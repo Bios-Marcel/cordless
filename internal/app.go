@@ -6,6 +6,8 @@ import (
 	"github.com/Bios-Marcel/cordless/internal/config"
 )
 
+//Run launches the whole application and might abort in case it encounters an
+//error.
 func Run() {
 	configDir, configErr := config.GetConfigDirectory()
 
