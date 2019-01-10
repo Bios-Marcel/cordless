@@ -26,12 +26,16 @@ In order to execute the application, simply run the executable, which lies at
 
 ### Configuration
 
-Cordless doesn't need anything besides your Discord token. In order to retrieve
-your token, simply follow the steps in the graphic below:
+Cordless doesn't need anything besides your Discord token. The application will
+ask you to input the token in case it can't be found.
+
+In order to retrieve your token, simply follow the steps in the graphic below:
 
 ![Steps to retrieve discord token - by ripcord](https://cancel.fm/ripcord/static/app_misc/discord_token_howto_en-US.png)
 
-After retrieving the token, you have to insert it into the `Token` field of
-your configuration file. In order to find the location of the configuration
-file, simply run cordless via your terminal and check the output, as it will
-tell you, where its configuration file lies.
+After retrieving the token, you have to insert it into the input prompt.
+
+Alternative, you can manually insert it into your configuration file.
+In order to find the location of the configuration file, simply run
+cordless via your terminal and check the output, as it will tell you, where
+its configuration file lies.
