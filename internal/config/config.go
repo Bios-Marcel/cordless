@@ -6,16 +6,17 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
-var (
+const (
 	//AppName is the name representing the application.
 	AppName = "Cordless"
 	//AppNameLowercase is the representative name, but lowercase.
 	//It us used for filepaths and such.
-	AppNameLowercase = strings.ToLower(AppName)
+	AppNameLowercase = "cordless"
+)
 
+var (
 	currentConfig = Config{}
 )
 
