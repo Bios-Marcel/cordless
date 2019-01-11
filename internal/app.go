@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
+	"github.com/Bios-Marcel/cordless/internal/ui"
+	"github.com/bwmarrin/discordgo"
 )
 
 //Run launches the whole application and might abort in case it encounters an
@@ -34,6 +36,24 @@ func Run() {
 			log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
 		}
 	}
+
+	discord, discordError := discordgo.New(configuration.Token)
+	if discordError != nil {
+		//TODO Handle
+		os.Exit(0)
+	}
+
+	window, createError := ui.NewWindow(discord)
+
+	if createError != nil {
+		log.Fatalf("Error constructing window (%s).\n", createError.Error())
+	}
+
+	runError := window.Run()
+	if runError != nil {
+		log.Fatalf("Error launching View (%s).\n", runError.Error())
+	}
+
 }
 
 func askForToken() string {
