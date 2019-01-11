@@ -142,8 +142,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						continue
 					}
 
-					fmt.Println("Adding stuff")
-
 					window.AddMessages(messages)
 				}
 			case <-quitMessageListener:
