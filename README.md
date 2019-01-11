@@ -7,6 +7,9 @@ This project was mainly inspired by [Southclaws](https://github.com/Southclaws)
 [Cordless](https://github.com/Southclaws/cordless), which he sadly didn't
 develop any further.
 
+The application only uses the official Discord API and doesn't send data to
+any third party.
+
 ## How to use it
 
 ### Installation
@@ -24,6 +27,9 @@ In order to execute the application, simply run the executable, which lies at
 `$GOPATH/bin/cordless`. In order to be able to run this from your commandline,
 `$GOPATH/bin` has to be in your `PATH` variable.
 
+Currently this is the only way of installation. Prebuilt binaries will be
+available at a later point.
+
 ### Configuration
 
 Cordless doesn't need anything besides your Discord token. The application will
@@ -39,3 +45,6 @@ Alternative, you can manually insert it into your configuration file.
 In order to find the location of the configuration file, simply run
 cordless via your terminal and check the output, as it will tell you, where
 its configuration file lies.
+
+The token will be saved on your machine, but it won't be encrypted, so be
+careful with your configuration file.
