@@ -19,6 +19,7 @@ type Window struct {
 
 	session *discordgo.Session
 
+	lastMessageID   *string
 	shownMessages   []*discordgo.Message
 	selectedServer  *discordgo.UserGuild
 	selectedChannel *discordgo.Channel
@@ -124,13 +125,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			select {
 			case <-messageTick.C:
 				if window.selectedChannel != nil {
-					messageAmount := len(window.shownMessages)
 					var messages []*discordgo.Message
 					var discordError error
-					if window.shownMessages != nil && messageAmount > 0 {
-						messages, discordError = discord.ChannelMessages(window.selectedChannel.ID, 100, "", window.shownMessages[messageAmount-1].ID, "")
-					} else {
-						messages, discordError = discord.ChannelMessages(window.selectedChannel.ID, 100, "", "", "")
+					if window.lastMessageID != nil {
+						messages, discordError = discord.ChannelMessages(window.selectedChannel.ID, 100, "", *window.lastMessageID, "")
 					}
 
 					//TODO Handle properly
@@ -141,6 +139,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					if messages == nil || len(messages) == 0 {
 						continue
 					}
+
+					window.lastMessageID = &messages[len(messages)-1].ID
 
 					window.AddMessages(messages)
 				}
@@ -238,6 +238,15 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		return discordError
 	}
 
+	messageLast, discordError := window.session.ChannelMessages(channel.ID, 100, "", messages[len(messages)-1].ID, "")
+	if discordError != nil {
+		return discordError
+	}
+
+	messages = append(messages, messageLast[0])
+
+	window.lastMessageID = &channel.LastMessageID
+
 	sort.Slice(messages, func(x, y int) bool {
 		timeOne, parseError := messages[x].Timestamp.Parse()
 		if parseError != nil {
@@ -262,16 +271,18 @@ func (window *Window) AddMessages(messages []*discordgo.Message) {
 	window.shownMessages = append(window.shownMessages, messages...)
 
 	window.app.QueueUpdateDraw(func() {
-		for index, message := range messages {
+		for _, message := range messages {
+			rowIndex := window.messageContainer.GetRowCount()
+
 			time, parseError := message.Timestamp.Parse()
 			if parseError == nil {
 				timeCellText := fmt.Sprintf("%02d:%02d:%02d", time.Hour(), time.Minute(), time.Second())
-				window.messageContainer.SetCell(index, 0, tview.NewTableCell(timeCellText))
+				window.messageContainer.SetCell(rowIndex, 0, tview.NewTableCell(timeCellText))
 			}
 
 			//TODO use nickname instead.
-			window.messageContainer.SetCell(index, 1, tview.NewTableCell(message.Author.Username))
-			window.messageContainer.SetCell(index, 2, tview.NewTableCell(message.Content))
+			window.messageContainer.SetCell(rowIndex, 1, tview.NewTableCell(message.Author.Username))
+			window.messageContainer.SetCell(rowIndex, 2, tview.NewTableCell(message.Content))
 		}
 
 		window.messageContainer.Select(window.messageContainer.GetRowCount()-1, 0)
