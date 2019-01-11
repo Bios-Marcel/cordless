@@ -58,7 +58,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		}
 
 		if window.selectedChannel != nil {
-			discordError := window.LoadChannel(window.selectedChannel.ID)
+			discordError := window.LoadChannel(window.selectedChannel)
 			if discordError != nil {
 				log.Fatalf("Error loading messages for channel (%s).", discordError.Error())
 			}
@@ -142,8 +142,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						continue
 					}
 
-					messages = append(window.shownMessages, messages...)
-					window.SetMessages(messages)
+					fmt.Println("Adding stuff")
+
+					window.AddMessages(messages)
 				}
 			case <-quitMessageListener:
 				messageTick.Stop()
@@ -232,8 +233,9 @@ func (window *Window) ClearMessages() {
 	window.messageContainer.Clear()
 }
 
-func (window *Window) LoadChannel(channelID string) error {
-	messages, discordError := window.session.ChannelMessages(channelID, 50, "", "", "")
+func (window *Window) LoadChannel(channel *discordgo.Channel) error {
+
+	messages, discordError := window.session.ChannelMessages(channel.ID, 100, channel.LastMessageID, "", "")
 	if discordError != nil {
 		return discordError
 	}
@@ -254,16 +256,14 @@ func (window *Window) LoadChannel(channelID string) error {
 		return timeOne.Before(timeTwo)
 	})
 
-	window.SetMessages(messages)
+	window.AddMessages(messages)
 	return nil
 }
 
-func (window *Window) SetMessages(messages []*discordgo.Message) {
-	window.shownMessages = messages
+func (window *Window) AddMessages(messages []*discordgo.Message) {
+	window.shownMessages = append(window.shownMessages, messages...)
 
 	window.app.QueueUpdateDraw(func() {
-		window.ClearMessages()
-
 		for index, message := range messages {
 			time, parseError := message.Timestamp.Parse()
 			if parseError == nil {
