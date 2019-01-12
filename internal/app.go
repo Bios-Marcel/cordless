@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/ui"
@@ -58,7 +57,8 @@ func Run() {
 
 func askForToken() string {
 	reader := bufio.NewReader(os.Stdin)
-	token, inputError := reader.ReadString('\n')
+	tokenAsBytes, _, inputError := reader.ReadLine()
+	token := string(tokenAsBytes[:len(tokenAsBytes)])
 
 	if inputError != nil {
 		log.Fatalf("Error reading your token (%s).\n", inputError.Error())
@@ -68,8 +68,6 @@ func askForToken() string {
 		log.Println("An empty token is not valid, please try again.")
 		return askForToken()
 	}
-
-	token = strings.TrimSuffix(token, "\n")
 
 	return token
 }
