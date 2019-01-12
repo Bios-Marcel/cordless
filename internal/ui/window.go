@@ -22,7 +22,7 @@ type Window struct {
 
 	lastMessageID   *string
 	shownMessages   []*discordgo.Message
-	selectedServer  *discordgo.UserGuild
+	selectedGuild   *discordgo.UserGuild
 	selectedChannel *discordgo.Channel
 }
 
@@ -40,28 +40,28 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	left := tview.NewPages()
 
-	serversPageName := "Servers"
-	serversPage := tview.NewFlex()
-	serversPage.SetDirection(tview.FlexRow)
+	guildPageName := "Guilds"
+	guildPage := tview.NewFlex()
+	guildPage.SetDirection(tview.FlexRow)
 
-	channelsPlaceholder := tview.NewTreeView()
+	channelTree := tview.NewTreeView()
 	channelRootNode := tview.NewTreeNode("")
 	window.channelRootNode = channelRootNode
-	channelsPlaceholder.SetRoot(channelRootNode)
-	channelsPlaceholder.SetBorder(true)
-	channelsPlaceholder.SetTopLevel(1)
+	channelTree.SetRoot(channelRootNode)
+	channelTree.SetBorder(true)
+	channelTree.SetTopLevel(1)
 
-	serversPlaceholder := tview.NewList()
-	serversPlaceholder.SetBorder(true)
-	serversPlaceholder.ShowSecondaryText(false)
+	guildList := tview.NewList()
+	guildList.SetBorder(true)
+	guildList.ShowSecondaryText(false)
 	for _, guild := range guilds {
-		serversPlaceholder.AddItem(guild.Name, "", 0, nil)
+		guildList.AddItem(guild.Name, "", 0, nil)
 	}
 
-	serversPlaceholder.SetSelectedFunc(func(index int, primary, secondary string, shortcut rune) {
+	guildList.SetSelectedFunc(func(index int, primary, secondary string, shortcut rune) {
 		for _, guild := range guilds {
 			if guild.Name == primary {
-				window.selectedServer = guild
+				window.selectedGuild = guild
 				channelRootNode.ClearChildren()
 
 				//TODO Handle error
@@ -89,8 +89,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						newNode := tview.NewTreeNode(channel.Name)
 
 						//No selection will prevent selection from working at all.
-						if channelsPlaceholder.GetCurrentNode() == nil {
-							channelsPlaceholder.SetCurrentNode(newNode)
+						if channelTree.GetCurrentNode() == nil {
+							channelTree.SetCurrentNode(newNode)
 						}
 
 						newNode.SetSelectable(true)
@@ -131,18 +131,18 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		}
 	})
 
-	serversPage.AddItem(serversPlaceholder, 0, 1, true)
-	serversPage.AddItem(channelsPlaceholder, 0, 2, true)
+	guildPage.AddItem(guildList, 0, 1, true)
+	guildPage.AddItem(channelTree, 0, 2, true)
 
-	left.AddPage(serversPageName, serversPage, true, true)
+	left.AddPage(guildPageName, guildPage, true, true)
 
 	friendsPageName := "Friends"
 	friendsPage := tview.NewFlex()
 	friendsPage.SetDirection(tview.FlexRow)
 	left.AddPage(friendsPageName, friendsPage, true, false)
 
-	mid := tview.NewFlex()
-	mid.SetDirection(tview.FlexRow)
+	chatArea := tview.NewFlex()
+	chatArea.SetDirection(tview.FlexRow)
 
 	messageContainer := tview.NewTable()
 	window.messageContainer = messageContainer
@@ -197,8 +197,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return event
 	})
 
-	mid.AddItem(messageContainer, 0, 1, true)
-	mid.AddItem(window.messageInput, 3, 0, true)
+	chatArea.AddItem(messageContainer, 0, 1, true)
+	chatArea.AddItem(window.messageInput, 3, 0, true)
 
 	window.userContainer = tview.NewList()
 	window.userContainer.ShowSecondaryText(false)
@@ -209,7 +209,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	root.SetBorderPadding(-1, -1, 0, 0)
 
 	root.AddItem(left, 0, 7, true)
-	root.AddItem(mid, 0, 20, false)
+	root.AddItem(chatArea, 0, 20, false)
 	root.AddItem(window.userContainer, 0, 6, false)
 
 	frame := tview.NewFrame(root)
@@ -220,12 +220,12 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers()&tcell.ModAlt == tcell.ModAlt {
 			if event.Rune() == 'c' {
-				app.SetFocus(channelsPlaceholder)
+				app.SetFocus(channelTree)
 				return nil
 			}
 
 			if event.Rune() == 's' {
-				app.SetFocus(serversPlaceholder)
+				app.SetFocus(guildList)
 				return nil
 			}
 
