@@ -14,7 +14,8 @@ import (
 type Window struct {
 	app              *tview.Application
 	messageContainer *tview.Table
-	userContainer    *tview.List
+	userContainer    *tview.TreeView
+	userRootNode     *tview.TreeNode
 	messageInput     *tview.InputField
 	channelRootNode  *tview.TreeNode
 
@@ -112,17 +113,52 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				}
 
 				go func() {
+					users, discordError := discord.GuildMembers(guild.ID, "", 1000)
+
 					//TODO Handle error
-					window.userContainer.Clear()
-					users, _ := discord.GuildMembers(guild.ID, "", 1000)
+					if discordError != nil {
+						return
+					}
 
 					app.QueueUpdateDraw(func() {
-						for _, user := range users {
-							if user.Nick != "" {
-								window.userContainer.AddItem(user.Nick, "", 0, nil)
-							} else {
-								window.userContainer.AddItem(user.User.Username, "", 0, nil)
+						window.userRootNode.ClearChildren()
+
+						roles, _ := discord.GuildRoles(guild.ID)
+						roleNodes := make(map[string]*tview.TreeNode)
+
+						sort.Slice(roles, func(a, b int) bool {
+							return roles[a].Position > roles[b].Position
+						})
+
+						for _, role := range roles {
+							if role.Hoist {
+								roleNode := tview.NewTreeNode(role.Name)
+								roleNodes[role.ID] = roleNode
+								window.userRootNode.AddChild(roleNode)
 							}
+						}
+
+					USER:
+						for _, user := range users {
+
+							var nameToUse string
+							if user.Nick != "" {
+								nameToUse = user.Nick
+							} else {
+								nameToUse = user.User.Username
+							}
+
+							userNode := tview.NewTreeNode(nameToUse)
+
+							for _, userRole := range user.Roles {
+								roleNode, exists := roleNodes[userRole]
+								if exists {
+									roleNode.AddChild(userNode)
+									continue USER
+								}
+							}
+
+							window.userRootNode.AddChild(userNode)
 						}
 					})
 				}()
@@ -150,7 +186,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	messageContainer.SetSelectable(true, false)
 
 	messageTick := time.NewTicker(250 * time.Millisecond)
-	quitMessageListener := make(chan struct{})
 	go func() {
 		for {
 			select {
@@ -175,9 +210,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 					window.AddMessages(messages)
 				}
-			case <-quitMessageListener:
-				messageTick.Stop()
-				return
 			}
 		}
 	}()
@@ -200,8 +232,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	chatArea.AddItem(messageContainer, 0, 1, true)
 	chatArea.AddItem(window.messageInput, 3, 0, true)
 
-	window.userContainer = tview.NewList()
-	window.userContainer.ShowSecondaryText(false)
+	window.userContainer = tview.NewTreeView()
+	window.userRootNode = tview.NewTreeNode("")
+	window.userContainer.SetTopLevel(1)
+	window.userContainer.SetRoot(window.userRootNode)
 	window.userContainer.SetBorder(true)
 
 	root := tview.NewFlex()
@@ -260,7 +294,6 @@ func (window *Window) ClearMessages() {
 }
 
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
-
 	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", "", "")
 	if discordError != nil {
 		return discordError
@@ -292,6 +325,7 @@ func (window *Window) AddMessages(messages []*discordgo.Message) {
 
 			time, parseError := message.Timestamp.Parse()
 			if parseError == nil {
+				time := time.Local()
 				timeCellText := fmt.Sprintf("%02d:%02d:%02d", time.Hour(), time.Minute(), time.Second())
 				window.messageContainer.SetCell(rowIndex, 0, tview.NewTableCell(timeCellText))
 			}
