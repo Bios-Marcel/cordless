@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	updateInterval = 100 * time.Millisecond
+	updateInterval         = 250 * time.Millisecond
+	userListUpdateInterval = 5 * time.Second
 )
 
 type Window struct {
@@ -23,8 +24,9 @@ type Window struct {
 	messageInput     *tview.InputField
 	channelRootNode  *tview.TreeNode
 
-	killCurrentUpdateThread *chan bool
-	session                 *discordgo.Session
+	killCurrentGuildUpdateThread   *chan bool
+	killCurrentChannelUpdateThread *chan bool
+	session                        *discordgo.Session
 
 	shownMessages   []*discordgo.Message
 	selectedGuild   *discordgo.UserGuild
@@ -66,6 +68,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	guildList.SetSelectedFunc(func(index int, primary, secondary string, shortcut rune) {
 		for _, guild := range guilds {
 			if guild.Name == primary {
+				if window.killCurrentGuildUpdateThread != nil {
+					*window.killCurrentGuildUpdateThread <- true
+				}
+
 				window.selectedGuild = guild
 				channelRootNode.ClearChildren()
 
@@ -116,7 +122,21 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					}
 				}
 
-				go window.UpdateUsersForGuild(guild)
+				updateUser := time.NewTicker(userListUpdateInterval)
+				go func() {
+					killChan := make(chan bool)
+					window.killCurrentGuildUpdateThread = &killChan
+					window.UpdateUsersForGuild(guild)
+					for {
+						select {
+						case <-*window.killCurrentGuildUpdateThread:
+							window.killCurrentGuildUpdateThread = nil
+							return
+						case <-updateUser.C:
+							window.UpdateUsersForGuild(guild)
+						}
+					}
+				}()
 				break
 			}
 		}
@@ -220,8 +240,8 @@ func (window *Window) ClearMessages() {
 }
 
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
-	if window.killCurrentUpdateThread != nil {
-		*window.killCurrentUpdateThread <- true
+	if window.killCurrentChannelUpdateThread != nil {
+		*window.killCurrentChannelUpdateThread <- true
 	}
 
 	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", "", "")
@@ -243,10 +263,11 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	updateTicker := time.NewTicker(updateInterval)
 	go func() {
 		killChan := make(chan bool)
-		window.killCurrentUpdateThread = &killChan
+		window.killCurrentChannelUpdateThread = &killChan
 		for {
 			select {
-			case <-*window.killCurrentUpdateThread:
+			case <-*window.killCurrentChannelUpdateThread:
+				window.killCurrentChannelUpdateThread = nil
 				return
 
 			case <-updateTicker.C:
@@ -336,6 +357,27 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 			}
 
 			userNode := tview.NewTreeNode(nameToUse)
+
+			sort.Slice(user.Roles, func(a, b int) bool {
+				firstIdentifier := user.Roles[a]
+				secondIdentifier := user.Roles[b]
+
+				var firstRole *discordgo.Role
+				for _, role := range roles {
+					if role.ID == firstIdentifier {
+						firstRole = role
+					}
+				}
+
+				var secondRole *discordgo.Role
+				for _, role := range roles {
+					if role.ID == secondIdentifier {
+						secondRole = role
+					}
+				}
+
+				return firstRole.Position > secondRole.Position
+			})
 
 			for _, userRole := range user.Roles {
 				roleNode, exists := roleNodes[userRole]
