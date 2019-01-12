@@ -11,6 +11,10 @@ import (
 	"github.com/rivo/tview"
 )
 
+const (
+	updateInterval = 100 * time.Millisecond
+)
+
 type Window struct {
 	app              *tview.Application
 	messageContainer *tview.Table
@@ -19,9 +23,9 @@ type Window struct {
 	messageInput     *tview.InputField
 	channelRootNode  *tview.TreeNode
 
-	session *discordgo.Session
+	killCurrentUpdateThread *chan bool
+	session                 *discordgo.Session
 
-	lastMessageID   *string
 	shownMessages   []*discordgo.Message
 	selectedGuild   *discordgo.UserGuild
 	selectedChannel *discordgo.Channel
@@ -99,9 +103,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						//of always the same one.
 						channelToConnectTo := channel
 						newNode.SetSelectedFunc(func() {
-							window.ClearMessages()
-
 							window.selectedChannel = channelToConnectTo
+
+							window.ClearMessages()
 							discordError := window.LoadChannel(channelToConnectTo)
 							if discordError != nil {
 								log.Fatalf("Error loading messages (%s).", discordError.Error())
@@ -112,56 +116,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					}
 				}
 
-				go func() {
-					users, discordError := discord.GuildMembers(guild.ID, "", 1000)
-
-					//TODO Handle error
-					if discordError != nil {
-						return
-					}
-
-					app.QueueUpdateDraw(func() {
-						window.userRootNode.ClearChildren()
-
-						roles, _ := discord.GuildRoles(guild.ID)
-						roleNodes := make(map[string]*tview.TreeNode)
-
-						sort.Slice(roles, func(a, b int) bool {
-							return roles[a].Position > roles[b].Position
-						})
-
-						for _, role := range roles {
-							if role.Hoist {
-								roleNode := tview.NewTreeNode(role.Name)
-								roleNodes[role.ID] = roleNode
-								window.userRootNode.AddChild(roleNode)
-							}
-						}
-
-					USER:
-						for _, user := range users {
-
-							var nameToUse string
-							if user.Nick != "" {
-								nameToUse = user.Nick
-							} else {
-								nameToUse = user.User.Username
-							}
-
-							userNode := tview.NewTreeNode(nameToUse)
-
-							for _, userRole := range user.Roles {
-								roleNode, exists := roleNodes[userRole]
-								if exists {
-									roleNode.AddChild(userNode)
-									continue USER
-								}
-							}
-
-							window.userRootNode.AddChild(userNode)
-						}
-					})
-				}()
+				go window.UpdateUsersForGuild(guild)
 				break
 			}
 		}
@@ -184,35 +139,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.messageContainer = messageContainer
 	messageContainer.SetBorder(true)
 	messageContainer.SetSelectable(true, false)
-
-	messageTick := time.NewTicker(250 * time.Millisecond)
-	go func() {
-		for {
-			select {
-			case <-messageTick.C:
-				if window.selectedChannel != nil {
-					var messages []*discordgo.Message
-					var discordError error
-					if window.lastMessageID != nil {
-						messages, discordError = discord.ChannelMessages(window.selectedChannel.ID, 100, "", *window.lastMessageID, "")
-					}
-
-					//TODO Handle properly
-					if discordError != nil {
-						continue
-					}
-
-					if messages == nil || len(messages) == 0 {
-						continue
-					}
-
-					window.lastMessageID = &messages[len(messages)-1].ID
-
-					window.AddMessages(messages)
-				}
-			}
-		}
-	}()
 
 	window.messageInput = tview.NewInputField()
 	window.messageInput.SetBorder(true)
@@ -294,26 +220,58 @@ func (window *Window) ClearMessages() {
 }
 
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
+	if window.killCurrentUpdateThread != nil {
+		*window.killCurrentUpdateThread <- true
+	}
+
 	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", "", "")
 	if discordError != nil {
 		return discordError
 	}
 
-	if messages == nil || len(messages) == 0 {
-		return nil
+	if messages != nil && len(messages) > 0 {
+		//HACK: Reversing them, as they are sorted anyway.
+		msgAmount := len(messages)
+		for i := 0; i < msgAmount/2; i++ {
+			j := msgAmount - i - 1
+			messages[i], messages[j] = messages[j], messages[i]
+		}
+
+		window.AddMessages(messages)
 	}
 
-	window.lastMessageID = &messages[0].ID
+	updateTicker := time.NewTicker(updateInterval)
+	go func() {
+		killChan := make(chan bool)
+		window.killCurrentUpdateThread = &killChan
+		for {
+			select {
+			case <-*window.killCurrentUpdateThread:
+				return
 
-	//HACK: Reversing them, as they are sorted anyway.
-	msgAmount := len(messages)
-	for i := 0; i < msgAmount/2; i++ {
-		j := msgAmount - i - 1
-		messages[i], messages[j] = messages[j], messages[i]
+			case <-updateTicker.C:
+				window.LoadMessagesInChannelAfter(channel)
+			}
+		}
+	}()
+
+	return nil
+}
+
+func (window *Window) LoadMessagesInChannelAfter(channel *discordgo.Channel) {
+	lastMessageID := window.shownMessages[len(window.shownMessages)-1].ID
+	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", lastMessageID, "")
+
+	//TODO Handle
+	if discordError != nil {
+		return
+	}
+
+	if messages == nil || len(messages) == 0 {
+		return
 	}
 
 	window.AddMessages(messages)
-	return nil
 }
 
 func (window *Window) AddMessages(messages []*discordgo.Message) {
@@ -321,6 +279,7 @@ func (window *Window) AddMessages(messages []*discordgo.Message) {
 
 	window.app.QueueUpdateDraw(func() {
 		for _, message := range messages {
+
 			rowIndex := window.messageContainer.GetRowCount()
 
 			time, parseError := message.Timestamp.Parse()
@@ -337,6 +296,57 @@ func (window *Window) AddMessages(messages []*discordgo.Message) {
 
 		window.messageContainer.Select(window.messageContainer.GetRowCount()-1, 0)
 		window.messageContainer.ScrollToEnd()
+	})
+}
+
+func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
+	users, discordError := window.session.GuildMembers(guild.ID, "", 1000)
+
+	//TODO Handle error
+	if discordError != nil {
+		return
+	}
+
+	window.app.QueueUpdateDraw(func() {
+		window.userRootNode.ClearChildren()
+
+		roles, _ := window.session.GuildRoles(guild.ID)
+		roleNodes := make(map[string]*tview.TreeNode)
+
+		sort.Slice(roles, func(a, b int) bool {
+			return roles[a].Position > roles[b].Position
+		})
+
+		for _, role := range roles {
+			if role.Hoist {
+				roleNode := tview.NewTreeNode(role.Name)
+				roleNodes[role.ID] = roleNode
+				window.userRootNode.AddChild(roleNode)
+			}
+		}
+
+	USER:
+		for _, user := range users {
+
+			var nameToUse string
+			if user.Nick != "" {
+				nameToUse = user.Nick
+			} else {
+				nameToUse = user.User.Username
+			}
+
+			userNode := tview.NewTreeNode(nameToUse)
+
+			for _, userRole := range user.Roles {
+				roleNode, exists := roleNodes[userRole]
+				if exists {
+					roleNode.AddChild(userNode)
+					continue USER
+				}
+			}
+
+			window.userRootNode.AddChild(userNode)
+		}
 	})
 }
 
