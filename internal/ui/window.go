@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -15,6 +16,7 @@ type Window struct {
 	messageContainer *tview.Table
 	userContainer    *tview.List
 	messageInput     *tview.InputField
+	channelRootNode  *tview.TreeNode
 
 	session *discordgo.Session
 
@@ -42,28 +44,12 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	serversPage := tview.NewFlex()
 	serversPage.SetDirection(tview.FlexRow)
 
-	channelsPlaceholder := tview.NewList()
+	channelsPlaceholder := tview.NewTreeView()
+	channelRootNode := tview.NewTreeNode("")
+	window.channelRootNode = channelRootNode
+	channelsPlaceholder.SetRoot(channelRootNode)
 	channelsPlaceholder.SetBorder(true)
-	channelsPlaceholder.ShowSecondaryText(false)
-
-	channelsPlaceholder.SetSelectedFunc(func(index int, primary, secondary string, shortcut rune) {
-		window.ClearMessages()
-
-		channels, _ := discord.GuildChannels(window.selectedServer.ID)
-		for _, channel := range channels {
-			if channel.Name == primary {
-				window.selectedChannel = channel
-				break
-			}
-		}
-
-		if window.selectedChannel != nil {
-			discordError := window.LoadChannel(window.selectedChannel)
-			if discordError != nil {
-				log.Fatalf("Error loading messages for channel (%s).", discordError.Error())
-			}
-		}
-	})
+	channelsPlaceholder.SetTopLevel(1)
 
 	serversPlaceholder := tview.NewList()
 	serversPlaceholder.SetBorder(true)
@@ -76,24 +62,70 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		for _, guild := range guilds {
 			if guild.Name == primary {
 				window.selectedServer = guild
-				channelsPlaceholder.Clear()
-				//TODO Handle error
-				channels, _ := discord.GuildChannels(guild.ID)
-				for _, channel := range channels {
-					//TODO Filter by permissions
-					channelsPlaceholder.AddItem(channel.Name, "", 0, nil)
-				}
+				channelRootNode.ClearChildren()
 
 				//TODO Handle error
-				window.userContainer.Clear()
-				users, _ := discord.GuildMembers(guild.ID, "", 1000)
-				for _, user := range users {
-					if user.Nick != "" {
-						window.userContainer.AddItem(user.Nick, "", 0, nil)
-					} else {
-						window.userContainer.AddItem(user.User.Username, "", 0, nil)
+				channels, _ := discord.GuildChannels(guild.ID)
+
+				sort.Slice(channels, func(a, b int) bool {
+					return channels[a].Position < channels[b].Position
+				})
+
+				channelCategories := make(map[string]*tview.TreeNode)
+				for _, channel := range channels {
+					if channel.ParentID == "" {
+						newNode := tview.NewTreeNode(channel.Name)
+						channelRootNode.AddChild(newNode)
+
+						if channel.Type == discordgo.ChannelTypeGuildCategory {
+							newNode.SetSelectable(false)
+							channelCategories[channel.ID] = newNode
+						}
 					}
 				}
+
+				for _, channel := range channels {
+					if channel.Type == discordgo.ChannelTypeGuildText && channel.ParentID != "" {
+						newNode := tview.NewTreeNode(channel.Name)
+
+						//No selection will prevent selection from working at all.
+						if channelsPlaceholder.GetCurrentNode() == nil {
+							channelsPlaceholder.SetCurrentNode(newNode)
+						}
+
+						newNode.SetSelectable(true)
+						//This copy is necessary in order to use the correct channel instead
+						//of always the same one.
+						channelToConnectTo := channel
+						newNode.SetSelectedFunc(func() {
+							window.ClearMessages()
+
+							window.selectedChannel = channelToConnectTo
+							discordError := window.LoadChannel(channelToConnectTo)
+							if discordError != nil {
+								log.Fatalf("Error loading messages (%s).", discordError.Error())
+							}
+						})
+
+						channelCategories[channelToConnectTo.ParentID].AddChild(newNode)
+					}
+				}
+
+				go func() {
+					//TODO Handle error
+					window.userContainer.Clear()
+					users, _ := discord.GuildMembers(guild.ID, "", 1000)
+
+					app.QueueUpdateDraw(func() {
+						for _, user := range users {
+							if user.Nick != "" {
+								window.userContainer.AddItem(user.Nick, "", 0, nil)
+							} else {
+								window.userContainer.AddItem(user.User.Username, "", 0, nil)
+							}
+						}
+					})
+				}()
 				break
 			}
 		}
