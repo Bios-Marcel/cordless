@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"log"
-	"sort"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -233,35 +232,23 @@ func (window *Window) ClearMessages() {
 
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
-	messages, discordError := window.session.ChannelMessages(channel.ID, 100, channel.LastMessageID, "", "")
+	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", "", "")
 	if discordError != nil {
 		return discordError
 	}
 
-	messageLast, discordError := window.session.ChannelMessages(channel.ID, 100, "", messages[len(messages)-1].ID, "")
-	if discordError != nil {
-		return discordError
+	if messages == nil || len(messages) == 0 {
+		return nil
 	}
 
-	messages = append(messages, messageLast[0])
+	window.lastMessageID = &messages[0].ID
 
-	window.lastMessageID = &channel.LastMessageID
-
-	sort.Slice(messages, func(x, y int) bool {
-		timeOne, parseError := messages[x].Timestamp.Parse()
-		if parseError != nil {
-			fmt.Println("Error 1")
-			return false
-		}
-
-		timeTwo, parseError := messages[y].Timestamp.Parse()
-		if parseError != nil {
-			fmt.Println("Error 2")
-			return false
-		}
-
-		return timeOne.Before(timeTwo)
-	})
+	//HACK: Reversing them, as they are sorted anyway.
+	msgAmount := len(messages)
+	for i := 0; i < msgAmount/2; i++ {
+		j := msgAmount - i - 1
+		messages[i], messages[j] = messages[j], messages[i]
+	}
 
 	window.AddMessages(messages)
 	return nil
