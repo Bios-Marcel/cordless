@@ -186,32 +186,27 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	frame.SetTitle("Cordless")
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == 'C' &&
-			event.Modifiers() == tcell.ModAlt {
+		if event.Rune() == 'C' {
 			app.SetFocus(channelsPlaceholder)
 			return nil
 		}
 
-		if event.Rune() == 'S' &&
-			event.Modifiers() == tcell.ModAlt {
+		if event.Rune() == 'S' {
 			app.SetFocus(serversPlaceholder)
 			return nil
 		}
 
-		if event.Rune() == 'T' &&
-			event.Modifiers() == tcell.ModAlt {
+		if event.Rune() == 'T' {
 			app.SetFocus(window.messageContainer)
 			return nil
 		}
 
-		if event.Rune() == 'U' &&
-			event.Modifiers() == tcell.ModAlt {
+		if event.Rune() == 'U' {
 			app.SetFocus(window.userContainer)
 			return nil
 		}
 
-		if event.Rune() == 'M' &&
-			event.Modifiers() == tcell.ModAlt {
+		if event.Rune() == 'M' {
 			app.SetFocus(window.messageInput)
 			return nil
 		}
