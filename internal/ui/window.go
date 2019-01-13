@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -170,8 +171,17 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
 			if window.selectedChannel != nil {
-				discord.ChannelMessageSend(window.selectedChannel.ID, window.messageInput.GetText())
+				messageToSend := window.messageInput.GetText()
 				window.messageInput.SetText("")
+				guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+				if discordError == nil {
+					for _, channel := range guild.Channels {
+						if channel.Type != discordgo.ChannelTypeGuildText {
+							messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
+						}
+					}
+				}
+				go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
 			}
 
 			return nil
@@ -270,7 +280,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 
 	if channel.Topic != "" {
-		window.channelTitle.SetText(fmt.Sprintf("%s - %s", channel.Name, channel.Topic))
+		window.channelTitle.SetText(channel.Name + " - " + channel.Topic)
 	} else {
 		window.channelTitle.SetText(channel.Name)
 	}

@@ -42,6 +42,9 @@ func Run() {
 		os.Exit(0)
 	}
 
+	//TODO Handle error
+	discord.Open()
+
 	window, createError := ui.NewWindow(discord)
 
 	if createError != nil {
