@@ -323,7 +323,15 @@ func (window *Window) AddMessages(messages []*discordgo.Message) {
 
 			//TODO use nickname instead.
 			window.messageContainer.SetCell(rowIndex, 1, tview.NewTableCell(message.Author.Username))
-			window.messageContainer.SetCell(rowIndex, 2, tview.NewTableCell(message.Content))
+			messageText := message.ContentWithMentionsReplaced()
+			if message.Attachments != nil && len(message.Attachments) != 0 {
+				if messageText != "" {
+					messageText = messageText + " "
+				}
+				messageText = messageText + message.Attachments[0].URL
+			}
+
+			window.messageContainer.SetCell(rowIndex, 2, tview.NewTableCell(messageText))
 		}
 
 		window.messageContainer.Select(window.messageContainer.GetRowCount()-1, 0)
