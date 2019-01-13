@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -18,9 +19,15 @@ const (
 )
 
 type Window struct {
-	app              *tview.Application
+	app *tview.Application
+
+	rootContainer *tview.Flex
+
+	leftArea      *tview.Pages
+	chatArea      *tview.Flex
+	userContainer *tview.TreeView
+
 	messageContainer *tview.Table
-	userContainer    *tview.TreeView
 	userRootNode     *tview.TreeNode
 	messageInput     *tview.InputField
 	channelRootNode  *tview.TreeNode
@@ -36,8 +43,11 @@ type Window struct {
 }
 
 func NewWindow(discord *discordgo.Session) (*Window, error) {
+	app := tview.NewApplication()
+
 	window := Window{
 		session: discord,
+		app:     app,
 	}
 
 	guilds, discordError := discord.UserGuilds(100, "", "")
@@ -45,9 +55,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return nil, discordError
 	}
 
-	app := tview.NewApplication()
-
-	left := tview.NewPages()
+	window.leftArea = tview.NewPages()
 
 	guildPageName := "Guilds"
 	guildPage := tview.NewFlex()
@@ -132,14 +140,18 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				go func() {
 					killChan := make(chan bool)
 					window.killCurrentGuildUpdateThread = &killChan
-					window.UpdateUsersForGuild(guild)
+					if config.GetConfig().ShowUserContainer {
+						window.UpdateUsersForGuild(guild)
+					}
 					for {
 						select {
 						case <-*window.killCurrentGuildUpdateThread:
 							window.killCurrentGuildUpdateThread = nil
 							return
 						case <-updateUser.C:
-							window.UpdateUsersForGuild(guild)
+							if config.GetConfig().ShowUserContainer {
+								window.UpdateUsersForGuild(guild)
+							}
 						}
 					}
 				}()
@@ -151,15 +163,15 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	guildPage.AddItem(guildList, 0, 1, true)
 	guildPage.AddItem(channelTree, 0, 2, true)
 
-	left.AddPage(guildPageName, guildPage, true, true)
+	window.leftArea.AddPage(guildPageName, guildPage, true, true)
 
-	friendsPageName := "Friends"
+	/*friendsPageName := "Friends"
 	friendsPage := tview.NewFlex()
 	friendsPage.SetDirection(tview.FlexRow)
-	left.AddPage(friendsPageName, friendsPage, true, false)
+	left.AddPage(friendsPageName, friendsPage, true, false)*/
 
-	chatArea := tview.NewFlex()
-	chatArea.SetDirection(tview.FlexRow)
+	window.chatArea = tview.NewFlex()
+	window.chatArea.SetDirection(tview.FlexRow)
 
 	messageContainer := tview.NewTable()
 	window.messageContainer = messageContainer
@@ -176,7 +188,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
 				if discordError == nil {
 					for _, channel := range guild.Channels {
-						if channel.Type != discordgo.ChannelTypeGuildText {
+						if channel.Type == discordgo.ChannelTypeGuildText {
 							messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
 						}
 					}
@@ -193,9 +205,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.channelTitle = tview.NewTextView()
 	window.channelTitle.SetBorder(true)
 
-	chatArea.AddItem(window.channelTitle, 3, 1, true)
-	chatArea.AddItem(messageContainer, 0, 1, true)
-	chatArea.AddItem(window.messageInput, 3, 0, true)
+	window.chatArea.AddItem(window.channelTitle, 3, 1, true)
+	window.chatArea.AddItem(messageContainer, 0, 1, true)
+	window.chatArea.AddItem(window.messageInput, 3, 0, true)
 
 	window.userContainer = tview.NewTreeView()
 	window.userRootNode = tview.NewTreeNode("")
@@ -203,20 +215,32 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.userContainer.SetRoot(window.userRootNode)
 	window.userContainer.SetBorder(true)
 
-	root := tview.NewFlex()
-	root.SetDirection(tview.FlexColumn)
-	root.SetBorderPadding(-1, -1, 0, 0)
+	window.rootContainer = tview.NewFlex()
+	window.rootContainer.SetDirection(tview.FlexColumn)
+	window.rootContainer.SetBorderPadding(-1, -1, 0, 0)
 
-	root.AddItem(left, 0, 7, true)
-	root.AddItem(chatArea, 0, 20, false)
-	root.AddItem(window.userContainer, 0, 6, false)
+	window.RefreshLayout()
 
-	frame := tview.NewFrame(root)
-	frame.SetBorder(true)
-	frame.SetTitleAlign(tview.AlignCenter)
-	frame.SetTitle("Cordless")
+	if config.GetConfig().UseFrame {
+		frame := tview.NewFrame(window.rootContainer)
+		frame.SetBorder(true)
+		frame.SetTitleAlign(tview.AlignCenter)
+		frame.SetTitle("Cordless")
+		app.SetRoot(frame, true)
+	} else {
+		app.SetRoot(window.rootContainer, true)
+	}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == 'U' &&
+			(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
+			conf := config.GetConfig()
+			conf.ShowUserContainer = !conf.ShowUserContainer
+			config.PersistConfig()
+			window.RefreshLayout()
+			return nil
+		}
+
 		if event.Modifiers()&tcell.ModAlt == tcell.ModAlt {
 			if event.Rune() == 'c' {
 				app.SetFocus(channelTree)
@@ -247,11 +271,23 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return event
 	})
 
-	app.SetRoot(frame, true)
-
-	window.app = app
-
 	return &window, nil
+}
+
+func (window *Window) RefreshLayout() {
+	window.rootContainer.RemoveItem(window.leftArea)
+	window.rootContainer.RemoveItem(window.chatArea)
+	window.rootContainer.RemoveItem(window.userContainer)
+
+	window.rootContainer.AddItem(window.leftArea, 0, 7, true)
+	if config.GetConfig().ShowUserContainer {
+		window.rootContainer.AddItem(window.chatArea, 0, 20, false)
+		window.rootContainer.AddItem(window.userContainer, 0, 6, false)
+	} else {
+		window.rootContainer.AddItem(window.chatArea, 0, 26, false)
+	}
+
+	window.app.ForceDraw()
 }
 
 func (window *Window) ClearMessages() {

@@ -30,10 +30,11 @@ func Run() {
 	if configuration.Token == "" {
 		log.Println("The Discord token could not be found, please input your token.")
 		configuration.Token = askForToken()
-		persistError := config.PersistConfig()
-		if persistError != nil {
-			log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
-		}
+	}
+
+	persistError := config.PersistConfig()
+	if persistError != nil {
+		log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
 	}
 
 	discord, discordError := discordgo.New(configuration.Token)

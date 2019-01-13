@@ -23,6 +23,9 @@ var (
 //Config contains all possible configuration for the application.
 type Config struct {
 	Token string
+
+	ShowUserContainer bool
+	UseFrame          bool
 }
 
 var cachedConfigDir string
