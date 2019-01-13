@@ -21,7 +21,11 @@ const (
 )
 
 var (
-	currentConfig = Config{}
+	currentConfig = Config{
+		Times:             HourMinuteAndSeconds,
+		ShowUserContainer: true,
+		ShowFrame:         true,
+	}
 )
 
 //Config contains all possible configuration for the application.
@@ -30,7 +34,7 @@ type Config struct {
 
 	Times             int
 	ShowUserContainer bool
-	UseFrame          bool
+	ShowFrame         bool
 }
 
 var cachedConfigDir string
