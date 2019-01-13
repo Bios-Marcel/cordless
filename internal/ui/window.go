@@ -269,7 +269,11 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		window.AddMessages(messages)
 	}
 
-	window.channelTitle.SetText(fmt.Sprintf("%s - %s", channel.Name, channel.Topic))
+	if channel.Topic != "" {
+		window.channelTitle.SetText(fmt.Sprintf("%s - %s", channel.Name, channel.Topic))
+	} else {
+		window.channelTitle.SetText(channel.Name)
+	}
 
 	updateTicker := time.NewTicker(updateInterval)
 	go func() {
