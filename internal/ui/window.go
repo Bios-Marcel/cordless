@@ -125,7 +125,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						newNode.SetSelectedFunc(func() {
 							window.selectedChannel = channelToConnectTo
 
-							window.ClearMessages()
 							discordError := window.LoadChannel(channelToConnectTo)
 							if discordError != nil {
 								log.Fatalf("Error loading messages (%s).", discordError.Error())
@@ -180,7 +179,29 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.messageInput = tview.NewInputField()
 	window.messageInput.SetBorder(true)
+
+	var editingMessageID *string
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyUp && window.messageInput.GetText() == "" {
+			for i := len(window.shownMessages) - 1; i > 0; i-- {
+				message := window.shownMessages[i]
+				if message.Author.ID == window.session.State.User.ID {
+					window.messageInput.SetText(message.ContentWithMentionsReplaced())
+					window.messageInput.SetBackgroundColor(tcell.ColorDarkGoldenrod)
+					editingMessageID = &message.ID
+					break
+				}
+			}
+
+			return nil
+		}
+
+		if event.Key() == tcell.KeyEsc {
+			editingMessageID = nil
+			window.messageInput.SetBackgroundColor(tcell.ColorDefault)
+			window.messageInput.SetText("")
+		}
+
 		if event.Key() == tcell.KeyEnter {
 			if window.selectedChannel != nil {
 				messageToSend := window.messageInput.GetText()
@@ -205,7 +226,27 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					}
 				}
 
-				go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
+				if editingMessageID != nil {
+					msgIDCopy := *editingMessageID
+					go func() {
+						updatedMessage, discordError := discord.ChannelMessageEdit(window.selectedChannel.ID, msgIDCopy, messageToSend)
+						if discordError == nil {
+							for index, msg := range window.shownMessages {
+								if msg.ID == updatedMessage.ID {
+									window.shownMessages[index] = updatedMessage
+									break
+								}
+							}
+						}
+						window.app.QueueUpdateDraw(func() {
+							window.RenderMessages()
+						})
+					}()
+					window.messageInput.SetBackgroundColor(tcell.ColorDefault)
+					editingMessageID = nil
+				} else {
+					go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
+				}
 			}
 
 			return nil
@@ -302,10 +343,6 @@ func (window *Window) RefreshLayout() {
 	window.app.ForceDraw()
 }
 
-func (window *Window) ClearMessages() {
-	window.messageContainer.Clear()
-}
-
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	if window.killCurrentChannelUpdateThread != nil {
 		*window.killCurrentChannelUpdateThread <- true
@@ -353,8 +390,15 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 }
 
 func (window *Window) LoadMessagesInChannelAfter(channel *discordgo.Channel) {
-	lastMessageID := window.shownMessages[len(window.shownMessages)-1].ID
-	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", lastMessageID, "")
+
+	var messages []*discordgo.Message
+	var discordError error
+	if window.shownMessages == nil || len(window.shownMessages) == 0 {
+		messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", "", "")
+	} else {
+		lastMessageID := window.shownMessages[len(window.shownMessages)-1].ID
+		messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", lastMessageID, "")
+	}
 
 	//TODO Handle
 	if discordError != nil {
@@ -368,11 +412,10 @@ func (window *Window) LoadMessagesInChannelAfter(channel *discordgo.Channel) {
 	window.AddMessages(messages)
 }
 
-func (window *Window) AddMessages(messages []*discordgo.Message) {
-	window.shownMessages = append(window.shownMessages, messages...)
-
+func (window *Window) RenderMessages() {
 	window.app.QueueUpdateDraw(func() {
-		for _, message := range messages {
+		window.messageContainer.Clear()
+		for _, message := range window.shownMessages {
 
 			rowIndex := window.messageContainer.GetRowCount()
 
@@ -406,6 +449,15 @@ func (window *Window) AddMessages(messages []*discordgo.Message) {
 		window.messageContainer.Select(window.messageContainer.GetRowCount()-1, 0)
 		window.messageContainer.ScrollToEnd()
 	})
+}
+
+func (window *Window) AddMessages(messages []*discordgo.Message) {
+	window.SetMessages(append(window.shownMessages, messages...))
+}
+
+func (window *Window) SetMessages(messages []*discordgo.Message) {
+	window.shownMessages = messages
+	window.RenderMessages()
 }
 
 func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
