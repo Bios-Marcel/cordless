@@ -230,7 +230,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.RefreshLayout()
 
-	if config.GetConfig().UseFrame {
+	if config.GetConfig().ShowFrame {
 		frame := tview.NewFrame(window.rootContainer)
 		frame.SetBorder(true)
 		frame.SetTitleAlign(tview.AlignCenter)
