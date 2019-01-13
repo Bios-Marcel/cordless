@@ -1,3 +1,9 @@
+---
+name: Bug report
+about: Tell us what went wrong
+
+---
+
 ## Is your source up to date
 
 - [ ] Yes
