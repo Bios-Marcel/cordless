@@ -23,6 +23,7 @@ type Window struct {
 	userRootNode     *tview.TreeNode
 	messageInput     *tview.InputField
 	channelRootNode  *tview.TreeNode
+	channelTitle     *tview.TextView
 
 	killCurrentGuildUpdateThread   *chan bool
 	killCurrentChannelUpdateThread *chan bool
@@ -175,6 +176,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return event
 	})
 
+	window.channelTitle = tview.NewTextView()
+	window.channelTitle.SetBorder(true)
+
+	chatArea.AddItem(window.channelTitle, 3, 1, true)
 	chatArea.AddItem(messageContainer, 0, 1, true)
 	chatArea.AddItem(window.messageInput, 3, 0, true)
 
@@ -259,6 +264,8 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 		window.AddMessages(messages)
 	}
+
+	window.channelTitle.SetText(fmt.Sprintf("%s - %s", channel.Name, channel.Topic))
 
 	updateTicker := time.NewTicker(updateInterval)
 	go func() {
