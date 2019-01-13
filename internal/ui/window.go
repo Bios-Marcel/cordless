@@ -198,6 +198,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					}
 
 					for _, member := range guild.Members {
+						if member.Nick != "" {
+							messageToSend = strings.Replace(messageToSend, "@"+member.Nick, "<@"+member.User.ID+">", -1)
+						}
 						messageToSend = strings.Replace(messageToSend, "@"+member.User.Username, "<@"+member.User.ID+">", -1)
 					}
 				}
