@@ -341,10 +341,15 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 		for _, role := range roles {
 			if role.Hoist {
 				roleNode := tview.NewTreeNode(role.Name)
+				roleNode.SetSelectable(false)
 				roleNodes[role.ID] = roleNode
 				window.userRootNode.AddChild(roleNode)
 			}
 		}
+
+		nonHoistNode := tview.NewTreeNode("No Hoist Role")
+		nonHoistNode.SetSelectable(false)
+		window.userRootNode.AddChild(nonHoistNode)
 
 	USER:
 		for _, user := range users {
@@ -387,7 +392,14 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 				}
 			}
 
-			window.userRootNode.AddChild(userNode)
+			nonHoistNode.AddChild(userNode)
+		}
+
+		if window.userContainer.GetCurrentNode() == nil {
+			userNodes := window.userRootNode.GetChildren()
+			if userNodes != nil && len(userNodes) > 0 {
+				window.userContainer.SetCurrentNode(window.userRootNode.GetChildren()[0])
+			}
 		}
 	})
 }
