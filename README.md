@@ -10,6 +10,11 @@ develop any further.
 The application only uses the official Discord API and doesn't send data to
 any third party.
 
+This application is currently a WIP and will change rather fast, however, here
+is a picture of it's current state (4 days after I started).
+
+![Cordless in its early stages](https://i.imgur.com/8Qr1aI6.png)
+
 ## How to use it
 
 ### Installation
