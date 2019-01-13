@@ -37,9 +37,10 @@ type Window struct {
 	killCurrentChannelUpdateThread *chan bool
 	session                        *discordgo.Session
 
-	shownMessages   []*discordgo.Message
-	selectedGuild   *discordgo.UserGuild
-	selectedChannel *discordgo.Channel
+	shownMessages       []*discordgo.Message
+	selectedGuild       *discordgo.UserGuild
+	selectedChannelNode *tview.TreeNode
+	selectedChannel     *discordgo.Channel
 }
 
 func NewWindow(discord *discordgo.Session) (*Window, error) {
@@ -123,8 +124,15 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						//of always the same one.
 						channelToConnectTo := channel
 						newNode.SetSelectedFunc(func() {
-							window.selectedChannel = channelToConnectTo
+							if window.selectedChannelNode != nil {
+								//For some reason using tcell.ColorDefault causes hovering to render incorrect.
+								window.selectedChannelNode.SetColor(tcell.ColorWhite)
+							}
 
+							window.selectedChannel = channelToConnectTo
+							window.selectedChannelNode = newNode
+
+							newNode.SetColor(tcell.ColorTeal)
 							discordError := window.LoadChannel(channelToConnectTo)
 							if discordError != nil {
 								log.Fatalf("Error loading messages (%s).", discordError.Error())
