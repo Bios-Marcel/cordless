@@ -185,14 +185,23 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			if window.selectedChannel != nil {
 				messageToSend := window.messageInput.GetText()
 				window.messageInput.SetText("")
+
 				guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
 				if discordError == nil {
+
+					//Those could be optimized by searching the string for patterns.
+
 					for _, channel := range guild.Channels {
 						if channel.Type == discordgo.ChannelTypeGuildText {
 							messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
 						}
 					}
+
+					for _, member := range guild.Members {
+						messageToSend = strings.Replace(messageToSend, "@"+member.User.Username, "<@"+member.User.ID+">", -1)
+					}
 				}
+
 				go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
 			}
 
