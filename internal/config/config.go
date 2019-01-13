@@ -14,6 +14,10 @@ const (
 	//AppNameLowercase is the representative name, but lowercase.
 	//It us used for filepaths and such.
 	AppNameLowercase = "cordless"
+
+	HourMinuteAndSeconds = 0
+	HourAndMinute        = 1
+	NoTime               = 2
 )
 
 var (
@@ -24,6 +28,7 @@ var (
 type Config struct {
 	Token string
 
+	Times             int
 	ShowUserContainer bool
 	UseFrame          bool
 }

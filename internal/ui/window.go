@@ -367,8 +367,15 @@ func (window *Window) AddMessages(messages []*discordgo.Message) {
 			time, parseError := message.Timestamp.Parse()
 			if parseError == nil {
 				time := time.Local()
-				timeCellText := fmt.Sprintf("%02d:%02d:%02d", time.Hour(), time.Minute(), time.Second())
-				window.messageContainer.SetCell(rowIndex, 0, tview.NewTableCell(timeCellText))
+				var timeCellText string
+				conf := config.GetConfig()
+				if conf.Times == config.HourMinuteAndSeconds {
+					timeCellText = fmt.Sprintf("%02d:%02d:%02d", time.Hour(), time.Minute(), time.Second())
+					window.messageContainer.SetCell(rowIndex, 0, tview.NewTableCell(timeCellText))
+				} else if conf.Times == config.HourAndMinute {
+					timeCellText = fmt.Sprintf("%02d:%02d", time.Hour(), time.Minute())
+					window.messageContainer.SetCell(rowIndex, 0, tview.NewTableCell(timeCellText))
+				}
 			}
 
 			//TODO use nickname instead.
