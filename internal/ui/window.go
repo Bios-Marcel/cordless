@@ -98,7 +98,11 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 				for _, channel := range channels {
 					if channel.Type == discordgo.ChannelTypeGuildText && channel.ParentID != "" {
-						newNode := tview.NewTreeNode(channel.Name)
+						nodeName := channel.Name
+						if channel.NSFW {
+							nodeName = nodeName + " NSFW"
+						}
+						newNode := tview.NewTreeNode(nodeName)
 
 						//No selection will prevent selection from working at all.
 						if channelTree.GetCurrentNode() == nil {
