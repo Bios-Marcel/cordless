@@ -215,49 +215,54 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				messageToSend := window.messageInput.GetText()
 				window.messageInput.SetText("")
 
-				guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
-				if discordError == nil {
+				if len(messageToSend) != 0 {
+					guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+					if discordError == nil {
 
-					//Those could be optimized by searching the string for patterns.
+						//Those could be optimized by searching the string for patterns.
 
-					for _, channel := range guild.Channels {
-						if channel.Type == discordgo.ChannelTypeGuildText {
-							messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
-						}
-					}
-
-					for _, member := range guild.Members {
-						if member.Nick != "" {
-							messageToSend = strings.Replace(messageToSend, "@"+member.Nick, "<@"+member.User.ID+">", -1)
-						}
-						messageToSend = strings.Replace(messageToSend, "@"+member.User.Username, "<@"+member.User.ID+">", -1)
-					}
-				}
-
-				if editingMessageID != nil {
-					msgIDCopy := *editingMessageID
-					go func() {
-						updatedMessage, discordError := discord.ChannelMessageEdit(window.selectedChannel.ID, msgIDCopy, messageToSend)
-						if discordError == nil {
-							for index, msg := range window.shownMessages {
-								if msg.ID == updatedMessage.ID {
-									window.shownMessages[index] = updatedMessage
-									break
-								}
+						for _, channel := range guild.Channels {
+							if channel.Type == discordgo.ChannelTypeGuildText {
+								messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
 							}
 						}
-						window.app.QueueUpdateDraw(func() {
-							window.RenderMessages()
-						})
-					}()
-					window.messageInput.SetBackgroundColor(tcell.ColorDefault)
-					editingMessageID = nil
-				} else {
-					go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
-				}
-			}
 
-			return nil
+						for _, member := range guild.Members {
+							if member.Nick != "" {
+								messageToSend = strings.Replace(messageToSend, "@"+member.Nick, "<@"+member.User.ID+">", -1)
+							}
+							messageToSend = strings.Replace(messageToSend, "@"+member.User.Username, "<@"+member.User.ID+">", -1)
+						}
+					}
+
+					if editingMessageID != nil {
+						msgIDCopy := *editingMessageID
+						go func() {
+							updatedMessage, discordError := discord.ChannelMessageEdit(window.selectedChannel.ID, msgIDCopy, messageToSend)
+							if discordError == nil {
+								for index, msg := range window.shownMessages {
+									if msg.ID == updatedMessage.ID {
+										window.shownMessages[index] = updatedMessage
+										break
+									}
+								}
+							}
+							window.app.QueueUpdateDraw(func() {
+								window.RenderMessages()
+							})
+						}()
+						window.messageInput.SetBackgroundColor(tcell.ColorDefault)
+						editingMessageID = nil
+					} else {
+						go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
+					}
+				} else {
+					dialog := tview.NewModal()
+					window.app.SetRoot(dialog, false)
+				}
+
+				return nil
+			}
 		}
 
 		return event
@@ -278,19 +283,11 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.rootContainer = tview.NewFlex()
 	window.rootContainer.SetDirection(tview.FlexColumn)
-	window.rootContainer.SetBorderPadding(-1, -1, 0, 0)
+	window.rootContainer.SetTitleAlign(tview.AlignCenter)
+
+	app.SetRoot(window.rootContainer, true)
 
 	window.RefreshLayout()
-
-	if config.GetConfig().ShowFrame {
-		frame := tview.NewFrame(window.rootContainer)
-		frame.SetBorder(true)
-		frame.SetTitleAlign(tview.AlignCenter)
-		frame.SetTitle("Cordless")
-		app.SetRoot(frame, true)
-	} else {
-		app.SetRoot(window.rootContainer, true)
-	}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Rune() == 'U' &&
@@ -335,17 +332,29 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	return &window, nil
 }
 
+//RefreshLayout removes and adds the main parts of the layout
+//so that the ones that are disabled by settings do not show up.
 func (window *Window) RefreshLayout() {
 	window.rootContainer.RemoveItem(window.leftArea)
 	window.rootContainer.RemoveItem(window.chatArea)
 	window.rootContainer.RemoveItem(window.userContainer)
 
 	window.rootContainer.AddItem(window.leftArea, 0, 7, true)
-	if config.GetConfig().ShowUserContainer {
+
+	conf := config.GetConfig()
+	if conf.ShowUserContainer {
 		window.rootContainer.AddItem(window.chatArea, 0, 20, false)
 		window.rootContainer.AddItem(window.userContainer, 0, 6, false)
 	} else {
 		window.rootContainer.AddItem(window.chatArea, 0, 26, false)
+	}
+
+	if conf.ShowFrame {
+		window.rootContainer.SetTitle("Cordless")
+		window.rootContainer.SetBorder(true)
+	} else {
+		window.rootContainer.SetTitle("")
+		window.rootContainer.SetBorder(false)
 	}
 
 	window.app.ForceDraw()
