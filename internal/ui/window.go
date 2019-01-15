@@ -69,103 +69,111 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	channelTree.SetBorder(true)
 	channelTree.SetTopLevel(1)
 
-	guildList := tview.NewList()
+	guildList := tview.NewTreeView()
+	guildRootNode := tview.NewTreeNode("")
+	guildList.SetRoot(guildRootNode)
 	guildList.SetBorder(true)
-	guildList.ShowSecondaryText(false)
-	for _, guild := range guilds {
-		guildList.AddItem(guild.Name, "", 0, nil)
-	}
+	guildList.SetTopLevel(1)
 
-	guildList.SetSelectedFunc(func(index int, primary, secondary string, shortcut rune) {
-		for _, guild := range guilds {
-			if guild.Name == primary {
-				if window.killCurrentGuildUpdateThread != nil {
-					*window.killCurrentGuildUpdateThread <- true
-				}
-
-				window.selectedGuild = guild
-				channelRootNode.ClearChildren()
-
-				//TODO Handle error
-				channels, _ := discord.GuildChannels(guild.ID)
-
-				sort.Slice(channels, func(a, b int) bool {
-					return channels[a].Position < channels[b].Position
-				})
-
-				channelCategories := make(map[string]*tview.TreeNode)
-				for _, channel := range channels {
-					if channel.ParentID == "" {
-						newNode := tview.NewTreeNode(channel.Name)
-						channelRootNode.AddChild(newNode)
-
-						if channel.Type == discordgo.ChannelTypeGuildCategory {
-							newNode.SetSelectable(false)
-							channelCategories[channel.ID] = newNode
-						}
-					}
-				}
-
-				for _, channel := range channels {
-					if channel.Type == discordgo.ChannelTypeGuildText && channel.ParentID != "" {
-						nodeName := channel.Name
-						if channel.NSFW {
-							nodeName = nodeName + " NSFW"
-						}
-						newNode := tview.NewTreeNode(nodeName)
-
-						//No selection will prevent selection from working at all.
-						if channelTree.GetCurrentNode() == nil {
-							channelTree.SetCurrentNode(newNode)
-						}
-
-						newNode.SetSelectable(true)
-						//This copy is necessary in order to use the correct channel instead
-						//of always the same one.
-						channelToConnectTo := channel
-						newNode.SetSelectedFunc(func() {
-							if window.selectedChannelNode != nil {
-								//For some reason using tcell.ColorDefault causes hovering to render incorrect.
-								window.selectedChannelNode.SetColor(tcell.ColorWhite)
-							}
-
-							window.selectedChannel = channelToConnectTo
-							window.selectedChannelNode = newNode
-
-							newNode.SetColor(tcell.ColorTeal)
-							discordError := window.LoadChannel(channelToConnectTo)
-							if discordError != nil {
-								log.Fatalf("Error loading messages (%s).", discordError.Error())
-							}
-						})
-
-						channelCategories[channelToConnectTo.ParentID].AddChild(newNode)
-					}
-				}
-
-				updateUser := time.NewTicker(userListUpdateInterval)
-				go func() {
-					killChan := make(chan bool)
-					window.killCurrentGuildUpdateThread = &killChan
-					if config.GetConfig().ShowUserContainer {
-						window.UpdateUsersForGuild(guild)
-					}
-					for {
-						select {
-						case <-*window.killCurrentGuildUpdateThread:
-							window.killCurrentGuildUpdateThread = nil
-							return
-						case <-updateUser.C:
-							if config.GetConfig().ShowUserContainer {
-								window.UpdateUsersForGuild(guild)
-							}
-						}
-					}
-				}()
-				break
+	var selectedGuildNode *tview.TreeNode
+	for _, tempGuild := range guilds {
+		guild := tempGuild
+		guildNode := tview.NewTreeNode(guild.Name)
+		guildRootNode.AddChild(guildNode)
+		guildNode.SetSelectable(true)
+		guildNode.SetSelectedFunc(func() {
+			if window.killCurrentGuildUpdateThread != nil {
+				*window.killCurrentGuildUpdateThread <- true
 			}
-		}
-	})
+
+			if selectedGuildNode != nil {
+				selectedGuildNode.SetColor(tcell.ColorWhite)
+			}
+			selectedGuildNode = guildNode
+			selectedGuildNode.SetColor(tcell.ColorTeal)
+
+			window.selectedGuild = guild
+			channelRootNode.ClearChildren()
+
+			//TODO Handle error
+			channels, _ := discord.GuildChannels(guild.ID)
+
+			sort.Slice(channels, func(a, b int) bool {
+				return channels[a].Position < channels[b].Position
+			})
+
+			channelCategories := make(map[string]*tview.TreeNode)
+			for _, channel := range channels {
+				if channel.ParentID == "" {
+					newNode := tview.NewTreeNode(channel.Name)
+					channelRootNode.AddChild(newNode)
+
+					if channel.Type == discordgo.ChannelTypeGuildCategory {
+						newNode.SetSelectable(false)
+						channelCategories[channel.ID] = newNode
+					}
+				}
+			}
+
+			for _, channel := range channels {
+				if channel.Type == discordgo.ChannelTypeGuildText && channel.ParentID != "" {
+					nodeName := channel.Name
+					if channel.NSFW {
+						nodeName = nodeName + " NSFW"
+					}
+					newNode := tview.NewTreeNode(nodeName)
+
+					//No selection will prevent selection from working at all.
+					if channelTree.GetCurrentNode() == nil {
+						channelTree.SetCurrentNode(newNode)
+					}
+
+					newNode.SetSelectable(true)
+					//This copy is necessary in order to use the correct channel instead
+					//of always the same one.
+					channelToConnectTo := channel
+					newNode.SetSelectedFunc(func() {
+						if window.selectedChannelNode != nil {
+							//For some reason using tcell.ColorDefault causes hovering to render incorrect.
+							window.selectedChannelNode.SetColor(tcell.ColorWhite)
+						}
+
+						window.selectedChannel = channelToConnectTo
+						window.selectedChannelNode = newNode
+
+						newNode.SetColor(tcell.ColorTeal)
+						discordError := window.LoadChannel(channelToConnectTo)
+						if discordError != nil {
+							log.Fatalf("Error loading messages (%s).", discordError.Error())
+						}
+					})
+
+					channelCategories[channelToConnectTo.ParentID].AddChild(newNode)
+				}
+			}
+
+			updateUser := time.NewTicker(userListUpdateInterval)
+			go func() {
+				killChan := make(chan bool)
+				window.killCurrentGuildUpdateThread = &killChan
+				if config.GetConfig().ShowUserContainer {
+					window.UpdateUsersForGuild(guild)
+				}
+				for {
+					select {
+					case <-*window.killCurrentGuildUpdateThread:
+						window.killCurrentGuildUpdateThread = nil
+						return
+					case <-updateUser.C:
+						if config.GetConfig().ShowUserContainer {
+							window.UpdateUsersForGuild(guild)
+						}
+					}
+				}
+			}()
+		})
+	}
+	guildList.SetCurrentNode(guildRootNode)
 
 	guildPage.AddItem(guildList, 0, 1, true)
 	guildPage.AddItem(channelTree, 0, 2, true)
@@ -215,49 +223,54 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				messageToSend := window.messageInput.GetText()
 				window.messageInput.SetText("")
 
-				guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
-				if discordError == nil {
+				if len(messageToSend) != 0 {
+					guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+					if discordError == nil {
 
-					//Those could be optimized by searching the string for patterns.
+						//Those could be optimized by searching the string for patterns.
 
-					for _, channel := range guild.Channels {
-						if channel.Type == discordgo.ChannelTypeGuildText {
-							messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
-						}
-					}
-
-					for _, member := range guild.Members {
-						if member.Nick != "" {
-							messageToSend = strings.Replace(messageToSend, "@"+member.Nick, "<@"+member.User.ID+">", -1)
-						}
-						messageToSend = strings.Replace(messageToSend, "@"+member.User.Username, "<@"+member.User.ID+">", -1)
-					}
-				}
-
-				if editingMessageID != nil {
-					msgIDCopy := *editingMessageID
-					go func() {
-						updatedMessage, discordError := discord.ChannelMessageEdit(window.selectedChannel.ID, msgIDCopy, messageToSend)
-						if discordError == nil {
-							for index, msg := range window.shownMessages {
-								if msg.ID == updatedMessage.ID {
-									window.shownMessages[index] = updatedMessage
-									break
-								}
+						for _, channel := range guild.Channels {
+							if channel.Type == discordgo.ChannelTypeGuildText {
+								messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
 							}
 						}
-						window.app.QueueUpdateDraw(func() {
-							window.RenderMessages()
-						})
-					}()
-					window.messageInput.SetBackgroundColor(tcell.ColorDefault)
-					editingMessageID = nil
-				} else {
-					go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
-				}
-			}
 
-			return nil
+						for _, member := range guild.Members {
+							if member.Nick != "" {
+								messageToSend = strings.Replace(messageToSend, "@"+member.Nick, "<@"+member.User.ID+">", -1)
+							}
+							messageToSend = strings.Replace(messageToSend, "@"+member.User.Username, "<@"+member.User.ID+">", -1)
+						}
+					}
+
+					if editingMessageID != nil {
+						msgIDCopy := *editingMessageID
+						go func() {
+							updatedMessage, discordError := discord.ChannelMessageEdit(window.selectedChannel.ID, msgIDCopy, messageToSend)
+							if discordError == nil {
+								for index, msg := range window.shownMessages {
+									if msg.ID == updatedMessage.ID {
+										window.shownMessages[index] = updatedMessage
+										break
+									}
+								}
+							}
+							window.app.QueueUpdateDraw(func() {
+								window.RenderMessages()
+							})
+						}()
+						window.messageInput.SetBackgroundColor(tcell.ColorDefault)
+						editingMessageID = nil
+					} else {
+						go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
+					}
+				} else {
+					dialog := tview.NewModal()
+					window.app.SetRoot(dialog, false)
+				}
+
+				return nil
+			}
 		}
 
 		return event
@@ -278,19 +291,11 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.rootContainer = tview.NewFlex()
 	window.rootContainer.SetDirection(tview.FlexColumn)
-	window.rootContainer.SetBorderPadding(-1, -1, 0, 0)
+	window.rootContainer.SetTitleAlign(tview.AlignCenter)
+
+	app.SetRoot(window.rootContainer, true)
 
 	window.RefreshLayout()
-
-	if config.GetConfig().ShowFrame {
-		frame := tview.NewFrame(window.rootContainer)
-		frame.SetBorder(true)
-		frame.SetTitleAlign(tview.AlignCenter)
-		frame.SetTitle("Cordless")
-		app.SetRoot(frame, true)
-	} else {
-		app.SetRoot(window.rootContainer, true)
-	}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Rune() == 'U' &&
@@ -335,17 +340,29 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	return &window, nil
 }
 
+//RefreshLayout removes and adds the main parts of the layout
+//so that the ones that are disabled by settings do not show up.
 func (window *Window) RefreshLayout() {
 	window.rootContainer.RemoveItem(window.leftArea)
 	window.rootContainer.RemoveItem(window.chatArea)
 	window.rootContainer.RemoveItem(window.userContainer)
 
 	window.rootContainer.AddItem(window.leftArea, 0, 7, true)
-	if config.GetConfig().ShowUserContainer {
+
+	conf := config.GetConfig()
+	if conf.ShowUserContainer {
 		window.rootContainer.AddItem(window.chatArea, 0, 20, false)
 		window.rootContainer.AddItem(window.userContainer, 0, 6, false)
 	} else {
 		window.rootContainer.AddItem(window.chatArea, 0, 26, false)
+	}
+
+	if conf.ShowFrame {
+		window.rootContainer.SetTitle("Cordless")
+		window.rootContainer.SetBorder(true)
+	} else {
+		window.rootContainer.SetTitle("")
+		window.rootContainer.SetBorder(false)
 	}
 
 	window.app.ForceDraw()
