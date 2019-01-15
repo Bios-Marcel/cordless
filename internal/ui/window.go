@@ -493,15 +493,20 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 		return
 	}
 
+	roles, discordError := window.session.GuildRoles(guild.ID)
+	//TODO Handle error
+	if discordError != nil {
+		return
+	}
+
+	sort.Slice(roles, func(a, b int) bool {
+		return roles[a].Position > roles[b].Position
+	})
+
 	window.app.QueueUpdateDraw(func() {
 		window.userRootNode.ClearChildren()
 
-		roles, _ := window.session.GuildRoles(guild.ID)
 		roleNodes := make(map[string]*tview.TreeNode)
-
-		sort.Slice(roles, func(a, b int) bool {
-			return roles[a].Position > roles[b].Position
-		})
 
 		for _, role := range roles {
 			if role.Hoist {
@@ -533,15 +538,11 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 				secondIdentifier := user.Roles[b]
 
 				var firstRole *discordgo.Role
+				var secondRole *discordgo.Role
 				for _, role := range roles {
 					if role.ID == firstIdentifier {
 						firstRole = role
-					}
-				}
-
-				var secondRole *discordgo.Role
-				for _, role := range roles {
-					if role.ID == secondIdentifier {
+					} else if role.ID == secondIdentifier {
 						secondRole = role
 					}
 				}
