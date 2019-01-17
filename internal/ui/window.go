@@ -16,22 +16,31 @@ import (
 const (
 	updateInterval         = 250 * time.Millisecond
 	userListUpdateInterval = 5 * time.Second
+
+	guildPageName   = "Guilds"
+	friendsPageName = "Friends"
 )
 
 type Window struct {
-	app *tview.Application
-
+	app           *tview.Application
 	rootContainer *tview.Flex
 
-	leftArea      *tview.Pages
-	chatArea      *tview.Flex
-	userContainer *tview.TreeView
+	leftArea        *tview.Pages
+	currentPage     string
+	friendsList     *tview.TreeView
+	friendsRootNode *tview.TreeNode
 
+	channelRootNode *tview.TreeNode
+	channelTitle    *tview.TextView
+
+	chatArea         *tview.Flex
 	messageContainer *tview.Table
-	userRootNode     *tview.TreeNode
 	messageInput     *tview.InputField
-	channelRootNode  *tview.TreeNode
-	channelTitle     *tview.TextView
+
+	userContainer *tview.TreeView
+	userRootNode  *tview.TreeNode
+
+	overrideShowUsers bool
 
 	killCurrentGuildUpdateThread   *chan bool
 	killCurrentChannelUpdateThread *chan bool
@@ -40,7 +49,9 @@ type Window struct {
 	shownMessages       []*discordgo.Message
 	selectedGuild       *discordgo.UserGuild
 	selectedChannelNode *tview.TreeNode
-	selectedChannel     *discordgo.Channel
+
+	selectedFriend  *discordgo.User
+	selectedChannel *discordgo.Channel
 }
 
 func NewWindow(discord *discordgo.Session) (*Window, error) {
@@ -58,7 +69,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.leftArea = tview.NewPages()
 
-	guildPageName := "Guilds"
 	guildPage := tview.NewFlex()
 	guildPage.SetDirection(tview.FlexRow)
 
@@ -181,12 +191,51 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	guildPage.AddItem(guildList, 0, 1, true)
 	guildPage.AddItem(channelTree, 0, 2, true)
 
-	window.leftArea.AddPage(guildPageName, guildPage, true, true)
+	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
-	/*friendsPageName := "Friends"
-	friendsPage := tview.NewFlex()
-	friendsPage.SetDirection(tview.FlexRow)
-	left.AddPage(friendsPageName, friendsPage, true, false)*/
+	window.friendsList = tview.NewTreeView()
+	window.friendsList.SetBorder(true)
+	window.friendsList.SetTopLevel(1)
+
+	window.friendsRootNode = tview.NewTreeNode("")
+	window.friendsList.SetRoot(window.friendsRootNode)
+	window.friendsRootNode.SetSelectable(false)
+
+	window.leftArea.AddPage(friendsPageName, window.friendsList, true, false)
+
+	go func() {
+		friends, _ := window.session.RelationshipsGet()
+
+		window.app.QueueUpdate(func() {
+			for _, friend := range friends {
+				newNode := tview.NewTreeNode(friend.User.Username)
+				window.friendsRootNode.AddChild(newNode)
+
+				friendCopy := friend
+				newNode.SetSelectedFunc(func() {
+					window.selectedFriend = friendCopy.User
+
+					userChannels, _ := window.session.UserChannels()
+					for _, userChannel := range userChannels {
+						if userChannel.Type == discordgo.ChannelTypeDM &&
+							(userChannel.Recipients[0].ID == window.selectedFriend.ID) {
+							//TODO Handle error
+							window.LoadChannel(userChannel)
+							break
+						}
+					}
+
+					window.channelTitle.SetText(friendCopy.User.Username)
+				})
+
+				//window.messageContainer.SetCell
+			}
+
+			if len(window.friendsRootNode.GetChildren()) > 0 {
+				window.friendsList.SetCurrentNode(window.friendsRootNode)
+			}
+		})
+	}()
 
 	window.chatArea = tview.NewFlex()
 	window.chatArea.SetDirection(tview.FlexRow)
@@ -222,7 +271,26 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		}
 
 		if event.Key() == tcell.KeyEnter {
-			if window.selectedChannel != nil {
+			if window.selectedFriend != nil {
+				messageToSend := window.messageInput.GetText()
+				window.messageInput.SetText("")
+
+				userChannels, _ := window.session.UserChannels()
+				for _, userChannel := range userChannels {
+					if userChannel.Type == discordgo.ChannelTypeDM &&
+						(userChannel.Recipients[0].ID == window.selectedFriend.ID) {
+						if editingMessageID != nil {
+							msgIDCopy := *editingMessageID
+							go window.editMessage(userChannel.ID, msgIDCopy, messageToSend)
+							editingMessageID = nil
+						} else {
+							go window.session.ChannelMessageSend(userChannel.ID, messageToSend)
+						}
+						break
+					}
+				}
+
+			} else if window.selectedChannel != nil {
 				messageToSend := window.messageInput.GetText()
 				window.messageInput.SetText("")
 
@@ -248,21 +316,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 					if editingMessageID != nil {
 						msgIDCopy := *editingMessageID
-						go func() {
-							updatedMessage, discordError := discord.ChannelMessageEdit(window.selectedChannel.ID, msgIDCopy, messageToSend)
-							if discordError == nil {
-								for index, msg := range window.shownMessages {
-									if msg.ID == updatedMessage.ID {
-										window.shownMessages[index] = updatedMessage
-										break
-									}
-								}
-							}
-							window.app.QueueUpdateDraw(func() {
-								window.RenderMessages()
-							})
-						}()
-						window.messageInput.SetBackgroundColor(tcell.ColorDefault)
+						go window.editMessage(window.selectedChannel.ID, msgIDCopy, messageToSend)
 						editingMessageID = nil
 					} else {
 						go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
@@ -297,9 +351,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.rootContainer.SetTitleAlign(tview.AlignCenter)
 
 	app.SetRoot(window.rootContainer, true)
-
-	window.RefreshLayout()
-
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Rune() == 'U' &&
 			(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
@@ -311,12 +362,20 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		}
 
 		if event.Modifiers()&tcell.ModAlt == tcell.ModAlt {
+			if event.Rune() == 'f' {
+				window.SwitchToFriendsPage()
+				app.SetFocus(window.friendsList)
+				return nil
+			}
+
 			if event.Rune() == 'c' {
+				window.SwitchToGuildsPage()
 				app.SetFocus(channelTree)
 				return nil
 			}
 
 			if event.Rune() == 's' {
+				window.SwitchToGuildsPage()
 				app.SetFocus(guildList)
 				return nil
 			}
@@ -340,9 +399,47 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return event
 	})
 
+	window.SwitchToGuildsPage()
+
 	app.SetFocus(guildList)
 
 	return &window, nil
+}
+
+func (window *Window) editMessage(channelID, messageID, messageEdited string) {
+	go func() {
+		updatedMessage, discordError := window.session.ChannelMessageEdit(channelID, messageID, messageEdited)
+		if discordError == nil {
+			for index, msg := range window.shownMessages {
+				if msg.ID == updatedMessage.ID {
+					window.shownMessages[index] = updatedMessage
+					break
+				}
+			}
+		}
+		window.app.QueueUpdateDraw(func() {
+			window.RenderMessages()
+		})
+	}()
+	window.messageInput.SetBackgroundColor(tcell.ColorDefault)
+}
+
+func (window *Window) SwitchToGuildsPage() {
+	if window.currentPage != guildPageName {
+		window.currentPage = guildPageName
+		window.leftArea.SwitchToPage(guildPageName)
+		window.overrideShowUsers = true
+		window.RefreshLayout()
+	}
+}
+
+func (window *Window) SwitchToFriendsPage() {
+	if window.currentPage != friendsPageName {
+		window.currentPage = friendsPageName
+		window.leftArea.SwitchToPage(friendsPageName)
+		window.overrideShowUsers = false
+		window.RefreshLayout()
+	}
 }
 
 //RefreshLayout removes and adds the main parts of the layout
@@ -355,7 +452,7 @@ func (window *Window) RefreshLayout() {
 	window.rootContainer.AddItem(window.leftArea, 0, 7, true)
 
 	conf := config.GetConfig()
-	if conf.ShowUserContainer {
+	if conf.ShowUserContainer && window.overrideShowUsers {
 		window.rootContainer.AddItem(window.chatArea, 0, 20, false)
 		window.rootContainer.AddItem(window.userContainer, 0, 6, false)
 	} else {
