@@ -65,11 +65,13 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	channelTree := tview.NewTreeView()
 	channelRootNode := tview.NewTreeNode("")
 	window.channelRootNode = channelRootNode
+	channelTree.SetCycleSelection(true)
 	channelTree.SetRoot(channelRootNode)
 	channelTree.SetBorder(true)
 	channelTree.SetTopLevel(1)
 
 	guildList := tview.NewTreeView()
+	guildList.SetCycleSelection(true)
 	guildRootNode := tview.NewTreeNode("")
 	guildList.SetRoot(guildRootNode)
 	guildList.SetBorder(true)
@@ -123,11 +125,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					}
 					newNode := tview.NewTreeNode(nodeName)
 
-					//No selection will prevent selection from working at all.
-					if channelTree.GetCurrentNode() == nil {
-						channelTree.SetCurrentNode(newNode)
-					}
-
 					newNode.SetSelectable(true)
 					//This copy is necessary in order to use the correct channel instead
 					//of always the same one.
@@ -152,6 +149,11 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				}
 			}
 
+			//No selection will prevent selection from working at all.
+			if len(window.channelRootNode.GetChildren()) > 0 {
+				channelTree.SetCurrentNode(window.channelRootNode)
+			}
+
 			updateUser := time.NewTicker(userListUpdateInterval)
 			go func() {
 				killChan := make(chan bool)
@@ -173,7 +175,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			}()
 		})
 	}
-	guildList.SetCurrentNode(guildRootNode)
+
+	if len(guildRootNode.GetChildren()) > 0 {
+		guildList.SetCurrentNode(guildRootNode)
+	}
 
 	guildPage.AddItem(guildList, 0, 1, true)
 	guildPage.AddItem(channelTree, 0, 2, true)
@@ -337,6 +342,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return event
 	})
 
+	app.SetFocus(guildList)
+
 	return &window, nil
 }
 
@@ -486,18 +493,35 @@ func (window *Window) SetMessages(messages []*discordgo.Message) {
 }
 
 func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
-	users, discordError := window.session.GuildMembers(guild.ID, "", 1000)
-
+	guildRefreshed, discordError := window.session.Guild(guild.ID)
 	//TODO Handle error
 	if discordError != nil {
 		return
 	}
 
-	roles, discordError := window.session.GuildRoles(guild.ID)
+	discordError = window.session.State.GuildAdd(guildRefreshed)
 	//TODO Handle error
 	if discordError != nil {
 		return
 	}
+
+	guildState, discordError := window.session.State.Guild(guildRefreshed.ID)
+	//TODO Handle error
+	if discordError != nil {
+		return
+	}
+
+	users := guildState.Members
+	/*users := make([]*discordgo.Member, 0)
+
+	for _, user := range usersUnfiltered {
+		if true {
+			users = append(users, user)
+			continue USER_MATCHED
+		}
+	}*/
+
+	roles := guildState.Roles
 
 	sort.Slice(roles, func(a, b int) bool {
 		return roles[a].Position > roles[b].Position
@@ -525,6 +549,7 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 		for _, user := range users {
 
 			var nameToUse string
+
 			if user.Nick != "" {
 				nameToUse = user.Nick
 			} else {
