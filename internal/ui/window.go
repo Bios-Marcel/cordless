@@ -65,13 +65,11 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	channelTree := tview.NewTreeView()
 	channelRootNode := tview.NewTreeNode("")
 	window.channelRootNode = channelRootNode
-	channelTree.SetCycleSelection(true)
 	channelTree.SetRoot(channelRootNode)
 	channelTree.SetBorder(true)
 	channelTree.SetTopLevel(1)
 
 	guildList := tview.NewTreeView()
-	guildList.SetCycleSelection(true)
 	guildRootNode := tview.NewTreeNode("")
 	guildList.SetRoot(guildRootNode)
 	guildList.SetBorder(true)
