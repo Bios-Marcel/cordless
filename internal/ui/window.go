@@ -305,19 +305,21 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
 					}
 				} else {
-					dialog := tview.NewModal()
-					dialog.AddButtons([]string{"Abort", "Delete"})
-					dialog.SetDoneFunc(func(index int, label string) {
-						if index == 1 {
-							msgIDCopy := *window.editingMessageID
-							go window.session.ChannelMessageDelete(window.selectedChannel.ID, msgIDCopy)
-						}
+					if window.editingMessageID != nil {
+						dialog := tview.NewModal()
+						dialog.AddButtons([]string{"Abort", "Delete"})
+						dialog.SetDoneFunc(func(index int, label string) {
+							if index == 1 {
+								msgIDCopy := *window.editingMessageID
+								go window.session.ChannelMessageDelete(window.selectedChannel.ID, msgIDCopy)
+							}
 
-						window.exitMessageEditMode()
-						window.app.SetRoot(window.rootContainer, true)
-						window.app.SetFocus(window.messageInput)
-					})
-					window.app.SetRoot(dialog, false)
+							window.exitMessageEditMode()
+							window.app.SetRoot(window.rootContainer, true)
+							window.app.SetFocus(window.messageInput)
+						})
+						window.app.SetRoot(dialog, false)
+					}
 				}
 
 				return nil
