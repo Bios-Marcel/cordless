@@ -2,7 +2,7 @@ clone_folder: c:\gopath\src\github.com\Bios-Marcel\cordless
 
 environment:
   GOPATH: c:\gopath
-
+build: Script
 stack: go 1.10
 
 artifacts:
