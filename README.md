@@ -73,14 +73,25 @@ careful with your configuration file.
 
 ## Features
 
-* Chat in different guilds and channels
-* Chat with friends
-* See friends
-* See guild members
-* See messages
-* See message time and author
-* See channel topic
-* Send messages
-* Mention people using their full username
-* Edit last message
-* Delete last message
+* Guilds
+  * Enter channels
+  * See channels
+  * See members
+* Channels
+  * See NSFW flag
+  * See group
+  * See topic
+* Members
+  * See Nickname
+  * See hoist group
+* Chatting
+  * 1on1 conversation with a friend
+  * Talk in a channel
+  * Timestamp Just `HH:MM(:SS)`
+* See all friends
+* Messages
+  * Send messages
+  * Mention people using their full username
+  * Mention a channel
+  * Edit last message
+  * Delete last message
