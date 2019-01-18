@@ -323,13 +323,12 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					dialog := tview.NewModal()
 					dialog.AddButtons([]string{"Abort", "Delete"})
 					dialog.SetDoneFunc(func(index int, label string) {
-						if index == 0 {
-							window.exitMessageEditMode()
-						} else {
+						if index == 1 {
 							msgIDCopy := *window.editingMessageID
 							go window.session.ChannelMessageDelete(window.selectedChannel.ID, msgIDCopy)
-							window.exitMessageEditMode()
 						}
+
+						window.exitMessageEditMode()
 						window.app.SetRoot(window.rootContainer, true)
 						window.app.SetFocus(window.messageInput)
 					})
