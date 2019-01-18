@@ -1,0 +1,17 @@
+
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.10
+
+    working_directory: /go/src/github.com/Bios-Marcel/cordless
+    steps:
+      - checkout
+
+      - run: go get -v -t -d ./...
+      - run: go build
+
+      - store_artifacts:
+          path: /go/src/github.com/Bios-Marcel/cordless/cordless
+          destination: cordless
