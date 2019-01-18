@@ -37,6 +37,8 @@ type Window struct {
 	messageContainer *tview.Table
 	messageInput     *tview.InputField
 
+	editingMessageID *string
+
 	userContainer *tview.TreeView
 	userRootNode  *tview.TreeNode
 
@@ -50,7 +52,6 @@ type Window struct {
 	selectedGuild       *discordgo.UserGuild
 	selectedChannelNode *tview.TreeNode
 
-	selectedFriend  *discordgo.User
 	selectedChannel *discordgo.Channel
 }
 
@@ -143,7 +144,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 							window.selectedChannelNode.SetColor(tcell.ColorWhite)
 						}
 
-						window.selectedChannel = channelToConnectTo
 						window.selectedChannelNode = newNode
 
 						newNode.SetColor(tcell.ColorTeal)
@@ -213,12 +213,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 				friendCopy := friend
 				newNode.SetSelectedFunc(func() {
-					window.selectedFriend = friendCopy.User
-
 					userChannels, _ := window.session.UserChannels()
 					for _, userChannel := range userChannels {
 						if userChannel.Type == discordgo.ChannelTypeDM &&
-							(userChannel.Recipients[0].ID == window.selectedFriend.ID) {
+							(userChannel.Recipients[0].ID == friendCopy.User.ID) {
 							//TODO Handle error
 							window.LoadChannel(userChannel)
 							break
@@ -248,7 +246,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.messageInput = tview.NewInputField()
 	window.messageInput.SetBorder(true)
 
-	var editingMessageID *string
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyUp && window.messageInput.GetText() == "" {
 			for i := len(window.shownMessages) - 1; i > 0; i-- {
@@ -256,7 +253,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				if message.Author.ID == window.session.State.User.ID {
 					window.messageInput.SetText(message.ContentWithMentionsReplaced())
 					window.messageInput.SetBackgroundColor(tcell.ColorDarkGoldenrod)
-					editingMessageID = &message.ID
+					window.editingMessageID = &message.ID
 					break
 				}
 			}
@@ -265,13 +262,12 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		}
 
 		if event.Key() == tcell.KeyEsc {
-			editingMessageID = nil
-			window.messageInput.SetBackgroundColor(tcell.ColorDefault)
-			window.messageInput.SetText("")
+			window.exitMessageEditMode()
+			return nil
 		}
 
 		if event.Key() == tcell.KeyEnter {
-			if window.selectedFriend != nil {
+			/*if window.selectedFriend != nil {
 				messageToSend := window.messageInput.GetText()
 				window.messageInput.SetText("")
 
@@ -279,10 +275,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				for _, userChannel := range userChannels {
 					if userChannel.Type == discordgo.ChannelTypeDM &&
 						(userChannel.Recipients[0].ID == window.selectedFriend.ID) {
-						if editingMessageID != nil {
-							msgIDCopy := *editingMessageID
+						if window.editingMessageID != nil {
+							msgIDCopy := *window.editingMessageID
 							go window.editMessage(userChannel.ID, msgIDCopy, messageToSend)
-							editingMessageID = nil
 						} else {
 							go window.session.ChannelMessageSend(userChannel.ID, messageToSend)
 						}
@@ -290,39 +285,54 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					}
 				}
 
-			} else if window.selectedChannel != nil {
+			}*/
+			if window.selectedChannel != nil {
 				messageToSend := window.messageInput.GetText()
 				window.messageInput.SetText("")
 
 				if len(messageToSend) != 0 {
-					guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
-					if discordError == nil {
+					if window.selectedGuild != nil {
+						guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+						if discordError == nil {
 
-						//Those could be optimized by searching the string for patterns.
+							//Those could be optimized by searching the string for patterns.
 
-						for _, channel := range guild.Channels {
-							if channel.Type == discordgo.ChannelTypeGuildText {
-								messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
+							for _, channel := range guild.Channels {
+								if channel.Type == discordgo.ChannelTypeGuildText {
+									messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
+								}
 							}
-						}
 
-						for _, member := range guild.Members {
-							if member.Nick != "" {
-								messageToSend = strings.Replace(messageToSend, "@"+member.Nick, "<@"+member.User.ID+">", -1)
+							for _, member := range guild.Members {
+								if member.Nick != "" {
+									messageToSend = strings.Replace(messageToSend, "@"+member.Nick, "<@"+member.User.ID+">", -1)
+								}
+								messageToSend = strings.Replace(messageToSend, "@"+member.User.Username, "<@"+member.User.ID+">", -1)
 							}
-							messageToSend = strings.Replace(messageToSend, "@"+member.User.Username, "<@"+member.User.ID+">", -1)
 						}
 					}
 
-					if editingMessageID != nil {
-						msgIDCopy := *editingMessageID
+					if window.editingMessageID != nil {
+						msgIDCopy := *window.editingMessageID
 						go window.editMessage(window.selectedChannel.ID, msgIDCopy, messageToSend)
-						editingMessageID = nil
+						window.editingMessageID = nil
 					} else {
 						go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
 					}
 				} else {
 					dialog := tview.NewModal()
+					dialog.AddButtons([]string{"Abort", "Delete"})
+					dialog.SetDoneFunc(func(index int, label string) {
+						if index == 0 {
+							window.exitMessageEditMode()
+						} else {
+							msgIDCopy := *window.editingMessageID
+							go window.session.ChannelMessageDelete(window.selectedChannel.ID, msgIDCopy)
+							window.exitMessageEditMode()
+						}
+						window.app.SetRoot(window.rootContainer, true)
+						window.app.SetFocus(window.messageInput)
+					})
 					window.app.SetRoot(dialog, false)
 				}
 
@@ -406,6 +416,12 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	return &window, nil
 }
 
+func (window *Window) exitMessageEditMode() {
+	window.editingMessageID = nil
+	window.messageInput.SetBackgroundColor(tcell.ColorDefault)
+	window.messageInput.SetText("")
+}
+
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 	go func() {
 		updatedMessage, discordError := window.session.ChannelMessageEdit(channelID, messageID, messageEdited)
@@ -421,7 +437,8 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 			window.RenderMessages()
 		})
 	}()
-	window.messageInput.SetBackgroundColor(tcell.ColorDefault)
+
+	window.exitMessageEditMode()
 }
 
 func (window *Window) SwitchToGuildsPage() {
@@ -496,6 +513,8 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	} else {
 		window.channelTitle.SetText(channel.Name)
 	}
+
+	window.selectedChannel = channel
 
 	updateTicker := time.NewTicker(updateInterval)
 	go func() {
