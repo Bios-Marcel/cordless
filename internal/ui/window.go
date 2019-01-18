@@ -307,6 +307,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				} else {
 					if window.editingMessageID != nil {
 						dialog := tview.NewModal()
+						dialog.SetText("Do you really want to delete the message?")
 						dialog.AddButtons([]string{"Abort", "Delete"})
 						dialog.SetDoneFunc(func(index int, label string) {
 							if index == 1 {
