@@ -6,6 +6,14 @@
 | darwin | TODO |
 | windows | [![Build status](https://ci.appveyor.com/api/projects/status/svv866htsr33hdoh/branch/master?svg=true)](https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master) |
 
+## Overview
+
+* How to install it
+  * [Using pre-built binaries](https://github.com/Bios-Marcel/cordless#using-pre-built-binaries)
+  * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
+* [Configuration](https://github.com/Bios-Marcel/cordless#configuration)
+* [Features](https://github.com/Bios-Marcel/cordless#features)
+
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at powerusers.
 
@@ -21,9 +29,15 @@ is a picture of it's current state (4 days after I started).
 
 ![Cordless in its early stages](https://i.imgur.com/8Qr1aI6.png)
 
-## How to use it
+## How to install it
 
-### Installation
+### Using pre-built binaries
+
+Currently every commit triggers a build for windows and linux, those builds
+each produce ready to use binaries. The builds can be found at the top, by
+clicking on the respective builds badges.
+
+### Building it from source
 
 First you have to grab the code via:
 
@@ -37,9 +51,6 @@ In order to execute this command
 In order to execute the application, simply run the executable, which lies at
 `$GOPATH/bin/cordless`. In order to be able to run this from your commandline,
 `$GOPATH/bin` has to be in your `PATH` variable.
-
-Currently this is the only way of installation. Prebuilt binaries will be
-available at a later point.
 
 ### Configuration
 
@@ -59,3 +70,17 @@ its configuration file lies.
 
 The token will be saved on your machine, but it won't be encrypted, so be
 careful with your configuration file.
+
+## Features
+
+* Chat in different guilds and channels
+* Chat with friends
+* See friends
+* See guild members
+* See messages
+* See message time and author
+* See channel topic
+* Send messages
+* Mention people using their full username
+* Edit last message
+* Delete last message
