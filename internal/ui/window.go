@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
+	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -211,6 +212,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				newNode := tview.NewTreeNode(friend.User.Username)
 				window.friendsRootNode.AddChild(newNode)
 
+				if friend.Type != discordgoplus.RelationTypeFriend {
+					continue
+				}
+
 				friendCopy := friend
 				newNode.SetSelectedFunc(func() {
 					userChannels, _ := window.session.UserChannels()
@@ -267,25 +272,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		}
 
 		if event.Key() == tcell.KeyEnter {
-			/*if window.selectedFriend != nil {
-				messageToSend := window.messageInput.GetText()
-				window.messageInput.SetText("")
-
-				userChannels, _ := window.session.UserChannels()
-				for _, userChannel := range userChannels {
-					if userChannel.Type == discordgo.ChannelTypeDM &&
-						(userChannel.Recipients[0].ID == window.selectedFriend.ID) {
-						if window.editingMessageID != nil {
-							msgIDCopy := *window.editingMessageID
-							go window.editMessage(userChannel.ID, msgIDCopy, messageToSend)
-						} else {
-							go window.session.ChannelMessageSend(userChannel.ID, messageToSend)
-						}
-						break
-					}
-				}
-
-			}*/
 			if window.selectedChannel != nil {
 				messageToSend := window.messageInput.GetText()
 				window.messageInput.SetText("")
@@ -313,9 +299,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					}
 
 					if window.editingMessageID != nil {
-						msgIDCopy := *window.editingMessageID
-						go window.editMessage(window.selectedChannel.ID, msgIDCopy, messageToSend)
-						window.editingMessageID = nil
+						go window.editMessage(window.selectedChannel.ID, *window.editingMessageID, messageToSend)
+						window.exitMessageEditMode()
 					} else {
 						go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
 					}
