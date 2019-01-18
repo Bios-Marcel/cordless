@@ -1,5 +1,11 @@
 # Cordless
 
+| OS | Build-Status |
+| - |:- |
+| linux | [![CircleCI](https://circleci.com/gh/Bios-Marcel/cordless.svg?style=svg)](https://circleci.com/gh/Bios-Marcel/cordless) |
+| darwin | TODO |
+| windows | [![Build status](https://ci.appveyor.com/api/projects/status/svv866htsr33hdoh/branch/master?svg=true)](https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master) |
+
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at powerusers.
 
