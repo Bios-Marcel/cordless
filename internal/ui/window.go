@@ -45,9 +45,8 @@ type Window struct {
 
 	overrideShowUsers bool
 
-	killCurrentGuildUpdateThread   *chan bool
-	killCurrentChannelUpdateThread *chan bool
-	session                        *discordgo.Session
+	killCurrentGuildUpdateThread *chan bool
+	session                      *discordgo.Session
 
 	shownMessages       []*discordgo.Message
 	selectedGuild       *discordgo.UserGuild
@@ -377,6 +376,72 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return event
 	})
 
+	messageInputChan := make(chan *discordgo.Message, 50)
+	messageDeleteChan := make(chan *discordgo.Message, 50)
+	messageEditChan := make(chan *discordgo.Message, 50)
+
+	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
+		if window.selectedChannel != nil {
+			if m.ChannelID == window.selectedChannel.ID {
+				messageInputChan <- m.Message
+			}
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDelete) {
+		if window.selectedChannel != nil {
+			if m.ChannelID == window.selectedChannel.ID {
+				messageDeleteChan <- m.Message
+			}
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
+		if window.selectedChannel != nil {
+			if m.ChannelID == window.selectedChannel.ID {
+				messageEditChan <- m.Message
+			}
+		}
+	})
+
+	go func() {
+		for {
+			select {
+			case message := <-messageInputChan:
+				window.SetMessages(append(window.shownMessages, message))
+			}
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case messageDeleted := <-messageDeleteChan:
+				for index, message := range window.shownMessages {
+					if message.ID == messageDeleted.ID {
+						window.SetMessages(append(window.shownMessages[:index], window.shownMessages[index+1:]...))
+						break
+					}
+				}
+			}
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case messageEdited := <-messageEditChan:
+				for _, message := range window.shownMessages {
+					if message.ID == messageEdited.ID {
+						message.Content = messageEdited.Content
+						window.RenderMessages()
+						break
+					}
+				}
+			}
+		}
+	}()
+
 	window.channelTitle = tview.NewTextView()
 	window.channelTitle.SetBorder(true)
 
@@ -522,10 +587,6 @@ func (window *Window) RefreshLayout() {
 }
 
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
-	if window.killCurrentChannelUpdateThread != nil {
-		*window.killCurrentChannelUpdateThread <- true
-	}
-
 	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", "", "")
 	if discordError != nil {
 		return discordError
@@ -547,24 +608,8 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	} else {
 		window.channelTitle.SetText(channel.Name)
 	}
-
+<
 	window.selectedChannel = channel
-
-	updateTicker := time.NewTicker(updateInterval)
-	go func() {
-		killChan := make(chan bool)
-		window.killCurrentChannelUpdateThread = &killChan
-		for {
-			select {
-			case <-*window.killCurrentChannelUpdateThread:
-				window.killCurrentChannelUpdateThread = nil
-				return
-
-			case <-updateTicker.C:
-				window.LoadMessagesInChannelAfter(channel)
-			}
-		}
-	}()
 
 	return nil
 }
