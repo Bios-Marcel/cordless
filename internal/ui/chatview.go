@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/bwmarrin/discordgo"
@@ -38,8 +37,6 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 
 	for _, message := range messages {
 
-		indentNewLine := ""
-
 		time, parseError := message.Timestamp.Parse()
 		var timeCellText string
 		if parseError == nil {
@@ -51,12 +48,6 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 				timeCellText = fmt.Sprintf("%02d:%02d ", time.Hour(), time.Minute())
 			}
 		}
-
-		if timeCellText != "" {
-			indentNewLine = strings.Repeat(" ", len(timeCellText)+1)
-		}
-
-		indentNewLine = indentNewLine + strings.Repeat(" ", len(message.Author.Username)+1)
 
 		messageText := message.ContentWithMentionsReplaced()
 		if message.Attachments != nil && len(message.Attachments) != 0 {
