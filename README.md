@@ -13,6 +13,7 @@
   * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
 * [Configuration](https://github.com/Bios-Marcel/cordless#configuration)
 * [Features](https://github.com/Bios-Marcel/cordless#features)
+* [Troubleshooting](https://github.com/Bios-Marcel/cordless#troubleshooting)
 
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at powerusers.
@@ -24,10 +25,9 @@ develop any further.
 The application only uses the official Discord API and doesn't send data to
 any third party.
 
-This application is currently a WIP and will change rather fast, however, here
-is a picture of it's current state (4 days after I started).
+This application is currently a WIP and will change rather fast.
 
-![Cordless in its early stages](https://i.imgur.com/8Qr1aI6.png)
+![Cordless 19th January 2019](https://i.imgur.com/ftmvcYM.png)
 
 ## How to install it
 
@@ -86,12 +86,22 @@ careful with your configuration file.
   * See hoist group
 * Chatting
   * 1on1 conversation with a friend
+  * Groupchats
   * Talk in a channel
   * Timestamp Just `HH:MM(:SS)`
-* See all friends
+* See all your friends
 * Messages
   * Send messages
   * Mention people using their full username
   * Mention a channel
   * Edit last message
   * Delete last message
+  * Multiline
+
+## Troubleshooting
+
+If you happen to encounter a crash or a bug, please submit a bug request.
+
+In case that you simply can't use any shortcuts that the application has, this
+might be due to your terminal emulator accepting those instead of letting
+cordless handle them.
