@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	updateInterval         = 250 * time.Millisecond
 	userListUpdateInterval = 5 * time.Second
 
 	guildPageName   = "Guilds"
@@ -608,7 +607,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	} else {
 		window.channelTitle.SetText(channel.Name)
 	}
-<
+
 	window.selectedChannel = channel
 
 	return nil
