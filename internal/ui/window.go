@@ -202,36 +202,83 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.friendsList.SetRoot(window.friendsRootNode)
 	window.friendsRootNode.SetSelectable(false)
 
+	friendsNode := tview.NewTreeNode("Friends")
+	groupChatsNode := tview.NewTreeNode("Groups")
+	peopleChatsNode := tview.NewTreeNode("Open duo chats")
+
+	window.friendsRootNode.AddChild(friendsNode)
+	window.friendsRootNode.AddChild(groupChatsNode)
+	window.friendsRootNode.AddChild(peopleChatsNode)
+
 	window.leftArea.AddPage(friendsPageName, window.friendsList, true, false)
 
 	go func() {
-		friends, _ := window.session.RelationshipsGet()
+		for _, channel := range window.session.State.PrivateChannels {
+			if channel.Type == discordgo.ChannelTypeDM && len(channel.Recipients) > 0 {
+				recipient := channel.Recipients[0].Username
+				channelCopy := channel
+				window.app.QueueUpdate(func() {
+					newNode := tview.NewTreeNode(recipient)
+					peopleChatsNode.AddChild(newNode)
+					newNode.SetSelectedFunc(func() {
+						window.LoadChannel(channelCopy)
+						window.channelTitle.SetText(recipient)
+					})
+				})
+			} else if channel.Type == discordgo.ChannelTypeGroupDM && len(channel.Recipients) > 0 {
+				itemName := ""
+
+				if channel.Name != "" {
+					itemName = channel.Name
+				} else {
+					for index, recipient := range channel.Recipients {
+						if index == 0 {
+							itemName = recipient.Username
+						} else {
+							itemName = fmt.Sprintf("%s, %s", itemName, recipient.Username)
+						}
+					}
+				}
+
+				channelCopy := channel
+				window.app.QueueUpdate(func() {
+					newNode := tview.NewTreeNode(itemName)
+					groupChatsNode.AddChild(newNode)
+					newNode.SetSelectedFunc(func() {
+						window.LoadChannel(channelCopy)
+						window.channelTitle.SetText(itemName)
+					})
+				})
+			}
+		}
 
 		window.app.QueueUpdate(func() {
-			for _, friend := range friends {
-				newNode := tview.NewTreeNode(friend.User.Username)
-				window.friendsRootNode.AddChild(newNode)
-
+			for _, friend := range window.session.State.Relationships {
 				if friend.Type != discordgoplus.RelationTypeFriend {
 					continue
 				}
 
-				friendCopy := friend
+				newNode := tview.NewTreeNode(friend.User.Username)
+				friendsNode.AddChild(newNode)
+
+				friendCopy := friend.User
 				newNode.SetSelectedFunc(func() {
 					userChannels, _ := window.session.UserChannels()
 					for _, userChannel := range userChannels {
 						if userChannel.Type == discordgo.ChannelTypeDM &&
-							(userChannel.Recipients[0].ID == friendCopy.User.ID) {
-							//TODO Handle error
+							(userChannel.Recipients[0].ID == friendCopy.ID) {
 							window.LoadChannel(userChannel)
-							break
+							window.channelTitle.SetText(newNode.GetText())
+							return
 						}
 					}
 
-					window.channelTitle.SetText(friendCopy.User.Username)
+					newChannel, discordError := window.session.UserChannelCreate(friendCopy.ID)
+					if discordError == nil {
+						window.LoadChannel(newChannel)
+						window.channelTitle.SetText(newChannel.Recipients[0].Username)
+					}
 				})
-
-				//window.messageContainer.SetCell
 			}
 
 			if len(window.friendsRootNode.GetChildren()) > 0 {
