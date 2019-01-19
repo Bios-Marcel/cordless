@@ -604,7 +604,9 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 			messages[i], messages[j] = messages[j], messages[i]
 		}
 
-		window.AddMessages(messages)
+		window.SetMessages(messages)
+	} else {
+		window.SetMessages(make([]*discordgo.Message, 0))
 	}
 
 	if channel.Topic != "" {
