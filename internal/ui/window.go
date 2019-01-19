@@ -34,7 +34,8 @@ type Window struct {
 	channelTitle    *tview.TextView
 
 	chatArea         *tview.Flex
-	messageContainer *tview.Table
+	chatView         *ChatView
+	messageContainer tview.Primitive
 	messageInput     *tview.InputField
 
 	editingMessageID *string
@@ -288,10 +289,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.chatArea = tview.NewFlex()
 	window.chatArea.SetDirection(tview.FlexRow)
 
-	messageContainer := tview.NewTable()
-	window.messageContainer = messageContainer
-	messageContainer.SetBorder(true)
-	messageContainer.SetSelectable(true, false)
+	window.chatView = NewChatView()
+	window.messageContainer = window.chatView.GetPrimitive()
 
 	window.messageInput = tview.NewInputField()
 	window.messageInput.SetBorder(true)
@@ -407,7 +406,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		for {
 			select {
 			case message := <-messageInputChan:
-				window.SetMessages(append(window.shownMessages, message))
+				window.app.QueueUpdateDraw(func() {
+					window.SetMessages(append(window.shownMessages, message))
+				})
 			}
 		}
 	}()
@@ -418,7 +419,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			case messageDeleted := <-messageDeleteChan:
 				for index, message := range window.shownMessages {
 					if message.ID == messageDeleted.ID {
-						window.SetMessages(append(window.shownMessages[:index], window.shownMessages[index+1:]...))
+						window.app.QueueUpdateDraw(func() {
+							window.SetMessages(append(window.shownMessages[:index], window.shownMessages[index+1:]...))
+						})
 						break
 					}
 				}
@@ -433,7 +436,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				for _, message := range window.shownMessages {
 					if message.ID == messageEdited.ID {
 						message.Content = messageEdited.Content
-						window.RenderMessages()
+						window.app.QueueUpdateDraw(func() {
+							window.SetMessages(window.shownMessages)
+						})
 						break
 					}
 				}
@@ -445,7 +450,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.channelTitle.SetBorder(true)
 
 	window.chatArea.AddItem(window.channelTitle, 3, 1, true)
-	window.chatArea.AddItem(messageContainer, 0, 1, true)
+	window.chatArea.AddItem(window.messageContainer, 0, 1, true)
 	window.chatArea.AddItem(window.messageInput, 3, 0, true)
 
 	window.userContainer = tview.NewTreeView()
@@ -532,7 +537,7 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 			}
 		}
 		window.app.QueueUpdateDraw(func() {
-			window.RenderMessages()
+			window.SetMessages(window.shownMessages)
 		})
 	}()
 
@@ -613,75 +618,13 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	return nil
 }
 
-func (window *Window) LoadMessagesInChannelAfter(channel *discordgo.Channel) {
-
-	var messages []*discordgo.Message
-	var discordError error
-	if window.shownMessages == nil || len(window.shownMessages) == 0 {
-		messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", "", "")
-	} else {
-		lastMessageID := window.shownMessages[len(window.shownMessages)-1].ID
-		messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", lastMessageID, "")
-	}
-
-	//TODO Handle
-	if discordError != nil {
-		return
-	}
-
-	if messages == nil || len(messages) == 0 {
-		return
-	}
-
-	window.AddMessages(messages)
-}
-
-func (window *Window) RenderMessages() {
-	window.app.QueueUpdateDraw(func() {
-		window.messageContainer.Clear()
-		for _, message := range window.shownMessages {
-
-			rowIndex := window.messageContainer.GetRowCount()
-
-			time, parseError := message.Timestamp.Parse()
-			if parseError == nil {
-				time := time.Local()
-				var timeCellText string
-				conf := config.GetConfig()
-				if conf.Times == config.HourMinuteAndSeconds {
-					timeCellText = fmt.Sprintf("%02d:%02d:%02d", time.Hour(), time.Minute(), time.Second())
-					window.messageContainer.SetCell(rowIndex, 0, tview.NewTableCell(timeCellText))
-				} else if conf.Times == config.HourAndMinute {
-					timeCellText = fmt.Sprintf("%02d:%02d", time.Hour(), time.Minute())
-					window.messageContainer.SetCell(rowIndex, 0, tview.NewTableCell(timeCellText))
-				}
-			}
-
-			//TODO use nickname instead.
-			window.messageContainer.SetCell(rowIndex, 1, tview.NewTableCell(message.Author.Username))
-			messageText := message.ContentWithMentionsReplaced()
-			if message.Attachments != nil && len(message.Attachments) != 0 {
-				if messageText != "" {
-					messageText = messageText + " "
-				}
-				messageText = messageText + message.Attachments[0].URL
-			}
-
-			window.messageContainer.SetCell(rowIndex, 2, tview.NewTableCell(messageText))
-		}
-
-		window.messageContainer.Select(window.messageContainer.GetRowCount()-1, 0)
-		window.messageContainer.ScrollToEnd()
-	})
-}
-
 func (window *Window) AddMessages(messages []*discordgo.Message) {
 	window.SetMessages(append(window.shownMessages, messages...))
 }
 
 func (window *Window) SetMessages(messages []*discordgo.Message) {
 	window.shownMessages = messages
-	window.RenderMessages()
+	window.chatView.SetMessages(window.shownMessages)
 }
 
 func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
