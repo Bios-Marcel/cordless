@@ -13,7 +13,7 @@ about: Tell us what went wrong
 
 <!-- Explain what happened (the problem)-->
 
-## What did u expect to happen
+## What did you expect to happen
 
 <!-- Explain what you think should have happened instead? -->
 
@@ -24,6 +24,10 @@ about: Tell us what went wrong
 ## Error output
 
 <!-- If there was any output, enter it here please -->
+
+## How to fix
+
+<!-- If you know how to solve this problem, tell others how -->
 
 ## System information
 

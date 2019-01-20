@@ -11,3 +11,7 @@ about: Tell us what you'd like to see in cordless
 ## Why
 
 <!-- Why do you think this Feature would benefit Cordless? -->
+
+## Implementation hints
+
+<!-- Have tips or thoughts on a possible implementatiob? Put em here! -->
