@@ -31,6 +31,7 @@ func (chatView *ChatView) GetPrimitive() tview.Primitive {
 }
 
 func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
+	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 	chatView.data = messages
 
 	newText := ""
@@ -63,5 +64,7 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 	chatView.internalTextView.SetText("")
 	fmt.Fprintf(chatView.internalTextView, "%s", newText)
 
-	chatView.internalTextView.ScrollToEnd()
+	if wasScrolledToTheEnd {
+		chatView.internalTextView.ScrollToEnd()
+	}
 }
