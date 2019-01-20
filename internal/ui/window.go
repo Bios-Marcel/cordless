@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -106,8 +105,13 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			window.selectedGuild = guild
 			channelRootNode.ClearChildren()
 
-			//TODO Handle error
-			channels, _ := discord.GuildChannels(guild.ID)
+			channels, discordError := discord.GuildChannels(guild.ID)
+
+			if discordError != nil {
+				window.ShowErrorDialog(fmt.Sprintf("An error occured while trying to receive the channels: %s", discordError.Error()))
+				//TODO Is returning here a good idea?
+				return
+			}
 
 			sort.Slice(channels, func(a, b int) bool {
 				return channels[a].Position < channels[b].Position
@@ -139,18 +143,20 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					//of always the same one.
 					channelToConnectTo := channel
 					newNode.SetSelectedFunc(func() {
+						discordError := window.LoadChannel(channelToConnectTo)
+						if discordError != nil {
+							errorMessage := fmt.Sprintf("An error occured while trying to load the channel '%s': %s", channelToConnectTo.Name, discordError.Error())
+							window.ShowErrorDialog(errorMessage)
+							return
+						}
+
 						if window.selectedChannelNode != nil {
 							//For some reason using tcell.ColorDefault causes hovering to render incorrect.
 							window.selectedChannelNode.SetColor(tcell.ColorWhite)
 						}
 
 						window.selectedChannelNode = newNode
-
 						newNode.SetColor(tcell.ColorTeal)
-						discordError := window.LoadChannel(channelToConnectTo)
-						if discordError != nil {
-							log.Fatalf("Error loading messages (%s).", discordError.Error())
-						}
 					})
 
 					channelCategories[channelToConnectTo.ParentID].AddChild(newNode)
@@ -523,6 +529,24 @@ func (window *Window) exitMessageEditMode() {
 	window.editingMessageID = nil
 	window.messageInput.SetBackgroundColor(tcell.ColorDefault)
 	window.messageInput.SetText("")
+}
+
+//ShowErrorDialog shows a simple error dialog that has only an Okay button,
+//a generic title and the given text.
+func (window *Window) ShowErrorDialog(text string) {
+	previousFocus := window.app.GetFocus()
+
+	dialog := tview.NewModal()
+	dialog.SetTitle("An error occured")
+	dialog.SetText(text)
+	dialog.AddButtons([]string{"Okay"})
+
+	dialog.SetDoneFunc(func(index int, label string) {
+		window.app.SetRoot(window.rootContainer, true)
+		window.app.SetFocus(previousFocus)
+	})
+
+	window.app.SetRoot(dialog, false)
 }
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
