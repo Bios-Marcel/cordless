@@ -8,9 +8,9 @@ import (
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/tview"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gdamore/tcell"
-	"github.com/rivo/tview"
 )
 
 const (
@@ -73,6 +73,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	guildPage.SetDirection(tview.FlexRow)
 
 	channelTree := tview.NewTreeView()
+	channelTree.SetCycleSelection(true)
 	channelRootNode := tview.NewTreeNode("")
 	window.channelRootNode = channelRootNode
 	channelTree.SetRoot(channelRootNode)
@@ -80,6 +81,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	channelTree.SetTopLevel(1)
 
 	guildList := tview.NewTreeView()
+	guildList.SetCycleSelection(true)
 	guildRootNode := tview.NewTreeNode("")
 	guildList.SetRoot(guildRootNode)
 	guildList.SetBorder(true)
@@ -209,6 +211,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
 	window.friendsList = tview.NewTreeView()
+	window.friendsList.SetCycleSelection(true)
 	window.friendsList.SetBorder(true)
 	window.friendsList.SetTopLevel(1)
 
@@ -469,6 +472,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.chatArea.AddItem(window.messageInput, 3, 0, true)
 
 	window.userContainer = tview.NewTreeView()
+	window.userContainer.SetCycleSelection(true)
 	window.userRootNode = tview.NewTreeNode("")
 	window.userContainer.SetTopLevel(1)
 	window.userContainer.SetRoot(window.userRootNode)

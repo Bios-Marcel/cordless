@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
+	"github.com/Bios-Marcel/tview"
 	"github.com/bwmarrin/discordgo"
-	"github.com/rivo/tview"
 )
 
 type ChatView struct {
