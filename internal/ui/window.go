@@ -117,49 +117,58 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				return channels[a].Position < channels[b].Position
 			})
 
+			registerChannelForChatting := func(node *tview.TreeNode, channelToConnectTo *discordgo.Channel) {
+				node.SetSelectable(true)
+				node.SetSelectedFunc(func() {
+					discordError := window.LoadChannel(channelToConnectTo)
+					if discordError != nil {
+						errorMessage := fmt.Sprintf("An error occured while trying to load the channel '%s': %s", channelToConnectTo.Name, discordError.Error())
+						window.ShowErrorDialog(errorMessage)
+						return
+					}
+
+					if window.selectedChannelNode != nil {
+						//For some reason using tcell.ColorDefault causes hovering to render incorrect.
+						window.selectedChannelNode.SetColor(tcell.ColorWhite)
+					}
+
+					window.selectedChannelNode = node
+					node.SetColor(tcell.ColorTeal)
+				})
+			}
+
+			createNodeForChannel := func(channel *discordgo.Channel) *tview.TreeNode {
+				nodeName := channel.Name
+				if channel.NSFW {
+					nodeName = nodeName + " NSFW"
+				}
+
+				return tview.NewTreeNode(nodeName)
+			}
+
 			channelCategories := make(map[string]*tview.TreeNode)
 			for _, channel := range channels {
 				if channel.ParentID == "" {
-					newNode := tview.NewTreeNode(channel.Name)
+					newNode := createNodeForChannel(channel)
 					channelRootNode.AddChild(newNode)
 
 					if channel.Type == discordgo.ChannelTypeGuildCategory {
+						//Categories
 						newNode.SetSelectable(false)
 						channelCategories[channel.ID] = newNode
+					} else {
+						//Toplevel channels
+						registerChannelForChatting(newNode, channel)
 					}
 				}
 			}
 
+			//Channels that are in categories
 			for _, channel := range channels {
 				if channel.Type == discordgo.ChannelTypeGuildText && channel.ParentID != "" {
-					nodeName := channel.Name
-					if channel.NSFW {
-						nodeName = nodeName + " NSFW"
-					}
-					newNode := tview.NewTreeNode(nodeName)
-
-					newNode.SetSelectable(true)
-					//This copy is necessary in order to use the correct channel instead
-					//of always the same one.
-					channelToConnectTo := channel
-					newNode.SetSelectedFunc(func() {
-						discordError := window.LoadChannel(channelToConnectTo)
-						if discordError != nil {
-							errorMessage := fmt.Sprintf("An error occured while trying to load the channel '%s': %s", channelToConnectTo.Name, discordError.Error())
-							window.ShowErrorDialog(errorMessage)
-							return
-						}
-
-						if window.selectedChannelNode != nil {
-							//For some reason using tcell.ColorDefault causes hovering to render incorrect.
-							window.selectedChannelNode.SetColor(tcell.ColorWhite)
-						}
-
-						window.selectedChannelNode = newNode
-						newNode.SetColor(tcell.ColorTeal)
-					})
-
-					channelCategories[channelToConnectTo.ParentID].AddChild(newNode)
+					newNode := createNodeForChannel(channel)
+					registerChannelForChatting(newNode, channel)
+					channelCategories[channel.ParentID].AddChild(newNode)
 				}
 			}
 
