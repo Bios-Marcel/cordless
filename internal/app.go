@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Bios-Marcel/cordless/internal/commands"
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/ui"
 	"github.com/bwmarrin/discordgo"
@@ -51,6 +52,8 @@ func Run() {
 	if createError != nil {
 		log.Fatalf("Error constructing window (%s).\n", createError.Error())
 	}
+
+	window.RegisterCommand("fixedlayout", commands.FixedLayout)
 
 	runError := window.Run()
 	if runError != nil {

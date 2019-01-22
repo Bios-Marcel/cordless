@@ -15,9 +15,12 @@ const (
 	//It us used for filepaths and such.
 	AppNameLowercase = "cordless"
 
+	//HourMinuteAndSeconds is the time format HH:MM:SS.
 	HourMinuteAndSeconds = 0
-	HourAndMinute        = 1
-	NoTime               = 2
+	//HourAndMinute is the time format HH:MM.
+	HourAndMinute = 1
+	//NoTime means that not time at all will be displayed.
+	NoTime = 2
 )
 
 var (
@@ -25,16 +28,40 @@ var (
 		Times:             HourMinuteAndSeconds,
 		ShowUserContainer: true,
 		ShowFrame:         true,
+		UseFixedLayout:    false,
+		FixedSizeLeft:     12,
+		FixedSizeRight:    12,
+		CommandPrefix:     "!c",
 	}
 )
 
 //Config contains all possible configuration for the application.
 type Config struct {
+	//Token is the authorization token for accessing the discord API.
 	Token string
 
-	Times             int
+	//Times decides on the time format (none, short and long).
+	Times int
+
+	//ShowUserContainer decides wether the user container is part of the
+	//layout or not.
 	ShowUserContainer bool
-	ShowFrame         bool
+
+	//ShowFrame decides wether the application will have a border and a title.
+	ShowFrame bool
+
+	//UseFixedLayout defines whether the FixedSizeLeft and FixedSizeRight
+	//values will be applied or not.
+	UseFixedLayout bool
+	//FixedSizeLeft determines the size of the guilds/channels/friends
+	//container on the left side of the layout.
+	FixedSizeLeft int
+	//FixedSizeRight defines the size of the users container on the right.
+	FixedSizeRight int
+
+	//CommandPrefix determines which prefix a text needs in order to be
+	//recognized as an application internal command.
+	CommandPrefix string
 }
 
 var cachedConfigDir string

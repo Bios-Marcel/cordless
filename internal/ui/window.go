@@ -52,14 +52,17 @@ type Window struct {
 	selectedChannelNode *tview.TreeNode
 
 	selectedChannel *discordgo.Channel
+
+	commands map[string]func(*Window, []string) error
 }
 
 func NewWindow(discord *discordgo.Session) (*Window, error) {
 	app := tview.NewApplication()
 
 	window := Window{
-		session: discord,
-		app:     app,
+		session:  discord,
+		app:      app,
+		commands: make(map[string]func(*Window, []string) error, 1),
 	}
 
 	guilds, discordError := discord.UserGuilds(100, "", "")
@@ -314,7 +317,11 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.messageInput.SetBorder(true)
 
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyUp && window.messageInput.GetText() == "" {
+		messageToSend := window.messageInput.GetText()
+		if messageToSend == "" {
+
+		}
+		if event.Key() == tcell.KeyUp {
 			for i := len(window.shownMessages) - 1; i > 0; i-- {
 				message := window.shownMessages[i]
 				if message.Author.ID == window.session.State.User.ID {
@@ -334,8 +341,20 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		}
 
 		if event.Key() == tcell.KeyEnter {
+			conf := config.GetConfig()
+			if conf.CommandPrefix != "" && strings.HasPrefix(messageToSend, conf.CommandPrefix) {
+				command := strings.TrimPrefix(messageToSend, conf.CommandPrefix)
+				commandError := window.ExecuteCommand(strings.TrimSpace(command))
+				if commandError != nil {
+					window.ShowErrorDialog(commandError.Error())
+				}
+
+				window.messageInput.SetText("")
+
+				return nil
+			}
+
 			if window.selectedChannel != nil {
-				messageToSend := window.messageInput.GetText()
 				window.messageInput.SetText("")
 
 				if len(messageToSend) != 0 {
@@ -538,6 +557,16 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	return &window, nil
 }
 
+func (window *Window) ExecuteCommand(command string) error {
+	parts := strings.Split(command, " ")
+	commandLogic, exists := window.commands[parts[0]]
+	if exists {
+		return commandLogic(window, parts[1:])
+	}
+
+	return nil
+}
+
 func (window *Window) exitMessageEditMode() {
 	window.editingMessageID = nil
 	window.messageInput.SetBackgroundColor(tcell.ColorDefault)
@@ -606,14 +635,24 @@ func (window *Window) RefreshLayout() {
 	window.rootContainer.RemoveItem(window.chatArea)
 	window.rootContainer.RemoveItem(window.userContainer)
 
-	window.rootContainer.AddItem(window.leftArea, 0, 7, true)
-
 	conf := config.GetConfig()
-	if conf.ShowUserContainer && window.overrideShowUsers {
-		window.rootContainer.AddItem(window.chatArea, 0, 20, false)
-		window.rootContainer.AddItem(window.userContainer, 0, 6, false)
+
+	if conf.UseFixedLayout {
+		window.rootContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 7, true)
+		window.rootContainer.AddItem(window.chatArea, 0, 1, false)
+
+		if conf.ShowUserContainer && window.overrideShowUsers {
+			window.rootContainer.AddItem(window.userContainer, conf.FixedSizeRight, 6, false)
+		}
 	} else {
-		window.rootContainer.AddItem(window.chatArea, 0, 26, false)
+		window.rootContainer.AddItem(window.leftArea, 0, 7, true)
+
+		if conf.ShowUserContainer && window.overrideShowUsers {
+			window.rootContainer.AddItem(window.chatArea, 0, 20, false)
+			window.rootContainer.AddItem(window.userContainer, 0, 6, false)
+		} else {
+			window.rootContainer.AddItem(window.chatArea, 0, 26, false)
+		}
 	}
 
 	if conf.ShowFrame {
@@ -767,6 +806,13 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 			}
 		}
 	})
+}
+
+//RegisterCommand register a command. That makes the command available for
+//being called from the message input field, in case the user-defined prefix
+//is in front of the input.
+func (window *Window) RegisterCommand(name string, logic func(window *Window, parameters []string) error) {
+	window.commands[name] = logic
 }
 
 //Run Shows the window optionally returning an error.
