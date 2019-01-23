@@ -7,7 +7,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/ui"
-	"github.com/bwmarrin/discordgo"
+	"github.com/Bios-Marcel/discordgo"
 )
 
 //Run launches the whole application and might abort in case it encounters an
@@ -39,12 +39,15 @@ func Run() {
 
 	discord, discordError := discordgo.New(configuration.Token)
 	if discordError != nil {
-		//TODO Handle
-		os.Exit(0)
+		//TODO Handle better
+		log.Fatalln("Error logging into Discord", discordError)
 	}
 
-	//TODO Handle error
-	discord.Open()
+	discordError = discord.Open()
+	if discordError != nil {
+		//TODO Handle better
+		log.Fatalln("Error establishing web socket connection", discordError)
+	}
 
 	window, createError := ui.NewWindow(discord)
 
