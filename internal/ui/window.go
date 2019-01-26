@@ -607,7 +607,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			}
 
 			if event.Rune() == 'u' {
-				app.SetFocus(window.userContainer)
+				if window.currentPage == guildPageName {
+					app.SetFocus(window.userContainer)
+				}
 				return nil
 			}
 
