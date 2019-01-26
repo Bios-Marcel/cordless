@@ -31,7 +31,6 @@ var (
 		UseFixedLayout:    false,
 		FixedSizeLeft:     12,
 		FixedSizeRight:    12,
-		CommandPrefix:     "!c",
 	}
 )
 
@@ -58,10 +57,6 @@ type Config struct {
 	FixedSizeLeft int
 	//FixedSizeRight defines the size of the users container on the right.
 	FixedSizeRight int
-
-	//CommandPrefix determines which prefix a text needs in order to be
-	//recognized as an application internal command.
-	CommandPrefix string
 }
 
 var cachedConfigDir string

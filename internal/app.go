@@ -8,7 +8,7 @@ import (
 	"github.com/Bios-Marcel/cordless/internal/commands"
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/ui"
-	"github.com/bwmarrin/discordgo"
+	"github.com/Bios-Marcel/discordgo"
 )
 
 //Run launches the whole application and might abort in case it encounters an
@@ -53,7 +53,7 @@ func Run() {
 		log.Fatalf("Error constructing window (%s).\n", createError.Error())
 	}
 
-	window.RegisterCommand("fixedlayout", commands.FixedLayout)
+	window.RegisterCommand("fixlayout", commands.FixedLayout)
 
 	runError := window.Run()
 	if runError != nil {

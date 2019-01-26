@@ -2,14 +2,15 @@ package ui
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
-	"github.com/bwmarrin/discordgo"
 	"github.com/gdamore/tcell"
 )
 
@@ -37,6 +38,11 @@ type Window struct {
 	messageContainer tview.Primitive
 	messageInput     *tview.InputField
 
+	commandMode    bool
+	commandHistory []string
+	commandOutput  *tview.TextView
+	commandInput   *tview.InputField
+
 	editingMessageID *string
 
 	userContainer *tview.TreeView
@@ -53,7 +59,7 @@ type Window struct {
 
 	selectedChannel *discordgo.Channel
 
-	commands map[string]func(*Window, []string) error
+	commands map[string]func(io.Writer, *Window, []string)
 }
 
 func NewWindow(discord *discordgo.Session) (*Window, error) {
@@ -62,7 +68,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window := Window{
 		session:  discord,
 		app:      app,
-		commands: make(map[string]func(*Window, []string) error, 1),
+		commands: make(map[string]func(io.Writer, *Window, []string), 1),
 	}
 
 	guilds, discordError := discord.UserGuilds(100, "", "")
@@ -341,19 +347,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		}
 
 		if event.Key() == tcell.KeyEnter {
-			conf := config.GetConfig()
-			if conf.CommandPrefix != "" && strings.HasPrefix(messageToSend, conf.CommandPrefix) {
-				command := strings.TrimPrefix(messageToSend, conf.CommandPrefix)
-				commandError := window.ExecuteCommand(strings.TrimSpace(command))
-				if commandError != nil {
-					window.ShowErrorDialog(commandError.Error())
-				}
-
-				window.messageInput.SetText("")
-
-				return nil
-			}
-
 			if window.selectedChannel != nil {
 				window.messageInput.SetText("")
 
@@ -490,6 +483,59 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.chatArea.AddItem(window.messageContainer, 0, 1, true)
 	window.chatArea.AddItem(window.messageInput, 3, 0, true)
 
+	window.commandOutput = tview.NewTextView()
+	window.commandOutput.SetBorder(true)
+	window.commandInput = tview.NewInputField()
+	window.commandInput.SetBorder(true)
+
+	commandHistoryIndex := -1
+	window.commandInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEnter {
+			commandHistoryIndex = -1
+			command := window.commandInput.GetText()
+			if command == "" {
+				return nil
+			}
+
+			window.ExecuteCommand(strings.TrimSpace(command))
+			window.commandInput.SetText("")
+
+			window.commandHistory = append(window.commandHistory, command)
+
+			return nil
+		}
+
+		if event.Key() == tcell.KeyDown {
+			if commandHistoryIndex > len(window.commandHistory)-1 {
+				commandHistoryIndex = 0
+			} else {
+				commandHistoryIndex++
+			}
+
+			if commandHistoryIndex > len(window.commandHistory)-1 {
+				return nil
+			}
+
+			window.commandInput.SetText(window.commandHistory[commandHistoryIndex])
+		}
+
+		if event.Key() == tcell.KeyUp {
+			if commandHistoryIndex < 0 {
+				commandHistoryIndex = len(window.commandHistory) - 1
+			} else {
+				commandHistoryIndex--
+			}
+
+			if commandHistoryIndex < 0 {
+				return nil
+			}
+
+			window.commandInput.SetText(window.commandHistory[commandHistoryIndex])
+		}
+
+		return event
+	})
+
 	window.userContainer = tview.NewTreeView()
 	window.userContainer.SetCycleSelection(true)
 	window.userRootNode = tview.NewTreeNode("")
@@ -503,6 +549,30 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	app.SetRoot(window.rootContainer, true)
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == ':' {
+			if window.commandMode {
+				window.commandMode = false
+			} else {
+				window.commandMode = true
+			}
+
+			window.RefreshLayout()
+
+			if window.commandMode {
+				app.SetFocus(window.commandInput)
+			}
+
+			return nil
+		}
+
+		if window.commandMode && event.Key() == tcell.KeyCtrlO {
+			app.SetFocus(window.commandOutput)
+		}
+
+		if window.commandMode && event.Key() == tcell.KeyCtrlI {
+			app.SetFocus(window.commandInput)
+		}
+
 		if event.Rune() == 'U' &&
 			(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
 			conf := config.GetConfig()
@@ -557,14 +627,14 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	return &window, nil
 }
 
-func (window *Window) ExecuteCommand(command string) error {
+func (window *Window) ExecuteCommand(command string) {
 	parts := strings.Split(command, " ")
 	commandLogic, exists := window.commands[parts[0]]
 	if exists {
-		return commandLogic(window, parts[1:])
+		commandLogic(window.commandOutput, window, parts[1:])
+	} else {
+		fmt.Fprintf(window.commandOutput, "The command '%s' doesn't exist\n", parts[0])
 	}
-
-	return nil
 }
 
 func (window *Window) exitMessageEditMode() {
@@ -653,6 +723,14 @@ func (window *Window) RefreshLayout() {
 		} else {
 			window.rootContainer.AddItem(window.chatArea, 0, 26, false)
 		}
+	}
+
+	window.chatArea.RemoveItem(window.commandInput)
+	window.chatArea.RemoveItem(window.commandOutput)
+
+	if window.commandMode {
+		window.chatArea.AddItem(window.commandOutput, 0, 1, false)
+		window.chatArea.AddItem(window.commandInput, 3, 0, false)
 	}
 
 	if conf.ShowFrame {
@@ -811,7 +889,7 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 //RegisterCommand register a command. That makes the command available for
 //being called from the message input field, in case the user-defined prefix
 //is in front of the input.
-func (window *Window) RegisterCommand(name string, logic func(window *Window, parameters []string) error) {
+func (window *Window) RegisterCommand(name string, logic func(writer io.Writer, window *Window, parameters []string)) {
 	window.commands[name] = logic
 }
 
