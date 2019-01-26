@@ -14,4 +14,4 @@ about: Tell us what you'd like to see in cordless
 
 ## Implementation hints
 
-<!-- Have tips or thoughts on a possible implementatiob? Put em here! -->
+<!-- Have tips or thoughts on a possible implementation? Put em here! -->
