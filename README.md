@@ -27,7 +27,7 @@ any third party.
 
 This application is currently a WIP and will change rather fast.
 
-![Cordless 19th January 2019](https://i.imgur.com/ftmvcYM.png)
+![Cordless 26th January 2019](https://i.imgur.com/xX7dVCw.png)
 
 ## How to install it
 
