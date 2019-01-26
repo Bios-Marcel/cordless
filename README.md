@@ -97,6 +97,11 @@ careful with your configuration file.
   * Edit last message
   * Delete last message
   * Multiline
+  * Highlighting
+    * Code
+    * Mentions (Channels/Users)
+  * Special highlighting when you get mentioned
+* Custom layout to a specific point
 
 ## Troubleshooting
 
