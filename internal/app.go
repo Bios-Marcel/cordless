@@ -57,6 +57,7 @@ func Run() {
 	}
 
 	window.RegisterCommand("fixlayout", commands.FixLayout)
+	window.RegisterCommand("chatheader", commands.ChatHeader)
 
 	runError := window.Run()
 	if runError != nil {

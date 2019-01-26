@@ -726,8 +726,18 @@ func (window *Window) RefreshLayout() {
 		}
 	}
 
+	window.chatArea.RemoveItem(window.channelTitle)
+	window.chatArea.RemoveItem(window.messageContainer)
+	window.chatArea.RemoveItem(window.messageInput)
 	window.chatArea.RemoveItem(window.commandInput)
 	window.chatArea.RemoveItem(window.commandOutput)
+
+	if conf.ShowChatHeader {
+		window.chatArea.AddItem(window.channelTitle, 3, 0, false)
+	}
+
+	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
+	window.chatArea.AddItem(window.messageInput, 3, 0, false)
 
 	if window.commandMode {
 		window.chatArea.AddItem(window.commandOutput, 0, 1, false)

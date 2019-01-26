@@ -27,6 +27,7 @@ var (
 	currentConfig = Config{
 		Times:             HourMinuteAndSeconds,
 		ShowUserContainer: true,
+		ShowChatHeader:    true,
 		ShowFrame:         true,
 		UseFixedLayout:    false,
 		FixedSizeLeft:     12,
@@ -45,6 +46,10 @@ type Config struct {
 	//ShowUserContainer decides wether the user container is part of the
 	//layout or not.
 	ShowUserContainer bool
+
+	//ShowChatHeader decides wether the box above the chat will be shown
+	//or not.
+	ShowChatHeader bool
 
 	//ShowFrame decides wether the application will have a border and a title.
 	ShowFrame bool
