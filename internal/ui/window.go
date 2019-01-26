@@ -316,7 +316,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.chatArea = tview.NewFlex()
 	window.chatArea.SetDirection(tview.FlexRow)
 
-	window.chatView = NewChatView(window.session.State.User.ID)
+	window.chatView = NewChatView(window.session, window.session.State.User.ID)
 	window.messageContainer = window.chatView.GetPrimitive()
 
 	window.messageInput = tview.NewInputField()

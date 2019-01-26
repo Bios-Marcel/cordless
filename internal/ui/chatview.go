@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
@@ -12,13 +13,15 @@ import (
 type ChatView struct {
 	internalTextView *tview.TextView
 
+	session   *discordgo.Session
 	data      []*discordgo.Message
 	ownUserID string
 }
 
-func NewChatView(ownUserID string) *ChatView {
+func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 	chatView := ChatView{
 		internalTextView: tview.NewTextView(),
+		session:          session,
 		ownUserID:        ownUserID,
 	}
 
@@ -69,6 +72,20 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 				"<@!"+user.ID+">", "[blue]@"+user.Username+"[white]",
 			).Replace(messageText)
 		}
+
+		messageText = regexp.
+			MustCompile("<#\\d*>").
+			ReplaceAllStringFunc(messageText, func(data string) string {
+				channelID := strings.TrimSuffix(strings.TrimPrefix(data, "<#"), ">")
+				channel, cacheError := chatView.session.State.Channel(channelID)
+				if cacheError != nil {
+					return data
+				}
+
+				return "[blue]#" + channel.Name + "[white]"
+			})
+
+		//TODO Role mentions
 
 		if message.Attachments != nil && len(message.Attachments) != 0 {
 			if messageText != "" {
