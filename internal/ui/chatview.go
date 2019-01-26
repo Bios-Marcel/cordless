@@ -1,13 +1,19 @@
 package ui
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
+	_ "github.com/Bios-Marcel/cordless/internal/syntax"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
+	"github.com/alecthomas/chroma"
+	"github.com/alecthomas/chroma/formatters"
+	"github.com/alecthomas/chroma/lexers"
+	"github.com/alecthomas/chroma/styles"
 )
 
 type ChatView struct {
@@ -84,6 +90,60 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 
 				return "[blue]#" + channel.Name + "[white]"
 			})
+
+		groupValues := regexp.
+			MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)").
+			//Magicnumber, cuz u ain't gonna such a long message anyway.
+			FindAllStringSubmatch(messageText, 1000)
+
+		for _, values := range groupValues {
+			language := ""
+			for index, value := range values {
+				if index == 0 {
+					continue
+				}
+
+				if index == 1 {
+					language = value
+				} else if index == 2 {
+					// Determine lexer.
+					l := lexers.Get(language)
+					if l == nil {
+						l = lexers.Analyse(value)
+					}
+					if l == nil {
+						l = lexers.Fallback
+					}
+					l = chroma.Coalesce(l)
+
+					// Determine formatter.
+					f := formatters.Get("tview-8bit")
+					if f == nil {
+						f = formatters.Fallback
+					}
+
+					// Determine style.
+					s := styles.Get("monokai")
+					if s == nil {
+						s = styles.Fallback
+					}
+
+					it, tokeniseError := l.Tokenise(nil, value)
+					if tokeniseError != nil {
+						continue
+					}
+
+					writer := bytes.NewBufferString("")
+
+					formatError := f.Format(writer, s, it)
+					if formatError != nil {
+						continue
+					}
+
+					messageText = strings.Replace(messageText, value, writer.String(), 1)
+				}
+			}
+		}
 
 		//TODO Role mentions
 
