@@ -56,7 +56,7 @@ func Run() {
 		log.Fatalf("Error constructing window (%s).\n", createError.Error())
 	}
 
-	window.RegisterCommand("fixlayout", commands.FixedLayout)
+	window.RegisterCommand("fixlayout", commands.FixLayout)
 
 	runError := window.Run()
 	if runError != nil {

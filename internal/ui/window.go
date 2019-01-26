@@ -324,9 +324,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		messageToSend := window.messageInput.GetText()
-		if messageToSend == "" {
 
-		}
 		if event.Key() == tcell.KeyUp {
 			for i := len(window.shownMessages) - 1; i > 0; i-- {
 				message := window.shownMessages[i]

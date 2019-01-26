@@ -9,7 +9,7 @@ import (
 	"github.com/Bios-Marcel/cordless/internal/ui"
 )
 
-func FixedLayout(writer io.Writer, window *ui.Window, parameters []string) {
+func FixLayout(writer io.Writer, window *ui.Window, parameters []string) {
 	if len(parameters) == 1 {
 		choice, parseError := strconv.ParseBool(parameters[0])
 		if parseError != nil {
