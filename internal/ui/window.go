@@ -316,7 +316,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.chatArea = tview.NewFlex()
 	window.chatArea.SetDirection(tview.FlexRow)
 
-	window.chatView = NewChatView()
+	window.chatView = NewChatView(window.session.State.User.ID)
 	window.messageContainer = window.chatView.GetPrimitive()
 
 	window.messageInput = tview.NewInputField()
@@ -549,7 +549,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	app.SetRoot(window.rootContainer, true)
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == ':' {
+		if event.Rune() == '.' &&
+			(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
 			if window.commandMode {
 				window.commandMode = false
 			} else {
