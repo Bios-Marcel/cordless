@@ -34,10 +34,11 @@ type Window struct {
 	channelRootNode *tview.TreeNode
 	channelTitle    *tview.TextView
 
-	chatArea         *tview.Flex
-	chatView         *ChatView
-	messageContainer tview.Primitive
-	messageInput     *tview.InputField
+	chatArea                    *tview.Flex
+	chatView                    *ChatView
+	messageContainer            tview.Primitive
+	messageInput                *Editor
+	requestedMessageInputHeight int
 
 	commandMode    bool
 	commandHistory []string
@@ -67,9 +68,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	app := tview.NewApplication()
 
 	window := Window{
-		session:  discord,
-		app:      app,
-		commands: make(map[string]func(io.Writer, *Window, []string), 1),
+		session:                     discord,
+		app:                         app,
+		commands:                    make(map[string]func(io.Writer, *Window, []string), 1),
+		requestedMessageInputHeight: 3,
 	}
 
 	guilds, discordError := discord.UserGuilds(100, "", "")
@@ -324,13 +326,16 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.chatView = NewChatView(window.session, window.session.State.User.ID)
 	window.messageContainer = window.chatView.GetPrimitive()
 
-	window.messageInput = tview.NewInputField()
-	window.messageInput.SetBorder(true)
+	window.messageInput = NewEditor()
+	window.messageInput.SetOnHeightChangeRequest(func(height int) {
+		window.requestedMessageInputHeight = height
+		window.RefreshLayout()
+	})
 
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		messageToSend := window.messageInput.GetText()
 
-		if event.Key() == tcell.KeyUp {
+		if event.Key() == tcell.KeyUp && messageToSend == "" {
 			for i := len(window.shownMessages) - 1; i > 0; i-- {
 				message := window.shownMessages[i]
 				if message.Author.ID == window.session.State.User.ID {
@@ -394,7 +399,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 							window.exitMessageEditMode()
 							window.app.SetRoot(window.rootContainer, true)
-							window.app.SetFocus(window.messageInput)
+							window.app.SetFocus(window.messageInput.GetPrimitive())
 						})
 						window.app.SetRoot(dialog, false)
 					}
@@ -523,7 +528,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.chatArea.AddItem(window.channelTitle, 3, 1, true)
 	window.chatArea.AddItem(window.messageContainer, 0, 1, true)
-	window.chatArea.AddItem(window.messageInput, 3, 0, true)
+	window.chatArea.AddItem(window.messageInput.GetPrimitive(), 3, 0, true)
 
 	window.commandOutput = tview.NewTextView()
 	window.commandOutput.SetBorder(true)
@@ -657,7 +662,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			}
 
 			if event.Rune() == 'm' {
-				app.SetFocus(window.messageInput)
+				app.SetFocus(window.messageInput.GetPrimitive())
 				return nil
 			}
 		}
@@ -684,8 +689,8 @@ func (window *Window) ExecuteCommand(command string) {
 
 func (window *Window) exitMessageEditMode() {
 	window.editingMessageID = nil
-	window.messageInput.SetBackgroundColor(tcell.ColorDefault)
 	window.messageInput.SetText("")
+	window.messageInput.SetBackgroundColor(tcell.ColorBlack)
 }
 
 //ShowErrorDialog shows a simple error dialog that has only an Okay button,
@@ -772,7 +777,7 @@ func (window *Window) RefreshLayout() {
 
 	window.chatArea.RemoveItem(window.channelTitle)
 	window.chatArea.RemoveItem(window.messageContainer)
-	window.chatArea.RemoveItem(window.messageInput)
+	window.chatArea.RemoveItem(window.messageInput.GetPrimitive())
 	window.chatArea.RemoveItem(window.commandInput)
 	window.chatArea.RemoveItem(window.commandOutput)
 
@@ -781,7 +786,7 @@ func (window *Window) RefreshLayout() {
 	}
 
 	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
-	window.chatArea.AddItem(window.messageInput, 3, 0, false)
+	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.requestedMessageInputHeight, 0, false)
 
 	if window.commandMode {
 		window.chatArea.AddItem(window.commandOutput, 0, 1, false)
