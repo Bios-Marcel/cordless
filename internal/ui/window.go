@@ -98,6 +98,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	guildList.SetTopLevel(1)
 
 	var selectedGuildNode *tview.TreeNode
+
 	for _, tempGuild := range guilds {
 		guild := tempGuild
 		guildNode := tview.NewTreeNode(guild.Name)
@@ -446,6 +447,14 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						if user.ID == window.session.State.User.ID {
 							mentionsYou = true
 							break
+						}
+					}
+
+					if !mentionsYou {
+						channel, stateError := window.session.State.Channel(message.ChannelID)
+						//TODO Check if channel is muted.
+						if stateError == nil && channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+							mentionsYou = true
 						}
 					}
 
