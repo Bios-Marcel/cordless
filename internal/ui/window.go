@@ -12,6 +12,7 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
+	"github.com/gen2brain/beeep"
 )
 
 const (
@@ -144,6 +145,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					}
 
 					window.selectedChannelNode = node
+					node.SetText(channelToConnectTo.Name)
 					node.SetColor(tcell.ColorTeal)
 				})
 			}
@@ -169,6 +171,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						channelCategories[channel.ID] = newNode
 					} else {
 						//Toplevel channels
+						newNode.SetReference(channel.ID)
 						registerChannelForChatting(newNode, channel)
 					}
 				}
@@ -178,6 +181,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			for _, channel := range channels {
 				if channel.Type == discordgo.ChannelTypeGuildText && channel.ParentID != "" {
 					newNode := createNodeForChannel(channel)
+					newNode.SetReference(channel.ID)
 					registerChannelForChatting(newNode, channel)
 					channelCategories[channel.ParentID].AddChild(newNode)
 				}
@@ -408,9 +412,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if window.selectedChannel != nil {
-			if m.ChannelID == window.selectedChannel.ID {
-				messageInputChan <- m.Message
-			}
+			messageInputChan <- m.Message
 		}
 	})
 
@@ -434,9 +436,42 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		for {
 			select {
 			case message := <-messageInputChan:
-				window.app.QueueUpdateDraw(func() {
-					window.SetMessages(append(window.shownMessages, message))
-				})
+				if message.ChannelID == window.selectedChannel.ID {
+					window.app.QueueUpdateDraw(func() {
+						window.SetMessages(append(window.shownMessages, message))
+					})
+				} else {
+					mentionsYou := false
+					for _, user := range message.Mentions {
+						if user.ID == window.session.State.User.ID {
+							mentionsYou = true
+							break
+						}
+					}
+
+					if mentionsYou {
+						beeep.Notify("Cordless - New message", message.ContentWithMentionsReplaced(), "assets/information.png")
+					}
+
+					window.app.QueueUpdateDraw(func() {
+
+						window.channelRootNode.Walk(func(node, parent *tview.TreeNode) bool {
+							data, ok := node.GetReference().(string)
+							if ok && data == message.ChannelID {
+								if mentionsYou {
+									channel, stateError := window.session.State.Channel(message.ChannelID)
+									if stateError == nil {
+										node.SetText("(@You) " + channel.Name)
+									}
+								}
+
+								node.SetColor(tcell.ColorRed)
+								return false
+							}
+							return true
+						})
+					})
+				}
 			}
 		}
 	}()
