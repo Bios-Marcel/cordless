@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	spaceChar   = string('\u205F')
-	emptyText   = "[\"selection\"]\u205F[\"\"]"
-	leftRegion  = "[\"left\"]"
-	rightRegion = "[\"right\"]"
-	selRegion   = "[\"selection\"]"
-	endRegion   = "[\"\"]"
+	selectionChar = string('\u205F')
+	emptyText     = "[\"selection\"]\u205F[\"\"]"
+	leftRegion    = "[\"left\"]"
+	rightRegion   = "[\"right\"]"
+	selRegion     = "[\"selection\"]"
+	endRegion     = "[\"\"]"
 )
 
 //Editor is a simple component that wraps tview.TextView in order to gove the
@@ -48,15 +48,15 @@ func NewEditor() *Editor {
 
 		newText := emptyText
 		if event.Key() == tcell.KeyLeft {
+			expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
 			if len(left) > 0 {
 				newText = leftRegion + string(left[:len(left)-1]) + selRegion
 
 				currentSelection := string(selection)
-				if currentSelection == spaceChar {
+				if currentSelection == selectionChar {
 					currentSelection = ""
 				}
 
-				expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
 				if expandSelection {
 					newText = newText + string(left[len(left)-1]) + currentSelection + rightRegion + string(right)
 				} else {
@@ -65,20 +65,35 @@ func NewEditor() *Editor {
 
 				newText = newText + endRegion
 				editor.internalTextView.SetText(newText)
+			} else if len(selection) > 0 && !expandSelection {
+				newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + string(right) + endRegion
+				editor.internalTextView.SetText(newText)
 			}
 		} else if event.Key() == tcell.KeyRight {
 			newText = leftRegion + string(left)
 			expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
 			if len(right) > 0 {
-
 				if expandSelection {
 					newText = newText + selRegion + string(selection) + string(right[0]) + rightRegion + string(right[1:])
 				} else {
 					newText = newText + string(selection) + selRegion + string(right[0]) + rightRegion + string(right[1:])
 				}
 			} else {
-				if !expandSelection && string(selection) != spaceChar {
-					newText = newText + selRegion + spaceChar
+				endsWithSelectionChar := strings.HasSuffix(string(selection), selectionChar)
+				if !endsWithSelectionChar {
+					if expandSelection {
+						newText = newText + selRegion + string(selection)
+					} else if !expandSelection {
+						newText = newText + string(selection) + selRegion
+					}
+
+					newText = newText + selectionChar
+				} else {
+					if expandSelection {
+						newText = newText + selRegion + string(selection)
+					} else {
+						newText = newText + string(selection[:len(selection)-1]) + selRegion + selectionChar
+					}
 				}
 			}
 
@@ -102,7 +117,7 @@ func NewEditor() *Editor {
 			}
 
 			if len(right) == 0 {
-				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(spaceChar)))
+				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selectionChar)))
 			} else {
 				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
 					string(left), string(character), string(selection), string(right)))
@@ -143,7 +158,7 @@ func (editor *Editor) SetText(text string) {
 	if text == "" {
 		editor.internalTextView.SetText(emptyText)
 	} else {
-		editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s[\"\"][\"selection\"]%s[\"\"]", text, string(spaceChar)))
+		editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s[\"\"][\"selection\"]%s[\"\"]", text, string(selectionChar)))
 	}
 
 	editor.triggerHeightRequestIfNeccessary()
@@ -161,7 +176,7 @@ func (editor *Editor) GetText() string {
 	right := editor.internalTextView.GetRegionText("right")
 	selection := editor.internalTextView.GetRegionText("selection")
 
-	if right == "" && selection == string(spaceChar) {
+	if right == "" && selection == string(selectionChar) {
 		return left
 	}
 
