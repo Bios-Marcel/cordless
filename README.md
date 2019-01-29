@@ -49,13 +49,17 @@ In order to execute this command
 [you need to have go installed](https://golang.org/doc/install).
 
 In order to execute the application, simply run the executable, which lies at
-`$GOPATH/bin/cordless`. In order to be able to run this from your commandline,
+`$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
 `$GOPATH/bin` has to be in your `PATH` variable.
 
 ### Configuration
 
-Cordless doesn't need anything besides your Discord token. The application will
-ask you to input the token in case it can't be found.
+You have got two login choice, either you use your username and password or you
+use your current authentication token. Using your password only works if your
+account does not have Two-Factor authentication, which is you should use!
+
+Besides your login data / token, cordless doesn't need anything else.
+The application will ask you to input the token in case it can't be found.
 
 In order to retrieve your token, simply follow the steps in the graphic below:
 
