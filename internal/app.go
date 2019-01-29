@@ -2,8 +2,11 @@ package internal
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
+
+	"github.com/princebot/getpass"
 
 	"github.com/Bios-Marcel/cordless/internal/commands"
 	"github.com/Bios-Marcel/cordless/internal/config"
@@ -28,20 +31,25 @@ func Run() {
 		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
 	}
 
+	var (
+		discord      *discordgo.Session
+		discordError error
+	)
 	if configuration.Token == "" {
-		log.Println("The Discord token could not be found, please input your token.")
-		configuration.Token = askForToken()
+		discord, discordError = login()
+		config.GetConfig().Token = discord.Token
+	} else {
+		discord, discordError = discordgo.New(configuration.Token)
+	}
+
+	if discordError != nil {
+		//TODO Handle better
+		log.Fatalln("Error logging into Discord", discordError)
 	}
 
 	persistError := config.PersistConfig()
 	if persistError != nil {
 		log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
-	}
-
-	discord, discordError := discordgo.New(configuration.Token)
-	if discordError != nil {
-		//TODO Handle better
-		log.Fatalln("Error logging into Discord", discordError)
 	}
 
 	discordError = discord.Open()
@@ -66,19 +74,61 @@ func Run() {
 
 }
 
-func askForToken() string {
+func login() (*discordgo.Session, error) {
+	log.Println("Please choose wether to login via username and password (1) or authentication token (2).")
+	var choice int
+
+	_, err := fmt.Scanf("%d", &choice)
+
+	if err != nil {
+		log.Println("Invalid input, please try again.")
+		return login()
+	}
+
+	if choice == 1 {
+		return askForUsernameAndPassword()
+	} else if choice == 2 {
+		return askForToken()
+	} else {
+		log.Println("Invalid choice, please try again.")
+		return login()
+	}
+}
+
+func askForUsernameAndPassword() (*discordgo.Session, error) {
+	log.Println("Please input your username.")
+	reader := bufio.NewReader(os.Stdin)
+
+	nameAsBytes, _, inputError := reader.ReadLine()
+	if inputError != nil {
+		log.Fatalf("Error reading your username (%s).\n", inputError.Error())
+	}
+	name := string(nameAsBytes[:len(nameAsBytes)])
+
+	passwordAsBytes, inputError := getpass.Get("Please input your password.\n")
+	if inputError != nil {
+		log.Fatalf("Error reading your username (%s).\n", inputError.Error())
+	}
+	password := string(passwordAsBytes[:len(passwordAsBytes)])
+
+	return discordgo.New(name, password)
+}
+
+func askForToken() (*discordgo.Session, error) {
+	log.Println("Please input your token.")
 	reader := bufio.NewReader(os.Stdin)
 	tokenAsBytes, _, inputError := reader.ReadLine()
-	token := string(tokenAsBytes[:len(tokenAsBytes)])
 
 	if inputError != nil {
 		log.Fatalf("Error reading your token (%s).\n", inputError.Error())
 	}
+
+	token := string(tokenAsBytes[:len(tokenAsBytes)])
 
 	if token == "" {
 		log.Println("An empty token is not valid, please try again.")
 		return askForToken()
 	}
 
-	return token
+	return discordgo.New(token)
 }
