@@ -9,8 +9,12 @@ import (
 )
 
 const (
-	spaceChar = '\u205F'
-	emptyText = "[\"selection\"]\u205F[\"\"]"
+	spaceChar   = string('\u205F')
+	emptyText   = "[\"selection\"]\u205F[\"\"]"
+	leftRegion  = "[\"left\"]"
+	rightRegion = "[\"right\"]"
+	selRegion   = "[\"selection\"]"
+	endRegion   = "[\"\"]"
 )
 
 //Editor is a simple component that wraps tview.TextView in order to gove the
@@ -42,62 +46,68 @@ func NewEditor() *Editor {
 		right := []rune(editor.internalTextView.GetRegionText("right"))
 		selection := []rune(editor.internalTextView.GetRegionText("selection"))
 
+		newText := emptyText
 		if event.Key() == tcell.KeyLeft {
-			lengthMinusOne := len(left) - 1
-			if lengthMinusOne > -1 {
-				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s%s[\"\"]",
-					string(left[:len(left)-1]), string(left[len(left)-1:]), string(selection), string(right)))
-				editor.internalTextView.Highlight("selection")
-			}
-			return nil
-		} else if event.Key() == tcell.KeyRight {
-			if len(right) == 0 {
-				if selection[0] == spaceChar {
-					editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s[\"\"][\"selection\"]%s[\"\"]",
-						string(left), string(selection)))
+			if len(left) > 0 {
+				newText = leftRegion + string(left[:len(left)-1]) + selRegion
+
+				currentSelection := string(selection)
+				if currentSelection == spaceChar {
+					currentSelection = ""
+				}
+
+				expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
+				if expandSelection {
+					newText = newText + string(left[len(left)-1]) + currentSelection + rightRegion + string(right)
 				} else {
-					editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]",
-						string(left), string(selection), string(spaceChar)))
+					newText = newText + string(left[len(left)-1]) + rightRegion + currentSelection + string(right)
+				}
+
+				newText = newText + endRegion
+				editor.internalTextView.SetText(newText)
+			}
+		} else if event.Key() == tcell.KeyRight {
+			newText = leftRegion + string(left)
+			expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
+			if len(right) > 0 {
+
+				if expandSelection {
+					newText = newText + selRegion + string(selection) + string(right[0]) + rightRegion + string(right[1:])
+				} else {
+					newText = newText + string(selection) + selRegion + string(right[0]) + rightRegion + string(right[1:])
 				}
 			} else {
-				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
-					string(left), string(selection), string(right[:1]), string(right[1:])))
+				if !expandSelection && string(selection) != spaceChar {
+					newText = newText + selRegion + spaceChar
+				}
 			}
 
-			editor.internalTextView.Highlight("selection")
-			return nil
+			newText = newText + endRegion
+			editor.internalTextView.SetText(newText)
 		} else if event.Key() == tcell.KeyBackspace2 {
-			if (len(left) - 1) > -1 {
-				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
-					string(left[:len(left)-1]), string(selection), string(right)))
-				editor.internalTextView.Highlight("selection")
-				editor.triggerHeightRequestIfNeccessary()
-			}
-			return nil
-		}
-
-		var character rune
-		//TODO Find a way to listen to Shift + Enter, tcell or tview seem to ignore it.
-		if event.Key() == tcell.KeyEnter {
-			if (event.Modifiers() & tcell.ModAlt) == tcell.ModAlt {
-				character = '\n'
-			}
+			//TODO
 		} else {
-			character = event.Rune()
-		}
+			var character rune
+			if event.Key() == tcell.KeyEnter {
+				if (event.Modifiers() & tcell.ModAlt) == tcell.ModAlt {
+					character = '\n'
+				}
+			} else {
+				character = event.Rune()
+			}
 
-		if character == 0 {
-			editor.inputCapture(event)
-			return nil
-		}
+			if character == 0 {
+				editor.inputCapture(event)
+				return nil
+			}
 
-		if len(right) == 0 {
-			editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(spaceChar)))
-		} else {
-			editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
-				string(left), string(character), string(selection), string(right)))
+			if len(right) == 0 {
+				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(spaceChar)))
+			} else {
+				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
+					string(left), string(character), string(selection), string(right)))
+			}
 		}
-		editor.internalTextView.Highlight("selection")
 
 		editor.triggerHeightRequestIfNeccessary()
 
