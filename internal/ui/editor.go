@@ -100,7 +100,19 @@ func NewEditor() *Editor {
 			newText = newText + endRegion
 			editor.internalTextView.SetText(newText)
 		} else if event.Key() == tcell.KeyBackspace2 {
-			//TODO
+			if len(selection) == 1 && len(left) >= 1 {
+				newText = leftRegion + string(left[:len(left)-1]) + selRegion + string(selection) + rightRegion + string(right) + endRegion
+				editor.internalTextView.SetText(newText)
+			} else if len(selection) > 1 {
+				newText = leftRegion + string(left) + selRegion
+				if len(right) > 0 {
+					newText = newText + string(right[0]) + rightRegion + string(right[1:])
+				} else {
+					newText = newText + selectionChar
+				}
+				newText = newText + endRegion
+				editor.internalTextView.SetText(newText)
+			}
 		} else {
 			var character rune
 			if event.Key() == tcell.KeyEnter {
