@@ -71,12 +71,30 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 			}
 		}
 
-		messageText := message.Content
-		for _, user := range message.Mentions {
-			messageText = strings.NewReplacer(
-				"<@"+user.ID+">", "[blue]@"+user.Username+"[white]",
-				"<@!"+user.ID+">", "[blue]@"+user.Username+"[white]",
-			).Replace(messageText)
+		var messageText string
+
+		if message.Type == discordgo.MessageTypeDefault {
+			messageText = message.Content
+			for _, user := range message.Mentions {
+				messageText = strings.NewReplacer(
+					"<@"+user.ID+">", "[blue]@"+user.Username+"[white]",
+					"<@!"+user.ID+">", "[blue]@"+user.Username+"[white]",
+				).Replace(messageText)
+			}
+		} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
+			messageText = "[gray]joined the server."
+		} else if message.Type == discordgo.MessageTypeCall {
+			messageText = "[gray]is calling you."
+		} else if message.Type == discordgo.MessageTypeChannelIconChange {
+			messageText = "[gray]changed the channel icon."
+		} else if message.Type == discordgo.MessageTypeChannelNameChange {
+			messageText = "[gray]changed the channel name."
+		} else if message.Type == discordgo.MessageTypeChannelPinnedMessage {
+			messageText = "[gray]pinned a message."
+		} else if message.Type == discordgo.MessageTypeRecipientAdd {
+			messageText = "[gray]added " + message.Mentions[0].Username + " to the group."
+		} else if message.Type == discordgo.MessageTypeRecipientRemove {
+			messageText = "[gray]removed " + message.Mentions[0].Username + " from the group."
 		}
 
 		messageText = regexp.
