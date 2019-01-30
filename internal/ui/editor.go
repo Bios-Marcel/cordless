@@ -38,6 +38,7 @@ func NewEditor() *Editor {
 	editor.internalTextView.SetWordWrap(true)
 	editor.internalTextView.SetBorder(true)
 	editor.internalTextView.SetRegions(true)
+	editor.internalTextView.SetScrollable(true)
 	editor.internalTextView.SetText(emptyText)
 	editor.internalTextView.Highlight("selection")
 
@@ -145,8 +146,17 @@ func NewEditor() *Editor {
 }
 
 func (editor *Editor) triggerHeightRequestIfNeccessary() {
-	//+3 because of borders and the fact that there is always a line
-	newRequestedHeight := strings.Count(editor.GetText(), "\n") + 3
+	splitLines := strings.Split(editor.GetText(), "\n")
+	_, _, width, _ := editor.internalTextView.GetInnerRect()
+
+	wrappedLines := 0
+	for _, line := range splitLines {
+		if len(line) >= width {
+			wrappedLines++
+		}
+	}
+
+	newRequestedHeight := len(splitLines) + wrappedLines + 2 /*borders*/
 	if newRequestedHeight != editor.requestedHeight {
 		editor.requestedHeight = newRequestedHeight
 		editor.heightRequestHandler(newRequestedHeight)
