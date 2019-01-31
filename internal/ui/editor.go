@@ -100,7 +100,8 @@ func NewEditor() *Editor {
 
 			newText = newText + endRegion
 			editor.internalTextView.SetText(newText)
-		} else if event.Key() == tcell.KeyBackspace2 {
+		} else if event.Key() == tcell.KeyBackspace2 ||
+			event.Key() == tcell.KeyBackspace {
 			if len(selection) == 1 && len(left) >= 1 {
 				newText = leftRegion + string(left[:len(left)-1]) + selRegion + string(selection) + rightRegion + string(right) + endRegion
 				editor.internalTextView.SetText(newText)
