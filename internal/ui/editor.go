@@ -152,8 +152,8 @@ func (editor *Editor) triggerHeightRequestIfNeccessary() {
 
 	wrappedLines := 0
 	for _, line := range splitLines {
-		if len(line) >= width {
-			wrappedLines++
+		if len(line) > width {
+			wrappedLines = wrappedLines + ((len(line) - (len(line) % width)) / width)
 		}
 	}
 
