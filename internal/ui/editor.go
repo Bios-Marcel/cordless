@@ -2,13 +2,21 @@ package ui
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
 )
 
+var (
+	//Temporary solution, so not every function has to handle the selection
+	//character placement.
+	multiSelectionCharWithSelectionToLeftPattern = regexp.MustCompile(selectionChar + "*" + regexp.QuoteMeta(selRegion) + selectionChar + "*" + regexp.QuoteMeta(endRegion))
+)
+
 const (
+	selectionRune = '\u205F'
 	selectionChar = string('\u205F')
 	emptyText     = "[\"selection\"]\u205F[\"\"]"
 	leftRegion    = "[\"left\"]"
@@ -68,8 +76,12 @@ func NewEditor() *Editor {
 				newText = newText + endRegion
 				editor.internalTextView.SetText(newText)
 			} else if len(selection) > 0 && !expandSelection {
-				newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + string(right) + endRegion
-				editor.internalTextView.SetText(newText)
+				if len(right) > 0 {
+					newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + string(right) + endRegion
+				} else {
+					newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + endRegion
+				}
+				editor.setAndFixText(newText)
 			}
 		} else if event.Key() == tcell.KeyRight &&
 			(event.Modifiers() == tcell.ModShift || event.Modifiers() == tcell.ModNone) {
@@ -101,7 +113,7 @@ func NewEditor() *Editor {
 			}
 
 			newText = newText + endRegion
-			editor.internalTextView.SetText(newText)
+			editor.setAndFixText(newText)
 		} else if event.Key() == tcell.KeyLeft &&
 			(event.Modifiers()&(tcell.ModShift|tcell.ModCtrl)) == (tcell.ModShift|tcell.ModCtrl) {
 			if len(left) > 0 {
@@ -118,13 +130,13 @@ func NewEditor() *Editor {
 				} else {
 					newText = selRegion + string(left) + string(string(selection)) + rightRegion + string(right) + endRegion
 				}
-				editor.internalTextView.SetText(newText)
+				editor.setAndFixText(newText)
 			}
 		} else if event.Key() == tcell.KeyRight &&
 			(event.Modifiers()&(tcell.ModShift|tcell.ModCtrl)) == (tcell.ModShift|tcell.ModCtrl) {
 			if len(right) > 0 {
 				selectionFrom := len(right) - 1
-				for i := 1; /*Skip space left to selection*/ i < len(right)-1; i++ {
+				for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
 					if right[i] == ' ' {
 						selectionFrom = i
 						break
@@ -136,12 +148,52 @@ func NewEditor() *Editor {
 				} else {
 					newText = leftRegion + string(left) + selRegion + string(string(selection)) + string(right) + endRegion
 				}
-				editor.internalTextView.SetText(newText)
+				editor.setAndFixText(newText)
+			}
+		} else if event.Key() == tcell.KeyRight &&
+			event.Modifiers() == tcell.ModCtrl {
+			if len(right) > 0 {
+				selectionAt := len(right) - 1
+				for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
+					if right[i] == ' ' {
+						selectionAt = i
+						break
+					}
+				}
+
+				if selectionAt != len(right)-1 {
+					newText = leftRegion + string(left) + string(string(selection)) + string(right[:selectionAt]) + selRegion + string(right[selectionAt]) + rightRegion + string(right[selectionAt+1:]) + endRegion
+				} else {
+					newText = leftRegion + string(left) + string(selection) + string(right) + selRegion + selectionChar + endRegion
+				}
+				editor.setAndFixText(newText)
+			}
+		} else if event.Key() == tcell.KeyLeft &&
+			event.Modifiers() == tcell.ModCtrl {
+			if len(left) > 0 {
+				selectionAt := 0
+				for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
+					if left[i] == ' ' {
+						selectionAt = i
+						break
+					}
+				}
+
+				if selectionAt != 0 {
+					newText = leftRegion + string(left[:selectionAt]) + selRegion + string(left[selectionAt]) + rightRegion + string(left[selectionAt+1:]) + string(string(selection)) + string(right) + endRegion
+				} else {
+					if len(left) > 1 {
+						newText = selRegion + string(left[0]) + rightRegion + string(left[1:]) + string(selection) + string(right) + endRegion
+					} else {
+						newText = selRegion + string(left[0]) + rightRegion + string(selection) + string(right) + endRegion
+					}
+				}
+				editor.setAndFixText(newText)
 			}
 		} else if event.Key() == tcell.KeyCtrlA {
 			if len(left) > 0 || len(right) > 0 {
 				newText = selRegion + string(left) + string(selection) + string(right) + endRegion
-				editor.internalTextView.SetText(newText)
+				editor.setAndFixText(newText)
 			}
 		} else if event.Key() == tcell.KeyBackspace2 ||
 			event.Key() == tcell.KeyBackspace {
@@ -156,7 +208,7 @@ func NewEditor() *Editor {
 					newText = newText + selectionChar
 				}
 				newText = newText + endRegion
-				editor.internalTextView.SetText(newText)
+				editor.setAndFixText(newText)
 			}
 		} else {
 			var character rune
@@ -174,9 +226,9 @@ func NewEditor() *Editor {
 			}
 
 			if len(right) == 0 {
-				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selectionChar)))
+				editor.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selectionChar)))
 			} else {
-				editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
+				editor.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
 					string(left), string(character), string(selection), string(right)))
 			}
 		}
@@ -187,6 +239,11 @@ func NewEditor() *Editor {
 	})
 
 	return &editor
+}
+
+func (editor *Editor) setAndFixText(text string) {
+	newText := multiSelectionCharWithSelectionToLeftPattern.ReplaceAllString(text, selRegion+selectionChar+endRegion)
+	editor.internalTextView.SetText(newText)
 }
 
 func (editor *Editor) triggerHeightRequestIfNeccessary() {
