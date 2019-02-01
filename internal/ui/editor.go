@@ -48,7 +48,8 @@ func NewEditor() *Editor {
 		selection := []rune(editor.internalTextView.GetRegionText("selection"))
 
 		var newText string
-		if event.Key() == tcell.KeyLeft {
+		if event.Key() == tcell.KeyLeft &&
+			(event.Modifiers() == tcell.ModShift || event.Modifiers() == tcell.ModNone) {
 			expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
 			if len(left) > 0 {
 				newText = leftRegion + string(left[:len(left)-1]) + selRegion
@@ -70,7 +71,8 @@ func NewEditor() *Editor {
 				newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + string(right) + endRegion
 				editor.internalTextView.SetText(newText)
 			}
-		} else if event.Key() == tcell.KeyRight {
+		} else if event.Key() == tcell.KeyRight &&
+			(event.Modifiers() == tcell.ModShift || event.Modifiers() == tcell.ModNone) {
 			newText = leftRegion + string(left)
 			expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
 			if len(right) > 0 {
@@ -100,6 +102,42 @@ func NewEditor() *Editor {
 
 			newText = newText + endRegion
 			editor.internalTextView.SetText(newText)
+		} else if event.Key() == tcell.KeyLeft &&
+			(event.Modifiers()&(tcell.ModShift|tcell.ModCtrl)) == (tcell.ModShift|tcell.ModCtrl) {
+			if len(left) > 0 {
+				selectionFrom := 0
+				for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
+					if left[i] == ' ' {
+						selectionFrom = i
+						break
+					}
+				}
+
+				if selectionFrom != 0 {
+					newText = leftRegion + string(left[:selectionFrom+1]) + selRegion + string(left[selectionFrom+1:]) + string(string(selection)) + rightRegion + string(right) + endRegion
+				} else {
+					newText = selRegion + string(left) + string(string(selection)) + rightRegion + string(right) + endRegion
+				}
+				editor.internalTextView.SetText(newText)
+			}
+		} else if event.Key() == tcell.KeyRight &&
+			(event.Modifiers()&(tcell.ModShift|tcell.ModCtrl)) == (tcell.ModShift|tcell.ModCtrl) {
+			if len(right) > 0 {
+				selectionFrom := len(right) - 1
+				for i := 1; /*Skip space left to selection*/ i < len(right)-1; i++ {
+					if right[i] == ' ' {
+						selectionFrom = i
+						break
+					}
+				}
+
+				if selectionFrom != len(right)-1 {
+					newText = leftRegion + string(left) + selRegion + string(string(selection)) + string(right[:selectionFrom]) + rightRegion + string(right[selectionFrom:]) + endRegion
+				} else {
+					newText = leftRegion + string(left) + selRegion + string(string(selection)) + string(right) + endRegion
+				}
+				editor.internalTextView.SetText(newText)
+			}
 		} else if event.Key() == tcell.KeyCtrlA {
 			if len(left) > 0 || len(right) > 0 {
 				newText = selRegion + string(left) + string(selection) + string(right) + endRegion
