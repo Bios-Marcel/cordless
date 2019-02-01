@@ -25,13 +25,15 @@ const (
 
 var (
 	currentConfig = Config{
-		Times:             HourMinuteAndSeconds,
-		ShowUserContainer: true,
-		ShowChatHeader:    true,
-		ShowFrame:         true,
-		UseFixedLayout:    false,
-		FixedSizeLeft:     12,
-		FixedSizeRight:    12,
+		Times:                                  HourMinuteAndSeconds,
+		ShowUserContainer:                      true,
+		ShowChatHeader:                         true,
+		ShowFrame:                              true,
+		UseFixedLayout:                         false,
+		FixedSizeLeft:                          12,
+		FixedSizeRight:                         12,
+		FocusChannelAfterGuildSelection:        true,
+		FocusMessageInputAfterChannelSelection: true,
 	}
 )
 
@@ -43,17 +45,21 @@ type Config struct {
 	//Times decides on the time format (none, short and long).
 	Times int
 
-	//ShowUserContainer decides wether the user container is part of the
-	//layout or not.
-	ShowUserContainer bool
-
-	//ShowChatHeader decides wether the box above the chat will be shown
-	//or not.
-	ShowChatHeader bool
+	//FocusChannelAfterGuildSelection will cause the widget focus to move over
+	//to the channel tree after selecting a guild.
+	FocusChannelAfterGuildSelection bool
+	//FocusMessageInputAfterChannelSelection will cause the widget focus to
+	//move over to the message input widget after channel selection
+	FocusMessageInputAfterChannelSelection bool
 
 	//ShowFrame decides wether the application will have a border and a title.
 	ShowFrame bool
-
+	//ShowChatHeader decides wether the box above the chat will be shown
+	//or not.
+	ShowChatHeader bool
+	//ShowUserContainer decides wether the user container is part of the
+	//layout or not.
+	ShowUserContainer bool
 	//UseFixedLayout defines whether the FixedSizeLeft and FixedSizeRight
 	//values will be applied or not.
 	UseFixedLayout bool

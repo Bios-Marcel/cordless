@@ -200,6 +200,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				channelTree.SetCurrentNode(window.channelRootNode)
 			}
 
+			if config.GetConfig().FocusChannelAfterGuildSelection {
+				window.app.SetFocus(channelTree)
+			}
+
 			updateUser := time.NewTicker(userListUpdateInterval)
 			go func() {
 				killChan := make(chan bool)
@@ -469,9 +473,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						window.SetMessages(append(window.shownMessages, message))
 					})
 				} else {
+					mentionsYou := false
 					if message.Author.ID != window.session.State.User.ID {
 
-						mentionsYou := false
 						for _, user := range message.Mentions {
 							if user.ID == window.session.State.User.ID {
 								mentionsYou = true
@@ -857,6 +861,10 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 
 	window.selectedChannel = channel
+
+	if config.GetConfig().FocusMessageInputAfterChannelSelection {
+		window.app.SetFocus(window.messageInput.internalTextView)
+	}
 
 	return nil
 }
