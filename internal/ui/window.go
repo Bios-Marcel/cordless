@@ -477,16 +477,18 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						}
 					}
 
-					if !mentionsYou {
-						channel, stateError := window.session.State.Channel(message.ChannelID)
-						//TODO Check if channel is muted.
-						if stateError == nil && channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
-							mentionsYou = true
+					channel, stateError := window.session.State.Channel(message.ChannelID)
+					if stateError == nil {
+						if !mentionsYou {
+							//TODO Check if channel is muted.
+							if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+								mentionsYou = true
+							}
 						}
-					}
 
-					if mentionsYou {
-						beeep.Notify("Cordless - New message", message.ContentWithMentionsReplaced(), "assets/information.png")
+						if mentionsYou {
+							beeep.Notify("Cordless - "+channel.Name, message.ContentWithMentionsReplaced(), "assets/information.png")
+						}
 					}
 
 					window.app.QueueUpdateDraw(func() {
