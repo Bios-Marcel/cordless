@@ -70,6 +70,9 @@ type Window struct {
 	commands map[string]func(io.Writer, *Window, []string)
 }
 
+//NewWindow constructs the whole application window and also registers all
+//necessary handlers and functions. If this function returns an error, we can't
+//start the application.
 func NewWindow(discord *discordgo.Session) (*Window, error) {
 	app := tview.NewApplication()
 
@@ -236,10 +239,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
-	window.friendsList = tview.NewTreeView()
-	window.friendsList.SetCycleSelection(true)
+	window.friendsList = tview.NewTreeView().
+		SetCycleSelection(true).
+		SetTopLevel(1)
 	window.friendsList.SetBorder(true)
-	window.friendsList.SetTopLevel(1)
 
 	window.friendsRootNode = tview.NewTreeNode("")
 	window.friendsList.SetRoot(window.friendsRootNode)
@@ -330,8 +333,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		})
 	}()
 
-	window.chatArea = tview.NewFlex()
-	window.chatArea.SetDirection(tview.FlexRow)
+	window.chatArea = tview.NewFlex().
+		SetDirection(tview.FlexRow)
 
 	window.chatView = NewChatView(window.session, window.session.State.User.ID)
 	window.messageContainer = window.chatView.GetPrimitive()
@@ -621,15 +624,15 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return event
 	})
 
-	window.userContainer = tview.NewTreeView()
-	window.userContainer.SetCycleSelection(true)
 	window.userRootNode = tview.NewTreeNode("")
-	window.userContainer.SetTopLevel(1)
-	window.userContainer.SetRoot(window.userRootNode)
+	window.userContainer = tview.NewTreeView().
+		SetRoot(window.userRootNode).
+		SetTopLevel(1).
+		SetCycleSelection(true)
 	window.userContainer.SetBorder(true)
 
-	window.rootContainer = tview.NewFlex()
-	window.rootContainer.SetDirection(tview.FlexColumn)
+	window.rootContainer = tview.NewFlex().
+		SetDirection(tview.FlexColumn)
 	window.rootContainer.SetTitleAlign(tview.AlignCenter)
 
 	app.SetRoot(window.rootContainer, true)
@@ -715,6 +718,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	return &window, nil
 }
 
+//ExecuteCommand tries to execute the given input as a command. The first word
+//will be passed as the commands name and the rest will be parameters. If a
+//command can't be found, that info will be printed onto the command output.
 func (window *Window) ExecuteCommand(command string) {
 	parts := strings.Split(command, " ")
 	commandLogic, exists := window.commands[parts[0]]
@@ -768,6 +774,9 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 	window.exitMessageEditMode()
 }
 
+//SwitchToGuildsPage the left side of the layout over to the view where you can
+//see the servers and their channels. In additional to that, it also shows the
+//user list in case the user didn't explicitly hide it.
 func (window *Window) SwitchToGuildsPage() {
 	if window.currentPage != guildPageName {
 		window.currentPage = guildPageName
@@ -777,6 +786,9 @@ func (window *Window) SwitchToGuildsPage() {
 	}
 }
 
+//SwitchToFriendsPage switches the left side of the layout over to the view
+//where you can see your private chats and groups. In addition to that it
+//hides the user list.
 func (window *Window) SwitchToFriendsPage() {
 	if window.currentPage != friendsPageName {
 		window.currentPage = friendsPageName
@@ -842,6 +854,7 @@ func (window *Window) RefreshLayout() {
 	window.app.ForceDraw()
 }
 
+//LoadChannel eagerly loads the channels messages.
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", "", "")
 	if discordError != nil {
@@ -876,10 +889,12 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	return nil
 }
 
+//AddMessages adds the passed array of messages to the chat.
 func (window *Window) AddMessages(messages []*discordgo.Message) {
 	window.SetMessages(append(window.shownMessages, messages...))
 }
 
+//SetMessages clears the current chat and adds the passed messages.s
 func (window *Window) SetMessages(messages []*discordgo.Message) {
 	window.shownMessages = messages
 	window.chatView.SetMessages(window.shownMessages)

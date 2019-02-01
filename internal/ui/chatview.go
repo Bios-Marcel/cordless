@@ -22,6 +22,9 @@ var (
 	channelMentionRegex = regexp.MustCompile("<#\\d*>")
 )
 
+//ChatView is using a tview.TextView in order to be able to display messages
+//in a simple way. It supports highlighting specific element types and it
+//also supports multiline.
 type ChatView struct {
 	internalTextView *tview.TextView
 
@@ -30,6 +33,7 @@ type ChatView struct {
 	ownUserID string
 }
 
+//NewChatView constructs a new ready to use ChatView.
 func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 	chatView := ChatView{
 		internalTextView: tview.NewTextView(),
@@ -45,10 +49,14 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 	return &chatView
 }
 
+//GetPrimitive returns the component that can be added to a layout, since
+//the ChatView itself is not a component.
 func (chatView *ChatView) GetPrimitive() tview.Primitive {
 	return chatView.internalTextView
 }
 
+//SetMessages defines all currently displayed messages. Parsing and
+//manipulation of single message elements happens in this function.
 func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 	chatView.data = messages
