@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
+	//Blank import for initializing the tview formatter
 	_ "github.com/Bios-Marcel/cordless/internal/syntax"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
@@ -14,6 +15,11 @@ import (
 	"github.com/alecthomas/chroma/formatters"
 	"github.com/alecthomas/chroma/lexers"
 	"github.com/alecthomas/chroma/styles"
+)
+
+var (
+	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)")
+	channelMentionRegex = regexp.MustCompile("<#\\d*>")
 )
 
 type ChatView struct {
@@ -97,8 +103,7 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 			messageText = "[gray]removed " + message.Mentions[0].Username + " from the group."
 		}
 
-		messageText = regexp.
-			MustCompile("<#\\d*>").
+		messageText = channelMentionRegex.
 			ReplaceAllStringFunc(messageText, func(data string) string {
 				channelID := strings.TrimSuffix(strings.TrimPrefix(data, "<#"), ">")
 				channel, cacheError := chatView.session.State.Channel(channelID)
@@ -109,8 +114,7 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 				return "[blue]#" + channel.Name + "[white]"
 			})
 
-		groupValues := regexp.
-			MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)").
+		groupValues := codeBlockRegex.
 			//Magicnumber, cuz u ain't gonna such a long message anyway.
 			FindAllStringSubmatch(messageText, 1000)
 

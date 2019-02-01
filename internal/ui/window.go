@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"io"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -20,6 +21,10 @@ const (
 
 	guildPageName   = "Guilds"
 	friendsPageName = "Friends"
+)
+
+var (
+	mentionRegex = regexp.MustCompile("@.*?(?:$|\\s)")
 )
 
 type Window struct {
@@ -364,18 +369,35 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						if discordError == nil {
 
 							//Those could be optimized by searching the string for patterns.
-
 							for _, channel := range guild.Channels {
 								if channel.Type == discordgo.ChannelTypeGuildText {
 									messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
 								}
 							}
 
-							for _, member := range guild.Members {
-								if member.Nick != "" {
-									messageToSend = strings.Replace(messageToSend, "@"+member.Nick, "<@"+member.User.ID+">", -1)
+						}
+					}
+
+					if strings.Contains(messageToSend, "@") {
+						messageToSend = mentionRegex.
+							ReplaceAllStringFunc(messageToSend, func(part string) string {
+								return strings.ToLower(part)
+							})
+
+						if window.selectedGuild != nil {
+							guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+							if discordError == nil {
+								for _, member := range guild.Members {
+									if member.Nick != "" {
+										messageToSend = strings.Replace(messageToSend, "@"+strings.ToLower(member.Nick), "<@"+member.User.ID+">", -1)
+									}
+
+									messageToSend = strings.Replace(messageToSend, "@"+strings.ToLower(member.User.Username), "<@"+member.User.ID+">", -1)
 								}
-								messageToSend = strings.Replace(messageToSend, "@"+member.User.Username, "<@"+member.User.ID+">", -1)
+							}
+						} else if window.selectedChannel != nil {
+							for _, user := range window.selectedChannel.Recipients {
+								messageToSend = strings.Replace(messageToSend, "@"+strings.ToLower(user.Username), "<@"+user.ID+">", -1)
 							}
 						}
 					}
