@@ -14,6 +14,7 @@ import (
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
 	"github.com/gen2brain/beeep"
+	"github.com/kyokomi/emoji"
 )
 
 const (
@@ -381,6 +382,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 						}
 					}
+
+					messageToSend = emoji.Sprintf(messageToSend)
 
 					if strings.Contains(messageToSend, "@") {
 						messageToSend = mentionRegex.
