@@ -18,7 +18,7 @@ const (
 )
 
 //Editor is a simple component that wraps tview.TextView in order to gove the
-//user minimal text edit functionallity.
+//user minimal text edit functionality.
 type Editor struct {
 	internalTextView *tview.TextView
 
@@ -47,7 +47,7 @@ func NewEditor() *Editor {
 		right := []rune(editor.internalTextView.GetRegionText("right"))
 		selection := []rune(editor.internalTextView.GetRegionText("selection"))
 
-		newText := emptyText
+		var newText string
 		if event.Key() == tcell.KeyLeft {
 			expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
 			if len(left) > 0 {
