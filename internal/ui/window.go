@@ -493,7 +493,11 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 							}
 
 							if mentionsYou {
-								beeep.Notify("Cordless - "+channel.Name, message.ContentWithMentionsReplaced(), "assets/information.png")
+								notificationLocation := channel.Name
+								if notificationLocation == "" {
+									notificationLocation = channel.Recipients[0].Username
+								}
+								beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
 							}
 						}
 					}
