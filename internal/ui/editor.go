@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/atotto/clipboard"
+
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
 )
@@ -208,6 +210,12 @@ func NewEditor() *Editor {
 					newText = newText + selectionChar
 				}
 				newText = newText + endRegion
+				editor.setAndFixText(newText)
+			}
+		} else if event.Key() == tcell.KeyCtrlV {
+			clipBoardContent, clipError := clipboard.ReadAll()
+			if clipError == nil {
+				newText = leftRegion + string(left) + selRegion + string(selection) + clipBoardContent + rightRegion + string(right) + endRegion
 				editor.setAndFixText(newText)
 			}
 		} else {
