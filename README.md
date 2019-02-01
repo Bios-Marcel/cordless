@@ -92,11 +92,11 @@ careful with your configuration file.
   * 1on1 conversation with a friend
   * Groupchats
   * Talk in a channel
-  * Timestamp Just `HH:MM(:SS)`
+  * Timestamps `HH:MM(:SS)`
 * See all your friends
 * Messages
   * Send messages
-  * Mention people using their full username
+  * Mention people using their full username or nickname
   * Mention a channel
   * Edit last message
   * Delete last message
@@ -105,7 +105,12 @@ careful with your configuration file.
     * Code
     * Mentions (Channels/Users)
   * Special highlighting when you get mentioned
+  * Send Emojis with `:name:`
 * Custom layout to a specific point
+* Notifications 
+  * System notifications on mention (not considering muted servers and such)
+  * Mark channels read when unread messages in the current session exist
+  * Prefix channel with `(@You)` if you got mentioned
 
 ## Troubleshooting
 
