@@ -49,10 +49,10 @@ func FixLayout(writer io.Writer, window *ui.Window, parameters []string) {
 		subCommand := parameters[0]
 		if subCommand == "left" {
 			config.GetConfig().FixedSizeLeft = int(size)
-			subCommand = fmt.Sprintf("The left side of the layout was set to %d", int(size))
+			successOutput = fmt.Sprintf("The left side of the layout was set to %d", int(size))
 		} else if subCommand == "right" {
 			config.GetConfig().FixedSizeRight = int(size)
-			subCommand = fmt.Sprintf("The right side of the layout was set to %d", int(size))
+			successOutput = fmt.Sprintf("The right side of the layout was set to %d", int(size))
 		} else {
 			fmt.Fprintf(writer, "The subcommand '%s' does not exist\n", subCommand)
 			return
