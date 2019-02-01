@@ -132,7 +132,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			channels, discordError := discord.GuildChannels(guild.ID)
 
 			if discordError != nil {
-				window.ShowErrorDialog(fmt.Sprintf("An error occured while trying to receive the channels: %s", discordError.Error()))
+				window.ShowErrorDialog(fmt.Sprintf("An error occurred while trying to receive the channels: %s", discordError.Error()))
 				//TODO Is returning here a good idea?
 				return
 			}
@@ -146,7 +146,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				node.SetSelectedFunc(func() {
 					discordError := window.LoadChannel(channelToConnectTo)
 					if discordError != nil {
-						errorMessage := fmt.Sprintf("An error occured while trying to load the channel '%s': %s", channelToConnectTo.Name, discordError.Error())
+						errorMessage := fmt.Sprintf("An error occurred while trying to load the channel '%s': %s", channelToConnectTo.Name, discordError.Error())
 						window.ShowErrorDialog(errorMessage)
 						return
 					}
@@ -743,7 +743,7 @@ func (window *Window) ShowErrorDialog(text string) {
 	previousFocus := window.app.GetFocus()
 
 	dialog := tview.NewModal()
-	dialog.SetTitle("An error occured")
+	dialog.SetTitle("An error occurred")
 	dialog.SetText(text)
 	dialog.AddButtons([]string{"Okay"})
 

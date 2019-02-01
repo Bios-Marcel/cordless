@@ -103,13 +103,13 @@ func askForUsernameAndPassword() (*discordgo.Session, error) {
 	if inputError != nil {
 		log.Fatalf("Error reading your username (%s).\n", inputError.Error())
 	}
-	name := string(nameAsBytes[:len(nameAsBytes)])
+	name := string(nameAsBytes[:])
 
 	passwordAsBytes, inputError := getpass.Get("Please input your password.\n")
 	if inputError != nil {
 		log.Fatalf("Error reading your username (%s).\n", inputError.Error())
 	}
-	password := string(passwordAsBytes[:len(passwordAsBytes)])
+	password := string(passwordAsBytes[:])
 
 	return discordgo.New(name, password)
 }
@@ -123,7 +123,7 @@ func askForToken() (*discordgo.Session, error) {
 		log.Fatalf("Error reading your token (%s).\n", inputError.Error())
 	}
 
-	token := string(tokenAsBytes[:len(tokenAsBytes)])
+	token := string(tokenAsBytes[:])
 
 	if token == "" {
 		log.Println("An empty token is not valid, please try again.")
