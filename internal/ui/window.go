@@ -10,6 +10,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/cordless/internal/ui/tview/treeview"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
@@ -21,7 +22,7 @@ const (
 	userListUpdateInterval = 5 * time.Second
 
 	guildPageName   = "Guilds"
-	friendsPageName = "Friends"
+	privatePageName = "Friends"
 )
 
 var (
@@ -36,8 +37,8 @@ type Window struct {
 
 	leftArea        *tview.Pages
 	currentPage     string
-	friendsList     *tview.TreeView
-	friendsRootNode *tview.TreeNode
+	privateList     *tview.TreeView
+	privateRootNode *tview.TreeNode
 
 	channelRootNode *tview.TreeNode
 	channelTitle    *tview.TextView
@@ -48,15 +49,13 @@ type Window struct {
 	messageInput                *Editor
 	requestedMessageInputHeight int
 
-	commandMode    bool
-	commandHistory []string
-	commandOutput  *tview.TextView
-	commandInput   *tview.InputField
+	commandMode bool
+	commandView *CommandView
 
 	editingMessageID *string
 
-	userContainer *tview.TreeView
-	userRootNode  *tview.TreeNode
+	userList     *tview.TreeView
+	userRootNode *tview.TreeNode
 
 	overrideShowUsers bool
 
@@ -109,51 +108,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	guildList.SetRoot(guildRootNode)
 	guildList.SetBorder(true)
 	guildList.SetTopLevel(1)
-
-	createInputHandler := func(treeView *tview.TreeView, rootNode *tview.TreeNode, jumpTime *time.Time, jumpBuffer *string) func(event *tcell.EventKey) *tcell.EventKey {
-		var traversalFunction func(node *tview.TreeNode) bool
-		traversalFunction = func(node *tview.TreeNode) bool {
-			if len(node.GetChildren()) > 0 {
-				for _, subNode := range node.GetChildren() {
-					returnValue := traversalFunction(subNode)
-					if returnValue {
-						return true
-					}
-				}
-			} else if node.IsSelectable() {
-				if strings.HasPrefix(strings.ToLower(node.GetText()), *jumpBuffer) {
-					treeView.SetCurrentNode(node)
-					return true
-				}
-			}
-
-			return false
-		}
-
-		eventHandler := func(event *tcell.EventKey) *tcell.EventKey {
-			if time.Since(*jumpTime) > (500 * time.Millisecond) {
-				*jumpBuffer = ""
-			}
-
-			*jumpTime = time.Now()
-
-			if event.Rune() != 0 {
-				*jumpBuffer += string(event.Rune())
-				*jumpBuffer = strings.ToLower(*jumpBuffer)
-
-				for _, node := range rootNode.GetChildren() {
-					stopIterating := traversalFunction(node)
-					if stopIterating {
-						return nil
-					}
-				}
-			}
-
-			return event
-		}
-
-		return eventHandler
-	}
 
 	var selectedGuildNode *tview.TreeNode
 
@@ -286,24 +240,24 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
-	window.friendsList = tview.NewTreeView().
+	window.privateList = tview.NewTreeView().
 		SetCycleSelection(true).
 		SetTopLevel(1)
-	window.friendsList.SetBorder(true)
+	window.privateList.SetBorder(true)
 
-	window.friendsRootNode = tview.NewTreeNode("")
-	window.friendsList.SetRoot(window.friendsRootNode)
-	window.friendsRootNode.SetSelectable(false)
+	window.privateRootNode = tview.NewTreeNode("")
+	window.privateList.SetRoot(window.privateRootNode)
+	window.privateRootNode.SetSelectable(false)
 
 	friendsNode := tview.NewTreeNode("Friends")
 	groupChatsNode := tview.NewTreeNode("Groups")
 	peopleChatsNode := tview.NewTreeNode("Open duo chats")
 
-	window.friendsRootNode.AddChild(friendsNode)
-	window.friendsRootNode.AddChild(groupChatsNode)
-	window.friendsRootNode.AddChild(peopleChatsNode)
+	window.privateRootNode.AddChild(friendsNode)
+	window.privateRootNode.AddChild(groupChatsNode)
+	window.privateRootNode.AddChild(peopleChatsNode)
 
-	window.leftArea.AddPage(friendsPageName, window.friendsList, true, false)
+	window.leftArea.AddPage(privatePageName, window.privateList, true, false)
 
 	go func() {
 		for _, channel := range window.session.State.PrivateChannels {
@@ -374,8 +328,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				})
 			}
 
-			if len(window.friendsRootNode.GetChildren()) > 0 {
-				window.friendsList.SetCurrentNode(window.friendsRootNode)
+			if len(window.privateRootNode.GetChildren()) > 0 {
+				window.privateList.SetCurrentNode(window.privateRootNode)
 			}
 		})
 	}()
@@ -618,79 +572,28 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.chatArea.AddItem(window.messageContainer, 0, 1, true)
 	window.chatArea.AddItem(window.messageInput.GetPrimitive(), 3, 0, true)
 
-	window.commandOutput = tview.NewTextView()
-	window.commandOutput.SetBorder(true)
-	window.commandInput = tview.NewInputField()
-	window.commandInput.SetBorder(true)
-
-	commandHistoryIndex := -1
-	window.commandInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEnter {
-			commandHistoryIndex = -1
-			command := window.commandInput.GetText()
-			if command == "" {
-				return nil
-			}
-
-			window.ExecuteCommand(strings.TrimSpace(command))
-			window.commandInput.SetText("")
-
-			window.commandHistory = append(window.commandHistory, command)
-
-			return nil
-		}
-
-		if event.Key() == tcell.KeyDown {
-			if commandHistoryIndex > len(window.commandHistory)-1 {
-				commandHistoryIndex = 0
-			} else {
-				commandHistoryIndex++
-			}
-
-			if commandHistoryIndex > len(window.commandHistory)-1 {
-				return nil
-			}
-
-			window.commandInput.SetText(window.commandHistory[commandHistoryIndex])
-		}
-
-		if event.Key() == tcell.KeyUp {
-			if commandHistoryIndex < 0 {
-				commandHistoryIndex = len(window.commandHistory) - 1
-			} else {
-				commandHistoryIndex--
-			}
-
-			if commandHistoryIndex < 0 {
-				return nil
-			}
-
-			window.commandInput.SetText(window.commandHistory[commandHistoryIndex])
-		}
-
-		return event
-	})
+	window.commandView = NewCommandView(window.ExecuteCommand)
 
 	window.userRootNode = tview.NewTreeNode("")
-	window.userContainer = tview.NewTreeView().
+	window.userList = tview.NewTreeView().
 		SetRoot(window.userRootNode).
 		SetTopLevel(1).
 		SetCycleSelection(true)
-	window.userContainer.SetBorder(true)
+	window.userList.SetBorder(true)
 
 	if config.GetConfig().OnTypeInListBehaviour == config.SearchOnTypeInList {
 		var guildJumpBuffer string
 		var guildJumpTime time.Time
-		guildList.SetInputCapture(createInputHandler(guildList, guildRootNode, &guildJumpTime, &guildJumpBuffer))
+		guildList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(guildList, guildRootNode, &guildJumpTime, &guildJumpBuffer))
 		var channelJumpBuffer string
 		var channelJumpTime time.Time
-		channelTree.SetInputCapture(createInputHandler(channelTree, channelRootNode, &channelJumpTime, &channelJumpBuffer))
+		channelTree.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(channelTree, channelRootNode, &channelJumpTime, &channelJumpBuffer))
 		var userJumpBuffer string
 		var userJumpTime time.Time
-		window.userContainer.SetInputCapture(createInputHandler(window.userContainer, window.userRootNode, &userJumpTime, &userJumpBuffer))
+		window.userList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(window.userList, window.userRootNode, &userJumpTime, &userJumpBuffer))
 		var privateJumpBuffer string
 		var privateJumpTime time.Time
-		window.friendsList.SetInputCapture(createInputHandler(window.friendsList, friendsNode, &privateJumpTime, &privateJumpBuffer))
+		window.privateList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(window.privateList, friendsNode, &privateJumpTime, &privateJumpBuffer))
 	}
 
 	window.rootContainer = tview.NewFlex().
@@ -710,18 +613,18 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			window.RefreshLayout()
 
 			if window.commandMode {
-				app.SetFocus(window.commandInput)
+				app.SetFocus(window.commandView.commandInput)
 			}
 
 			return nil
 		}
 
 		if window.commandMode && event.Key() == tcell.KeyCtrlO {
-			app.SetFocus(window.commandOutput)
+			app.SetFocus(window.commandView.commandOutput)
 		}
 
 		if window.commandMode && event.Key() == tcell.KeyCtrlI {
-			app.SetFocus(window.commandInput)
+			app.SetFocus(window.commandView.commandInput)
 		}
 
 		if event.Rune() == 'U' &&
@@ -736,7 +639,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		if event.Modifiers()&tcell.ModAlt == tcell.ModAlt {
 			if event.Rune() == 'f' {
 				window.SwitchToFriendsPage()
-				app.SetFocus(window.friendsList)
+				app.SetFocus(window.privateList)
 				return nil
 			}
 
@@ -759,7 +662,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 			if event.Rune() == 'u' {
 				if window.currentPage == guildPageName {
-					app.SetFocus(window.userContainer)
+					app.SetFocus(window.userList)
 				}
 				return nil
 			}
@@ -787,9 +690,9 @@ func (window *Window) ExecuteCommand(command string) {
 	parts := strings.Split(command, " ")
 	commandLogic, exists := window.commands[parts[0]]
 	if exists {
-		commandLogic(window.commandOutput, window, parts[1:])
+		commandLogic(window.commandView.commandOutput, window, parts[1:])
 	} else {
-		fmt.Fprintf(window.commandOutput, "The command '%s' doesn't exist\n", parts[0])
+		fmt.Fprintf(window.commandView.commandOutput, "The command '%s' doesn't exist\n", parts[0])
 	}
 }
 
@@ -852,9 +755,9 @@ func (window *Window) SwitchToGuildsPage() {
 //where you can see your private chats and groups. In addition to that it
 //hides the user list.
 func (window *Window) SwitchToFriendsPage() {
-	if window.currentPage != friendsPageName {
-		window.currentPage = friendsPageName
-		window.leftArea.SwitchToPage(friendsPageName)
+	if window.currentPage != privatePageName {
+		window.currentPage = privatePageName
+		window.leftArea.SwitchToPage(privatePageName)
 		window.overrideShowUsers = false
 		window.RefreshLayout()
 	}
@@ -865,7 +768,7 @@ func (window *Window) SwitchToFriendsPage() {
 func (window *Window) RefreshLayout() {
 	window.rootContainer.RemoveItem(window.leftArea)
 	window.rootContainer.RemoveItem(window.chatArea)
-	window.rootContainer.RemoveItem(window.userContainer)
+	window.rootContainer.RemoveItem(window.userList)
 
 	conf := config.GetConfig()
 
@@ -874,14 +777,14 @@ func (window *Window) RefreshLayout() {
 		window.rootContainer.AddItem(window.chatArea, 0, 1, false)
 
 		if conf.ShowUserContainer && window.overrideShowUsers {
-			window.rootContainer.AddItem(window.userContainer, conf.FixedSizeRight, 6, false)
+			window.rootContainer.AddItem(window.userList, conf.FixedSizeRight, 6, false)
 		}
 	} else {
 		window.rootContainer.AddItem(window.leftArea, 0, 7, true)
 
 		if conf.ShowUserContainer && window.overrideShowUsers {
 			window.rootContainer.AddItem(window.chatArea, 0, 20, false)
-			window.rootContainer.AddItem(window.userContainer, 0, 6, false)
+			window.rootContainer.AddItem(window.userList, 0, 6, false)
 		} else {
 			window.rootContainer.AddItem(window.chatArea, 0, 26, false)
 		}
@@ -890,8 +793,8 @@ func (window *Window) RefreshLayout() {
 	window.chatArea.RemoveItem(window.channelTitle)
 	window.chatArea.RemoveItem(window.messageContainer)
 	window.chatArea.RemoveItem(window.messageInput.GetPrimitive())
-	window.chatArea.RemoveItem(window.commandInput)
-	window.chatArea.RemoveItem(window.commandOutput)
+	window.chatArea.RemoveItem(window.commandView.commandInput)
+	window.chatArea.RemoveItem(window.commandView.commandOutput)
 
 	if conf.ShowChatHeader {
 		window.chatArea.AddItem(window.channelTitle, 3, 0, false)
@@ -901,8 +804,8 @@ func (window *Window) RefreshLayout() {
 	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.requestedMessageInputHeight, 0, false)
 
 	if window.commandMode {
-		window.chatArea.AddItem(window.commandOutput, 0, 1, false)
-		window.chatArea.AddItem(window.commandInput, 3, 0, false)
+		window.chatArea.AddItem(window.commandView.commandOutput, 0, 1, false)
+		window.chatArea.AddItem(window.commandView.commandInput, 3, 0, false)
 	}
 
 	if conf.ShowFrame {
@@ -1056,10 +959,10 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 			nonHoistNode.AddChild(userNode)
 		}
 
-		if window.userContainer.GetCurrentNode() == nil {
+		if window.userList.GetCurrentNode() == nil {
 			userNodes := window.userRootNode.GetChildren()
 			if userNodes != nil && len(userNodes) > 0 {
-				window.userContainer.SetCurrentNode(window.userRootNode.GetChildren()[0])
+				window.userList.SetCurrentNode(window.userRootNode.GetChildren()[0])
 			}
 		}
 	})
