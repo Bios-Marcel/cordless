@@ -28,6 +28,8 @@ var (
 	mentionRegex = regexp.MustCompile("@.*?(?:$|\\s)")
 )
 
+// Window is basically the whole application, as it contains all the
+// components and the necccessary global state.
 type Window struct {
 	app           *tview.Application
 	rootContainer *tview.Flex
@@ -107,6 +109,51 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	guildList.SetRoot(guildRootNode)
 	guildList.SetBorder(true)
 	guildList.SetTopLevel(1)
+
+	createInputHandler := func(treeView *tview.TreeView, rootNode *tview.TreeNode, jumpTime *time.Time, jumpBuffer *string) func(event *tcell.EventKey) *tcell.EventKey {
+		var traversalFunction func(node *tview.TreeNode) bool
+		traversalFunction = func(node *tview.TreeNode) bool {
+			if len(node.GetChildren()) > 0 {
+				for _, subNode := range node.GetChildren() {
+					returnValue := traversalFunction(subNode)
+					if returnValue {
+						return true
+					}
+				}
+			} else if node.IsSelectable() {
+				if strings.HasPrefix(strings.ToLower(node.GetText()), *jumpBuffer) {
+					guildList.SetCurrentNode(node)
+					return true
+				}
+			}
+
+			return false
+		}
+
+		eventHandler := func(event *tcell.EventKey) *tcell.EventKey {
+			if time.Since(*jumpTime) > (500 * time.Millisecond) {
+				*jumpBuffer = ""
+			}
+
+			*jumpTime = time.Now()
+
+			if event.Rune() != 0 {
+				*jumpBuffer += string(event.Rune())
+				*jumpBuffer = strings.ToLower(*jumpBuffer)
+
+				for _, node := range rootNode.GetChildren() {
+					stopIterating := traversalFunction(node)
+					if stopIterating {
+						return nil
+					}
+				}
+			}
+
+			return event
+		}
+
+		return eventHandler
+	}
 
 	var selectedGuildNode *tview.TreeNode
 
@@ -630,6 +677,21 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		SetTopLevel(1).
 		SetCycleSelection(true)
 	window.userContainer.SetBorder(true)
+
+	if config.GetConfig().OnTypeInListBehaviour == config.SearchOnTypeInList {
+		var guildJumpBuffer string
+		var guildJumpTime time.Time
+		guildList.SetInputCapture(createInputHandler(guildList, guildRootNode, &guildJumpTime, &guildJumpBuffer))
+		var channelJumpBuffer string
+		var channelJumpTime time.Time
+		guildList.SetInputCapture(createInputHandler(channelTree, channelRootNode, &channelJumpTime, &channelJumpBuffer))
+		var userJumpBuffer string
+		var userJumpTime time.Time
+		guildList.SetInputCapture(createInputHandler(window.userContainer, window.userRootNode, &userJumpTime, &userJumpBuffer))
+		var privateJumpBuffer string
+		var privateJumpTime time.Time
+		guildList.SetInputCapture(createInputHandler(window.friendsList, friendsNode, &privateJumpTime, &privateJumpBuffer))
+	}
 
 	window.rootContainer = tview.NewFlex().
 		SetDirection(tview.FlexColumn)

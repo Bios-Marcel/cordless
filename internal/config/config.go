@@ -21,6 +21,17 @@ const (
 	HourAndMinute = 1
 	//NoTime means that not time at all will be displayed.
 	NoTime = 2
+
+	// DoNothingOnTypeInList means that when typing in a list (treeview) simply
+	// nothing will happen.
+	DoNothingOnTypeInList = 0
+	// SearchOnTypeInList will cause the widget to search through it's
+	// children, trying to find anything that is prefixed with the
+	// previously entered characters.
+	SearchOnTypeInList = 1
+	// FocusMessageInputOnTypeInList will automatically focus the message input
+	// component and transfer the typed character into it as well.
+	FocusMessageInputOnTypeInList = 2
 )
 
 var (
@@ -34,6 +45,7 @@ var (
 		FixedSizeRight:                         12,
 		FocusChannelAfterGuildSelection:        true,
 		FocusMessageInputAfterChannelSelection: true,
+		OnTypeInListBehaviour:                  SearchOnTypeInList,
 	}
 )
 
@@ -68,6 +80,10 @@ type Config struct {
 	FixedSizeLeft int
 	//FixedSizeRight defines the size of the users container on the right.
 	FixedSizeRight int
+
+	// OnTypeInListBehaviour defines wether the application focus the input
+	// input field on typing, searches the list or does nothing.
+	OnTypeInListBehaviour int
 }
 
 var cachedConfigDir string
