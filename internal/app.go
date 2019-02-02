@@ -14,8 +14,8 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 )
 
-//Run launches the whole application and might abort in case it encounters an
-//error.
+// Run launches the whole application and might abort in case it encounters an
+// error.
 func Run() {
 	configDir, configErr := config.GetConfigDirectory()
 
@@ -43,7 +43,7 @@ func Run() {
 	}
 
 	if discordError != nil {
-		//TODO Handle better
+		// TODO Handle better
 		log.Fatalln("Error logging into Discord", discordError)
 	}
 
@@ -54,7 +54,7 @@ func Run() {
 
 	discordError = discord.Open()
 	if discordError != nil {
-		//TODO Handle better
+		// TODO Handle better
 		log.Fatalln("Error establishing web socket connection", discordError)
 	}
 

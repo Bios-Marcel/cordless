@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
-	//Blank import for initializing the tview formatter
+	// Blank import for initializing the tview formatter
 	_ "github.com/Bios-Marcel/cordless/internal/syntax"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
@@ -22,9 +22,9 @@ var (
 	channelMentionRegex = regexp.MustCompile("<#\\d*>")
 )
 
-//ChatView is using a tview.TextView in order to be able to display messages
-//in a simple way. It supports highlighting specific element types and it
-//also supports multiline.
+// ChatView is using a tview.TextView in order to be able to display messages
+// in a simple way. It supports highlighting specific element types and it
+// also supports multiline.
 type ChatView struct {
 	internalTextView *tview.TextView
 
@@ -33,7 +33,7 @@ type ChatView struct {
 	ownUserID string
 }
 
-//NewChatView constructs a new ready to use ChatView.
+// NewChatView constructs a new ready to use ChatView.
 func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 	chatView := ChatView{
 		internalTextView: tview.NewTextView(),
@@ -49,14 +49,14 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 	return &chatView
 }
 
-//GetPrimitive returns the component that can be added to a layout, since
-//the ChatView itself is not a component.
+// GetPrimitive returns the component that can be added to a layout, since
+// the ChatView itself is not a component.
 func (chatView *ChatView) GetPrimitive() tview.Primitive {
 	return chatView.internalTextView
 }
 
-//SetMessages defines all currently displayed messages. Parsing and
-//manipulation of single message elements happens in this function.
+// SetMessages defines all currently displayed messages. Parsing and
+// manipulation of single message elements happens in this function.
 func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 	chatView.data = messages
@@ -123,7 +123,7 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 			})
 
 		groupValues := codeBlockRegex.
-			//Magicnumber, cuz u ain't gonna such a long message anyway.
+			// Magicnumber, cuz u ain't gonna such a long message anyway.
 			FindAllStringSubmatch(messageText, 1000)
 
 		for _, values := range groupValues {
@@ -175,7 +175,7 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 			}
 		}
 
-		//TODO Role mentions
+		// TODO Role mentions
 
 		if message.Attachments != nil && len(message.Attachments) != 0 {
 			if messageText != "" {

@@ -72,9 +72,9 @@ type Window struct {
 	commands map[string]func(io.Writer, *Window, []string)
 }
 
-//NewWindow constructs the whole application window and also registers all
-//necessary handlers and functions. If this function returns an error, we can't
-//start the application.
+// NewWindow constructs the whole application window and also registers all
+// necessary handlers and functions. If this function returns an error, we can't
+// start the application.
 func NewWindow(discord *discordgo.Session) (*Window, error) {
 	app := tview.NewApplication()
 
@@ -180,7 +180,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 			if discordError != nil {
 				window.ShowErrorDialog(fmt.Sprintf("An error occurred while trying to receive the channels: %s", discordError.Error()))
-				//TODO Is returning here a good idea?
+				// TODO Is returning here a good idea?
 				return
 			}
 
@@ -199,7 +199,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					}
 
 					if window.selectedChannelNode != nil {
-						//For some reason using tcell.ColorDefault causes hovering to render incorrect.
+						// For some reason using tcell.ColorDefault causes hovering to render incorrect.
 						window.selectedChannelNode.SetColor(tcell.ColorWhite)
 					}
 
@@ -225,18 +225,18 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 					channelRootNode.AddChild(newNode)
 
 					if channel.Type == discordgo.ChannelTypeGuildCategory {
-						//Categories
+						// Categories
 						newNode.SetSelectable(false)
 						channelCategories[channel.ID] = newNode
 					} else {
-						//Toplevel channels
+						// Toplevel channels
 						newNode.SetReference(channel.ID)
 						registerChannelForChatting(newNode, channel)
 					}
 				}
 			}
 
-			//Channels that are in categories
+			// Channels that are in categories
 			for _, channel := range channels {
 				if channel.Type == discordgo.ChannelTypeGuildText && channel.ParentID != "" {
 					newNode := createNodeForChannel(channel)
@@ -246,7 +246,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 				}
 			}
 
-			//No selection will prevent selection from working at all.
+			// No selection will prevent selection from working at all.
 			if len(window.channelRootNode.GetChildren()) > 0 {
 				channelTree.SetCurrentNode(window.channelRootNode)
 			}
@@ -423,7 +423,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
 						if discordError == nil {
 
-							//Those could be optimized by searching the string for patterns.
+							// Those could be optimized by searching the string for patterns.
 							for _, channel := range guild.Channels {
 								if channel.Type == discordgo.ChannelTypeGuildText {
 									messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
@@ -539,7 +539,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						channel, stateError := window.session.State.Channel(message.ChannelID)
 						if stateError == nil {
 							if !mentionsYou {
-								//TODO Check if channel is muted.
+								// TODO Check if channel is muted.
 								if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 									mentionsYou = true
 								}
@@ -780,9 +780,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	return &window, nil
 }
 
-//ExecuteCommand tries to execute the given input as a command. The first word
-//will be passed as the commands name and the rest will be parameters. If a
-//command can't be found, that info will be printed onto the command output.
+// ExecuteCommand tries to execute the given input as a command. The first word
+// will be passed as the commands name and the rest will be parameters. If a
+// command can't be found, that info will be printed onto the command output.
 func (window *Window) ExecuteCommand(command string) {
 	parts := strings.Split(command, " ")
 	commandLogic, exists := window.commands[parts[0]]
@@ -799,8 +799,8 @@ func (window *Window) exitMessageEditMode() {
 	window.messageInput.SetBackgroundColor(tcell.ColorBlack)
 }
 
-//ShowErrorDialog shows a simple error dialog that has only an Okay button,
-//a generic title and the given text.
+// ShowErrorDialog shows a simple error dialog that has only an Okay button,
+// a generic title and the given text.
 func (window *Window) ShowErrorDialog(text string) {
 	previousFocus := window.app.GetFocus()
 
@@ -836,9 +836,9 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 	window.exitMessageEditMode()
 }
 
-//SwitchToGuildsPage the left side of the layout over to the view where you can
-//see the servers and their channels. In additional to that, it also shows the
-//user list in case the user didn't explicitly hide it.
+// SwitchToGuildsPage the left side of the layout over to the view where you can
+// see the servers and their channels. In additional to that, it also shows the
+// user list in case the user didn't explicitly hide it.
 func (window *Window) SwitchToGuildsPage() {
 	if window.currentPage != guildPageName {
 		window.currentPage = guildPageName
@@ -848,9 +848,9 @@ func (window *Window) SwitchToGuildsPage() {
 	}
 }
 
-//SwitchToFriendsPage switches the left side of the layout over to the view
-//where you can see your private chats and groups. In addition to that it
-//hides the user list.
+// SwitchToFriendsPage switches the left side of the layout over to the view
+// where you can see your private chats and groups. In addition to that it
+// hides the user list.
 func (window *Window) SwitchToFriendsPage() {
 	if window.currentPage != friendsPageName {
 		window.currentPage = friendsPageName
@@ -860,8 +860,8 @@ func (window *Window) SwitchToFriendsPage() {
 	}
 }
 
-//RefreshLayout removes and adds the main parts of the layout
-//so that the ones that are disabled by settings do not show up.
+// RefreshLayout removes and adds the main parts of the layout
+// so that the ones that are disabled by settings do not show up.
 func (window *Window) RefreshLayout() {
 	window.rootContainer.RemoveItem(window.leftArea)
 	window.rootContainer.RemoveItem(window.chatArea)
@@ -916,7 +916,7 @@ func (window *Window) RefreshLayout() {
 	window.app.ForceDraw()
 }
 
-//LoadChannel eagerly loads the channels messages.
+// LoadChannel eagerly loads the channels messages.
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", "", "")
 	if discordError != nil {
@@ -924,7 +924,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 
 	if messages != nil && len(messages) > 0 {
-		//HACK: Reversing them, as they are sorted anyway.
+		// HACK: Reversing them, as they are sorted anyway.
 		msgAmount := len(messages)
 		for i := 0; i < msgAmount/2; i++ {
 			j := msgAmount - i - 1
@@ -951,12 +951,12 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	return nil
 }
 
-//AddMessages adds the passed array of messages to the chat.
+// AddMessages adds the passed array of messages to the chat.
 func (window *Window) AddMessages(messages []*discordgo.Message) {
 	window.SetMessages(append(window.shownMessages, messages...))
 }
 
-//SetMessages clears the current chat and adds the passed messages.s
+// SetMessages clears the current chat and adds the passed messages.s
 func (window *Window) SetMessages(messages []*discordgo.Message) {
 	window.shownMessages = messages
 	window.chatView.SetMessages(window.shownMessages)
@@ -964,19 +964,19 @@ func (window *Window) SetMessages(messages []*discordgo.Message) {
 
 func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 	guildRefreshed, discordError := window.session.Guild(guild.ID)
-	//TODO Handle error
+	// TODO Handle error
 	if discordError != nil {
 		return
 	}
 
 	discordError = window.session.State.GuildAdd(guildRefreshed)
-	//TODO Handle error
+	// TODO Handle error
 	if discordError != nil {
 		return
 	}
 
 	guildState, discordError := window.session.State.Guild(guildRefreshed.ID)
-	//TODO Handle error
+	// TODO Handle error
 	if discordError != nil {
 		return
 	}
@@ -1065,14 +1065,14 @@ func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
 	})
 }
 
-//RegisterCommand register a command. That makes the command available for
-//being called from the message input field, in case the user-defined prefix
-//is in front of the input.
+// RegisterCommand register a command. That makes the command available for
+// being called from the message input field, in case the user-defined prefix
+// is in front of the input.
 func (window *Window) RegisterCommand(name string, logic func(writer io.Writer, window *Window, parameters []string)) {
 	window.commands[name] = logic
 }
 
-//Run Shows the window optionally returning an error.
+// Run Shows the window optionally returning an error.
 func (window *Window) Run() error {
 	return window.app.Run()
 }

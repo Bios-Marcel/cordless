@@ -6,7 +6,7 @@ import (
 )
 
 func getConfigDirectory() (string, error) {
-	//TODO Gotta research this
+	// TODO Gotta research this
 
 	currentUser, userError := user.Current()
 

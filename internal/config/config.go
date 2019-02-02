@@ -9,17 +9,17 @@ import (
 )
 
 const (
-	//AppName is the name representing the application.
+	// AppName is the name representing the application.
 	AppName = "Cordless"
-	//AppNameLowercase is the representative name, but lowercase.
-	//It us used for filepaths and such.
+	// AppNameLowercase is the representative name, but lowercase.
+	// It us used for filepaths and such.
 	AppNameLowercase = "cordless"
 
-	//HourMinuteAndSeconds is the time format HH:MM:SS.
+	// HourMinuteAndSeconds is the time format HH:MM:SS.
 	HourMinuteAndSeconds = 0
-	//HourAndMinute is the time format HH:MM.
+	// HourAndMinute is the time format HH:MM.
 	HourAndMinute = 1
-	//NoTime means that not time at all will be displayed.
+	// NoTime means that not time at all will be displayed.
 	NoTime = 2
 
 	// DoNothingOnTypeInList means that when typing in a list (treeview) simply
@@ -49,36 +49,36 @@ var (
 	}
 )
 
-//Config contains all possible configuration for the application.
+// Config contains all possible configuration for the application.
 type Config struct {
-	//Token is the authorization token for accessing the discord API.
+	// Token is the authorization token for accessing the discord API.
 	Token string
 
-	//Times decides on the time format (none, short and long).
+	// Times decides on the time format (none, short and long).
 	Times int
 
-	//FocusChannelAfterGuildSelection will cause the widget focus to move over
-	//to the channel tree after selecting a guild.
+	// FocusChannelAfterGuildSelection will cause the widget focus to move over
+	// to the channel tree after selecting a guild.
 	FocusChannelAfterGuildSelection bool
-	//FocusMessageInputAfterChannelSelection will cause the widget focus to
-	//move over to the message input widget after channel selection
+	// FocusMessageInputAfterChannelSelection will cause the widget focus to
+	// move over to the message input widget after channel selection
 	FocusMessageInputAfterChannelSelection bool
 
-	//ShowFrame decides wether the application will have a border and a title.
+	// ShowFrame decides wether the application will have a border and a title.
 	ShowFrame bool
-	//ShowChatHeader decides wether the box above the chat will be shown
-	//or not.
+	// ShowChatHeader decides wether the box above the chat will be shown
+	// or not.
 	ShowChatHeader bool
-	//ShowUserContainer decides wether the user container is part of the
-	//layout or not.
+	// ShowUserContainer decides wether the user container is part of the
+	// layout or not.
 	ShowUserContainer bool
-	//UseFixedLayout defines whether the FixedSizeLeft and FixedSizeRight
-	//values will be applied or not.
+	// UseFixedLayout defines whether the FixedSizeLeft and FixedSizeRight
+	// values will be applied or not.
 	UseFixedLayout bool
-	//FixedSizeLeft determines the size of the guilds/channels/friends
-	//container on the left side of the layout.
+	// FixedSizeLeft determines the size of the guilds/channels/friends
+	// container on the left side of the layout.
 	FixedSizeLeft int
-	//FixedSizeRight defines the size of the users container on the right.
+	// FixedSizeRight defines the size of the users container on the right.
 	FixedSizeRight int
 
 	// OnTypeInListBehaviour defines wether the application focus the input
@@ -88,8 +88,8 @@ type Config struct {
 
 var cachedConfigDir string
 
-//GetConfigFile returns the absolute path to the configuration file or an error
-//in case of failure.
+// GetConfigFile returns the absolute path to the configuration file or an error
+// in case of failure.
 func GetConfigFile() (string, error) {
 	configDir, configError := GetConfigDirectory()
 
@@ -100,8 +100,8 @@ func GetConfigFile() (string, error) {
 	return filepath.Join(configDir, "config.json"), nil
 }
 
-//GetConfigDirectory is the parent directory in the os, that contains the
-//settings for the application.
+// GetConfigDirectory is the parent directory in the os, that contains the
+// settings for the application.
 func GetConfigDirectory() (string, error) {
 	if cachedConfigDir != "" {
 		return cachedConfigDir, nil
@@ -122,19 +122,19 @@ func GetConfigDirectory() (string, error) {
 		return "", statError
 	}
 
-	//After first retrieval, we will save this, as we needn't redo all that
-	//stuff over and over again.
+	// After first retrieval, we will save this, as we needn't redo all that
+	// stuff over and over again.
 	cachedConfigDir = directory
 
 	return cachedConfigDir, nil
 }
 
-//GetConfig returns the currently loaded configuration.
+// GetConfig returns the currently loaded configuration.
 func GetConfig() *Config {
 	return &currentConfig
 }
 
-//LoadConfig loads the configuration initially and returns it.
+// LoadConfig loads the configuration initially and returns it.
 func LoadConfig() (*Config, error) {
 	configFilePath, configError := GetConfigFile()
 	if configError != nil {
@@ -155,7 +155,7 @@ func LoadConfig() (*Config, error) {
 	decoder := json.NewDecoder(configFile)
 	configLoadError := decoder.Decode(&currentConfig)
 
-	//io.EOF would mean empty, therefore we use defaults.
+	// io.EOF would mean empty, therefore we use defaults.
 	if configLoadError != nil && configLoadError != io.EOF {
 		return nil, configLoadError
 	}
@@ -163,7 +163,7 @@ func LoadConfig() (*Config, error) {
 	return GetConfig(), nil
 }
 
-//PersistConfig saves the current configuration onto the filesystem.
+// PersistConfig saves the current configuration onto the filesystem.
 func PersistConfig() error {
 	configFilePath, configError := GetConfigFile()
 	if configError != nil {
