@@ -102,7 +102,7 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 		} else if message.Type == discordgo.MessageTypeChannelIconChange {
 			messageText = "[gray]changed the channel icon."
 		} else if message.Type == discordgo.MessageTypeChannelNameChange {
-			messageText = "[gray]changed the channel name."
+			messageText = "[gray]changed the channel name to " + message.Content + "."
 		} else if message.Type == discordgo.MessageTypeChannelPinnedMessage {
 			messageText = "[gray]pinned a message."
 		} else if message.Type == discordgo.MessageTypeRecipientAdd {
