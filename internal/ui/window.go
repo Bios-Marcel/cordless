@@ -10,6 +10,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/cordless/internal/scripting"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
@@ -68,6 +69,8 @@ type Window struct {
 	selectedChannel *discordgo.Channel
 
 	commands map[string]func(io.Writer, *Window, []string)
+
+	scripting scripting.Engine
 }
 
 //NewWindow constructs the whole application window and also registers all
@@ -81,6 +84,15 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		app:                         app,
 		commands:                    make(map[string]func(io.Writer, *Window, []string), 1),
 		requestedMessageInputHeight: 3,
+		scripting:                   scripting.New(),
+	}
+
+	configDir, err := config.GetConfigDirectory()
+	if err != nil {
+		return nil, err
+	}
+	if err := window.scripting.LoadScripts(configDir); err != nil {
+		return nil, err
 	}
 
 	guilds, discordError := discord.UserGuilds(100, "", "")
@@ -416,7 +428,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						go window.editMessage(window.selectedChannel.ID, *window.editingMessageID, messageToSend)
 						window.exitMessageEditMode()
 					} else {
-						go discord.ChannelMessageSend(window.selectedChannel.ID, messageToSend)
+						go discord.ChannelMessageSend(window.selectedChannel.ID, window.scripting.OnMessage(messageToSend))
 					}
 				} else {
 					if window.editingMessageID != nil {
