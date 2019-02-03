@@ -22,7 +22,7 @@ const (
 	userListUpdateInterval = 5 * time.Second
 
 	guildPageName   = "Guilds"
-	privatePageName = "Friends"
+	privatePageName = "Private"
 )
 
 var (
@@ -591,7 +591,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		window.userList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(window.userList, window.userRootNode, &userJumpTime, &userJumpBuffer))
 		var privateJumpBuffer string
 		var privateJumpTime time.Time
-		window.privateList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(window.privateList, friendsNode, &privateJumpTime, &privateJumpBuffer))
+		window.privateList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(window.privateList, window.privateRootNode, &privateJumpTime, &privateJumpBuffer))
 	}
 
 	window.rootContainer = tview.NewFlex().
