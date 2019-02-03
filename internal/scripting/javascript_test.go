@@ -11,9 +11,9 @@ func TestJavaScriptEngine(t *testing.T) {
 		want  string
 	}{
 		{
-			"test/simple",
-			"Replace me",
-			"Replace this",
+			dir:   "test/simple",
+			input: "Replace me",
+			want:  "Replace this",
 		},
 	}
 	for _, tt := range tests {
@@ -23,6 +23,7 @@ func TestJavaScriptEngine(t *testing.T) {
 				t.Error("LoadScripts failed:", err)
 				return
 			}
+
 			if gotNewText := e.OnMessage(tt.input); gotNewText != tt.want {
 				t.Errorf("JavaScriptEngine.OnMessage() = %v, want %v", gotNewText, tt.want)
 			}

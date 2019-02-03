@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"io"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -91,7 +92,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := window.scripting.LoadScripts(configDir); err != nil {
+	if err := window.scripting.LoadScripts(filepath.Join(configDir, "scripts", "js")); err != nil {
 		return nil, err
 	}
 

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
@@ -37,6 +38,11 @@ func (e *JavaScriptEngine) LoadScripts(dirname string) (err error) {
 		if file.IsDir() {
 			continue
 		}
+
+		if !strings.HasSuffix(file.Name(), ".js") {
+			continue
+		}
+
 		path := filepath.Join(dirname, file.Name())
 		f, err := os.Open(path)
 		if err != nil {
