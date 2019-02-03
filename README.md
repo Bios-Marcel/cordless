@@ -2,24 +2,24 @@
 
 | OS | Build-Status |
 | - |:- |
-| linux | [![CircleCI](https:// circleci.com/gh/Bios-Marcel/cordless.svg?style=svg)](https:// circleci.com/gh/Bios-Marcel/cordless) |
-| darwin | [![Build Status](https:// travis-ci.org/Bios-Marcel/cordless.svg?branch=master)](https:// travis-ci.org/Bios-Marcel/cordless) |
-| windows | [![Build status](https:// ci.appveyor.com/api/projects/status/svv866htsr33hdoh/branch/master?svg=true)](https:// ci.appveyor.com/project/Bios-Marcel/cordless/branch/master) |
+| linux | [![CircleCI](https://circleci.com/gh/Bios-Marcel/cordless.svg?style=svg)](https://circleci.com/gh/Bios-Marcel/cordless) |
+| darwin | [![Build Status](https://travis-ci.org/Bios-Marcel/cordless.svg?branch=master)](https://travis-ci.org/Bios-Marcel/cordless) |
+| windows | [![Build status](https://ci.appveyor.com/api/projects/status/svv866htsr33hdoh/branch/master?svg=true)](https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master) |
 
 ## Overview
 
 * How to install it
-  * [Using pre-built binaries](https:// github.com/Bios-Marcel/cordless#using-pre-built-binaries)
-  * [Building it from source](https:// github.com/Bios-Marcel/cordless#building-it-from-source)
-* [Configuration](https:// github.com/Bios-Marcel/cordless#configuration)
-* [Features](https:// github.com/Bios-Marcel/cordless#features)
-* [Troubleshooting](https:// github.com/Bios-Marcel/cordless#troubleshooting)
+  * [Using pre-built binaries](https://github.com/Bios-Marcel/cordless#using-pre-built-binaries)
+  * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
+* [Configuration](https://github.com/Bios-Marcel/cordless#configuration)
+* [Features](https://github.com/Bios-Marcel/cordless#features)
+* [Troubleshooting](https://github.com/Bios-Marcel/cordless#troubleshooting)
 
-Cordless is supposed to be a custom [Discord](https:// discordapp.com) client
+Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at powerusers.
 
-This project was mainly inspired by [Southclaws](https:// github.com/Southclaws)
-[Cordless](https:// github.com/Southclaws/cordless), which he sadly didn't
+This project was mainly inspired by [Southclaws](https://github.com/Southclaws)
+[Cordless](https://github.com/Southclaws/cordless), which he sadly didn't
 develop any further.
 
 The application only uses the official Discord API and doesn't send data to
@@ -27,7 +27,7 @@ any third party.
 
 This application is currently a WIP and will change rather fast.
 
-![Cordless 26th January 2019](https:// i.imgur.com/xX7dVCw.png)
+![Cordless 26th January 2019](https://i.imgur.com/xX7dVCw.png)
 
 ## How to install it
 
@@ -46,7 +46,7 @@ go get github.com/Bios-Marcel/cordless
 ```
 
 In order to execute this command
-[you need to have go installed](https:// golang.org/doc/install).
+[you need to have go installed](https://golang.org/doc/install).
 
 In order to execute the application, simply run the executable, which lies at
 `$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
@@ -63,7 +63,7 @@ The application will ask you to input the token in case it can't be found.
 
 In order to retrieve your token, simply follow the steps in the graphic below:
 
-![Steps to retrieve discord token - by ripcord](https:// cancel.fm/ripcord/static/app_misc/discord_token_howto_en-US.png)
+![Steps to retrieve discord token - by ripcord](https://cancel.fm/ripcord/static/app_misc/discord_token_howto_en-US.png)
 
 After retrieving the token, you have to insert it into the input prompt.
 
