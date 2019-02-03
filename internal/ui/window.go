@@ -249,7 +249,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	friendsNode := tview.NewTreeNode("Friends")
 	groupChatsNode := tview.NewTreeNode("Groups")
-	peopleChatsNode := tview.NewTreeNode("Open duo chats")
+	peopleChatsNode := tview.NewTreeNode("O2pen duo chats")
 
 	window.privateRootNode.AddChild(friendsNode)
 	window.privateRootNode.AddChild(groupChatsNode)
@@ -385,7 +385,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						}
 					}
 
-					messageToSend = emoji.Sprintf(messageToSend)
+					//Replace formatter characters and replace emoji codes.
+					messageToSend = emoji.Sprintf(strings.Replace(messageToSend, "%", "%%", -1))
 
 					if strings.Contains(messageToSend, "@") {
 						messageToSend = mentionRegex.
