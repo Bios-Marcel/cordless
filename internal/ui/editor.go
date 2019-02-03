@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	//Temporary solution, so not every function has to handle the selection
-	//character placement.
+	// Temporary solution, so not every function has to handle the selection
+	// character placement.
 	multiSelectionCharWithSelectionToLeftPattern = regexp.MustCompile(selectionChar + "*" + regexp.QuoteMeta(selRegion) + selectionChar + "*" + regexp.QuoteMeta(endRegion))
 )
 
@@ -27,8 +27,8 @@ const (
 	endRegion     = "[\"\"]"
 )
 
-//Editor is a simple component that wraps tview.TextView in order to gove the
-//user minimal text edit functionality.
+// Editor is a simple component that wraps tview.TextView in order to gove the
+// user minimal text edit functionality.
 type Editor struct {
 	internalTextView *tview.TextView
 
@@ -37,7 +37,7 @@ type Editor struct {
 	requestedHeight      int
 }
 
-//NewEditor Instanciates a ready to use text editor.
+// NewEditor Instanciates a ready to use text editor.
 func NewEditor() *Editor {
 	editor := Editor{
 		internalTextView: tview.NewTextView(),
@@ -272,19 +272,19 @@ func (editor *Editor) triggerHeightRequestIfNeccessary() {
 	}
 }
 
-//SetOnHeightChangeRequest handles the cases where the component thinks it needs
-//more space or would be fine with less.
+// SetOnHeightChangeRequest handles the cases where the component thinks it needs
+// more space or would be fine with less.
 func (editor *Editor) SetOnHeightChangeRequest(handler func(requestHeight int)) {
 	editor.heightRequestHandler = handler
 }
 
-//SetBackgroundColor sets the background color of the internal TextView
+// SetBackgroundColor sets the background color of the internal TextView
 func (editor *Editor) SetBackgroundColor(color tcell.Color) {
 	editor.internalTextView.SetBackgroundColor(color)
 }
 
-//SetText sets the texts of the internal TextView, but also sets the selection
-//and necessary groups for the navigation behaviour.
+// SetText sets the texts of the internal TextView, but also sets the selection
+// and necessary groups for the navigation behaviour.
 func (editor *Editor) SetText(text string) {
 	if text == "" {
 		editor.internalTextView.SetText(emptyText)
@@ -295,13 +295,13 @@ func (editor *Editor) SetText(text string) {
 	editor.triggerHeightRequestIfNeccessary()
 }
 
-//SetInputCapture sets the alternative input capture that will be used if the
-//components default controls aren't being triggered.
+// SetInputCapture sets the alternative input capture that will be used if the
+// components default controls aren't being triggered.
 func (editor *Editor) SetInputCapture(captureFunc func(event *tcell.EventKey) *tcell.EventKey) {
 	editor.inputCapture = captureFunc
 }
 
-//GetText returns the text without color tags, region tags and so on.
+// GetText returns the text without color tags, region tags and so on.
 func (editor *Editor) GetText() string {
 	left := editor.internalTextView.GetRegionText("left")
 	right := editor.internalTextView.GetRegionText("right")
@@ -314,7 +314,7 @@ func (editor *Editor) GetText() string {
 	return left + selection + right
 }
 
-//GetPrimitive returnbs the internal component that can be added to a layout
+// GetPrimitive returnbs the internal component that can be added to a layout
 func (editor *Editor) GetPrimitive() tview.Primitive {
 	return editor.internalTextView
 }
