@@ -43,7 +43,7 @@ func FixLayout(writer io.Writer, window *ui.Window, parameters []string) {
 			return
 		}
 
-		//TODO Check for upper limit?
+		// TODO Check for upper limit?
 
 		var successOutput string
 		subCommand := parameters[0]

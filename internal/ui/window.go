@@ -49,9 +49,6 @@ type Window struct {
 	messageInput                *Editor
 	requestedMessageInputHeight int
 
-	commandMode bool
-	commandView *CommandView
-
 	editingMessageID *string
 
 	userList     *tview.TreeView
@@ -65,10 +62,11 @@ type Window struct {
 	shownMessages       []*discordgo.Message
 	selectedGuild       *discordgo.UserGuild
 	selectedChannelNode *tview.TreeNode
+	selectedChannel     *discordgo.Channel
 
-	selectedChannel *discordgo.Channel
-
-	commands map[string]func(io.Writer, *Window, []string)
+	commandMode bool
+	commandView *CommandView
+	commands    map[string]func(io.Writer, *Window, []string)
 }
 
 //NewWindow constructs the whole application window and also registers all
@@ -703,7 +701,7 @@ func (window *Window) exitMessageEditMode() {
 }
 
 //ShowErrorDialog shows a simple error dialog that has only an Okay button,
-//a generic title and the given text.
+// a generic title and the given text.
 func (window *Window) ShowErrorDialog(text string) {
 	previousFocus := window.app.GetFocus()
 

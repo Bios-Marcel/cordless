@@ -14,7 +14,7 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 )
 
-//Run launches the whole application and might abort in case it encounters an
+// Run launches the whole application and might abort in case it encounters an
 //error.
 func Run() {
 	configDir, configErr := config.GetConfigDirectory()
