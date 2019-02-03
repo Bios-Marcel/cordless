@@ -87,6 +87,7 @@ type Config struct {
 }
 
 var cachedConfigDir string
+var cachedScriptDir string
 
 //GetConfigFile returns the absolute path to the configuration file or an error
 //in case of failure.
@@ -98,6 +99,17 @@ func GetConfigFile() (string, error) {
 	}
 
 	return filepath.Join(configDir, "config.json"), nil
+}
+
+//GetScriptDirectory returns the path at which all the external scripts should
+//lie.
+func GetScriptDirectory() string {
+	if cachedScriptDir == "" {
+		//We'll just make the assumption, that the config dir has already been
+		//initialized at that point and time in the application.
+		cachedScriptDir = filepath.Join(cachedConfigDir, "scripts")
+	}
+	return cachedScriptDir
 }
 
 //GetConfigDirectory is the parent directory in the os, that contains the

@@ -2,7 +2,6 @@ package scripting
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,8 +18,8 @@ type JavaScriptEngine struct {
 }
 
 // New instantiates a new scripting engine
-func New() (e *JavaScriptEngine) {
-	e = &JavaScriptEngine{
+func New() (engine *JavaScriptEngine) {
+	engine = &JavaScriptEngine{
 		vm: otto.New(),
 	}
 
@@ -28,40 +27,37 @@ func New() (e *JavaScriptEngine) {
 }
 
 // LoadScripts implements Engine
-func (e *JavaScriptEngine) LoadScripts(dirname string) (err error) {
-	files, err := ioutil.ReadDir(dirname)
-	if err != nil {
-		return
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
+func (engine *JavaScriptEngine) LoadScripts(dirname string) (err error) {
+	err = filepath.Walk(dirname, func(path string, fileInfo os.FileInfo, err error) error {
+		if fileInfo.IsDir() {
+			return nil
 		}
 
-		if !strings.HasSuffix(file.Name(), ".js") {
-			continue
+		if !strings.HasSuffix(fileInfo.Name(), ".js") {
+			return nil
 		}
 
-		path := filepath.Join(dirname, file.Name())
-		f, err := os.Open(path)
+		file, err := os.Open(path)
 		if err != nil {
 			return errors.Wrap(err, path)
 		}
-		_, err = e.vm.Run(f)
+		_, err = engine.vm.Run(file)
 		if err != nil {
 			return errors.Wrap(err, "failed to run script")
 		}
-	}
 
-	return
+		return nil
+	})
+
+	return err
 }
 
 // OnMessage implements Engine
-func (e *JavaScriptEngine) OnMessage(oldText string) (newText string) {
-	v, err := e.vm.Run(fmt.Sprintf(`onMessage("%s")`, oldText))
-	if err != nil {
+func (engine *JavaScriptEngine) OnMessage(oldText string) (newText string) {
+	jsValue, jsError := engine.vm.Run(fmt.Sprintf(`onMessage("%s")`, oldText))
+	if jsError != nil {
+		//TODO Return error?
 		return oldText
 	}
-	return v.String()
+	return jsValue.String()
 }

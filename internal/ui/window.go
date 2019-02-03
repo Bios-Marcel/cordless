@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -87,11 +86,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		scripting:                   scripting.New(),
 	}
 
-	configDir, err := config.GetConfigDirectory()
-	if err != nil {
-		return nil, err
-	}
-	if err := window.scripting.LoadScripts(filepath.Join(configDir, "scripts", "js")); err != nil {
+	if err := window.scripting.LoadScripts(config.GetScriptDirectory()); err != nil {
 		return nil, err
 	}
 
@@ -135,6 +130,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			if selectedGuildNode != nil {
 				selectedGuildNode.SetColor(tcell.ColorWhite)
 			}
+
 			selectedGuildNode = guildNode
 			selectedGuildNode.SetColor(tcell.ColorTeal)
 
@@ -429,7 +425,14 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						go window.editMessage(window.selectedChannel.ID, *window.editingMessageID, messageToSend)
 						window.exitMessageEditMode()
 					} else {
-						go discord.ChannelMessageSend(window.selectedChannel.ID, window.scripting.OnMessage(messageToSend))
+						go func() {
+							_, sendError := discord.ChannelMessageSend(window.selectedChannel.ID, window.scripting.OnMessage(messageToSend))
+							if sendError != nil {
+								window.app.QueueUpdateDraw(func() {
+									window.ShowErrorDialog("Error sending message: " + sendError.Error())
+								})
+							}
+						}()
 					}
 				} else {
 					if window.editingMessageID != nil {
