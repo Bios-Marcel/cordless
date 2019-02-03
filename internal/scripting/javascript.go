@@ -52,8 +52,8 @@ func (engine *JavaScriptEngine) LoadScripts(dirname string) (err error) {
 	return err
 }
 
-// OnMessage implements Engine
-func (engine *JavaScriptEngine) OnMessage(oldText string) (newText string) {
+// OnMessageSend implements Engine
+func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 	jsValue, jsError := engine.vm.Run(fmt.Sprintf(`onMessage("%s")`, oldText))
 	if jsError != nil {
 		//TODO Return error?

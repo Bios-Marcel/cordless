@@ -426,7 +426,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 						window.exitMessageEditMode()
 					} else {
 						go func() {
-							_, sendError := discord.ChannelMessageSend(window.selectedChannel.ID, window.scripting.OnMessage(messageToSend))
+							_, sendError := discord.ChannelMessageSend(window.selectedChannel.ID, window.scripting.OnMessageSend(messageToSend))
 							if sendError != nil {
 								window.app.QueueUpdateDraw(func() {
 									window.ShowErrorDialog("Error sending message: " + sendError.Error())
