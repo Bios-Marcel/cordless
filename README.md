@@ -111,6 +111,19 @@ careful with your configuration file.
   * System notifications on mention (not considering muted servers and such)
   * Mark channels read when unread messages in the current session exist
   * Prefix channel with `(@You)` if you got mentioned
+* Basic scripting interface
+  * Languages
+    * JavaScript
+    * More to come ...
+  * Hooks
+    * onMessageSend Event that can manipulate the message before sending
+
+### Extending Cordless via the scripting interface
+
+Cordless has a very basic scripting interface that exposes predefined events.
+Scripts can simply be dumped into the subfolder `scripts` of the cordless
+config folder. An example for a script can be found here:
+[cordlenny](https://github.com/Bios-Marcel/cordlenny)
 
 ## Troubleshooting
 
