@@ -52,11 +52,18 @@ func Run() {
 		log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
 	}
 
+	readyChan := make(chan struct{})
+	discord.AddHandlerOnce(func(s *discordgo.Session, event *discordgo.Ready) {
+		readyChan <- struct{}{}
+	})
+
 	discordError = discord.Open()
 	if discordError != nil {
 		//TODO Handle better
 		log.Fatalln("Error establishing web socket connection", discordError)
 	}
+
+	<-readyChan
 
 	window, createError := ui.NewWindow(discord)
 
