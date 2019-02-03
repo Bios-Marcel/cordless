@@ -68,9 +68,9 @@ type Window struct {
 
 	selectedChannel *discordgo.Channel
 	
-  scripting scripting.Engine
+	scripting scripting.Engine
 
-  commandMode bool
+	commandMode bool
 	commandView *CommandView
 	commands    map[string]func(io.Writer, *Window, []string)
 }
