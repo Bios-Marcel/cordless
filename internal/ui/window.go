@@ -66,8 +66,6 @@ type Window struct {
 	selectedChannelNode *tview.TreeNode
 	selectedChannel     *discordgo.Channel
 
-	selectedChannel *discordgo.Channel
-	
 	scripting scripting.Engine
 
 	commandMode bool
