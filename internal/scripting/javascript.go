@@ -14,13 +14,13 @@ var _ Engine = &JavaScriptEngine{}
 
 // JavaScriptEngine stores scripting engine state
 type JavaScriptEngine struct {
-	vm *otto.Otto
+	vms []*otto.Otto
 }
 
 // New instantiates a new scripting engine
 func New() (engine *JavaScriptEngine) {
 	engine = &JavaScriptEngine{
-		vm: otto.New(),
+		vms: make([]*otto.Otto, 0),
 	}
 
 	return
@@ -48,7 +48,10 @@ func (engine *JavaScriptEngine) LoadScripts(dirname string) (err error) {
 		if err != nil {
 			return errors.Wrap(err, path)
 		}
-		_, err = engine.vm.Run(file)
+
+		vm := otto.New()
+		engine.vms = append(engine.vms, vm)
+		_, err = vm.Run(file)
 		if err != nil {
 			return errors.Wrapf(err, "failed to run script '%s'", path)
 		}
@@ -61,10 +64,15 @@ func (engine *JavaScriptEngine) LoadScripts(dirname string) (err error) {
 
 // OnMessageSend implements Engine
 func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
-	jsValue, jsError := engine.vm.Run(fmt.Sprintf(`onMessageSend("%s")`, oldText))
-	if jsError != nil {
-		//TODO Return error?
-		return oldText
+	newText = oldText
+	for _, vm := range engine.vms {
+		jsValue, jsError := vm.Run(fmt.Sprintf(`onMessageSend("%s")`, newText))
+		if jsError != nil {
+			//This script failed, go to next one
+			continue
+		}
+		newText = jsValue.String()
 	}
-	return jsValue.String()
+
+	return
 }
