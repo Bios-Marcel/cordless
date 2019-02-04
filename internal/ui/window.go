@@ -873,6 +873,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 //AddMessages adds the passed array of messages to the chat.
 func (window *Window) AddMessages(messages []*discordgo.Message) {
+	window.shownMessages = append(window.shownMessages, messages...)
 	window.chatView.AddMessages(messages)
 }
 
