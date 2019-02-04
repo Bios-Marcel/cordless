@@ -494,7 +494,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			case message := <-messageInputChan:
 				if message.ChannelID == window.selectedChannel.ID {
 					window.app.QueueUpdateDraw(func() {
-						window.SetMessages(append(window.shownMessages, message))
+						window.AddMessages([]*discordgo.Message{message})
 					})
 				} else {
 					mentionsYou := false
@@ -873,7 +873,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 //AddMessages adds the passed array of messages to the chat.
 func (window *Window) AddMessages(messages []*discordgo.Message) {
-	window.SetMessages(append(window.shownMessages, messages...))
+	window.chatView.AddMessages(messages)
 }
 
 //SetMessages clears the current chat and adds the passed messages.s

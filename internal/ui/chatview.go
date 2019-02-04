@@ -69,11 +69,10 @@ func (chatView *ChatView) GetPrimitive() tview.Primitive {
 	return chatView.internalTextView
 }
 
-// SetMessages defines all currently displayed messages. Parsing and
-// manipulation of single message elements happens in this function.
-func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
+//AddMessages adds additional messages to the ChatView.
+func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
-	chatView.data = messages
+	chatView.data = append(chatView.data, messages...)
 
 	newText := ""
 
@@ -218,10 +217,18 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 		}
 	}
 
-	chatView.internalTextView.SetText("")
 	fmt.Fprint(chatView.internalTextView, newText)
 
 	if wasScrolledToTheEnd {
 		chatView.internalTextView.ScrollToEnd()
 	}
+}
+
+// SetMessages defines all currently displayed messages. Parsing and
+// manipulation of single message elements happens in this function.
+func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
+	chatView.data = make([]*discordgo.Message, 0)
+	chatView.internalTextView.SetText("")
+
+	chatView.AddMessages(messages)
 }
