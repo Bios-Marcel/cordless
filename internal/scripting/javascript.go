@@ -28,6 +28,13 @@ func New() (engine *JavaScriptEngine) {
 
 // LoadScripts implements Engine
 func (engine *JavaScriptEngine) LoadScripts(dirname string) (err error) {
+	_, statError := os.Stat(dirname)
+	if os.IsNotExist(statError) {
+		return nil
+	} else if statError != nil {
+		return errors.Wrapf(statError, "Error loading scripts '%s'", statError.Error())
+	}
+
 	err = filepath.Walk(dirname, func(path string, fileInfo os.FileInfo, err error) error {
 		if fileInfo.IsDir() {
 			return nil

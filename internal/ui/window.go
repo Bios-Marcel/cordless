@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -87,7 +88,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	}
 
 	if err := window.scripting.LoadScripts(config.GetScriptDirectory()); err != nil {
-		return nil, err
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
 	}
 
 	guilds, discordError := discord.UserGuilds(100, "", "")
