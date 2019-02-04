@@ -2,6 +2,7 @@ package scripting
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,13 +36,33 @@ func (engine *JavaScriptEngine) LoadScripts(dirname string) (err error) {
 		return errors.Wrapf(statError, "Error loading scripts '%s'", statError.Error())
 	}
 
-	err = filepath.Walk(dirname, func(path string, fileInfo os.FileInfo, err error) error {
-		if fileInfo.IsDir() {
-			return nil
+	return engine.readScriptsRecursively(dirname)
+}
+
+func (engine *JavaScriptEngine) readScriptsRecursively(dirname string) error {
+	files, err := ioutil.ReadDir(dirname)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		path := filepath.Join(dirname, file.Name())
+
+		//Skip dotfolders and read non-dotfolders.
+		if file.IsDir() {
+			if !strings.HasPrefix(file.Name(), ".") {
+				readError := engine.readScriptsRecursively(path)
+				if readError != nil {
+					return readError
+				}
+			}
+
+			continue
 		}
 
-		if !strings.HasSuffix(fileInfo.Name(), ".js") {
-			return nil
+		//Only javascript files
+		if !strings.HasSuffix(file.Name(), ".js") {
+			continue
 		}
 
 		file, err := os.Open(path)
@@ -55,11 +76,9 @@ func (engine *JavaScriptEngine) LoadScripts(dirname string) (err error) {
 		if err != nil {
 			return errors.Wrapf(err, "failed to run script '%s'", path)
 		}
+	}
 
-		return nil
-	})
-
-	return err
+	return nil
 }
 
 // OnMessageSend implements Engine
