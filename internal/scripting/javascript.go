@@ -43,7 +43,7 @@ func (engine *JavaScriptEngine) LoadScripts(dirname string) (err error) {
 		}
 		_, err = engine.vm.Run(file)
 		if err != nil {
-			return errors.Wrap(err, "failed to run script")
+			return errors.Wrapf(err, "failed to run script '%s'", path)
 		}
 
 		return nil
