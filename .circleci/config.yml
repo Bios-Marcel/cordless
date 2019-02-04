@@ -10,6 +10,7 @@ jobs:
       - checkout
 
       - run: go get -v -t -d ./...
+      - run: go test ./...
       - run: go build
 
       - store_artifacts:

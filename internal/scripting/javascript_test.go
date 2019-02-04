@@ -24,8 +24,8 @@ func TestJavaScriptEngine(t *testing.T) {
 				return
 			}
 
-			if gotNewText := e.OnMessage(tt.input); gotNewText != tt.want {
-				t.Errorf("JavaScriptEngine.OnMessage() = %v, want %v", gotNewText, tt.want)
+			if gotNewText := e.OnMessageSend(tt.input); gotNewText != tt.want {
+				t.Errorf("JavaScriptEngine.OnMessageSend() = %v, want %v", gotNewText, tt.want)
 			}
 		})
 	}
