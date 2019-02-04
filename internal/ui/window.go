@@ -480,7 +480,9 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
 		if window.selectedChannel != nil {
-			if m.ChannelID == window.selectedChannel.ID {
+			if m.ChannelID == window.selectedChannel.ID &&
+				//Ignore just-embed edits
+				m.Content != "" {
 				messageEditChan <- m.Message
 			}
 		}

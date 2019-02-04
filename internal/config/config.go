@@ -46,6 +46,7 @@ var (
 		FocusChannelAfterGuildSelection:        true,
 		FocusMessageInputAfterChannelSelection: true,
 		OnTypeInListBehaviour:                  SearchOnTypeInList,
+		ShortenLinks:                           false,
 	}
 )
 
@@ -84,6 +85,10 @@ type Config struct {
 	// OnTypeInListBehaviour defines wether the application focus the input
 	// input field on typing, searches the list or does nothing.
 	OnTypeInListBehaviour int
+
+	// ShortenLinks decides wether cordless starts a local webserver in order
+	// to be able to shorten links
+	ShortenLinks bool
 }
 
 var cachedConfigDir string

@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 
@@ -10,7 +11,9 @@ import (
 	// Blank import for initializing the tview formatter
 	_ "github.com/Bios-Marcel/cordless/internal/syntax"
 	"github.com/Bios-Marcel/discordgo"
+	linkshortener "github.com/Bios-Marcel/shortnotforlong"
 	"github.com/Bios-Marcel/tview"
+
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/formatters"
 	"github.com/alecthomas/chroma/lexers"
@@ -20,6 +23,8 @@ import (
 var (
 	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)")
 	channelMentionRegex = regexp.MustCompile("<#\\d*>")
+	urlRegex            = regexp.MustCompile("https?://(.+?)(?:(?:/.*)|\\s|$)")
+	shortener           = linkshortener.NewShortener(51726)
 )
 
 // ChatView is using a tview.TextView in order to be able to display messages
@@ -39,6 +44,15 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		internalTextView: tview.NewTextView(),
 		session:          session,
 		ownUserID:        ownUserID,
+	}
+
+	if config.GetConfig().ShortenLinks {
+		go func() {
+			shortenerError := shortener.Start()
+			if shortenerError != nil {
+				log.Fatalln("Error creating shortener:", shortenerError.Error())
+			}
+		}()
 	}
 
 	chatView.internalTextView.SetDynamicColors(true)
@@ -63,13 +77,14 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 
 	newText := ""
 
+	conf := config.GetConfig()
+
 	for _, message := range messages {
 
 		time, parseError := message.Timestamp.Parse()
 		var timeCellText string
 		if parseError == nil {
 			time := time.Local()
-			conf := config.GetConfig()
 			if conf.Times == config.HourMinuteAndSeconds {
 				timeCellText = fmt.Sprintf("%02d:%02d:%02d ", time.Hour(), time.Minute(), time.Second())
 			} else if conf.Times == config.HourAndMinute {
@@ -121,6 +136,17 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 
 				return "[blue]#" + channel.Name + "[white]"
 			})
+
+		if conf.ShortenLinks {
+			urlMatches := urlRegex.FindAllStringSubmatch(messageText, 1000)
+
+			for _, urlMatch := range urlMatches {
+				if (len(urlMatch[1]) + 35) < len(urlMatch[0]) {
+					shortenedURL := fmt.Sprintf("(%s) %s", urlMatch[1], shortener.Shorten(urlMatch[0]))
+					messageText = strings.Replace(messageText, urlMatch[0], shortenedURL, 1)
+				}
+			}
+		}
 
 		groupValues := codeBlockRegex.
 			// Magicnumber, cuz u ain't gonna such a long message anyway.
@@ -177,12 +203,12 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 
 		// TODO Role mentions
 
-		if message.Attachments != nil && len(message.Attachments) != 0 {
+		/*if message.Attachments != nil && len(message.Attachments) != 0 {
 			if messageText != "" {
 				messageText = messageText + " "
 			}
 			messageText = messageText + message.Attachments[0].URL
-		}
+		}*/
 
 		messageText = fmt.Sprintf("[\"%s\"][#FF0000]%s[#00FF00]%s [white]%s[\"\"]", message.ID, timeCellText, message.Author.Username, messageText)
 		newText = fmt.Sprintf("%s\n%s", newText, messageText)
