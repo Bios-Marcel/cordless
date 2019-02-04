@@ -136,6 +136,22 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 				return "[blue]#" + channel.Name + "[white]"
 			})
 
+		if message.Attachments != nil && len(message.Attachments) > 0 {
+			attachmentsAsText := ""
+			for attachmentIndex, attachment := range message.Attachments {
+				attachmentsAsText = attachmentsAsText + attachment.URL
+				if attachmentIndex != len(message.Attachments)-1 {
+					attachmentsAsText = attachmentsAsText + "\n"
+				}
+			}
+
+			if messageText != "" {
+				messageText = attachmentsAsText + "\n" + messageText
+			} else {
+				messageText = attachmentsAsText + messageText
+			}
+		}
+
 		if conf.ShortenLinks {
 			urlMatches := urlRegex.FindAllStringSubmatch(messageText, 1000)
 
@@ -201,13 +217,6 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		}
 
 		// TODO Role mentions
-
-		/*if message.Attachments != nil && len(message.Attachments) != 0 {
-			if messageText != "" {
-				messageText = messageText + " "
-			}
-			messageText = messageText + message.Attachments[0].URL
-		}*/
 
 		messageText = fmt.Sprintf("[\"%s\"][#FF0000]%s[#00FF00]%s [white]%s[\"\"]", message.ID, timeCellText, message.Author.Username, messageText)
 		newText = fmt.Sprintf("%s\n%s", newText, messageText)
