@@ -583,11 +583,8 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	}()
 
 	window.channelTitle = tview.NewTextView()
+	window.channelTitle.SetBorderSides(true, true, false, true)
 	window.channelTitle.SetBorder(true)
-
-	window.chatArea.AddItem(window.channelTitle, 3, 1, true)
-	window.chatArea.AddItem(window.messageContainer, 0, 1, true)
-	window.chatArea.AddItem(window.messageInput.GetPrimitive(), 3, 0, true)
 
 	window.commandView = NewCommandView(window.ExecuteCommand)
 
@@ -818,7 +815,7 @@ func (window *Window) RefreshLayout() {
 	window.chatArea.RemoveItem(window.commandView.commandOutput)
 
 	if conf.ShowChatHeader {
-		window.chatArea.AddItem(window.channelTitle, 3, 0, false)
+		window.chatArea.AddItem(window.channelTitle, 2, 0, false)
 	}
 
 	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
