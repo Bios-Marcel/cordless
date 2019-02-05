@@ -101,16 +101,19 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	guildPage := tview.NewFlex()
 	guildPage.SetDirection(tview.FlexRow)
 
-	channelTree := tview.NewTreeView()
-	channelTree.SetCycleSelection(true)
+	channelTree := tview.NewTreeView().
+		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
+		SetCycleSelection(true)
+
 	channelRootNode := tview.NewTreeNode("")
 	window.channelRootNode = channelRootNode
 	channelTree.SetRoot(channelRootNode)
 	channelTree.SetBorder(true)
 	channelTree.SetTopLevel(1)
 
-	guildList := tview.NewTreeView()
-	guildList.SetCycleSelection(true)
+	guildList := tview.NewTreeView().
+		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
+		SetCycleSelection(true)
 	guildRootNode := tview.NewTreeNode("")
 	guildList.SetRoot(guildRootNode)
 	guildList.SetBorder(true)
@@ -249,6 +252,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
 	window.privateList = tview.NewTreeView().
+		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetCycleSelection(true).
 		SetTopLevel(1)
 	window.privateList.SetBorder(true)
@@ -590,6 +594,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 	window.userRootNode = tview.NewTreeNode("")
 	window.userList = tview.NewTreeView().
+		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetRoot(window.userRootNode).
 		SetTopLevel(1).
 		SetCycleSelection(true)
