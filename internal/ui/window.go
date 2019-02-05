@@ -259,7 +259,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 	friendsNode := tview.NewTreeNode("Friends")
 	groupChatsNode := tview.NewTreeNode("Groups")
-	peopleChatsNode := tview.NewTreeNode("O2pen duo chats")
+	peopleChatsNode := tview.NewTreeNode("Open duo chats")
 
 	window.privateRootNode.AddChild(friendsNode)
 	window.privateRootNode.AddChild(groupChatsNode)
