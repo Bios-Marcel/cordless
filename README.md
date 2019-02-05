@@ -13,6 +13,7 @@
   * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
 * [Configuration](https://github.com/Bios-Marcel/cordless#configuration)
 * [Features](https://github.com/Bios-Marcel/cordless#features)
+* [Extending Cordless via the scripting interface](https://github.com/Bios-Marcel/cordless#extending-cordless-via-the-scripting-interface)
 * [Troubleshooting](https://github.com/Bios-Marcel/cordless#troubleshooting)
 
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
@@ -89,7 +90,7 @@ careful with your configuration file.
   * See Nickname
   * See hoist group
 * Chatting
-  * 1on1 conversation with a friend
+  * conversation with a friend
   * Groupchats
   * Talk in a channel
   * Timestamps `HH:MM(:SS)`
@@ -118,12 +119,14 @@ careful with your configuration file.
   * Hooks
     * onMessageSend Event that can manipulate the message before sending
 
-### Extending Cordless via the scripting interface
+## Extending Cordless via the scripting interface
 
 Cordless has a very basic scripting interface that exposes predefined events.
 Scripts can simply be dumped into the subfolder `scripts` of the cordless
-config folder. An example for a script can be found here:
-[cordlenny](https://github.com/Bios-Marcel/cordlenny)
+config folder.
+
+An example can be found here:
+[Kaomoji](https://github.com/Bios-Marcel/cordless-kaomoji)
 
 ## Troubleshooting
 
