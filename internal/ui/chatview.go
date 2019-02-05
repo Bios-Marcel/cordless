@@ -216,8 +216,6 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 			}
 		}
 
-		// TODO Role mentions
-
 		messageText = fmt.Sprintf("[\"%s\"][#FF0000]%s[#00FF00]%s [white]%s[\"\"]", message.ID, timeCellText, message.Author.Username, messageText)
 		newText = fmt.Sprintf("%s\n%s", newText, messageText)
 
