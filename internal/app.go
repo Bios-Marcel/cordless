@@ -17,12 +17,12 @@ import (
 
 const (
 	splashText = `
-  .o88b.  .d88b.  d8888b. d8888b. db      d88888b .d8888. .d8888.
- d8P  Y8 .8P  Y8. 88  8D  88   8D 88      88'     88'  YP 88'  YP
-8P      88    88 88oobY' 88   88 88      88ooooo  8bo.    8bo.
- 8b      88    88 88 8b   88   88 88      88~~~~~    Y8b.    Y8b.
- Y8b  d8  8b  d8' 88  88. 88  .8D 88booo. 88.     db   8D db   8D
-  Y88P'    Y88P'  88  YD  Y8888D' Y88888P Y88888P  8888Y'  8888Y'
+     ██████╗ ██████╗ ██████╗ ██████╗ ██╗     ███████╗███████╗███████╗              
+    ██╔════╝██╔═══██╗██╔══██╗██╔══██╗██║     ██╔════╝██╔════╝██╔════╝     /   \    
+    ██║     ██║   ██║██████╔╝██║  ██║██║     █████╗  ███████╗███████╗ ████-   -████
+    ██║     ██║   ██║██╔══██╗██║  ██║██║     ██╔══╝  ╚════██║╚════██║     \   /    
+    ╚██████╗╚██████╔╝██║  ██║██████╔╝███████╗███████╗███████║███████║              
+     ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝╚══════╝              
 `
 )
 
@@ -38,7 +38,7 @@ func Run() {
 	app := tview.NewApplication()
 	splashScreen := tview.NewTextView()
 	splashScreen.SetTextAlign(tview.AlignCenter)
-	splashScreen.SetText(splashText + "\n\nConfig lies at: " + configDir)
+	splashScreen.SetText(tview.Escape(splashText + "\n\nConfig lies at: " + configDir))
 	app.SetRoot(splashScreen, true)
 
 	go func() {
