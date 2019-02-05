@@ -633,13 +633,13 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		}
 
 		if window.commandMode && event.Key() == tcell.KeyCtrlO {
-			if window.commandView.commandOutput.GetVisible() {
+			if window.commandView.commandOutput.IsVisible() {
 				app.SetFocus(window.commandView.commandOutput)
 			}
 		}
 
 		if window.commandMode && event.Key() == tcell.KeyCtrlI {
-			if window.commandView.commandInput.GetVisible() {
+			if window.commandView.commandInput.IsVisible() {
 				app.SetFocus(window.commandView.commandInput)
 			}
 		}
@@ -683,7 +683,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			}
 
 			if event.Rune() == 'u' {
-				if window.currentPage == guildPageName && window.userList.GetVisible() {
+				if window.currentPage == guildPageName && window.userList.IsVisible() {
 					app.SetFocus(window.userList)
 				}
 				return nil
