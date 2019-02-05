@@ -100,3 +100,10 @@ func (cmdView *CommandView) GetCommandInputWidget() *tview.InputField {
 func (cmdView *CommandView) GetCommandOutputWidget() *tview.TextView {
 	return cmdView.commandOutput
 }
+
+// SetVisible sets the given visible state to both the input component and
+// the output component
+func (cmdView *CommandView) SetVisible(visible bool) {
+	cmdView.commandInput.SetVisible(visible)
+	cmdView.commandOutput.SetVisible(visible)
+}

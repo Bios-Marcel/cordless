@@ -12,6 +12,18 @@ import (
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/ui"
 	"github.com/Bios-Marcel/discordgo"
+	"github.com/Bios-Marcel/tview"
+)
+
+const (
+	splashText = `
+  .o88b.  .d88b.  d8888b. d8888b. db      d88888b .d8888. .d8888.
+ d8P  Y8 .8P  Y8. 88  8D  88   8D 88      88'     88'  YP 88'  YP
+8P      88    88 88oobY' 88   88 88      88ooooo  8bo.    8bo.
+ 8b      88    88 88 8b   88   88 88      88~~~~~    Y8b.    Y8b.
+ Y8b  d8  8b  d8' 88  88. 88  .8D 88booo. 88.     db   8D db   8D
+  Y88P'    Y88P'  88  YD  Y8888D' Y88888P Y88888P  8888Y'  8888Y'
+`
 )
 
 // Run launches the whole application and might abort in case it encounters an
@@ -23,62 +35,73 @@ func Run() {
 		log.Fatalf("Unable to determine configuration directory (%s)\n", configErr.Error())
 	}
 
-	log.Printf("Configuration lies at: %s\n", configDir)
+	app := tview.NewApplication()
+	splashScreen := tview.NewTextView()
+	splashScreen.SetTextAlign(tview.AlignCenter)
+	splashScreen.SetText(splashText + "\n\nConfig lies at: " + configDir)
+	app.SetRoot(splashScreen, true)
 
-	configuration, configLoadError := config.LoadConfig()
+	go func() {
+		configuration, configLoadError := config.LoadConfig()
 
-	if configLoadError != nil {
-		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
-	}
+		if configLoadError != nil {
+			app.Stop()
+			log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
+		}
 
-	var (
-		discord      *discordgo.Session
-		discordError error
-	)
-	if configuration.Token == "" {
-		discord, discordError = login()
-		config.GetConfig().Token = discord.Token
-	} else {
-		discord, discordError = discordgo.New(configuration.Token)
-	}
+		var (
+			discord      *discordgo.Session
+			discordError error
+		)
 
-	if discordError != nil {
-		//TODO Handle better
-		log.Fatalln("Error logging into Discord", discordError)
-	}
+		if configuration.Token == "" {
+			discord, discordError = login()
+			config.GetConfig().Token = discord.Token
+		} else {
+			discord, discordError = discordgo.New(configuration.Token)
+		}
 
-	persistError := config.PersistConfig()
-	if persistError != nil {
-		log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
-	}
+		if discordError != nil {
+			app.Stop()
+			log.Fatalln("Error logging into Discord", discordError)
+		}
 
-	readyChan := make(chan struct{})
-	discord.AddHandlerOnce(func(s *discordgo.Session, event *discordgo.Ready) {
-		readyChan <- struct{}{}
-	})
+		persistError := config.PersistConfig()
+		if persistError != nil {
+			app.Stop()
+			log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
+		}
 
-	discordError = discord.Open()
-	if discordError != nil {
-		//TODO Handle better
-		log.Fatalln("Error establishing web socket connection", discordError)
-	}
+		readyChan := make(chan struct{})
+		discord.AddHandlerOnce(func(s *discordgo.Session, event *discordgo.Ready) {
+			readyChan <- struct{}{}
+		})
 
-	<-readyChan
+		discordError = discord.Open()
+		if discordError != nil {
+			app.Stop()
+			log.Fatalln("Error establishing web socket connection", discordError)
+		}
 
-	window, createError := ui.NewWindow(discord)
+		<-readyChan
 
-	if createError != nil {
-		log.Fatalf("Error constructing window (%s).\n", createError.Error())
-	}
+		app.QueueUpdateDraw(func() {
+			window, createError := ui.NewWindow(app, discord)
 
-	window.RegisterCommand("fixlayout", commands.FixLayout)
-	window.RegisterCommand("chatheader", commands.ChatHeader)
+			if createError != nil {
+				app.Stop()
+				log.Fatalf("Error constructing window (%s).\n", createError.Error())
+			}
 
-	runError := window.Run()
+			window.RegisterCommand("fixlayout", commands.FixLayout)
+			window.RegisterCommand("chatheader", commands.ChatHeader)
+		})
+	}()
+
+	runError := app.Run()
 	if runError != nil {
 		log.Fatalf("Error launching View (%s).\n", runError.Error())
 	}
-
 }
 
 func login() (*discordgo.Session, error) {

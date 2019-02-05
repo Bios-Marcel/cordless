@@ -75,9 +75,7 @@ type Window struct {
 //NewWindow constructs the whole application window and also registers all
 //necessary handlers and functions. If this function returns an error, we can't
 //start the application.
-func NewWindow(discord *discordgo.Session) (*Window, error) {
-	app := tview.NewApplication()
-
+func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, error) {
 	window := Window{
 		session:                     discord,
 		app:                         app,
@@ -97,7 +95,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	mentionWindow := tview.NewTreeView()
 	mentionWindow.SetCycleSelection(true)
-	mentionWindow.SetRect(50, 50, 50, 50)
 
 	window.leftArea = tview.NewPages()
 
@@ -354,10 +351,6 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	window.messageInput = NewEditor()
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
 		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), height, 0)
-	})
-
-	window.messageInput.SetMentionCharacterHandler(func(event *tcell.EventKey) *tcell.EventKey {
-		return nil
 	})
 
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -625,33 +618,41 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Rune() == '.' &&
 			(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
-			if window.commandMode {
-				window.commandMode = false
-			} else {
-				window.commandMode = true
-			}
 
-			window.RefreshLayout()
+			window.commandMode = !window.commandMode
 
 			if window.commandMode {
 				app.SetFocus(window.commandView.commandInput)
+			} else {
+				app.SetFocus(window.messageInput.GetPrimitive())
 			}
+
+			window.commandView.SetVisible(window.commandMode)
 
 			return nil
 		}
 
 		if window.commandMode && event.Key() == tcell.KeyCtrlO {
-			app.SetFocus(window.commandView.commandOutput)
+			if window.commandView.commandOutput.GetVisible() {
+				app.SetFocus(window.commandView.commandOutput)
+			}
 		}
 
 		if window.commandMode && event.Key() == tcell.KeyCtrlI {
-			app.SetFocus(window.commandView.commandInput)
+			if window.commandView.commandInput.GetVisible() {
+				app.SetFocus(window.commandView.commandInput)
+			}
 		}
 
 		if event.Rune() == 'U' &&
 			(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
 			conf := config.GetConfig()
 			conf.ShowUserContainer = !conf.ShowUserContainer
+
+			if !conf.ShowUserContainer {
+				app.SetFocus(window.messageInput.GetPrimitive())
+			}
+
 			config.PersistConfig()
 			window.RefreshLayout()
 			return nil
@@ -682,7 +683,7 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 			}
 
 			if event.Rune() == 'u' {
-				if window.currentPage == guildPageName {
+				if window.currentPage == guildPageName && window.userList.GetVisible() {
 					app.SetFocus(window.userList)
 				}
 				return nil
@@ -828,9 +829,6 @@ func (window *Window) RefreshLayout() {
 
 	window.userList.SetVisible(conf.ShowUserContainer && window.overrideShowUsers)
 	window.channelTitle.SetVisible(conf.ShowChatHeader)
-
-	window.commandView.commandOutput.SetVisible(window.commandMode)
-	window.commandView.commandInput.SetVisible(window.commandMode)
 
 	if conf.UseFixedLayout {
 		window.rootContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
