@@ -5,6 +5,7 @@ import (
 	"io"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -261,60 +262,83 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	window.privateList.SetRoot(window.privateRootNode)
 	window.privateRootNode.SetSelectable(false)
 
-	friendsNode := tview.NewTreeNode("Friends")
-	groupChatsNode := tview.NewTreeNode("Groups")
-	peopleChatsNode := tview.NewTreeNode("Open duo chats")
+	privateChatsNode := tview.NewTreeNode("Chats").
+		SetSelectable(false)
+	friendsNode := tview.NewTreeNode("Friends").
+		SetSelectable(false)
 
+	window.privateRootNode.AddChild(privateChatsNode)
 	window.privateRootNode.AddChild(friendsNode)
-	window.privateRootNode.AddChild(groupChatsNode)
-	window.privateRootNode.AddChild(peopleChatsNode)
 
 	window.leftArea.AddPage(privatePageName, window.privateList, true, false)
 
 	go func() {
-		for _, channel := range window.session.State.PrivateChannels {
-			if channel.Type == discordgo.ChannelTypeDM && len(channel.Recipients) > 0 {
-				recipient := channel.Recipients[0].Username
-				channelCopy := channel
-				window.app.QueueUpdate(func() {
-					newNode := tview.NewTreeNode(recipient)
-					peopleChatsNode.AddChild(newNode)
-					newNode.SetSelectedFunc(func() {
-						window.LoadChannel(channelCopy)
-						window.channelTitle.SetText(recipient)
-					})
-				})
-			} else if channel.Type == discordgo.ChannelTypeGroupDM && len(channel.Recipients) > 0 {
-				itemName := ""
+		privateChannels := make([]*discordgo.Channel, len(window.session.State.PrivateChannels))
+		copy(privateChannels, window.session.State.PrivateChannels)
+		sort.Slice(privateChannels, func(a, b int) bool {
+			channelA := privateChannels[a]
+			channelB := privateChannels[b]
 
-				if channel.Name != "" {
-					itemName = channel.Name
-				} else {
-					for index, recipient := range channel.Recipients {
-						if index == 0 {
-							itemName = recipient.Username
-						} else {
-							itemName = fmt.Sprintf("%s, %s", itemName, recipient.Username)
+			messageA, parseError := strconv.ParseInt(channelA.LastMessageID, 10, 64)
+			if parseError != nil {
+				return false
+			}
+
+			messageB, parseError := strconv.ParseInt(channelB.LastMessageID, 10, 64)
+			if parseError != nil {
+				return true
+			}
+
+			return messageA > messageB
+		})
+
+		window.app.QueueUpdate(func() {
+			for _, channel := range privateChannels {
+				var channelName string
+				if channel.Type == discordgo.ChannelTypeDM {
+					channelName = channel.Recipients[0].Username
+				} else if channel.Type == discordgo.ChannelTypeGroupDM {
+					if channel.Name != "" {
+						channelName = channel.Name
+					} else {
+						for index, recipient := range channel.Recipients {
+							if index == 0 {
+								channelName = recipient.Username
+							} else {
+								channelName = fmt.Sprintf("%s, %s", channelName, recipient.Username)
+							}
 						}
 					}
 				}
 
+				if channelName == "" {
+					channelName = "Unnamed"
+				}
+
 				channelCopy := channel
-				window.app.QueueUpdate(func() {
-					newNode := tview.NewTreeNode(itemName)
-					groupChatsNode.AddChild(newNode)
-					newNode.SetSelectedFunc(func() {
-						window.LoadChannel(channelCopy)
-						window.channelTitle.SetText(itemName)
-					})
+				newNode := tview.NewTreeNode(channelName)
+				privateChatsNode.AddChild(newNode)
+				newNode.SetSelectedFunc(func() {
+					window.LoadChannel(channelCopy)
+					window.channelTitle.SetText(channelName)
 				})
 			}
-		}
 
-		window.app.QueueUpdate(func() {
+		FRIEND_LOOP:
 			for _, friend := range window.session.State.Relationships {
 				if friend.Type != discordgoplus.RelationTypeFriend {
 					continue
+				}
+
+				for _, channel := range privateChannels {
+					if channel.Type != discordgo.ChannelTypeDM {
+						continue
+					}
+
+					if channel.Recipients[0].ID == friend.ID ||
+						(len(channel.Recipients) > 1 && channel.Recipients[1].ID == friend.ID) {
+						continue FRIEND_LOOP
+					}
 				}
 
 				newNode := tview.NewTreeNode(friend.User.Username)
@@ -339,7 +363,6 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 					}
 				})
 			}
-
 			if len(window.privateRootNode.GetChildren()) > 0 {
 				window.privateList.SetCurrentNode(window.privateRootNode)
 			}
