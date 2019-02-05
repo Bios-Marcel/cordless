@@ -102,11 +102,12 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		var messageText string
 
 		if message.Type == discordgo.MessageTypeDefault {
-			messageText = message.Content
+			messageText = tview.Escape(message.Content)
 			for _, user := range message.Mentions {
+				escapedUsername := tview.Escape(user.Username)
 				messageText = strings.NewReplacer(
-					"<@"+user.ID+">", "[blue]@"+user.Username+"[white]",
-					"<@!"+user.ID+">", "[blue]@"+user.Username+"[white]",
+					"<@"+user.ID+">", "[blue]@"+escapedUsername+"[white]",
+					"<@!"+user.ID+">", "[blue]@"+escapedUsername+"[white]",
 				).Replace(messageText)
 			}
 		} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
