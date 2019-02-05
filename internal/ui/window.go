@@ -714,8 +714,12 @@ func (window *Window) ExecuteCommand(command string) {
 }
 
 func (window *Window) exitMessageEditMode() {
-	window.editingMessageID = nil
+	window.exitMessageEditModeAndKeepText()
 	window.messageInput.SetText("")
+}
+
+func (window *Window) exitMessageEditModeAndKeepText() {
+	window.editingMessageID = nil
 	window.messageInput.SetBackgroundColor(tcell.ColorBlack)
 }
 
@@ -863,6 +867,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 
 	window.selectedChannel = channel
+	window.exitMessageEditModeAndKeepText()
 
 	if config.GetConfig().FocusMessageInputAfterChannelSelection {
 		window.app.SetFocus(window.messageInput.internalTextView)
