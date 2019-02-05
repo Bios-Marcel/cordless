@@ -249,7 +249,7 @@ func NewEditor() *Editor {
 					string(left), string(character), string(selection), string(right)))
 			}
 
-			if character == '@' {
+			if character == '@' && editor.mentionCharacterHandler != nil {
 				editor.mentionCharacterHandler(event)
 			}
 		}
