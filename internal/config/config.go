@@ -39,7 +39,7 @@ var (
 		Times:                                  HourMinuteAndSeconds,
 		ShowUserContainer:                      true,
 		ShowChatHeader:                         true,
-		ShowFrame:                              true,
+		ShowFrame:                              false,
 		UseFixedLayout:                         false,
 		FixedSizeLeft:                          12,
 		FixedSizeRight:                         12,
