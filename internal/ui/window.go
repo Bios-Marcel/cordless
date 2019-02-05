@@ -95,6 +95,10 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return nil, discordError
 	}
 
+	mentionWindow := tview.NewTreeView()
+	mentionWindow.SetCycleSelection(true)
+	mentionWindow.SetRect(50, 50, 50, 50)
+
 	window.leftArea = tview.NewPages()
 
 	guildPage := tview.NewFlex()
@@ -349,8 +353,11 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 
 	window.messageInput = NewEditor()
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
-		window.requestedMessageInputHeight = height
-		window.RefreshLayout()
+		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), height, 0)
+	})
+
+	window.messageInput.SetMentionCharacterHandler(func(event *tcell.EventKey) *tcell.EventKey {
+		return nil
 	})
 
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -690,6 +697,39 @@ func NewWindow(discord *discordgo.Session) (*Window, error) {
 		return event
 	})
 
+	conf := config.GetConfig()
+
+	if conf.UseFixedLayout {
+		window.rootContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 7, true)
+		window.rootContainer.AddItem(window.chatArea, 0, 1, false)
+		window.rootContainer.AddItem(window.userList, conf.FixedSizeRight, 6, false)
+	} else {
+		window.rootContainer.AddItem(window.leftArea, 0, 7, true)
+		window.rootContainer.AddItem(window.chatArea, 0, 20, false)
+		window.rootContainer.AddItem(window.userList, 0, 6, false)
+	}
+
+	mentionWindow.SetVisible(false)
+
+	window.chatArea.AddItem(window.channelTitle, 2, 0, false)
+	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
+	window.chatArea.AddItem(mentionWindow, 2, 2, true)
+	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.requestedMessageInputHeight, 0, false)
+
+	window.commandView.commandOutput.SetVisible(false)
+	window.commandView.commandInput.SetVisible(false)
+
+	window.chatArea.AddItem(window.commandView.commandOutput, 0, 1, false)
+	window.chatArea.AddItem(window.commandView.commandInput, 3, 0, false)
+
+	if conf.ShowFrame {
+		window.rootContainer.SetTitle("Cordless")
+		window.rootContainer.SetBorder(true)
+	} else {
+		window.rootContainer.SetTitle("")
+		window.rootContainer.SetBorder(false)
+	}
+
 	window.SwitchToGuildsPage()
 
 	app.SetFocus(guildList)
@@ -784,54 +824,22 @@ func (window *Window) SwitchToFriendsPage() {
 //RefreshLayout removes and adds the main parts of the layout
 //so that the ones that are disabled by settings do not show up.
 func (window *Window) RefreshLayout() {
-	window.rootContainer.RemoveItem(window.leftArea)
-	window.rootContainer.RemoveItem(window.chatArea)
-	window.rootContainer.RemoveItem(window.userList)
-
 	conf := config.GetConfig()
 
+	window.userList.SetVisible(conf.ShowUserContainer && window.overrideShowUsers)
+	window.channelTitle.SetVisible(conf.ShowChatHeader)
+
+	window.commandView.commandOutput.SetVisible(window.commandMode)
+	window.commandView.commandInput.SetVisible(window.commandMode)
+
 	if conf.UseFixedLayout {
-		window.rootContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 7, true)
-		window.rootContainer.AddItem(window.chatArea, 0, 1, false)
-
-		if conf.ShowUserContainer && window.overrideShowUsers {
-			window.rootContainer.AddItem(window.userList, conf.FixedSizeRight, 6, false)
-		}
+		window.rootContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
+		window.rootContainer.ResizeItem(window.chatArea, 0, 1)
+		window.rootContainer.ResizeItem(window.userList, conf.FixedSizeRight, 6)
 	} else {
-		window.rootContainer.AddItem(window.leftArea, 0, 7, true)
-
-		if conf.ShowUserContainer && window.overrideShowUsers {
-			window.rootContainer.AddItem(window.chatArea, 0, 20, false)
-			window.rootContainer.AddItem(window.userList, 0, 6, false)
-		} else {
-			window.rootContainer.AddItem(window.chatArea, 0, 26, false)
-		}
-	}
-
-	window.chatArea.RemoveItem(window.channelTitle)
-	window.chatArea.RemoveItem(window.messageContainer)
-	window.chatArea.RemoveItem(window.messageInput.GetPrimitive())
-	window.chatArea.RemoveItem(window.commandView.commandInput)
-	window.chatArea.RemoveItem(window.commandView.commandOutput)
-
-	if conf.ShowChatHeader {
-		window.chatArea.AddItem(window.channelTitle, 2, 0, false)
-	}
-
-	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
-	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.requestedMessageInputHeight, 0, false)
-
-	if window.commandMode {
-		window.chatArea.AddItem(window.commandView.commandOutput, 0, 1, false)
-		window.chatArea.AddItem(window.commandView.commandInput, 3, 0, false)
-	}
-
-	if conf.ShowFrame {
-		window.rootContainer.SetTitle("Cordless")
-		window.rootContainer.SetBorder(true)
-	} else {
-		window.rootContainer.SetTitle("")
-		window.rootContainer.SetBorder(false)
+		window.rootContainer.ResizeItem(window.leftArea, 0, 7)
+		window.rootContainer.ResizeItem(window.chatArea, 0, 20)
+		window.rootContainer.ResizeItem(window.userList, 0, 6)
 	}
 
 	window.app.ForceDraw()
