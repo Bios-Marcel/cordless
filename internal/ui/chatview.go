@@ -164,7 +164,7 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		}
 
 		groupValues := codeBlockRegex.
-			// Magicnumber, cuz u ain't gonna such a long message anyway.
+			// Magicnumber, because message aren't gonna be that long anyway.
 			FindAllStringSubmatch(messageText, 1000)
 
 		for _, values := range groupValues {
