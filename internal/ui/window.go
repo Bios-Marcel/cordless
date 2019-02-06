@@ -58,8 +58,7 @@ type Window struct {
 
 	overrideShowUsers bool
 
-	killCurrentGuildUpdateThread *chan bool
-	session                      *discordgo.Session
+	session *discordgo.Session
 
 	shownMessages       []*discordgo.Message
 	selectedGuild       *discordgo.UserGuild
@@ -128,10 +127,6 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		guildRootNode.AddChild(guildNode)
 		guildNode.SetSelectable(true)
 		guildNode.SetSelectedFunc(func() {
-			if window.killCurrentGuildUpdateThread != nil {
-				*window.killCurrentGuildUpdateThread <- true
-			}
-
 			if selectedGuildNode != nil {
 				selectedGuildNode.SetColor(tcell.ColorWhite)
 			}
@@ -221,25 +216,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 				window.app.SetFocus(channelTree)
 			}
 
-			updateUser := time.NewTicker(userListUpdateInterval)
-			go func() {
-				killChan := make(chan bool)
-				window.killCurrentGuildUpdateThread = &killChan
-				if config.GetConfig().ShowUserContainer {
-					window.UpdateUsersForGuild(guild)
-				}
-				for {
-					select {
-					case <-*window.killCurrentGuildUpdateThread:
-						window.killCurrentGuildUpdateThread = nil
-						return
-					case <-updateUser.C:
-						if config.GetConfig().ShowUserContainer {
-							window.UpdateUsersForGuild(guild)
-						}
-					}
-				}
-			}()
+			go window.LoadUsersForGuild(guild)
 		})
 	}
 
@@ -431,9 +408,9 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 							})
 
 						if window.selectedGuild != nil {
-							guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+							members, discordError := window.session.State.Members(window.selectedGuild.ID)
 							if discordError == nil {
-								for _, member := range guild.Members {
+								for _, member := range members {
 									if member.Nick != "" {
 										messageToSend = strings.Replace(messageToSend, "@"+strings.ToLower(member.Nick), "<@"+member.User.ID+">", -1)
 									}
@@ -959,36 +936,59 @@ func (window *Window) SetMessages(messages []*discordgo.Message) {
 	window.chatView.SetMessages(window.shownMessages)
 }
 
-func (window *Window) UpdateUsersForGuild(guild *discordgo.UserGuild) {
-	guildRefreshed, discordError := window.session.Guild(guild.ID)
+func (window *Window) LoadUsersForGuild(userGuild *discordgo.UserGuild) {
+	guild, discordError := window.session.Guild(userGuild.ID)
 	//TODO Handle error
 	if discordError != nil {
 		return
 	}
 
-	discordError = window.session.State.GuildAdd(guildRefreshed)
+	discordError = window.session.State.GuildAdd(guild)
 	//TODO Handle error
 	if discordError != nil {
 		return
 	}
 
-	guildState, discordError := window.session.State.Guild(guildRefreshed.ID)
-	//TODO Handle error
+	members, discordError := window.session.GuildMembers(guild.ID, "", 1000)
 	if discordError != nil {
 		return
 	}
 
-	users := guildState.Members
-	/*users := make([]*discordgo.Member, 0)
+	if len(members) >= 1000 && len(members) > 0 {
+		for {
+			additionalMembers, discordError := window.session.GuildMembers(guild.ID, members[len(members)-1].User.ID, 1000)
+			if discordError != nil {
+				break
+			}
 
-	for _, user := range usersUnfiltered {
-		if true {
+			if len(additionalMembers) == 0 {
+				break
+			}
+
+			members = append(members, additionalMembers...)
+		}
+	}
+
+	window.session.State.MembersAdd(guild.ID, members)
+
+	users := members
+
+	//TODO Filter
+	/*for _, user := range members {
+		matched := false
+		for _, presence := range guildState.Presences {
+			if presence.User.ID == user.User.ID {
+				matched = true
+				break
+			}
+		}
+
+		if matched {
 			users = append(users, user)
-			continue USER_MATCHED
 		}
 	}*/
 
-	roles := guildState.Roles
+	roles := guild.Roles
 
 	sort.Slice(roles, func(a, b int) bool {
 		return roles[a].Position > roles[b].Position
