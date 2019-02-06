@@ -526,7 +526,6 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 				} else {
 					mentionsYou := false
 					if message.Author.ID != window.session.State.User.ID {
-
 						for _, user := range message.Mentions {
 							if user.ID == window.session.State.User.ID {
 								mentionsYou = true
@@ -544,33 +543,49 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 							}
 
 							if mentionsYou {
-								notificationLocation := channel.Name
-								if notificationLocation == "" {
-									notificationLocation = channel.Recipients[0].Username
+								var notificationLocation string
+
+								if channel.Type == discordgo.ChannelTypeDM {
+									notificationLocation = message.Author.Username
+								} else if channel.Type == discordgo.ChannelTypeGroupDM {
+									notificationLocation = channel.Name
+									if notificationLocation == "" {
+										for index, recipient := range channel.Recipients {
+											if index == 0 {
+												notificationLocation = recipient.Username
+											} else {
+												notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
+											}
+										}
+									}
+
+									notificationLocation = message.Author.Username + "-" + notificationLocation
+								} else if channel.Type == discordgo.ChannelTypeGuildText {
+									notificationLocation = message.Author.Username + "-" + channel.Name
 								}
+
 								beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
 							}
 						}
-					}
 
-					window.app.QueueUpdateDraw(func() {
-
-						window.channelRootNode.Walk(func(node, parent *tview.TreeNode) bool {
-							data, ok := node.GetReference().(string)
-							if ok && data == message.ChannelID {
-								if mentionsYou {
-									channel, stateError := window.session.State.Channel(message.ChannelID)
-									if stateError == nil {
-										node.SetText("(@You) " + channel.Name)
+						window.app.QueueUpdateDraw(func() {
+							window.channelRootNode.Walk(func(node, parent *tview.TreeNode) bool {
+								data, ok := node.GetReference().(string)
+								if ok && data == message.ChannelID && window.selectedChannel.ID != data {
+									if mentionsYou {
+										channel, stateError := window.session.State.Channel(message.ChannelID)
+										if stateError == nil {
+											node.SetText("(@You) " + channel.Name)
+										}
 									}
-								}
 
-								node.SetColor(tcell.ColorRed)
-								return false
-							}
-							return true
+									node.SetColor(tcell.ColorRed)
+									return false
+								}
+								return true
+							})
 						})
-					})
+					}
 				}
 			}
 		}
