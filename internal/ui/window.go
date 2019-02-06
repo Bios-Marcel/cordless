@@ -1019,15 +1019,7 @@ func (window *Window) LoadUsersForGuild(userGuild *discordgo.UserGuild) {
 
 	USER:
 		for _, user := range users {
-
-			var nameToUse string
-
-			if user.Nick != "" {
-				nameToUse = user.Nick
-			} else {
-				nameToUse = user.User.Username
-			}
-
+			nameToUse := discordgoplus.GetMemberName(user, nil)
 			userNode := tview.NewTreeNode(nameToUse)
 
 			sort.Slice(user.Roles, func(a, b int) bool {

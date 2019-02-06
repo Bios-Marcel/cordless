@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+
 	"github.com/Bios-Marcel/cordless/internal/config"
 	// Blank import for initializing the tview formatter
 	_ "github.com/Bios-Marcel/cordless/internal/syntax"
@@ -25,6 +27,7 @@ var (
 	channelMentionRegex = regexp.MustCompile("<#\\d*>")
 	urlRegex            = regexp.MustCompile("https?://(.+?)(?:(?:/.*)|\\s|$)")
 	shortener           = linkshortener.NewShortener(51726)
+	userColor           = "green"
 )
 
 // ChatView is using a tview.TextView in order to be able to display messages
@@ -221,15 +224,15 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		if message.GuildID != "" {
 			member, cacheError := chatView.session.State.Member(message.GuildID, message.Author.ID)
 			if cacheError == nil && member.Nick != "" {
-				messageAuthor = member.Nick
+				messageAuthor = discordgoplus.GetMemberName(member, &userColor)
 			}
 		}
 
 		if messageAuthor == "" {
-			messageAuthor = message.Author.Username
+			messageAuthor = discordgoplus.GetUserName(message.Author, &userColor)
 		}
 
-		messageText = fmt.Sprintf("[\"%s\"][#FF0000]%s[#00FF00]%s [white]%s[\"\"]", message.ID, timeCellText, messageAuthor, messageText)
+		messageText = fmt.Sprintf("[\"%s\"][red]%s[green]%s [white]%s[\"\"]", message.ID, timeCellText, messageAuthor, messageText)
 		newText = fmt.Sprintf("%s\n%s", newText, messageText)
 
 		if mentionsUser {
