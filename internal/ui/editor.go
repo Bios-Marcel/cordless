@@ -255,6 +255,7 @@ func NewEditor() *Editor {
 		}
 
 		editor.triggerHeightRequestIfNeccessary()
+		editor.internalTextView.ScrollToHighlight()
 
 		return nil
 	})
@@ -267,8 +268,8 @@ func (editor *Editor) setAndFixText(text string) {
 	editor.internalTextView.SetText(newText)
 }
 
-func (editor *Editor) triggerHeightRequestIfNeccessary() {
-	splitLines := strings.Split(editor.GetText(), "\n")
+func (editor *Editor) countRows(text string) int {
+	splitLines := strings.Split(text, "\n")
 	_, _, width, _ := editor.internalTextView.GetInnerRect()
 
 	wrappedLines := 0
@@ -278,7 +279,17 @@ func (editor *Editor) triggerHeightRequestIfNeccessary() {
 		}
 	}
 
-	newRequestedHeight := len(splitLines) + wrappedLines + 2 /*borders*/
+	return len(splitLines) + wrappedLines
+}
+
+func (editor *Editor) triggerHeightRequestIfNeccessary() {
+	if editor.heightRequestHandler == nil {
+		return
+	}
+
+	rowAmount := editor.countRows(editor.GetText())
+
+	newRequestedHeight := rowAmount + 2 /*borders*/
 	if newRequestedHeight != editor.requestedHeight {
 		editor.requestedHeight = newRequestedHeight
 		editor.heightRequestHandler(newRequestedHeight)
