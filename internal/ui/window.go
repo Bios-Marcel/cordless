@@ -38,7 +38,6 @@ type Window struct {
 	rootContainer *tview.Flex
 
 	leftArea        *tview.Pages
-	currentPage     string
 	privateList     *tview.TreeView
 	privateRootNode *tview.TreeNode
 
@@ -710,7 +709,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			}
 
 			if event.Rune() == 'u' {
-				if window.currentPage == guildPageName && window.userList.IsVisible() {
+				if window.leftArea.GetCurrentPage() == guildPageName && window.userList.IsVisible() {
 					app.SetFocus(window.userList)
 				}
 				return nil
@@ -816,10 +815,11 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 					break
 				}
 			}
+
+			window.app.QueueUpdateDraw(func() {
+				window.SetMessages(window.shownMessages)
+			})
 		}
-		window.app.QueueUpdateDraw(func() {
-			window.SetMessages(window.shownMessages)
-		})
 	}()
 
 	window.exitMessageEditMode()
@@ -829,8 +829,7 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 //see the servers and their channels. In additional to that, it also shows the
 //user list in case the user didn't explicitly hide it.
 func (window *Window) SwitchToGuildsPage() {
-	if window.currentPage != guildPageName {
-		window.currentPage = guildPageName
+	if window.leftArea.GetCurrentPage() != guildPageName {
 		window.leftArea.SwitchToPage(guildPageName)
 		window.overrideShowUsers = true
 		window.RefreshLayout()
@@ -841,8 +840,7 @@ func (window *Window) SwitchToGuildsPage() {
 //where you can see your private chats and groups. In addition to that it
 //hides the user list.
 func (window *Window) SwitchToFriendsPage() {
-	if window.currentPage != privatePageName {
-		window.currentPage = privatePageName
+	if window.leftArea.GetCurrentPage() != privatePageName {
 		window.leftArea.SwitchToPage(privatePageName)
 		window.overrideShowUsers = false
 		window.RefreshLayout()
@@ -941,6 +939,8 @@ func (window *Window) SetMessages(messages []*discordgo.Message) {
 	window.chatView.SetMessages(window.shownMessages)
 }
 
+// LoadUsersForGuild loads all users for a guild and adds them to the view.
+// If no user is selected, the first available node gets selected.
 func (window *Window) LoadUsersForGuild(userGuild *discordgo.UserGuild) {
 	guild, discordError := window.session.Guild(userGuild.ID)
 	//TODO Handle error
