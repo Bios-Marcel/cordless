@@ -122,7 +122,7 @@ func NewEditor() *Editor {
 			if len(left) > 0 {
 				selectionFrom := 0
 				for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
-					if left[i] == ' ' {
+					if left[i] == ' ' || left[i] == '\n' {
 						selectionFrom = i
 						break
 					}
@@ -140,7 +140,7 @@ func NewEditor() *Editor {
 			if len(right) > 0 {
 				selectionFrom := len(right) - 1
 				for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
-					if right[i] == ' ' {
+					if right[i] == ' ' || right[i] == '\n' {
 						selectionFrom = i
 						break
 					}
@@ -158,7 +158,7 @@ func NewEditor() *Editor {
 			if len(right) > 0 {
 				selectionAt := len(right) - 1
 				for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
-					if right[i] == ' ' {
+					if right[i] == ' ' || right[i] == '\n' {
 						selectionAt = i
 						break
 					}
@@ -176,7 +176,7 @@ func NewEditor() *Editor {
 			if len(left) > 0 {
 				selectionAt := 0
 				for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
-					if left[i] == ' ' {
+					if left[i] == ' ' || left[i] == '\n' {
 						selectionAt = i
 						break
 					}
