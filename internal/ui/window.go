@@ -519,6 +519,9 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		for {
 			select {
 			case message := <-messageInputChan:
+				//UPDATE CACHE
+				window.session.State.MessageAdd(message)
+
 				if message.ChannelID == window.selectedChannel.ID {
 					window.app.QueueUpdateDraw(func() {
 						window.AddMessages([]*discordgo.Message{message})
@@ -595,6 +598,8 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		for {
 			select {
 			case messageDeleted := <-messageDeleteChan:
+				//UPDATE CACHE
+				window.session.State.MessageRemove(messageDeleted)
 				for index, message := range window.shownMessages {
 					if message.ID == messageDeleted.ID {
 						window.app.QueueUpdateDraw(func() {
@@ -611,6 +616,8 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		for {
 			select {
 			case messageEdited := <-messageEditChan:
+				//UPDATE CACHE
+				window.session.State.MessageAdd(messageEdited)
 				for _, message := range window.shownMessages {
 					if message.ID == messageEdited.ID {
 						message.Content = messageEdited.Content
@@ -888,23 +895,41 @@ func (window *Window) RefreshLayout() {
 
 //LoadChannel eagerly loads the channels messages.
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
-	messages, discordError := window.session.ChannelMessages(channel.ID, 100, "", "", "")
-	if discordError != nil {
-		return discordError
+
+	var messages []*discordgo.Message
+
+	// Data not present
+	if channel.LastMessageID != "" && len(channel.Messages) == 0 {
+		//Check Cache first
+		cache, cacheError := window.session.State.Channel(channel.ID)
+		if cacheError != nil || len(cache.Messages) == 0 {
+			var discordError error
+			messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", "", "")
+			if discordError == nil {
+				cache.Messages = append(cache.Messages, messages...)
+			}
+		} else {
+			messages = cache.Messages
+		}
+	} else {
+		messages = channel.Messages
 	}
 
-	if messages != nil && len(messages) > 0 {
-		//HACK: Reversing them, as they are sorted anyway.
-		msgAmount := len(messages)
-		for i := 0; i < msgAmount/2; i++ {
-			j := msgAmount - i - 1
-			messages[i], messages[j] = messages[j], messages[i]
+	sort.Slice(messages, func(a, b int) bool {
+		timeA, parseError := messages[a].Timestamp.Parse()
+		if parseError != nil {
+			return false
 		}
 
-		window.SetMessages(messages)
-	} else {
-		window.SetMessages(make([]*discordgo.Message, 0))
-	}
+		timeB, parseError := messages[b].Timestamp.Parse()
+		if parseError != nil {
+			return true
+		}
+
+		return timeA.Before(timeB)
+	})
+
+	window.SetMessages(messages)
 
 	if channel.Topic != "" {
 		window.channelTitle.SetText(channel.Name + " - " + channel.Topic)
