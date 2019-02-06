@@ -20,7 +20,7 @@ Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at powerusers.
 
 This project was mainly inspired by [Southclaws](https://github.com/Southclaws)
-[Cordless](https://github.com/Southclaws/cordless), which he sadly didn't
+[Cordless](https://github.com/Southclaws/cordless-old), which he sadly didn't
 develop any further.
 
 The application only uses the official Discord API and doesn't send data to
