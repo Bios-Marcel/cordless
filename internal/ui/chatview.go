@@ -223,8 +223,6 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 			if cacheError == nil && member.Nick != "" {
 				messageAuthor = member.Nick
 			}
-		} else {
-			fmt.Println(message.GuildID)
 		}
 
 		if messageAuthor == "" {
