@@ -954,29 +954,7 @@ func (window *Window) LoadUsersForGuild(userGuild *discordgo.UserGuild) {
 		return
 	}
 
-	members, discordError := window.session.GuildMembers(guild.ID, "", 1000)
-	if discordError != nil {
-		return
-	}
-
-	if len(members) >= 1000 && len(members) > 0 {
-		for {
-			additionalMembers, discordError := window.session.GuildMembers(guild.ID, members[len(members)-1].User.ID, 1000)
-			if discordError != nil {
-				break
-			}
-
-			if len(additionalMembers) == 0 {
-				break
-			}
-
-			members = append(members, additionalMembers...)
-		}
-	}
-
-	window.session.State.MembersAdd(guild.ID, members)
-
-	users := members
+	users, discordError := discordgoplus.LoadGuildMembers(window.session, guild.ID)
 
 	//TODO Filter
 	/*for _, user := range members {
@@ -993,10 +971,10 @@ func (window *Window) LoadUsersForGuild(userGuild *discordgo.UserGuild) {
 		}
 	}*/
 
-	roles := guild.Roles
+	guildRoles := guild.Roles
 
-	sort.Slice(roles, func(a, b int) bool {
-		return roles[a].Position > roles[b].Position
+	sort.Slice(guildRoles, func(a, b int) bool {
+		return guildRoles[a].Position > guildRoles[b].Position
 	})
 
 	window.app.QueueUpdateDraw(func() {
@@ -1004,7 +982,7 @@ func (window *Window) LoadUsersForGuild(userGuild *discordgo.UserGuild) {
 
 		roleNodes := make(map[string]*tview.TreeNode)
 
-		for _, role := range roles {
+		for _, role := range guildRoles {
 			if role.Hoist {
 				roleNode := tview.NewTreeNode(role.Name)
 				roleNode.SetSelectable(false)
@@ -1013,31 +991,12 @@ func (window *Window) LoadUsersForGuild(userGuild *discordgo.UserGuild) {
 			}
 		}
 
-		nonHoistNode := tview.NewTreeNode("No Hoist Role")
-		nonHoistNode.SetSelectable(false)
-		window.userRootNode.AddChild(nonHoistNode)
-
 	USER:
 		for _, user := range users {
 			nameToUse := discordgoplus.GetMemberName(user, nil)
 			userNode := tview.NewTreeNode(nameToUse)
 
-			sort.Slice(user.Roles, func(a, b int) bool {
-				firstIdentifier := user.Roles[a]
-				secondIdentifier := user.Roles[b]
-
-				var firstRole *discordgo.Role
-				var secondRole *discordgo.Role
-				for _, role := range roles {
-					if role.ID == firstIdentifier {
-						firstRole = role
-					} else if role.ID == secondIdentifier {
-						secondRole = role
-					}
-				}
-
-				return firstRole.Position > secondRole.Position
-			})
+			discordgoplus.SortUserRoles(user.Roles, guildRoles)
 
 			for _, userRole := range user.Roles {
 				roleNode, exists := roleNodes[userRole]
@@ -1047,7 +1006,7 @@ func (window *Window) LoadUsersForGuild(userGuild *discordgo.UserGuild) {
 				}
 			}
 
-			nonHoistNode.AddChild(userNode)
+			window.userRootNode.AddChild(userNode)
 		}
 
 		if window.userList.GetCurrentNode() == nil {
