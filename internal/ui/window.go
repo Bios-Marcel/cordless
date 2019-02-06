@@ -883,6 +883,11 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 			var discordError error
 			messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", "", "")
 			if discordError == nil {
+				if channel.GuildID != "" {
+					for _, message := range messages {
+						message.GuildID = channel.GuildID
+					}
+				}
 				cache.Messages = append(cache.Messages, messages...)
 			}
 		} else {

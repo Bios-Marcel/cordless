@@ -217,7 +217,21 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 			}
 		}
 
-		messageText = fmt.Sprintf("[\"%s\"][#FF0000]%s[#00FF00]%s [white]%s[\"\"]", message.ID, timeCellText, message.Author.Username, messageText)
+		var messageAuthor string
+		if message.GuildID != "" {
+			member, cacheError := chatView.session.State.Member(message.GuildID, message.Author.ID)
+			if cacheError == nil && member.Nick != "" {
+				messageAuthor = member.Nick
+			}
+		} else {
+			fmt.Println(message.GuildID)
+		}
+
+		if messageAuthor == "" {
+			messageAuthor = message.Author.Username
+		}
+
+		messageText = fmt.Sprintf("[\"%s\"][#FF0000]%s[#00FF00]%s [white]%s[\"\"]", message.ID, timeCellText, messageAuthor, messageText)
 		newText = fmt.Sprintf("%s\n%s", newText, messageText)
 
 		if mentionsUser {
