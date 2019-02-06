@@ -11,6 +11,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/cordless/internal/maths"
 	"github.com/Bios-Marcel/cordless/internal/scripting"
 	"github.com/Bios-Marcel/cordless/internal/ui/tview/treeview"
 	"github.com/Bios-Marcel/discordgo"
@@ -44,11 +45,10 @@ type Window struct {
 	channelRootNode *tview.TreeNode
 	channelTitle    *tview.TextView
 
-	chatArea                    *tview.Flex
-	chatView                    *ChatView
-	messageContainer            tview.Primitive
-	messageInput                *Editor
-	requestedMessageInputHeight int
+	chatArea         *tview.Flex
+	chatView         *ChatView
+	messageContainer tview.Primitive
+	messageInput     *Editor
 
 	editingMessageID *string
 
@@ -76,11 +76,10 @@ type Window struct {
 //start the application.
 func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, error) {
 	window := Window{
-		session:                     discord,
-		app:                         app,
-		commands:                    make(map[string]func(io.Writer, *Window, []string), 1),
-		requestedMessageInputHeight: 3,
-		scripting:                   scripting.New(),
+		session:   discord,
+		app:       app,
+		commands:  make(map[string]func(io.Writer, *Window, []string), 1),
+		scripting: scripting.New(),
 	}
 
 	if err := window.scripting.LoadScripts(config.GetScriptDirectory()); err != nil {
@@ -353,7 +352,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 	window.messageInput = NewEditor()
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
-		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), height, 0)
+		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), maths.Min(height, 20), 0)
 	})
 
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -741,7 +740,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	window.chatArea.AddItem(window.channelTitle, 2, 0, false)
 	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
 	window.chatArea.AddItem(mentionWindow, 2, 2, true)
-	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.requestedMessageInputHeight, 0, false)
+	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.messageInput.GetRequestedHeight(), 0, false)
 
 	window.commandView.commandOutput.SetVisible(false)
 	window.commandView.commandInput.SetVisible(false)

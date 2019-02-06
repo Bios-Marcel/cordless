@@ -285,6 +285,11 @@ func (editor *Editor) triggerHeightRequestIfNeccessary() {
 	}
 }
 
+// GetRequestedHeight returns the currently requested size.
+func (editor *Editor) GetRequestedHeight() int {
+	return editor.requestedHeight
+}
+
 // SetOnHeightChangeRequest handles the cases where the component thinks it needs
 // more space or would be fine with less.
 func (editor *Editor) SetOnHeightChangeRequest(handler func(requestHeight int)) {
