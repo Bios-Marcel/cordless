@@ -385,14 +385,21 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 	window.chatView = NewChatView(window.session, window.session.State.User.ID)
 	window.chatView.SetOnMessageAction(func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == 'q' && event.Modifiers() == tcell.ModNone {
-			time, parseError := message.Timestamp.Parse()
-			if parseError == nil {
-				//TODO Username doesn't take Nicknames into consideration.
-				window.messageInput.SetText(fmt.Sprintf(">%s %s: %s\n\n", times.TimeToString(&time), message.Author.Username, message.ContentWithMentionsReplaced()))
-				app.SetFocus(window.messageInput.GetPrimitive())
+		if event.Modifiers() == tcell.ModNone {
+			if event.Rune() == 'q' {
+				time, parseError := message.Timestamp.Parse()
+				if parseError == nil {
+					//TODO Username doesn't take Nicknames into consideration.
+					window.messageInput.SetText(fmt.Sprintf(">%s %s: %s\n\n", times.TimeToString(&time), message.Author.Username, message.ContentWithMentionsReplaced()))
+					app.SetFocus(window.messageInput.GetPrimitive())
+				}
+				return nil
 			}
-			return nil
+
+			if event.Key() == tcell.KeyDelete {
+				window.askForMessageDeletion(message.ID, true)
+				return nil
+			}
 		}
 
 		return event
@@ -487,20 +494,8 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 					}
 				} else {
 					if window.editingMessageID != nil {
-						dialog := tview.NewModal()
-						dialog.SetText("Do you really want to delete the message?")
-						dialog.AddButtons([]string{"Abort", "Delete"})
-						dialog.SetDoneFunc(func(index int, label string) {
-							if index == 1 {
-								msgIDCopy := *window.editingMessageID
-								go window.session.ChannelMessageDelete(window.selectedChannel.ID, msgIDCopy)
-							}
-
-							window.exitMessageEditMode()
-							window.app.SetRoot(window.rootContainer, true)
-							window.app.SetFocus(window.messageInput.GetPrimitive())
-						})
-						window.app.SetRoot(dialog, false)
+						msgIDCopy := *window.editingMessageID
+						window.askForMessageDeletion(msgIDCopy, true)
 					}
 				}
 
@@ -740,6 +735,33 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	return &window, nil
 }
 
+func (window *Window) askForMessageDeletion(messageID string, usedWithSelection bool) {
+	previousFocus := window.app.GetFocus()
+	dialog := tview.NewModal()
+	dialog.SetText("Do you really want to delete the message?")
+	dialog.AddButtons([]string{"Abort", "Delete"})
+
+	hasDeleted := false
+	dialog.SetDoneFunc(func(index int, label string) {
+		if index == 1 {
+			go window.session.ChannelMessageDelete(window.selectedChannel.ID, messageID)
+			hasDeleted = true
+		}
+
+		window.exitMessageEditMode()
+		window.app.SetRoot(window.rootContainer, true)
+		if usedWithSelection {
+			window.app.SetFocus(previousFocus)
+			window.chatView.SignalSelectionDeleted()
+		} else {
+			window.app.SetFocus(window.messageInput.GetPrimitive())
+
+		}
+	})
+
+	window.app.SetRoot(dialog, false)
+}
+
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
 	if event.Rune() == '.' &&
 		(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
@@ -969,6 +991,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	})
 
 	window.SetMessages(messages)
+	window.chatView.ClearSelection()
 
 	if channel.Topic != "" {
 		window.channelTitle.SetText(channel.Name + " - " + channel.Topic)

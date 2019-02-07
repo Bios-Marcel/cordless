@@ -77,7 +77,7 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		if chatView.selectionMode {
 			if event.Key() == tcell.KeyUp && event.Modifiers() == tcell.ModNone {
 				if chatView.selection == -1 {
-					chatView.selection = 0
+					chatView.selection = len(chatView.data) - 1
 				} else {
 					chatView.selection--
 					if chatView.selection < 0 {
@@ -92,7 +92,7 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 
 			if event.Key() == tcell.KeyDown && event.Modifiers() == tcell.ModNone {
 				if chatView.selection == -1 {
-					chatView.selection = len(chatView.data) - 1
+					chatView.selection = 0
 				} else {
 					chatView.selection++
 					if chatView.selection >= len(chatView.data) {
@@ -310,12 +310,23 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		nextIndex++
 	}
 
-	chatView.updateHighlights()
-
 	fmt.Fprint(chatView.internalTextView, newText)
+
+	chatView.updateHighlights()
 
 	if wasScrolledToTheEnd {
 		chatView.internalTextView.ScrollToEnd()
+	}
+}
+
+func (chatView *ChatView) ClearSelection() {
+	chatView.selection = -1
+	chatView.updateHighlights()
+}
+
+func (chatView *ChatView) SignalSelectionDeleted() {
+	if chatView.selection > 0 {
+		chatView.selection--
 	}
 }
 
@@ -323,7 +334,6 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 // manipulation of single message elements happens in this function.
 func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 	chatView.data = make([]*discordgo.Message, 0)
-	chatView.selection = -1
 	chatView.internalTextView.SetText("")
 
 	chatView.AddMessages(messages)
