@@ -10,12 +10,18 @@ import (
 
 func CreateFocusTextViewOnTypeInputHandler(treeView *tview.Box, app *tview.Application, component *tview.TextView) func(event *tcell.EventKey) *tcell.EventKey {
 	eventHandler := func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() != 0 && event.Modifiers() == tcell.ModNone {
-			inputHandler := component.InputHandler()
-			if inputHandler != nil {
-				app.SetFocus(component)
-				inputHandler(event, nil)
-				return nil
+		if event.Modifiers() == tcell.ModNone {
+			if event.Key() == tcell.KeyEnter {
+				return event
+			}
+
+			if event.Rune() != 0 {
+				inputHandler := component.InputHandler()
+				if inputHandler != nil {
+					app.SetFocus(component)
+					inputHandler(event, nil)
+					return nil
+				}
 			}
 		}
 
