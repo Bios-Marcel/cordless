@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/cordless/internal/times"
+	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	// Blank import for initializing the tview formatter
@@ -39,6 +42,11 @@ type ChatView struct {
 	session   *discordgo.Session
 	data      []*discordgo.Message
 	ownUserID string
+
+	selection     int
+	selectionMode bool
+
+	onMessageAction func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey
 }
 
 // NewChatView constructs a new ready to use ChatView.
@@ -47,6 +55,8 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		internalTextView: tview.NewTextView(),
 		session:          session,
 		ownUserID:        ownUserID,
+		selection:        -1,
+		selectionMode:    false,
 	}
 
 	if config.GetConfig().ShortenLinks {
@@ -58,12 +68,70 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		}()
 	}
 
+	chatView.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlS && event.Modifiers() == tcell.ModCtrl {
+			chatView.selectionMode = !chatView.selectionMode
+			return nil
+		}
+
+		if chatView.selectionMode {
+			if event.Key() == tcell.KeyUp && event.Modifiers() == tcell.ModNone {
+				if chatView.selection == -1 {
+					chatView.selection = 0
+				} else {
+					chatView.selection--
+					if chatView.selection < 0 {
+						chatView.selection = len(chatView.data) - 1
+					}
+				}
+
+				chatView.updateHighlights()
+
+				return nil
+			}
+
+			if event.Key() == tcell.KeyDown && event.Modifiers() == tcell.ModNone {
+				if chatView.selection == -1 {
+					chatView.selection = len(chatView.data) - 1
+				} else {
+					chatView.selection++
+					if chatView.selection >= len(chatView.data) {
+						chatView.selection = 0
+					}
+				}
+
+				chatView.updateHighlights()
+
+				return nil
+			}
+
+			if chatView.onMessageAction != nil {
+				return chatView.onMessageAction(chatView.data[chatView.selection], event)
+			}
+		}
+
+		return event
+	})
+
 	chatView.internalTextView.SetDynamicColors(true)
 	chatView.internalTextView.SetRegions(true)
 	chatView.internalTextView.SetWordWrap(true)
 	chatView.internalTextView.SetBorder(true)
 
 	return &chatView
+}
+
+func (chatView *ChatView) SetOnMessageAction(onMessageAction func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey) {
+	chatView.onMessageAction = onMessageAction
+}
+
+func intToString(value int) string {
+	return strconv.FormatInt(int64(value), 10)
+}
+
+func (chatView *ChatView) updateHighlights() {
+	chatView.internalTextView.Highlight(intToString(chatView.selection))
+	chatView.internalTextView.ScrollToHighlight()
 }
 
 // GetPrimitive returns the component that can be added to a layout, since
@@ -75,6 +143,7 @@ func (chatView *ChatView) GetPrimitive() tview.Primitive {
 //AddMessages adds additional messages to the ChatView.
 func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
+	nextIndex := len(chatView.data)
 	chatView.data = append(chatView.data, messages...)
 
 	newText := ""
@@ -86,20 +155,7 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		time, parseError := message.Timestamp.Parse()
 		var timeCellText string
 		if parseError == nil {
-			time := time.Local()
-			if conf.Times == config.HourMinuteAndSeconds {
-				timeCellText = fmt.Sprintf("%02d:%02d:%02d ", time.Hour(), time.Minute(), time.Second())
-			} else if conf.Times == config.HourAndMinute {
-				timeCellText = fmt.Sprintf("%02d:%02d ", time.Hour(), time.Minute())
-			}
-		}
-
-		mentionsUser := false
-		for _, mentionedUser := range message.Mentions {
-			if mentionedUser.ID == chatView.ownUserID {
-				mentionsUser = true
-				break
-			}
+			timeCellText = times.TimeToString(&time)
 		}
 
 		var messageText string
@@ -118,6 +174,11 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 				if userName == "" {
 					userName = discordgoplus.GetUserName(user, nil)
 				}
+
+				messageText = strings.NewReplacer(
+					"<@"+chatView.session.State.User.ID+">", "[orange]@"+userName+"[white]",
+					"<@!"+chatView.session.State.User.ID+">", "[orange]@"+userName+"[white]",
+				).Replace(messageText)
 
 				messageText = strings.NewReplacer(
 					"<@"+user.ID+">", "[blue]@"+userName+"[white]",
@@ -243,13 +304,13 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 			messageAuthor = discordgoplus.GetUserName(message.Author, &userColor)
 		}
 
-		messageText = fmt.Sprintf("[\"%s\"][red]%s[green]%s [white]%s[\"\"]", message.ID, timeCellText, messageAuthor, messageText)
+		messageText = fmt.Sprintf("[\"%d\"][red]%s [green]%s [white]%s[\"\"][\"\"]", nextIndex, timeCellText, messageAuthor, messageText)
 		newText = fmt.Sprintf("%s\n%s", newText, messageText)
 
-		if mentionsUser {
-			chatView.internalTextView.Highlight(append(chatView.internalTextView.GetHighlights(), message.ID)...)
-		}
+		nextIndex++
 	}
+
+	chatView.updateHighlights()
 
 	fmt.Fprint(chatView.internalTextView, newText)
 
@@ -262,6 +323,7 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 // manipulation of single message elements happens in this function.
 func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 	chatView.data = make([]*discordgo.Message, 0)
+	chatView.selection = -1
 	chatView.internalTextView.SetText("")
 
 	chatView.AddMessages(messages)

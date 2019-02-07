@@ -13,6 +13,7 @@ import (
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
 	"github.com/Bios-Marcel/cordless/internal/maths"
 	"github.com/Bios-Marcel/cordless/internal/scripting"
+	"github.com/Bios-Marcel/cordless/internal/times"
 	"github.com/Bios-Marcel/cordless/internal/ui/tview/treeview"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
@@ -383,6 +384,19 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		SetDirection(tview.FlexRow)
 
 	window.chatView = NewChatView(window.session, window.session.State.User.ID)
+	window.chatView.SetOnMessageAction(func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == 'q' && event.Modifiers() == tcell.ModNone {
+			time, parseError := message.Timestamp.Parse()
+			if parseError == nil {
+				//TODO Username doesn't take Nicknames into consideration.
+				window.messageInput.SetText(fmt.Sprintf(">%s %s: %s\n\n", times.TimeToString(&time), message.Author.Username, message.ContentWithMentionsReplaced()))
+				app.SetFocus(window.messageInput.GetPrimitive())
+			}
+			return nil
+		}
+
+		return event
+	})
 	window.messageContainer = window.chatView.GetPrimitive()
 
 	window.messageInput = NewEditor()
