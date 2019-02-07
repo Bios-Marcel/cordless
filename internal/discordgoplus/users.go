@@ -53,33 +53,6 @@ func GetMemberName(member *discordgo.Member, color *string) string {
 	return nameToUse
 }
 
-//LoadGuildMembers returns all guild members for the given guild.
-func LoadGuildMembers(session *discordgo.Session, guildID string) ([]*discordgo.Member, error) {
-	members, discordError := session.GuildMembers(guildID, "", 1000)
-	if discordError != nil {
-		return nil, discordError
-	}
-
-	if len(members) >= 1000 && len(members) > 0 {
-		for {
-			additionalMembers, discordError := session.GuildMembers(guildID, members[len(members)-1].User.ID, 1000)
-			if discordError != nil {
-				return nil, discordError
-			}
-
-			if len(additionalMembers) == 0 {
-				break
-			}
-
-			members = append(members, additionalMembers...)
-		}
-	}
-
-	session.State.MembersAdd(guildID, members)
-
-	return members, nil
-}
-
 // SortUserRoles sorts an array of roleIDs according to the guilds roles.
 func SortUserRoles(roles []string, guildRoles []*discordgo.Role) {
 	sort.Slice(roles, func(a, b int) bool {
