@@ -55,7 +55,9 @@ func Run() {
 		)
 
 		if configuration.Token == "" {
-			discord, discordError = login()
+			app.Suspend(func() {
+				discord, discordError = login()
+			})
 			config.GetConfig().Token = discord.Token
 		} else {
 			discord, discordError = discordgo.New(configuration.Token)
