@@ -400,6 +400,11 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 				window.askForMessageDeletion(message.ID, true)
 				return nil
 			}
+
+			if event.Rune() == 'e' {
+				window.startEditingMessage(message)
+				return nil
+			}
 		}
 
 		return event
@@ -417,12 +422,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		if event.Key() == tcell.KeyUp && messageToSend == "" {
 			for i := len(window.shownMessages) - 1; i > 0; i-- {
 				message := window.shownMessages[i]
-				if message.Author.ID == window.session.State.User.ID {
-					window.messageInput.SetText(message.ContentWithMentionsReplaced())
-					window.messageInput.SetBackgroundColor(tcell.ColorDarkGoldenrod)
-					window.editingMessageID = &message.ID
-					break
-				}
+				window.startEditingMessage(message)
 			}
 
 			return nil
@@ -856,6 +856,15 @@ func (window *Window) ExecuteCommand(command string) {
 	}
 }
 
+func (window *Window) startEditingMessage(message *discordgo.Message) {
+	if message.Author.ID == window.session.State.User.ID {
+		window.messageInput.SetText(message.ContentWithMentionsReplaced())
+		window.messageInput.SetBackgroundColor(tcell.ColorDarkGoldenrod)
+		window.editingMessageID = &message.ID
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+	}
+}
+
 func (window *Window) exitMessageEditMode() {
 	window.exitMessageEditModeAndKeepText()
 	window.messageInput.SetText("")
@@ -886,17 +895,10 @@ func (window *Window) ShowErrorDialog(text string) {
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 	go func() {
-		updatedMessage, discordError := window.session.ChannelMessageEdit(channelID, messageID, messageEdited)
-		if discordError == nil {
-			for index, msg := range window.shownMessages {
-				if msg.ID == updatedMessage.ID {
-					window.shownMessages[index] = updatedMessage
-					break
-				}
-			}
-
+		_, discordError := window.session.ChannelMessageEdit(channelID, messageID, messageEdited)
+		if discordError != nil {
 			window.app.QueueUpdateDraw(func() {
-				window.SetMessages(window.shownMessages)
+				window.ShowErrorDialog("Error editing message.")
 			})
 		}
 	}()
