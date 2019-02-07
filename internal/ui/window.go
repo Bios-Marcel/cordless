@@ -39,6 +39,8 @@ type Window struct {
 	rootContainer *tview.Flex
 
 	leftArea        *tview.Pages
+	guildList       *tview.TreeView
+	channelTree     *tview.TreeView
 	privateList     *tview.TreeView
 	privateRootNode *tview.TreeNode
 
@@ -102,6 +104,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	channelTree := tview.NewTreeView().
 		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetCycleSelection(true)
+	window.channelTree = channelTree
 
 	channelRootNode := tview.NewTreeNode("")
 	window.channelRootNode = channelRootNode
@@ -112,6 +115,8 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	guildList := tview.NewTreeView().
 		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetCycleSelection(true)
+	window.guildList = guildList
+
 	guildRootNode := tview.NewTreeNode("")
 	guildList.SetRoot(guildRootNode)
 	guildList.SetBorder(true)
@@ -306,33 +311,26 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 		window.app.QueueUpdate(func() {
 			for _, channel := range privateChannels {
-				var channelName string
-				if channel.Type == discordgo.ChannelTypeDM {
-					channelName = channel.Recipients[0].Username
-				} else if channel.Type == discordgo.ChannelTypeGroupDM {
-					if channel.Name != "" {
-						channelName = channel.Name
-					} else {
-						for index, recipient := range channel.Recipients {
-							if index == 0 {
-								channelName = recipient.Username
-							} else {
-								channelName = fmt.Sprintf("%s, %s", channelName, recipient.Username)
-							}
-						}
-					}
-				}
-
-				if channelName == "" {
-					channelName = "Unnamed"
-				}
-
+				channelName := discordgoplus.GetPrivateChannelName(channel)
 				channelCopy := channel
 				newNode := tview.NewTreeNode(channelName)
+
 				privateChatsNode.AddChild(newNode)
 				newNode.SetSelectedFunc(func() {
 					window.LoadChannel(channelCopy)
 					window.channelTitle.SetText(channelName)
+					if channelCopy.Type == discordgo.ChannelTypeDM {
+						window.overrideShowUsers = false
+						window.RefreshLayout()
+					} else if channelCopy.Type == discordgo.ChannelTypeGroupDM {
+						window.overrideShowUsers = true
+						loadError := window.userList.LoadGroup(channelCopy.ID)
+						if loadError != nil {
+							fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
+						}
+
+						window.RefreshLayout()
+					}
 				})
 			}
 
@@ -686,88 +684,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	window.rootContainer.SetTitleAlign(tview.AlignCenter)
 
 	app.SetRoot(window.rootContainer, true)
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == '.' &&
-			(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
-
-			window.commandMode = !window.commandMode
-
-			if window.commandMode {
-				app.SetFocus(window.commandView.commandInput)
-			} else {
-				app.SetFocus(window.messageInput.GetPrimitive())
-			}
-
-			window.commandView.SetVisible(window.commandMode)
-
-			return nil
-		}
-
-		if window.commandMode && event.Key() == tcell.KeyCtrlO {
-			if window.commandView.commandOutput.IsVisible() {
-				app.SetFocus(window.commandView.commandOutput)
-			}
-		}
-
-		if window.commandMode && event.Key() == tcell.KeyCtrlI {
-			if window.commandView.commandInput.IsVisible() {
-				app.SetFocus(window.commandView.commandInput)
-			}
-		}
-
-		if event.Rune() == 'U' &&
-			(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
-			conf := config.GetConfig()
-			conf.ShowUserContainer = !conf.ShowUserContainer
-
-			if !conf.ShowUserContainer {
-				app.SetFocus(window.messageInput.GetPrimitive())
-			}
-
-			config.PersistConfig()
-			window.RefreshLayout()
-			return nil
-		}
-
-		if event.Modifiers()&tcell.ModAlt == tcell.ModAlt {
-			if event.Rune() == 'f' {
-				window.SwitchToFriendsPage()
-				app.SetFocus(window.privateList)
-				return nil
-			}
-
-			if event.Rune() == 'c' {
-				window.SwitchToGuildsPage()
-				app.SetFocus(channelTree)
-				return nil
-			}
-
-			if event.Rune() == 's' {
-				window.SwitchToGuildsPage()
-				app.SetFocus(guildList)
-				return nil
-			}
-
-			if event.Rune() == 't' {
-				app.SetFocus(window.messageContainer)
-				return nil
-			}
-
-			if event.Rune() == 'u' {
-				if window.leftArea.GetCurrentPage() == guildPageName && window.userList.internalTreeView.IsVisible() {
-					app.SetFocus(window.userList.internalTreeView)
-				}
-				return nil
-			}
-
-			if event.Rune() == 'm' {
-				app.SetFocus(window.messageInput.GetPrimitive())
-				return nil
-			}
-		}
-
-		return event
-	})
+	app.SetInputCapture(window.handleGlobalShortcuts)
 
 	conf := config.GetConfig()
 
@@ -807,6 +724,89 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	app.SetFocus(guildList)
 
 	return &window, nil
+}
+
+func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
+	if event.Rune() == '.' &&
+		(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
+
+		window.commandMode = !window.commandMode
+
+		if window.commandMode {
+			window.app.SetFocus(window.commandView.commandInput)
+		} else {
+			window.app.SetFocus(window.messageInput.GetPrimitive())
+		}
+
+		window.commandView.SetVisible(window.commandMode)
+
+		return nil
+	}
+
+	if window.commandMode && event.Key() == tcell.KeyCtrlO {
+		if window.commandView.commandOutput.IsVisible() {
+			window.app.SetFocus(window.commandView.commandOutput)
+		}
+	}
+
+	if window.commandMode && event.Key() == tcell.KeyCtrlI {
+		if window.commandView.commandInput.IsVisible() {
+			window.app.SetFocus(window.commandView.commandInput)
+		}
+	}
+
+	if event.Rune() == 'U' &&
+		(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
+		conf := config.GetConfig()
+		conf.ShowUserContainer = !conf.ShowUserContainer
+
+		if !conf.ShowUserContainer {
+			window.app.SetFocus(window.messageInput.GetPrimitive())
+		}
+
+		config.PersistConfig()
+		window.RefreshLayout()
+		return nil
+	}
+
+	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt {
+		if event.Rune() == 'f' {
+			window.SwitchToFriendsPage()
+			window.app.SetFocus(window.privateList)
+			return nil
+		}
+
+		if event.Rune() == 'c' {
+			window.SwitchToGuildsPage()
+			window.app.SetFocus(window.channelTree)
+			return nil
+		}
+
+		if event.Rune() == 's' {
+			window.SwitchToGuildsPage()
+			window.app.SetFocus(window.guildList)
+			return nil
+		}
+
+		if event.Rune() == 't' {
+			window.app.SetFocus(window.messageContainer)
+			return nil
+		}
+
+		if event.Rune() == 'u' {
+			if window.leftArea.GetCurrentPage() == guildPageName && window.userList.internalTreeView.IsVisible() {
+				window.app.SetFocus(window.userList.internalTreeView)
+			}
+			return nil
+		}
+
+		if event.Rune() == 'm' {
+			window.app.SetFocus(window.messageInput.GetPrimitive())
+			return nil
+		}
+	}
+
+	return event
 }
 
 //ExecuteCommand tries to execute the given input as a command. The first word

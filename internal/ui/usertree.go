@@ -44,14 +44,37 @@ func NewUserTree(state *discordgo.State) *UserTree {
 	return userTree
 }
 
-// LoadGuild will load all available roles of the guild and then load all
-// available members. Afterwards the first available node will be selected.
-func (userTree *UserTree) LoadGuild(guildID string) error {
+func (userTree *UserTree) Clear() {
+	for _, roleNode := range userTree.roleNodes {
+		roleNode.ClearChildren()
+	}
+
 	userTree.userNodes = make(map[string]*tview.TreeNode)
 	userTree.roleNodes = make(map[string]*tview.TreeNode)
 	userTree.roles = make([]*discordgo.Role, 0)
 
 	userTree.rootNode.ClearChildren()
+}
+
+func (userTree *UserTree) LoadGroup(channelID string) error {
+	userTree.Clear()
+
+	channel, stateError := userTree.state.PrivateChannel(channelID)
+	if stateError != nil {
+		return stateError
+	}
+
+	userTree.AddOrUpdateUsers(channel.Recipients)
+
+	userTree.selectFirstNode()
+
+	return nil
+}
+
+// LoadGuild will load all available roles of the guild and then load all
+// available members. Afterwards the first available node will be selected.
+func (userTree *UserTree) LoadGuild(guildID string) error {
+	userTree.Clear()
 
 	guildRoles, roleLoadError := userTree.loadGuildRoles(guildID)
 	if roleLoadError != nil {
@@ -138,6 +161,26 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 	}
 
 	userTree.rootNode.AddChild(userNode)
+}
+
+func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
+	nameToUse := discordgoplus.GetUserName(user, nil)
+
+	userNode, contains := userTree.userNodes[user.ID]
+	if contains && userNode != nil {
+		userNode.SetText(nameToUse)
+		return
+	}
+
+	userNode = tview.NewTreeNode(nameToUse)
+	userTree.userNodes[user.ID] = userNode
+	userTree.rootNode.AddChild(userNode)
+}
+
+func (userTree *UserTree) AddOrUpdateUsers(users []*discordgo.User) {
+	for _, user := range users {
+		userTree.AddOrUpdateUser(user)
+	}
 }
 
 // AddOrUpdateMembers adds the all passed members to the tree, unless a node is
