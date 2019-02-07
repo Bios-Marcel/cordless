@@ -10,6 +10,7 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+// UserTree represents the visual list of users in a guild.
 type UserTree struct {
 	internalTreeView *tview.TreeView
 	rootNode         *tview.TreeNode
@@ -22,6 +23,7 @@ type UserTree struct {
 	roles     []*discordgo.Role
 }
 
+// NewUserTree creates a new pre-configured UserTree that is empty.
 func NewUserTree(state *discordgo.State) *UserTree {
 	userTree := &UserTree{
 		state:            state,
@@ -42,6 +44,8 @@ func NewUserTree(state *discordgo.State) *UserTree {
 	return userTree
 }
 
+// LoadGuild will load all available roles of the guild and then load all
+// available members. Afterwards the first available node will be selected.
 func (userTree *UserTree) LoadGuild(guildID string) error {
 	userTree.userNodes = make(map[string]*tview.TreeNode)
 	userTree.roleNodes = make(map[string]*tview.TreeNode)
@@ -109,6 +113,8 @@ func (userTree *UserTree) loadGuildRoles(guildID string) ([]*discordgo.Role, err
 	return guildRoles, nil
 }
 
+// AddOrUpdateMember adds the passed member to the tree, unless it is
+// already part of the tree, in that case the nodes name is updated.
 func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 	nameToUse := discordgoplus.GetMemberName(member, nil)
 
@@ -134,12 +140,15 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 	userTree.rootNode.AddChild(userNode)
 }
 
+// AddOrUpdateMembers adds the all passed members to the tree, unless a node is
+// already part of the tree, in that case the nodes name is updated.
 func (userTree *UserTree) AddOrUpdateMembers(members []*discordgo.Member) {
 	for _, member := range members {
 		userTree.AddOrUpdateMember(member)
 	}
 }
 
+// RemoveMember finds and removes a node from the tree.
 func (userTree *UserTree) RemoveMember(member *discordgo.Member) {
 	userNode, contains := userTree.userNodes[member.User.ID]
 	if contains {
@@ -174,6 +183,7 @@ func (userTree *UserTree) RemoveMember(member *discordgo.Member) {
 	}
 }
 
+// RemoveMembers finds and removes all passed members from the tree.
 func (userTree *UserTree) RemoveMembers(members []*discordgo.Member) {
 	for _, member := range members {
 		userTree.RemoveMember(member)
