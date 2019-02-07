@@ -741,11 +741,9 @@ func (window *Window) askForMessageDeletion(messageID string, usedWithSelection 
 	dialog.SetText("Do you really want to delete the message?")
 	dialog.AddButtons([]string{"Abort", "Delete"})
 
-	hasDeleted := false
 	dialog.SetDoneFunc(func(index int, label string) {
 		if index == 1 {
 			go window.session.ChannelMessageDelete(window.selectedChannel.ID, messageID)
-			hasDeleted = true
 		}
 
 		window.exitMessageEditMode()
