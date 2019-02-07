@@ -8,6 +8,23 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+func CreateFocusTextViewOnTypeInputHandler(treeView *tview.Box, app *tview.Application, component *tview.TextView) func(event *tcell.EventKey) *tcell.EventKey {
+	eventHandler := func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() != 0 && event.Modifiers() == tcell.ModNone {
+			inputHandler := component.InputHandler()
+			if inputHandler != nil {
+				app.SetFocus(component)
+				inputHandler(event, nil)
+				return nil
+			}
+		}
+
+		return event
+	}
+
+	return eventHandler
+}
+
 func CreateSearchOnTypeInuptHandler(treeView *tview.TreeView, rootNode *tview.TreeNode, jumpTime *time.Time, jumpBuffer *string) func(event *tcell.EventKey) *tcell.EventKey {
 	var traversalFunction func(node *tview.TreeNode) bool
 	traversalFunction = func(node *tview.TreeNode) bool {

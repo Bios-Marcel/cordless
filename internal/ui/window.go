@@ -623,16 +623,31 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	if config.GetConfig().OnTypeInListBehaviour == config.SearchOnTypeInList {
 		var guildJumpBuffer string
 		var guildJumpTime time.Time
-		guildList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(guildList, guildRootNode, &guildJumpTime, &guildJumpBuffer))
+		guildList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
+			guildList, guildRootNode, &guildJumpTime, &guildJumpBuffer))
 		var channelJumpBuffer string
 		var channelJumpTime time.Time
-		channelTree.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(channelTree, channelRootNode, &channelJumpTime, &channelJumpBuffer))
+		channelTree.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
+			channelTree, channelRootNode, &channelJumpTime, &channelJumpBuffer))
 		var userJumpBuffer string
 		var userJumpTime time.Time
-		window.userList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(window.userList, window.userRootNode, &userJumpTime, &userJumpBuffer))
+		window.userList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
+			window.userList, window.userRootNode, &userJumpTime, &userJumpBuffer))
 		var privateJumpBuffer string
 		var privateJumpTime time.Time
-		window.privateList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(window.privateList, window.privateRootNode, &privateJumpTime, &privateJumpBuffer))
+		window.privateList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
+			window.privateList, window.privateRootNode, &privateJumpTime, &privateJumpBuffer))
+	} else if config.GetConfig().OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
+		guildList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+			guildList.Box, window.app, window.messageInput.internalTextView))
+		channelTree.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+			channelTree.Box, window.app, window.messageInput.internalTextView))
+		window.userList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+			window.userList.Box, window.app, window.messageInput.internalTextView))
+		window.privateList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+			window.privateList.Box, window.app, window.messageInput.internalTextView))
+		window.chatView.internalTextView.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+			window.chatView.internalTextView.Box, window.app, window.messageInput.internalTextView))
 	}
 
 	window.rootContainer = tview.NewFlex().
