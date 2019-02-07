@@ -992,6 +992,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	window.SetMessages(messages)
 	window.chatView.ClearSelection()
+	window.chatView.internalTextView.ScrollToEnd()
 
 	if channel.Topic != "" {
 		window.channelTitle.SetText(channel.Name + " - " + channel.Topic)
