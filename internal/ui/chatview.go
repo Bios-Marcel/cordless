@@ -107,10 +107,21 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		if message.Type == discordgo.MessageTypeDefault {
 			messageText = tview.Escape(message.Content)
 			for _, user := range message.Mentions {
-				escapedUsername := tview.Escape(user.Username)
+				var userName string
+				if message.GuildID != "" {
+					member, cacheError := chatView.session.State.Member(message.GuildID, user.ID)
+					if cacheError == nil {
+						userName = discordgoplus.GetMemberName(member, nil)
+					}
+				}
+
+				if userName == "" {
+					userName = discordgoplus.GetUserName(user, nil)
+				}
+
 				messageText = strings.NewReplacer(
-					"<@"+user.ID+">", "[blue]@"+escapedUsername+"[white]",
-					"<@!"+user.ID+">", "[blue]@"+escapedUsername+"[white]",
+					"<@"+user.ID+">", "[blue]@"+userName+"[white]",
+					"<@!"+user.ID+">", "[blue]@"+userName+"[white]",
 				).Replace(messageText)
 			}
 		} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
@@ -223,7 +234,7 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		var messageAuthor string
 		if message.GuildID != "" {
 			member, cacheError := chatView.session.State.Member(message.GuildID, message.Author.ID)
-			if cacheError == nil && member.Nick != "" {
+			if cacheError == nil {
 				messageAuthor = discordgoplus.GetMemberName(member, &userColor)
 			}
 		}
