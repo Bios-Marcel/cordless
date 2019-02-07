@@ -52,8 +52,7 @@ type Window struct {
 
 	editingMessageID *string
 
-	userList     *tview.TreeView
-	userRootNode *tview.TreeNode
+	userList *UserTree
 
 	overrideShowUsers bool
 
@@ -86,6 +85,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		return nil, err
 	}
 
+	//FIXME Bug: If you are in more than 100 guilds, you won't see a lot of them!
 	guilds, discordError := discord.UserGuilds(100, "", "")
 	if discordError != nil {
 		return nil, discordError
@@ -117,6 +117,38 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	guildList.SetBorder(true)
 	guildList.SetTopLevel(1)
 
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMembersChunk) {
+		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
+			window.app.QueueUpdateDraw(func() {
+				window.userList.AddOrUpdateMembers(event.Members)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMemberRemove) {
+		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
+			window.app.QueueUpdateDraw(func() {
+				window.userList.RemoveMember(event.Member)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMemberAdd) {
+		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
+			window.app.QueueUpdateDraw(func() {
+				window.userList.AddOrUpdateMember(event.Member)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMemberUpdate) {
+		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
+			window.app.QueueUpdateDraw(func() {
+				window.userList.AddOrUpdateMember(event.Member)
+			})
+		}
+	})
+
 	var selectedGuildNode *tview.TreeNode
 
 	for _, tempGuild := range guilds {
@@ -136,6 +168,8 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			channelRootNode.ClearChildren()
 
 			channels, discordError := discord.GuildChannels(guild.ID)
+
+			discord.RequestGuildMembers(guild.ID, "", 0)
 
 			if discordError != nil {
 				window.ShowErrorDialog(fmt.Sprintf("An error occurred while trying to receive the channels: %s", discordError.Error()))
@@ -214,7 +248,10 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 				window.app.SetFocus(channelTree)
 			}
 
-			go window.LoadUsersForGuild(guild)
+			loadError := window.userList.LoadGuild(guild.ID)
+			if loadError != nil {
+				window.ShowErrorDialog(loadError.Error())
+			}
 		})
 	}
 
@@ -612,13 +649,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 	window.commandView = NewCommandView(window.ExecuteCommand)
 
-	window.userRootNode = tview.NewTreeNode("")
-	window.userList = tview.NewTreeView().
-		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
-		SetRoot(window.userRootNode).
-		SetTopLevel(1).
-		SetCycleSelection(true)
-	window.userList.SetBorder(true)
+	window.userList = NewUserTree(window.session.State)
 
 	if config.GetConfig().OnTypeInListBehaviour == config.SearchOnTypeInList {
 		var guildJumpBuffer string
@@ -632,7 +663,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		var userJumpBuffer string
 		var userJumpTime time.Time
 		window.userList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
-			window.userList, window.userRootNode, &userJumpTime, &userJumpBuffer))
+			window.userList.internalTreeView, window.userList.rootNode, &userJumpTime, &userJumpBuffer))
 		var privateJumpBuffer string
 		var privateJumpTime time.Time
 		window.privateList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
@@ -643,7 +674,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		channelTree.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
 			channelTree.Box, window.app, window.messageInput.internalTextView))
 		window.userList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
-			window.userList.Box, window.app, window.messageInput.internalTextView))
+			window.userList.internalTreeView.Box, window.app, window.messageInput.internalTextView))
 		window.privateList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
 			window.privateList.Box, window.app, window.messageInput.internalTextView))
 		window.chatView.internalTextView.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
@@ -723,8 +754,8 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			}
 
 			if event.Rune() == 'u' {
-				if window.leftArea.GetCurrentPage() == guildPageName && window.userList.IsVisible() {
-					app.SetFocus(window.userList)
+				if window.leftArea.GetCurrentPage() == guildPageName && window.userList.internalTreeView.IsVisible() {
+					app.SetFocus(window.userList.internalTreeView)
 				}
 				return nil
 			}
@@ -743,11 +774,11 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	if conf.UseFixedLayout {
 		window.rootContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 7, true)
 		window.rootContainer.AddItem(window.chatArea, 0, 1, false)
-		window.rootContainer.AddItem(window.userList, conf.FixedSizeRight, 6, false)
+		window.rootContainer.AddItem(window.userList.internalTreeView, conf.FixedSizeRight, 6, false)
 	} else {
 		window.rootContainer.AddItem(window.leftArea, 0, 7, true)
 		window.rootContainer.AddItem(window.chatArea, 0, 20, false)
-		window.rootContainer.AddItem(window.userList, 0, 6, false)
+		window.rootContainer.AddItem(window.userList.internalTreeView, 0, 6, false)
 	}
 
 	mentionWindow.SetVisible(false)
@@ -866,17 +897,17 @@ func (window *Window) SwitchToFriendsPage() {
 func (window *Window) RefreshLayout() {
 	conf := config.GetConfig()
 
-	window.userList.SetVisible(conf.ShowUserContainer && window.overrideShowUsers)
+	window.userList.internalTreeView.SetVisible(conf.ShowUserContainer && window.overrideShowUsers)
 	window.channelTitle.SetVisible(conf.ShowChatHeader)
 
 	if conf.UseFixedLayout {
 		window.rootContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
 		window.rootContainer.ResizeItem(window.chatArea, 0, 1)
-		window.rootContainer.ResizeItem(window.userList, conf.FixedSizeRight, 6)
+		window.rootContainer.ResizeItem(window.userList.internalTreeView, conf.FixedSizeRight, 6)
 	} else {
 		window.rootContainer.ResizeItem(window.leftArea, 0, 7)
 		window.rootContainer.ResizeItem(window.chatArea, 0, 20)
-		window.rootContainer.ResizeItem(window.userList, 0, 6)
+		window.rootContainer.ResizeItem(window.userList.internalTreeView, 0, 6)
 	}
 
 	window.app.ForceDraw()
@@ -951,85 +982,6 @@ func (window *Window) AddMessages(messages []*discordgo.Message) {
 func (window *Window) SetMessages(messages []*discordgo.Message) {
 	window.shownMessages = messages
 	window.chatView.SetMessages(window.shownMessages)
-}
-
-// LoadUsersForGuild loads all users for a guild and adds them to the view.
-// If no user is selected, the first available node gets selected.
-func (window *Window) LoadUsersForGuild(userGuild *discordgo.UserGuild) {
-	guild, discordError := window.session.Guild(userGuild.ID)
-	//TODO Handle error
-	if discordError != nil {
-		return
-	}
-
-	discordError = window.session.State.GuildAdd(guild)
-	//TODO Handle error
-	if discordError != nil {
-		return
-	}
-
-	users, discordError := discordgoplus.LoadGuildMembers(window.session, guild.ID)
-
-	//TODO Filter
-	/*for _, user := range members {
-		matched := false
-		for _, presence := range guildState.Presences {
-			if presence.User.ID == user.User.ID {
-				matched = true
-				break
-			}
-		}
-
-		if matched {
-			users = append(users, user)
-		}
-	}*/
-
-	guildRoles := guild.Roles
-
-	sort.Slice(guildRoles, func(a, b int) bool {
-		return guildRoles[a].Position > guildRoles[b].Position
-	})
-
-	window.app.QueueUpdateDraw(func() {
-		window.userRootNode.ClearChildren()
-
-		roleNodes := make(map[string]*tview.TreeNode)
-
-		for _, role := range guildRoles {
-			if role.Hoist {
-				roleNode := tview.NewTreeNode(role.Name)
-				roleNode.SetSelectable(false)
-				roleNodes[role.ID] = roleNode
-				window.userRootNode.AddChild(roleNode)
-			}
-		}
-
-	USER:
-		for _, user := range users {
-			nameToUse := discordgoplus.GetMemberName(user, nil)
-			userNode := tview.NewTreeNode(nameToUse)
-
-			discordgoplus.SortUserRoles(user.Roles, guildRoles)
-
-			for _, userRole := range user.Roles {
-				roleNode, exists := roleNodes[userRole]
-				if exists {
-					roleNode.AddChild(userNode)
-					continue USER
-				}
-			}
-
-			window.userRootNode.AddChild(userNode)
-		}
-
-		if window.userList.GetCurrentNode() == nil {
-			userNodes := window.userRootNode.GetChildren()
-			if userNodes != nil && len(userNodes) > 0 {
-				window.userList.SetCurrentNode(window.userRootNode.GetChildren()[0])
-			}
-		}
-	})
 }
 
 //RegisterCommand register a command. That makes the command available for
