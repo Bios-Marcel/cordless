@@ -110,7 +110,7 @@ func login() (*discordgo.Session, error) {
 	log.Println("Please choose wether to login via username and password (1) or authentication token (2).")
 	var choice int
 
-	_, err := fmt.Scanf("%d", &choice)
+	_, err := fmt.Scanf("%d\n", &choice)
 
 	if err != nil {
 		log.Println("Invalid input, please try again.")
