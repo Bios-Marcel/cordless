@@ -56,7 +56,7 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		session:          session,
 		ownUserID:        ownUserID,
 		selection:        -1,
-		selectionMode:    false,
+		selectionMode:    true,
 	}
 
 	if config.GetConfig().ShortenLinks {
@@ -74,14 +74,13 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 			return nil
 		}
 
-		if chatView.selectionMode {
-			if event.Key() == tcell.KeyUp && event.Modifiers() == tcell.ModNone {
+		if chatView.selectionMode && event.Modifiers() == tcell.ModNone {
+			if event.Key() == tcell.KeyUp {
 				if chatView.selection == -1 {
 					chatView.selection = len(chatView.data) - 1
 				} else {
-					chatView.selection--
-					if chatView.selection < 0 {
-						chatView.selection = len(chatView.data) - 1
+					if chatView.selection >= 1 {
+						chatView.selection--
 					}
 				}
 
@@ -90,15 +89,30 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 				return nil
 			}
 
-			if event.Key() == tcell.KeyDown && event.Modifiers() == tcell.ModNone {
+			if event.Key() == tcell.KeyDown {
 				if chatView.selection == -1 {
 					chatView.selection = 0
 				} else {
-					chatView.selection++
-					if chatView.selection >= len(chatView.data) {
-						chatView.selection = 0
+					if chatView.selection <= len(chatView.data)-2 {
+						chatView.selection++
 					}
 				}
+
+				chatView.updateHighlights()
+
+				return nil
+			}
+
+			if event.Key() == tcell.KeyHome {
+				chatView.selection = 0
+
+				chatView.updateHighlights()
+
+				return nil
+			}
+
+			if event.Key() == tcell.KeyEnd {
+				chatView.selection = len(chatView.data) - 1
 
 				chatView.updateHighlights()
 
