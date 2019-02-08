@@ -85,7 +85,7 @@ func (engine *JavaScriptEngine) readScriptsRecursively(dirname string) error {
 func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 	newText = oldText
 	for _, vm := range engine.vms {
-		jsValue, jsError := vm.Run(fmt.Sprintf(`onMessageSend("%s")`, newText))
+		jsValue, jsError := vm.Run(fmt.Sprintf("onMessageSend(\"%s\")", escapeNewlines(newText)))
 		if jsError != nil {
 			//This script failed, go to next one
 			continue
@@ -94,4 +94,8 @@ func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 	}
 
 	return
+}
+
+func escapeNewlines(parameter string) string {
+	return strings.Replace(parameter, "\n", "\\n", -1)
 }
