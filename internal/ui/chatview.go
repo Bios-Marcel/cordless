@@ -76,6 +76,10 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		}()
 	}
 
+	chatView.internalTextView.SetOnBlur(func() {
+		chatView.ClearSelection()
+	})
+
 	chatView.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyCtrlS && event.Modifiers() == tcell.ModCtrl {
 			chatView.selectionMode = !chatView.selectionMode
