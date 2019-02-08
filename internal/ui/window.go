@@ -399,7 +399,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			}
 
 			if event.Rune() == 'l' {
-				copyError := clipboard.WriteAll(fmt.Sprintf("https://discordapp.com/channels/@me/%s/%s", message.ChannelID, message.ID))
+				copyError := clipboard.WriteAll(fmt.Sprintf("<https://discordapp.com/channels/@me/%s/%s>", message.ChannelID, message.ID))
 				if copyError != nil {
 					window.ShowErrorDialog(fmt.Sprintf("Error copying message link: %s", copyError.Error()))
 				}
