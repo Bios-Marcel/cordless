@@ -779,7 +779,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	mentionWindow.SetVisible(false)
 	mentionWindow.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch key := event.Key(); key {
-		case tcell.KeyRune, tcell.KeyDelete, tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyLeft, tcell.KeyRight:
+		case tcell.KeyRune, tcell.KeyDelete, tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyLeft, tcell.KeyRight, tcell.KeyCtrlA, tcell.KeyCtrlV:
 			window.messageInput.internalTextView.GetInputCapture()(event)
 			return nil
 		}
