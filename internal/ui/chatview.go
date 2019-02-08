@@ -74,7 +74,8 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 			return nil
 		}
 
-		if chatView.selectionMode && event.Modifiers() == tcell.ModNone {
+		if chatView.selectionMode && chatView.selection > 0 &&
+			chatView.selection < len(chatView.data) && event.Modifiers() == tcell.ModNone {
 			if event.Key() == tcell.KeyUp {
 				if chatView.selection == -1 {
 					chatView.selection = len(chatView.data) - 1
