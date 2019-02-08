@@ -32,10 +32,13 @@ const (
 type Editor struct {
 	internalTextView *tview.TextView
 
-	inputCapture            func(event *tcell.EventKey) *tcell.EventKey
-	mentionCharacterHandler func(event *tcell.EventKey) *tcell.EventKey
-	heightRequestHandler    func(requestHeight int)
-	requestedHeight         int
+	inputCapture           func(event *tcell.EventKey) *tcell.EventKey
+	mentionShowHandler     func(namePart string)
+	mentionHideHandler     func()
+	heightRequestHandler   func(requestHeight int)
+	requestedHeight        int
+	currentMentionBeginIdx int
+	currentMentionEndIdx   int
 }
 
 // NewEditor Instanciates a ready to use text editor.
@@ -248,10 +251,36 @@ func NewEditor() *Editor {
 				editor.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
 					string(left), string(character), string(selection), string(right)))
 			}
+		}
 
-			if character == '@' && editor.mentionCharacterHandler != nil {
-				editor.mentionCharacterHandler(event)
+		atIndex := -1
+		newLeft := editor.internalTextView.GetRegionText("left")
+		for i := len(newLeft) - 1; i >= 0; i-- {
+			if newLeft[i] == ' ' {
+				break
 			}
+
+			if newLeft[i] == '@' {
+				atIndex = i
+				break
+			}
+		}
+
+		if atIndex != -1 {
+			lookup := editor.GetText()[atIndex+1:]
+			endIndex := strings.Index(lookup, " ")
+
+			if endIndex == -1 {
+				endIndex = len(lookup)
+			}
+
+			editor.currentMentionBeginIdx = atIndex + 1
+			editor.currentMentionEndIdx = endIndex + atIndex
+			editor.mentionShowHandler(lookup[:endIndex])
+		} else {
+			editor.currentMentionBeginIdx = 0
+			editor.currentMentionEndIdx = 0
+			editor.mentionHideHandler()
 		}
 
 		editor.triggerHeightRequestIfNeccessary()
@@ -330,8 +359,20 @@ func (editor *Editor) SetInputCapture(captureFunc func(event *tcell.EventKey) *t
 	editor.inputCapture = captureFunc
 }
 
-func (editor *Editor) SetMentionCharacterHandler(handlerFunc func(event *tcell.EventKey) *tcell.EventKey) {
-	editor.mentionCharacterHandler = handlerFunc
+// SetMentionShowHandler sets the handler for when a mention is being requested
+func (editor *Editor) SetMentionShowHandler(handlerFunc func(namePart string)) {
+	editor.mentionShowHandler = handlerFunc
+}
+
+// SetMentionHideHandler sets the handler for when a mention is no longer being requested
+func (editor *Editor) SetMentionHideHandler(handlerFunc func()) {
+	editor.mentionHideHandler = handlerFunc
+}
+
+// GetCurrentMentionIndices gets the starting and ending indices of the input box text
+// which are to be replaced
+func (editor *Editor) GetCurrentMentionIndices() (int, int) {
+	return editor.currentMentionBeginIdx, editor.currentMentionEndIdx
 }
 
 // GetText returns the text without color tags, region tags and so on.
