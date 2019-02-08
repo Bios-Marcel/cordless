@@ -403,6 +403,12 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 				return nil
 			}
 
+			if event.Rune() == 'r' {
+				window.messageInput.SetText("@" + message.Author.Username + "#" + message.Author.Discriminator + " " + window.messageInput.GetText())
+				app.SetFocus(window.messageInput.GetPrimitive())
+				return nil
+			}
+
 			if event.Rune() == 'l' {
 				copyError := clipboard.WriteAll(fmt.Sprintf("<https://discordapp.com/channels/@me/%s/%s>", message.ChannelID, message.ID))
 				if copyError != nil {
