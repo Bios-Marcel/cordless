@@ -445,15 +445,27 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		window.commandView.commandOutput.Clear()
 
 		if window.selectedChannel != nil {
-			guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
-			if discordError == nil {
-				for _, user := range guild.Members {
-					if strings.Contains(strings.ToUpper(user.Nick), strings.ToUpper(namePart)) || strings.Contains(strings.ToUpper(user.User.Username)+"#"+user.User.Discriminator, strings.ToUpper(namePart)) {
-						userName := user.User.Username + "#" + user.User.Discriminator
-						userNodeText := "\t" + userName
-						if len(user.Nick) > 0 {
-							userNodeText += " | " + user.Nick
+			if window.selectedGuild != nil {
+				guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+				if discordError == nil {
+					for _, user := range guild.Members {
+						if strings.Contains(strings.ToUpper(user.Nick), strings.ToUpper(namePart)) || strings.Contains(strings.ToUpper(user.User.Username)+"#"+user.User.Discriminator, strings.ToUpper(namePart)) {
+							userName := user.User.Username + "#" + user.User.Discriminator
+							userNodeText := "\t" + userName
+							if len(user.Nick) > 0 {
+								userNodeText += " | " + user.Nick
+							}
+							userNode := tview.NewTreeNode(userNodeText)
+							userNode.SetReference(userName)
+							mentionWindow.GetRoot().AddChild(userNode)
 						}
+					}
+				}
+			} else {
+				for _, user := range window.selectedChannel.Recipients {
+					if strings.Contains(strings.ToUpper(user.Username)+"#"+user.Discriminator, strings.ToUpper(namePart)) {
+						userName := user.Username + "#" + user.Discriminator
+						userNodeText := "\t" + userName
 						userNode := tview.NewTreeNode(userNodeText)
 						userNode.SetReference(userName)
 						mentionWindow.GetRoot().AddChild(userNode)
@@ -523,12 +535,16 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 					//Replace formatter characters and replace emoji codes.
 					messageToSend = emoji.Sprintf(strings.Replace(messageToSend, "%", "%%", -1))
 
-					members, discordError := window.session.State.Members(window.selectedGuild.ID)
-					if discordError == nil {
-						if window.selectedGuild != nil {
+					if window.selectedGuild != nil {
+						members, discordError := window.session.State.Members(window.selectedGuild.ID)
+						if discordError == nil {
 							for _, member := range members {
 								messageToSend = strings.Replace(messageToSend, "@"+member.User.Username+"#"+member.User.Discriminator, "<@"+member.User.ID+">", -1)
 							}
+						}
+					} else if window.selectedChannel != nil {
+						for _, user := range window.selectedChannel.Recipients {
+							messageToSend = strings.Replace(messageToSend, "@"+user.Username+"#"+user.Discriminator, "<@"+user.ID+">", -1)
 						}
 					}
 
@@ -1024,7 +1040,6 @@ func (window *Window) RefreshLayout() {
 
 //LoadChannel eagerly loads the channels messages.
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
-
 	var messages []*discordgo.Message
 
 	// Data not present
@@ -1074,6 +1089,10 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 
 	window.selectedChannel = channel
+	if channel.GuildID == "" {
+		window.selectedGuild = nil
+	}
+
 	window.exitMessageEditModeAndKeepText()
 
 	if config.GetConfig().FocusMessageInputAfterChannelSelection {
