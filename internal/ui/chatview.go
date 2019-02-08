@@ -28,7 +28,7 @@ import (
 var (
 	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)")
 	channelMentionRegex = regexp.MustCompile("<#\\d*>")
-	urlRegex            = regexp.MustCompile("https?://(.+?)(?:(?:/.*)|\\s|$)")
+	urlRegex            = regexp.MustCompile("<?https?://(.+?)(?:(?:/.*)|\\s|$|>)")
 	shortener           = linkshortener.NewShortener(51726)
 	userColor           = "green"
 )
@@ -135,6 +135,8 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 	return &chatView
 }
 
+// SetOnMessageAction sets the handler that will get called if the user tries
+// to interact with a selected message.
 func (chatView *ChatView) SetOnMessageAction(onMessageAction func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey) {
 	chatView.onMessageAction = onMessageAction
 }
@@ -246,10 +248,11 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 			urlMatches := urlRegex.FindAllStringSubmatch(messageText, 1000)
 
 			for _, urlMatch := range urlMatches {
-				if (len(urlMatch[1]) + 35) < len(urlMatch[0]) {
-					shortenedURL := fmt.Sprintf("(%s) %s", urlMatch[1], shortener.Shorten(urlMatch[0]))
-					messageText = strings.Replace(messageText, urlMatch[0], shortenedURL, 1)
+				newURL := strings.TrimSuffix(strings.TrimPrefix(urlMatch[0], "<"), ">")
+				if (len(urlMatch[1]) + 35) < len(newURL) {
+					newURL = fmt.Sprintf("(%s) %s", urlMatch[1], shortener.Shorten(newURL))
 				}
+				messageText = strings.Replace(messageText, urlMatch[0], newURL, 1)
 			}
 		}
 
