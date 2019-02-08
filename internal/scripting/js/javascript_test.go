@@ -1,4 +1,4 @@
-package scripting
+package js
 
 import (
 	"testing"

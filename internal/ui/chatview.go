@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	linkshortener "github.com/Bios-Marcel/shortnotforlong"
+
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
 	"github.com/Bios-Marcel/cordless/internal/times"
 	"github.com/gdamore/tcell"
@@ -16,7 +18,6 @@ import (
 	// Blank import for initializing the tview formatter
 	_ "github.com/Bios-Marcel/cordless/internal/syntax"
 	"github.com/Bios-Marcel/discordgo"
-	linkshortener "github.com/Bios-Marcel/shortnotforlong"
 	"github.com/Bios-Marcel/tview"
 
 	"github.com/alecthomas/chroma"
@@ -31,7 +32,6 @@ var (
 	urlRegex            = regexp.MustCompile("<?(https?://)(.+?)(/.+?)?($|\\s|\\||>)")
 	spoilerRegex        = regexp.MustCompile("(?s)\\|\\|(.+?)\\|\\|")
 
-	shortener = linkshortener.NewShortener(51726)
 	userColor = "green"
 )
 
@@ -40,6 +40,8 @@ var (
 // also supports multiline.
 type ChatView struct {
 	internalTextView *tview.TextView
+
+	shortener *linkshortener.Shortener
 
 	session   *discordgo.Session
 	data      []*discordgo.Message
@@ -65,8 +67,9 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 	}
 
 	if config.GetConfig().ShortenLinks {
+		chatView.shortener = linkshortener.NewShortener(config.GetConfig().ShortenerPort)
 		go func() {
-			shortenerError := shortener.Start()
+			shortenerError := chatView.shortener.Start()
 			if shortenerError != nil {
 				log.Fatalln("Error creating shortener:", shortenerError.Error())
 			}
@@ -275,7 +278,7 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 					newURL = newURL + urlMatch[3]
 				}
 				if (len(urlMatch[2]) + 35) < len(newURL) {
-					newURL = fmt.Sprintf("(%s) %s", urlMatch[2], shortener.Shorten(newURL))
+					newURL = fmt.Sprintf("(%s) %s", urlMatch[2], chatView.shortener.Shorten(newURL))
 				}
 				if len(urlMatch) == 5 {
 					newURL = newURL + strings.TrimSuffix(urlMatch[4], ">")

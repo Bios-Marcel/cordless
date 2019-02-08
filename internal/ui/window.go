@@ -15,6 +15,7 @@ import (
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
 	"github.com/Bios-Marcel/cordless/internal/maths"
 	"github.com/Bios-Marcel/cordless/internal/scripting"
+	"github.com/Bios-Marcel/cordless/internal/scripting/js"
 	"github.com/Bios-Marcel/cordless/internal/times"
 	"github.com/Bios-Marcel/cordless/internal/ui/tview/treeview"
 	"github.com/Bios-Marcel/discordgo"
@@ -67,7 +68,7 @@ type Window struct {
 	selectedChannelNode *tview.TreeNode
 	selectedChannel     *discordgo.Channel
 
-	scripting scripting.Engine
+	jsEngine scripting.Engine
 
 	commandMode bool
 	commandView *CommandView
@@ -79,13 +80,16 @@ type Window struct {
 //start the application.
 func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, error) {
 	window := Window{
-		session:   discord,
-		app:       app,
-		commands:  make(map[string]func(io.Writer, *Window, []string), 1),
-		scripting: scripting.New(),
+		session:  discord,
+		app:      app,
+		commands: make(map[string]func(io.Writer, *Window, []string), 1),
+		jsEngine: js.New(),
 	}
 
-	if err := window.scripting.LoadScripts(config.GetScriptDirectory()); err != nil {
+	window.commandView = NewCommandView(window.ExecuteCommand)
+
+	window.jsEngine.SetErrorOutput(window.commandView.commandOutput)
+	if err := window.jsEngine.LoadScripts(config.GetScriptDirectory()); err != nil {
 		return nil, err
 	}
 
@@ -559,7 +563,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 						window.exitMessageEditMode()
 					} else {
 						go func() {
-							_, sendError := discord.ChannelMessageSend(window.selectedChannel.ID, window.scripting.OnMessageSend(messageToSend))
+							_, sendError := discord.ChannelMessageSend(window.selectedChannel.ID, window.jsEngine.OnMessageSend(messageToSend))
 							if sendError != nil {
 								window.app.QueueUpdateDraw(func() {
 									window.ShowErrorDialog("Error sending message: " + sendError.Error())
@@ -728,8 +732,6 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	window.channelTitle = tview.NewTextView()
 	window.channelTitle.SetBorderSides(true, true, false, true)
 	window.channelTitle.SetBorder(true)
-
-	window.commandView = NewCommandView(window.ExecuteCommand)
 
 	window.userList = NewUserTree(window.session.State)
 

@@ -1,21 +1,24 @@
-package scripting
+package js
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/internal/scripting"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
 
-var _ Engine = &JavaScriptEngine{}
+var _ scripting.Engine = &JavaScriptEngine{}
 
 // JavaScriptEngine stores scripting engine state
 type JavaScriptEngine struct {
-	vms []*otto.Otto
+	vms         []*otto.Otto
+	errorOutput io.Writer
 }
 
 // New instantiates a new scripting engine
@@ -81,12 +84,19 @@ func (engine *JavaScriptEngine) readScriptsRecursively(dirname string) error {
 	return nil
 }
 
+func (engine *JavaScriptEngine) SetErrorOutput(errorOutput io.Writer) {
+	engine.errorOutput = errorOutput
+}
+
 // OnMessageSend implements Engine
 func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 	newText = oldText
 	for _, vm := range engine.vms {
 		jsValue, jsError := vm.Run(fmt.Sprintf("onMessageSend(\"%s\")", escapeNewlines(newText)))
 		if jsError != nil {
+			if engine.errorOutput != nil {
+				fmt.Fprintf(engine.errorOutput, "Error occured during execution of javascript: %s", jsError.Error())
+			}
 			//This script failed, go to next one
 			continue
 		}
@@ -97,5 +107,9 @@ func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 }
 
 func escapeNewlines(parameter string) string {
-	return strings.Replace(parameter, "\n", "\\n", -1)
+	return strings.NewReplacer(
+		"\\", "\\\\",
+		"\n", "\\n",
+		"\"", "\\\"").
+		Replace(parameter)
 }

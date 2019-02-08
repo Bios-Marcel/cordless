@@ -47,6 +47,7 @@ var (
 		FocusMessageInputAfterChannelSelection: true,
 		OnTypeInListBehaviour:                  SearchOnTypeInList,
 		ShortenLinks:                           false,
+		ShortenerPort:                          51726,
 	}
 )
 
@@ -89,6 +90,9 @@ type Config struct {
 	// ShortenLinks decides wether cordless starts a local webserver in order
 	// to be able to shorten links
 	ShortenLinks bool
+	// ShortenerPort defines the port, that the webserver for the linkshortener
+	// will be using.
+	ShortenerPort int
 }
 
 var cachedConfigDir string
