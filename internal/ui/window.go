@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
+
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
 	"github.com/Bios-Marcel/cordless/internal/maths"
@@ -397,12 +399,22 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			}
 
 			if event.Key() == tcell.KeyDelete {
-				window.askForMessageDeletion(message.ID, true)
+				if message.Author.ID == window.session.State.User.ID {
+					window.askForMessageDeletion(message.ID, true)
+				}
 				return nil
 			}
 
 			if event.Rune() == 'e' {
 				window.startEditingMessage(message)
+				return nil
+			}
+
+			if event.Rune() == 'c' {
+				copyError := clipboard.WriteAll(message.ContentWithMentionsReplaced())
+				if copyError != nil {
+					window.ShowErrorDialog(fmt.Sprintf("Error copying message: %s", copyError.Error()))
+				}
 				return nil
 			}
 		}
