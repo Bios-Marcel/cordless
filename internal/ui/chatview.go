@@ -29,8 +29,10 @@ var (
 	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)")
 	channelMentionRegex = regexp.MustCompile("<#\\d*>")
 	urlRegex            = regexp.MustCompile("<?https?://(.+?)(?:(?:/.*)|\\s|$|>)")
-	shortener           = linkshortener.NewShortener(51726)
-	userColor           = "green"
+	spoilerRegex        = regexp.MustCompile("(?s)\\|\\|(.+?)\\|\\|")
+
+	shortener = linkshortener.NewShortener(51726)
+	userColor = "green"
 )
 
 // ChatView is using a tview.TextView in order to be able to display messages
@@ -46,17 +48,20 @@ type ChatView struct {
 	selection     int
 	selectionMode bool
 
+	showSpoilerContent map[string]bool
+
 	onMessageAction func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey
 }
 
 // NewChatView constructs a new ready to use ChatView.
 func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 	chatView := ChatView{
-		internalTextView: tview.NewTextView(),
-		session:          session,
-		ownUserID:        ownUserID,
-		selection:        -1,
-		selectionMode:    true,
+		internalTextView:   tview.NewTextView(),
+		session:            session,
+		ownUserID:          ownUserID,
+		selection:          -1,
+		selectionMode:      true,
+		showSpoilerContent: make(map[string]bool, 0),
 	}
 
 	if config.GetConfig().ShortenLinks {
@@ -116,6 +121,18 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 
 				chatView.updateHighlights()
 
+				return nil
+			}
+
+			if chatView.selection > 0 && chatView.selection < len(chatView.data) && event.Rune() == 's' {
+				messageID := chatView.data[chatView.selection].ID
+				currentValue, contains := chatView.showSpoilerContent[messageID]
+				if contains {
+					chatView.showSpoilerContent[messageID] = !currentValue
+				} else {
+					chatView.showSpoilerContent[messageID] = true
+				}
+				chatView.SetMessages(chatView.data)
 				return nil
 			}
 
@@ -215,6 +232,11 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 			messageText = "[gray]added " + message.Mentions[0].Username + " to the group."
 		} else if message.Type == discordgo.MessageTypeRecipientRemove {
 			messageText = "[gray]removed " + message.Mentions[0].Username + " from the group."
+		}
+
+		shouldShow, contains := chatView.showSpoilerContent[message.ID]
+		if !contains || !shouldShow {
+			messageText = spoilerRegex.ReplaceAllString(messageText, "[red]!SPOILER![white]")
 		}
 
 		messageText = channelMentionRegex.
@@ -336,11 +358,14 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 	}
 }
 
+// ClearSelection clears the current selection of messages.
 func (chatView *ChatView) ClearSelection() {
 	chatView.selection = -1
 	chatView.updateHighlights()
 }
 
+// SignalSelectionDeleted notifies the ChatView that its currently selected
+// message doesn't exist anymore, moving the selection up by a row if possible.
 func (chatView *ChatView) SignalSelectionDeleted() {
 	if chatView.selection > 0 {
 		chatView.selection--
