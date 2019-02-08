@@ -564,6 +564,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 					} else {
 						go func() {
 							_, sendError := discord.ChannelMessageSend(window.selectedChannel.ID, window.jsEngine.OnMessageSend(messageToSend))
+							window.chatView.internalTextView.ScrollToEnd()
 							if sendError != nil {
 								window.app.QueueUpdateDraw(func() {
 									window.ShowErrorDialog("Error sending message: " + sendError.Error())
