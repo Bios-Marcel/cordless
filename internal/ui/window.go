@@ -63,7 +63,6 @@ type Window struct {
 
 	session *discordgo.Session
 
-	shownMessages       []*discordgo.Message
 	selectedGuild       *discordgo.UserGuild
 	selectedChannelNode *tview.TreeNode
 	selectedChannel     *discordgo.Channel
@@ -439,9 +438,12 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		messageToSend := window.messageInput.GetText()
 
 		if event.Key() == tcell.KeyUp && messageToSend == "" {
-			for i := len(window.shownMessages) - 1; i > 0; i-- {
-				message := window.shownMessages[i]
-				window.startEditingMessage(message)
+			for i := len(window.chatView.data) - 1; i > 0; i-- {
+				message := window.chatView.data[i]
+				if message.Author.ID == window.session.State.User.ID {
+					window.startEditingMessage(message)
+					break
+				}
 			}
 
 			return nil
@@ -638,10 +640,10 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			case messageDeleted := <-messageDeleteChan:
 				//UPDATE CACHE
 				window.session.State.MessageRemove(messageDeleted)
-				for index, message := range window.shownMessages {
+				for index, message := range window.chatView.data {
 					if message.ID == messageDeleted.ID {
 						window.app.QueueUpdateDraw(func() {
-							window.SetMessages(append(window.shownMessages[:index], window.shownMessages[index+1:]...))
+							window.SetMessages(append(window.chatView.data[:index], window.chatView.data[index+1:]...))
 						})
 						break
 					}
@@ -656,11 +658,11 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			case messageEdited := <-messageEditChan:
 				//UPDATE CACHE
 				window.session.State.MessageAdd(messageEdited)
-				for _, message := range window.shownMessages {
+				for _, message := range window.chatView.data {
 					if message.ID == messageEdited.ID {
 						message.Content = messageEdited.Content
 						window.app.QueueUpdateDraw(func() {
-							window.SetMessages(window.shownMessages)
+							window.SetMessages(window.chatView.data)
 						})
 						break
 					}
@@ -1031,14 +1033,12 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 //AddMessages adds the passed array of messages to the chat.
 func (window *Window) AddMessages(messages []*discordgo.Message) {
-	window.shownMessages = append(window.shownMessages, messages...)
 	window.chatView.AddMessages(messages)
 }
 
 //SetMessages clears the current chat and adds the passed messages.s
 func (window *Window) SetMessages(messages []*discordgo.Message) {
-	window.shownMessages = messages
-	window.chatView.SetMessages(window.shownMessages)
+	window.chatView.SetMessages(messages)
 }
 
 //RegisterCommand register a command. That makes the command available for
