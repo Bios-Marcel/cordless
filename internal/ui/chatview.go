@@ -28,7 +28,7 @@ import (
 var (
 	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)")
 	channelMentionRegex = regexp.MustCompile("<#\\d*>")
-	urlRegex            = regexp.MustCompile("<?https?://(.+?)(?:(?:/.*)|\\s|$|>)")
+	urlRegex            = regexp.MustCompile("<?(https?://)(.+?)(/.+?)?($|\\s|\\||>)")
 	spoilerRegex        = regexp.MustCompile("(?s)\\|\\|(.+?)\\|\\|")
 
 	shortener = linkshortener.NewShortener(51726)
@@ -270,9 +270,15 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 			urlMatches := urlRegex.FindAllStringSubmatch(messageText, 1000)
 
 			for _, urlMatch := range urlMatches {
-				newURL := strings.TrimSuffix(strings.TrimPrefix(urlMatch[0], "<"), ">")
-				if (len(urlMatch[1]) + 35) < len(newURL) {
-					newURL = fmt.Sprintf("(%s) %s", urlMatch[1], shortener.Shorten(newURL))
+				newURL := urlMatch[1] + urlMatch[2]
+				if len(urlMatch) == 5 || (len(urlMatch) == 4 && len(urlMatch[3]) > 1) {
+					newURL = newURL + urlMatch[3]
+				}
+				if (len(urlMatch[2]) + 35) < len(newURL) {
+					newURL = fmt.Sprintf("(%s) %s", urlMatch[2], shortener.Shorten(newURL))
+				}
+				if len(urlMatch) == 5 {
+					newURL = newURL + strings.TrimSuffix(urlMatch[4], ">")
 				}
 				messageText = strings.Replace(messageText, urlMatch[0], newURL, 1)
 			}
