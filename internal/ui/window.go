@@ -95,8 +95,14 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		return nil, discordError
 	}
 
-	mentionWindow := tview.NewTreeView()
-	mentionWindow.SetCycleSelection(true)
+	mentionWindowRootNode := tview.NewTreeNode("")
+	mentionWindow := tview.NewTreeView().
+		SetVimBindingsEnabled(false).
+		SetRoot(mentionWindowRootNode).
+		SetTopLevel(1).
+		SetCycleSelection(true)
+	mentionWindow.SetBorder(true)
+	mentionWindow.SetBorderSides(false, true, false, true)
 
 	window.leftArea = tview.NewPages()
 
@@ -434,6 +440,47 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), maths.Min(height, 20), 0)
 	})
 
+	window.messageInput.SetMentionShowHandler(func(namePart string) {
+		mentionWindow.GetRoot().ClearChildren()
+		window.commandView.commandOutput.Clear()
+
+		if window.selectedChannel != nil {
+			guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+			if discordError == nil {
+				for _, user := range guild.Members {
+					if strings.Contains(strings.ToUpper(user.Nick), strings.ToUpper(namePart)) || strings.Contains(strings.ToUpper(user.User.Username)+"#"+user.User.Discriminator, strings.ToUpper(namePart)) {
+						userName := user.User.Username + "#" + user.User.Discriminator
+						userNodeText := "\t" + userName
+						if len(user.Nick) > 0 {
+							userNodeText += " | " + user.Nick
+						}
+						userNode := tview.NewTreeNode(userNodeText)
+						userNode.SetReference(userName)
+						mentionWindow.GetRoot().AddChild(userNode)
+					}
+				}
+			}
+		}
+
+		if mentionWindow.GetRoot().GetChildren() != nil {
+			numChildren := len(mentionWindow.GetRoot().GetChildren())
+			if numChildren > 10 {
+				numChildren = 10
+			}
+			window.chatArea.ResizeItem(mentionWindow, numChildren, 0)
+			if numChildren > 0 {
+				mentionWindow.SetCurrentNode(mentionWindow.GetRoot().GetChildren()[0])
+			}
+		}
+		mentionWindow.SetVisible(mentionWindow.GetRoot().GetChildren() != nil)
+		window.app.SetFocus(mentionWindow)
+	})
+
+	window.messageInput.SetMentionHideHandler(func() {
+		mentionWindow.SetVisible(false)
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+	})
+
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		messageToSend := window.messageInput.GetText()
 
@@ -476,26 +523,11 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 					//Replace formatter characters and replace emoji codes.
 					messageToSend = emoji.Sprintf(strings.Replace(messageToSend, "%", "%%", -1))
 
-					if strings.Contains(messageToSend, "@") {
-						messageToSend = mentionRegex.
-							ReplaceAllStringFunc(messageToSend, func(part string) string {
-								return strings.ToLower(part)
-							})
-
+					members, discordError := window.session.State.Members(window.selectedGuild.ID)
+					if discordError == nil {
 						if window.selectedGuild != nil {
-							members, discordError := window.session.State.Members(window.selectedGuild.ID)
-							if discordError == nil {
-								for _, member := range members {
-									if member.Nick != "" {
-										messageToSend = strings.Replace(messageToSend, "@"+strings.ToLower(member.Nick), "<@"+member.User.ID+">", -1)
-									}
-
-									messageToSend = strings.Replace(messageToSend, "@"+strings.ToLower(member.User.Username), "<@"+member.User.ID+">", -1)
-								}
-							}
-						} else if window.selectedChannel != nil {
-							for _, user := range window.selectedChannel.Recipients {
-								messageToSend = strings.Replace(messageToSend, "@"+strings.ToLower(user.Username), "<@"+user.ID+">", -1)
+							for _, member := range members {
+								messageToSend = strings.Replace(messageToSend, "@"+member.User.Username+"#"+member.User.Discriminator, "<@"+member.User.ID+">", -1)
 							}
 						}
 					}
@@ -729,6 +761,26 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	}
 
 	mentionWindow.SetVisible(false)
+	mentionWindow.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch key := event.Key(); key {
+		case tcell.KeyRune, tcell.KeyDelete, tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyLeft, tcell.KeyRight:
+			window.messageInput.internalTextView.GetInputCapture()(event)
+			return nil
+		}
+		return event
+	})
+	mentionWindow.SetSelectedFunc(func(node *tview.TreeNode) {
+		beginIdx, endIdx := window.messageInput.GetCurrentMentionIndices()
+		if beginIdx != endIdx {
+			data, ok := node.GetReference().(string)
+			if ok {
+				oldText := window.messageInput.GetText()
+				newText := oldText[:beginIdx] + strings.TrimSpace(data) + oldText[endIdx+1:] + " "
+				window.messageInput.SetText(newText)
+			}
+		}
+		window.messageInput.mentionHideHandler()
+	})
 
 	window.chatArea.AddItem(window.channelTitle, 2, 0, false)
 	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
