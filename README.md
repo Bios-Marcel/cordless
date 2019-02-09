@@ -14,17 +14,21 @@
 * [Configuration](https://github.com/Bios-Marcel/cordless#configuration)
 * [Features](https://github.com/Bios-Marcel/cordless#features)
 * [Extending Cordless via the scripting interface](https://github.com/Bios-Marcel/cordless#extending-cordless-via-the-scripting-interface)
+* [Similar projects](https://github.com/Bios-Marcel/cordless#similar-projects)
 * [Troubleshooting](https://github.com/Bios-Marcel/cordless#troubleshooting)
 
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at powerusers.
+
+**WARNING: Self-bots are discouraged and against Discords TOS.**
 
 This project was mainly inspired by [Southclaws](https://github.com/Southclaws)
 [Cordless](https://github.com/Southclaws/cordless-old), which he sadly didn't
 develop any further.
 
 The application only uses the official Discord API and doesn't send data to
-any third party.
+any third party. However, this application is not an product official product
+of Discord (Hammer & Chisel).
 
 This application is currently a WIP and will change rather fast.
 
@@ -100,7 +104,12 @@ careful with your configuration file.
   * Mention people using their full username or nickname
   * Mention a channel
   * Edit last message
+  * Edit any message
   * Delete last message
+  * Delete any message
+  * Quoting
+  * Copying
+  * Spoiler
   * Multiline
   * Highlighting
     * Code
@@ -127,6 +136,14 @@ config folder.
 
 An example can be found here:
 [Kaomoji](https://github.com/Bios-Marcel/cordless-kaomoji)
+
+## Similar projects
+
+Here is a list of similar projects:
+
+* [terminal-discord](https://github.com/xynxynxyn/terminal-discord)
+* [Discurses](https://github.com/topisani/Discurses)
+* [Discline](https://github.com/MitchWeaver/Discline)
 
 ## Troubleshooting
 
