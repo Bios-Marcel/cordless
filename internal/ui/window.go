@@ -956,7 +956,7 @@ func (window *Window) ExecuteCommand(command string) {
 
 func (window *Window) startEditingMessage(message *discordgo.Message) {
 	if message.Author.ID == window.session.State.User.ID {
-		window.messageInput.SetText(message.ContentWithMentionsReplaced())
+		window.messageInput.SetText(message.Content)
 		window.messageInput.SetBackgroundColor(tcell.ColorDarkGoldenrod)
 		window.editingMessageID = &message.ID
 		window.app.SetFocus(window.messageInput.GetPrimitive())
