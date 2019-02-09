@@ -948,9 +948,9 @@ func (window *Window) ExecuteCommand(command string) {
 	parts := strings.Split(command, " ")
 	commandLogic, exists := window.commands[parts[0]]
 	if exists {
-		commandLogic.Execute(window.commandView.commandOutput, parts[1:])
+		commandLogic.Execute(window.commandView, parts[1:])
 	} else {
-		fmt.Fprintf(window.commandView.commandOutput, "[red]The command '%s' doesn't exist[white]\n", parts[0])
+		fmt.Fprintf(window.commandView, "[red]The command '%s' doesn't exist[white]\n", parts[0])
 	}
 }
 

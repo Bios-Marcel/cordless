@@ -19,16 +19,19 @@ channel name and optionally a topic if the channel has one.
 
 Usage: chatheader <[green]true[white]/[red]false[white]>`
 
+// ChatHeader is the command that allows toggling the chatheader.
 type ChatHeader struct {
 	window *ui.Window
 }
 
+// NewChatHeaderCommand creates a new ready-to-use ChatHeader command.
 func NewChatHeaderCommand(window *ui.Window) *ChatHeader {
 	return &ChatHeader{
 		window: window,
 	}
 }
 
+// Execute runs the command piping its output into the supplied writer.
 func (chatHeader *ChatHeader) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 1 {
 		choice, parseError := strconv.ParseBool(parameters[0])
@@ -56,10 +59,12 @@ func (chatHeader *ChatHeader) Execute(writer io.Writer, parameters []string) {
 	}
 }
 
-func (_ *ChatHeader) Name() string {
+// Name represents this commands indentifier.
+func (chatHeader *ChatHeader) Name() string {
 	return "chatheader"
 }
 
-func (_ *ChatHeader) PrintHelp(writer io.Writer) {
+// PrintHelp prints a static help page for this command
+func (chatHeader *ChatHeader) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, chatHeaderDocumentation)
 }

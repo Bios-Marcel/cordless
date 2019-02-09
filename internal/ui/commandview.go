@@ -45,6 +45,35 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 }
 
 func (cmdView *CommandView) handleInput(event *tcell.EventKey) *tcell.EventKey {
+	if event.Modifiers() == tcell.ModNone {
+		if event.Key() == tcell.KeyPgUp {
+			handler := cmdView.commandOutput.InputHandler()
+			handler(tcell.NewEventKey(tcell.KeyPgUp, 0, tcell.ModNone), nil)
+			return nil
+		}
+
+		if event.Key() == tcell.KeyPgDn {
+			handler := cmdView.commandOutput.InputHandler()
+			handler(tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone), nil)
+			return nil
+		}
+
+	}
+
+	if event.Modifiers() == tcell.ModCtrl {
+		if event.Key() == tcell.KeyUp {
+			handler := cmdView.commandOutput.InputHandler()
+			handler(tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone), nil)
+			return nil
+		}
+
+		if event.Key() == tcell.KeyDown {
+			handler := cmdView.commandOutput.InputHandler()
+			handler(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
+			return nil
+		}
+	}
+
 	if event.Key() == tcell.KeyEnter {
 		cmdView.commandHistoryIndex = -1
 		command := cmdView.commandInput.GetText()
@@ -108,4 +137,16 @@ func (cmdView *CommandView) GetCommandOutputWidget() *tview.TextView {
 func (cmdView *CommandView) SetVisible(visible bool) {
 	cmdView.commandInput.SetVisible(visible)
 	cmdView.commandOutput.SetVisible(visible)
+}
+
+// Write lets us implement the io.Writer interface. Tab characters will be
+// replaced with TabSize space characters. A "\n" or "\r\n" will be interpreted
+// as a new line.
+func (cmdView *CommandView) Write(p []byte) (n int, err error) {
+	n, err = cmdView.commandOutput.Write(p)
+	if err == nil {
+		cmdView.commandOutput.ScrollToEnd()
+	}
+
+	return
 }

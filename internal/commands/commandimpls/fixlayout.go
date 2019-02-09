@@ -11,12 +11,9 @@ import (
 
 const fixLayoutDocumentation = `[orange]# fixlayout[white]
 
-The fixlayout command allows adjusting the layout of the application to a
-certain degree. By default most components take a flexible amount of space.
-By activating the fixlayout, those components will instead use a fixed amount
-of space.
+The fixlayout command allows adjusting the layout of the application to a certain degree. By default most components take a flexible amount of space. By activating the fixlayout, those components will instead use a fixed amount of space.
 
-You can [green]activate[white] or [red]deactivate[white] the fixlayout by using this:
+You can [green]enable[white] or [red]disable[white] the fixlayout by using this:
     [-]fixlayout <[green]true[-]/[red]false[-]>
 
 [white]In order to specify the width of a component, use this:
@@ -24,16 +21,20 @@ You can [green]activate[white] or [red]deactivate[white] the fixlayout by using 
 [white]where [blue]N[white] is the width of the component.
 `
 
+// FixLayout is the command that allows the user to change the applications
+// layout.
 type FixLayout struct {
 	window *ui.Window
 }
 
+// NewFixLayoutCommand creates a ready-to-use FixLayout command.
 func NewFixLayoutCommand(window *ui.Window) *FixLayout {
 	return &FixLayout{
 		window: window,
 	}
 }
 
+// Execute runs the command piping its output into the supplied writer.
 func (fixLayout *FixLayout) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 1 {
 		choice, parseError := strconv.ParseBool(parameters[0])
@@ -99,10 +100,12 @@ func (fixLayout *FixLayout) Execute(writer io.Writer, parameters []string) {
 	fixLayout.PrintHelp(writer)
 }
 
-func (_ *FixLayout) Name() string {
+// Name represents this commands indentifier.
+func (fixLayout *FixLayout) Name() string {
 	return "fixlayout"
 }
 
-func (_ *FixLayout) PrintHelp(writer io.Writer) {
+// PrintHelp prints a static help page for this command
+func (fixLayout *FixLayout) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, fixLayoutDocumentation)
 }
