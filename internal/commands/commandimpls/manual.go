@@ -55,7 +55,7 @@ const chatViewDocumentation = `[orange]# Chatview[white]
 
 The Chatview is the component that displays the messages of the channel that you are currently looking at.
 
-The Chatview has two modes, the navigation mode and the selection mode. The [blue]selection mode[white] is the default mode. It [blue]can be toggled via Ctrl+s[white].
+The Chatview has two modes, the navigation mode is activate when the chatview does not have focus. While in navigation mode you can't select any message, you can only scroll through the view. If you focus the chatview, the it enters the selection mode and you can select single messages and interact with them.
 
 When in selection mode, those shortcuts are active:
 
