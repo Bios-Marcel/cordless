@@ -216,6 +216,25 @@ func NewEditor() *Editor {
 				newText = newText + endRegion
 				editor.setAndFixText(newText)
 			}
+		} else if event.Key() == tcell.KeyDelete {
+			if len(selection) >= 1 && strings.HasSuffix(string(selection), selectionChar) {
+				newText = leftRegion + string(left) + selRegion + selectionChar + endRegion
+				editor.setAndFixText(newText)
+			} else if string(selection) != selectionChar {
+				newText = leftRegion + string(left) + selRegion
+				if len(right) == 0 {
+					newText = newText + selectionChar
+				} else {
+					newText = newText + string(right[0])
+				}
+
+				if len(right) > 1 {
+					newText = newText + rightRegion + string(right[1:])
+				}
+
+				newText = newText + endRegion
+				editor.setAndFixText(newText)
+			}
 		} else if event.Key() == tcell.KeyCtrlV {
 			clipBoardContent, clipError := clipboard.ReadAll()
 			if clipError == nil {

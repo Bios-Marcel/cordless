@@ -62,7 +62,7 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		session:            session,
 		ownUserID:          ownUserID,
 		selection:          -1,
-		selectionMode:      true,
+		selectionMode:      false,
 		showSpoilerContent: make(map[string]bool, 0),
 	}
 
@@ -77,15 +77,15 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 	}
 
 	chatView.internalTextView.SetOnBlur(func() {
+		chatView.selectionMode = false
 		chatView.ClearSelection()
 	})
 
-	chatView.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlS && event.Modifiers() == tcell.ModCtrl {
-			chatView.selectionMode = !chatView.selectionMode
-			return nil
-		}
+	chatView.internalTextView.SetOnFocus(func() {
+		chatView.selectionMode = true
+	})
 
+	chatView.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if chatView.selectionMode && event.Modifiers() == tcell.ModNone {
 			if event.Key() == tcell.KeyUp {
 				if chatView.selection == -1 {

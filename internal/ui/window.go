@@ -506,6 +506,33 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		messageToSend := window.messageInput.GetText()
 
+		if event.Modifiers() == tcell.ModCtrl {
+			if event.Key() == tcell.KeyUp {
+				handler := window.chatView.internalTextView.InputHandler()
+				handler(tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone), nil)
+				return nil
+			}
+
+			if event.Key() == tcell.KeyDown {
+				handler := window.chatView.internalTextView.InputHandler()
+				handler(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
+				return nil
+			}
+
+		}
+
+		if event.Key() == tcell.KeyPgUp {
+			handler := window.chatView.internalTextView.InputHandler()
+			handler(tcell.NewEventKey(tcell.KeyPgUp, 0, tcell.ModNone), nil)
+			return nil
+		}
+
+		if event.Key() == tcell.KeyPgDn {
+			handler := window.chatView.internalTextView.InputHandler()
+			handler(tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone), nil)
+			return nil
+		}
+
 		if event.Key() == tcell.KeyUp && messageToSend == "" {
 			for i := len(window.chatView.data) - 1; i > 0; i-- {
 				message := window.chatView.data[i]
@@ -921,7 +948,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		}
 
 		if event.Rune() == 't' {
-			window.app.SetFocus(window.messageContainer)
+			window.app.SetFocus(window.chatView.internalTextView)
 			return nil
 		}
 
@@ -945,6 +972,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 //will be passed as the commands name and the rest will be parameters. If a
 //command can't be found, that info will be printed onto the command output.
 func (window *Window) ExecuteCommand(command string) {
+	//TODO Improve splitting for more complex stuff
 	parts := strings.Split(command, " ")
 	commandLogic, exists := window.commands[parts[0]]
 	if exists {
