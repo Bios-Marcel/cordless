@@ -1,0 +1,10 @@
+image: freebsd
+packages:
+  - go
+tasks:
+  - build: |
+      export GOPATH=$PWD
+      go get -v github.com/Bios-Marcel/cordless
+      cd src/github.com/Bios-Marcel/cordless
+      go vet ./...
+      go test ./...
