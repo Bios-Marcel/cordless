@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"io"
 	"regexp"
 	"sort"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/atotto/clipboard"
 
+	"github.com/Bios-Marcel/cordless/internal/commands"
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
 	"github.com/Bios-Marcel/cordless/internal/maths"
@@ -72,7 +72,7 @@ type Window struct {
 
 	commandMode bool
 	commandView *CommandView
-	commands    map[string]func(io.Writer, *Window, []string)
+	commands    map[string]commands.Command
 }
 
 //NewWindow constructs the whole application window and also registers all
@@ -82,7 +82,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	window := Window{
 		session:  discord,
 		app:      app,
-		commands: make(map[string]func(io.Writer, *Window, []string), 1),
+		commands: make(map[string]commands.Command, 1),
 		jsEngine: js.New(),
 	}
 
@@ -948,9 +948,9 @@ func (window *Window) ExecuteCommand(command string) {
 	parts := strings.Split(command, " ")
 	commandLogic, exists := window.commands[parts[0]]
 	if exists {
-		commandLogic(window.commandView.commandOutput, window, parts[1:])
+		commandLogic.Execute(window.commandView.commandOutput, parts[1:])
 	} else {
-		fmt.Fprintf(window.commandView.commandOutput, "The command '%s' doesn't exist\n", parts[0])
+		fmt.Fprintf(window.commandView.commandOutput, "[red]The command '%s' doesn't exist[white]\n", parts[0])
 	}
 }
 
@@ -1124,8 +1124,12 @@ func (window *Window) SetMessages(messages []*discordgo.Message) {
 //RegisterCommand register a command. That makes the command available for
 //being called from the message input field, in case the user-defined prefix
 //is in front of the input.
-func (window *Window) RegisterCommand(name string, logic func(writer io.Writer, window *Window, parameters []string)) {
-	window.commands[name] = logic
+func (window *Window) RegisterCommand(command commands.Command) {
+	window.commands[command.Name()] = command
+}
+
+func (window *Window) GetRegisteredCommands() map[string]commands.Command {
+	return window.commands
 }
 
 //Run Shows the window optionally returning an error.

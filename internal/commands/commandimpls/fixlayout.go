@@ -1,4 +1,4 @@
-package commands
+package commandimpls
 
 import (
 	"fmt"
@@ -9,7 +9,32 @@ import (
 	"github.com/Bios-Marcel/cordless/internal/ui"
 )
 
-func FixLayout(writer io.Writer, window *ui.Window, parameters []string) {
+const fixLayoutDocumentation = `[orange]# fixlayout[white]
+
+The fixlayout command allows adjusting the layout of the application to a
+certain degree. By default most components take a flexible amount of space.
+By activating the fixlayout, those components will instead use a fixed amount
+of space.
+
+You can [green]activate[white] or [red]deactivate[white] the fixlayout by using this:
+    [-]fixlayout <[green]true[-]/[red]false[-]>
+
+[white]In order to specify the width of a component, use this:
+    [-]fixlayout <left/right> <[blue]N[-]>
+[white]where [blue]N[white] is the width of the component.
+`
+
+type FixLayout struct {
+	window *ui.Window
+}
+
+func NewFixLayoutCommand(window *ui.Window) *FixLayout {
+	return &FixLayout{
+		window: window,
+	}
+}
+
+func (fixLayout *FixLayout) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 1 {
 		choice, parseError := strconv.ParseBool(parameters[0])
 		if parseError != nil {
@@ -18,7 +43,7 @@ func FixLayout(writer io.Writer, window *ui.Window, parameters []string) {
 		}
 
 		config.GetConfig().UseFixedLayout = choice
-		window.RefreshLayout()
+		fixLayout.window.RefreshLayout()
 
 		persistError := config.PersistConfig()
 		if persistError != nil {
@@ -58,7 +83,7 @@ func FixLayout(writer io.Writer, window *ui.Window, parameters []string) {
 			return
 		}
 
-		window.RefreshLayout()
+		fixLayout.window.RefreshLayout()
 
 		persistError := config.PersistConfig()
 		if persistError != nil {
@@ -70,5 +95,14 @@ func FixLayout(writer io.Writer, window *ui.Window, parameters []string) {
 			fmt.Fprintln(writer, successOutput)
 		}
 	}
-	//TODO Else ... Print help
+
+	fixLayout.PrintHelp(writer)
+}
+
+func (_ *FixLayout) Name() string {
+	return "fixlayout"
+}
+
+func (_ *FixLayout) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, fixLayoutDocumentation)
 }

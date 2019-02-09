@@ -24,6 +24,8 @@ type CommandView struct {
 func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 	commandOutput := tview.NewTextView()
 	commandOutput.SetBorder(true)
+	commandOutput.SetDynamicColors(true)
+
 	commandInput := tview.NewInputField()
 	commandInput.SetBorder(true)
 

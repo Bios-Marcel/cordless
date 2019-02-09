@@ -8,7 +8,7 @@ import (
 
 	"github.com/princebot/getpass"
 
-	"github.com/Bios-Marcel/cordless/internal/commands"
+	"github.com/Bios-Marcel/cordless/internal/commands/commandimpls"
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/cordless/internal/ui"
 	"github.com/Bios-Marcel/discordgo"
@@ -95,8 +95,9 @@ func Run() {
 				log.Fatalf("Error constructing window (%s).\n", createError.Error())
 			}
 
-			window.RegisterCommand("fixlayout", commands.FixLayout)
-			window.RegisterCommand("chatheader", commands.ChatHeader)
+			window.RegisterCommand(commandimpls.NewHelpCommand(window))
+			window.RegisterCommand(commandimpls.NewFixLayoutCommand(window))
+			window.RegisterCommand(commandimpls.NewChatHeaderCommand(window))
 		})
 	}()
 
