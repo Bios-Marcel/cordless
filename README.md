@@ -72,11 +72,31 @@ careful with your configuration file.
 
 **THIS APPLICATION NEVER SAVES YOUR PASSWORD LOCALLY.**
 
-#### How to retrieve your token
+#### Retrieving your token via discord or chrome
 
-In order to retrieve your token, simply follow the steps in the graphic below:
+* Press `CTRL+SHIFT+I` (or `COMMAND+SHIFT+I` if you are on Mac OS)
 
-![Steps to retrieve discord token - by ripcord](https://cancel.fm/ripcord/static/app_misc/discord_token_howto_en-US.png)
+![Default window](https://i.imgur.com/38UF1h5.png))
+
+* Click `Network` section
+
+![Network section](https://i.imgur.com/k6OhJHt.png)
+
+* Click `XHR` Section
+
+![XHR section](https://i.imgur.com/HXqL7Pp.png)
+
+* Reload it by clicking `F5` and choose `access-token`
+
+![XHR section after reloading it](https://i.imgur.com/Rkb2krO.png) 
+
+* Get into `Headers` section and scroll down until you find `authorization: token` and copy it
+ 
+![Headers section of acces token](https://i.imgur.com/PEox6bP.png)
+
+* Paste the token into the terminal and hit enter
+
+![Terimal after pasting the token](https://i.imgur.com/UpsrGJt.png)
 
 ## Features
 
