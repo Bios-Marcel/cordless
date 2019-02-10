@@ -25,6 +25,8 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 	commandOutput := tview.NewTextView()
 	commandOutput.SetBorder(true)
 	commandOutput.SetDynamicColors(true)
+	commandOutput.SetWordWrap(true)
+	commandOutput.SetWrap(true)
 
 	commandInput := tview.NewInputField()
 	commandInput.SetBorder(true)
