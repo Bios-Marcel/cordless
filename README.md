@@ -76,7 +76,7 @@ careful with your configuration file.
 
 * Press `CTRL+SHIFT+I` (or `COMMAND+SHIFT+I` if you are on Mac OS)
 
-![Default window](https://i.imgur.com/38UF1h5.png))
+![Default window](https://i.imgur.com/38UF1h5.png)
 
 * Click `Network` section
 
