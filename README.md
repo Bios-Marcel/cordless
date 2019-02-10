@@ -12,7 +12,7 @@
 * How to install it
   * [Using pre-built binaries](https://github.com/Bios-Marcel/cordless#using-pre-built-binaries)
   * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
-* [Configuration](https://github.com/Bios-Marcel/cordless#configuration)
+* [Login](https://github.com/Bios-Marcel/cordless#login)
 * [Features](https://github.com/Bios-Marcel/cordless#features)
 * [Extending Cordless via the scripting interface](https://github.com/Bios-Marcel/cordless#extending-cordless-via-the-scripting-interface)
 * [Similar projects](https://github.com/Bios-Marcel/cordless#similar-projects)
@@ -58,30 +58,29 @@ In order to execute the application, simply run the executable, which lies at
 `$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
 `$GOPATH/bin` has to be in your `PATH` variable.
 
-### Configuration
+### Login
 
-You have got two login choice, either you use your username and password or you
-use your current authentication token. Using your password only works if your
-account does not have Two-Factor authentication, which is you should use!
+On launch, cordless will offer you two login methods:
 
-Besides your login data / token, cordless doesn't need anything else.
-The application will ask you to input the token in case it can't be found.
+1. Using an authentication token
+2. Using username and password
+
+I recommend the first way, as the second one won't work anyway in case you have
+two-factor authentication enabled. After logging on using either method, your
+token is stored locally on your machine. The token will not be encrypted, so be
+careful with your configuration file.
+
+**THIS APPLICATION NEVER SAVES YOUR PASSWORD LOCALLY.**
+
+#### How to retrieve your token
 
 In order to retrieve your token, simply follow the steps in the graphic below:
 
 ![Steps to retrieve discord token - by ripcord](https://cancel.fm/ripcord/static/app_misc/discord_token_howto_en-US.png)
 
-After retrieving the token, you have to insert it into the input prompt.
-
-Alternative, you can manually insert it into your configuration file.
-In order to find the location of the configuration file, simply run
-cordless via your terminal and check the output, as it will tell you, where
-its configuration file lies.
-
-The token will be saved on your machine, but it won't be encrypted, so be
-careful with your configuration file.
-
 ## Features
+
+*This list might be incomplete.*
 
 * Guilds
   * Enter channels
