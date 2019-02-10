@@ -241,11 +241,6 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 			messageText = "[gray]removed " + message.Mentions[0].Username + " from the group."
 		}
 
-		shouldShow, contains := chatView.showSpoilerContent[message.ID]
-		if !contains || !shouldShow {
-			messageText = spoilerRegex.ReplaceAllString(messageText, "[red]!SPOILER![white]")
-		}
-
 		messageText = channelMentionRegex.
 			ReplaceAllStringFunc(messageText, func(data string) string {
 				channelID := strings.TrimSuffix(strings.TrimPrefix(data, "<#"), ">")
@@ -257,6 +252,7 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 				return "[blue]#" + channel.Name + "[white]"
 			})
 
+		// FIXME Needs improvement, as it wastes space and breaks things
 		if message.Attachments != nil && len(message.Attachments) > 0 {
 			attachmentsAsText := ""
 			for attachmentIndex, attachment := range message.Attachments {
@@ -273,6 +269,7 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 			}
 		}
 
+		// FIXME Handle Non-embed links nonetheless?
 		if conf.ShortenLinks {
 			urlMatches := urlRegex.FindAllStringSubmatch(messageText, 1000)
 
@@ -339,10 +336,20 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 						continue
 					}
 
-					messageText = strings.Replace(messageText, value, writer.String(), 1)
+					escaped := strings.Replace(strings.Replace(writer.String(), "*", "\\*", -1), "_", "\\_", -1)
+					messageText = strings.Replace(messageText, value, escaped, 1)
 				}
 			}
 		}
+
+		messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
+
+		messageText = strings.Replace(messageText, "|", "\\|", -1)
+		shouldShow, contains := chatView.showSpoilerContent[message.ID]
+		if !contains || !shouldShow {
+			messageText = spoilerRegex.ReplaceAllString(messageText, "[red]!SPOILER![white]")
+		}
+		messageText = strings.Replace(messageText, "\\|", "|", -1)
 
 		var messageAuthor string
 		if message.GuildID != "" {
@@ -369,6 +376,115 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 	if wasScrolledToTheEnd {
 		chatView.internalTextView.ScrollToEnd()
 	}
+}
+
+func parseBoldAndUnderline(messageText string) string {
+	messageTextTemp := make([]rune, 0)
+
+	firstBoldFound := false
+	boldOpen := false
+	firstUnderlineFound := false
+	underlineOpen := false
+
+	runes := []rune(messageText)
+	lastIndex := len(runes) - 1
+	for index, character := range runes {
+		messageTextTemp = append(messageTextTemp, character)
+		if character == '\n' {
+			if boldOpen && !underlineOpen {
+				messageTextTemp = append(messageTextTemp, '[', ':', ':', 'b', ']')
+			} else if !boldOpen && underlineOpen {
+				messageTextTemp = append(messageTextTemp, '[', ':', ':', 'u', ']')
+			} else if boldOpen && underlineOpen {
+				messageTextTemp = append(messageTextTemp, '[', ':', ':', 'u', 'b', ']')
+			}
+		} else if character == '*' {
+			if firstBoldFound {
+				firstBoldFound = false
+				if boldOpen {
+					boldOpen = false
+					if underlineOpen {
+						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':', 'u', ']')
+					} else {
+						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':', '-', ']')
+					}
+				} else if index != lastIndex {
+					doesClosingOneExist := false
+					foundFirstClosing := false
+					for _, c := range runes[index+1:] {
+						if c == '*' {
+							if foundFirstClosing {
+								doesClosingOneExist = true
+								break
+							}
+							foundFirstClosing = true
+						}
+					}
+
+					if doesClosingOneExist {
+						if runes[index+1] == '*' {
+							firstBoldFound = true
+							continue
+						}
+
+						boldOpen = true
+						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':')
+						if underlineOpen {
+							messageTextTemp = append(messageTextTemp, 'u')
+						}
+						messageTextTemp = append(messageTextTemp, 'b', ']')
+					}
+				}
+			} else {
+				firstBoldFound = true
+			}
+		} else if character == '_' {
+			if firstUnderlineFound {
+				firstUnderlineFound = false
+				if underlineOpen {
+					underlineOpen = false
+					if boldOpen {
+						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':', 'b', ']')
+					} else {
+						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':', '-', ']')
+					}
+				} else if index != lastIndex {
+					doesClosingOneExist := false
+					foundFirstClosing := false
+					for _, c := range runes[index+1:] {
+						if c == '_' {
+							if foundFirstClosing {
+								doesClosingOneExist = true
+								break
+							}
+							foundFirstClosing = true
+						}
+					}
+
+					if doesClosingOneExist {
+						if runes[index+1] == '_' {
+							firstUnderlineFound = true
+							continue
+						}
+
+						underlineOpen = true
+						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':')
+						if boldOpen {
+							messageTextTemp = append(messageTextTemp, 'b')
+						}
+						messageTextTemp = append(messageTextTemp, 'u', ']')
+					}
+				}
+			} else {
+				firstUnderlineFound = true
+			}
+		} else {
+			firstBoldFound = false
+			firstUnderlineFound = false
+		}
+	}
+
+	return string(messageTextTemp)
 }
 
 // ClearSelection clears the current selection of messages.
