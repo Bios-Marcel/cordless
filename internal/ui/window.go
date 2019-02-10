@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -73,6 +72,9 @@ type Window struct {
 	commandMode bool
 	commandView *CommandView
 	commands    map[string]commands.Command
+
+	userActive      bool
+	userActiveTimer *time.Timer
 }
 
 //NewWindow constructs the whole application window and also registers all
@@ -80,11 +82,19 @@ type Window struct {
 //start the application.
 func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, error) {
 	window := Window{
-		session:  discord,
-		app:      app,
-		commands: make(map[string]commands.Command, 1),
-		jsEngine: js.New(),
+		session:         discord,
+		app:             app,
+		commands:        make(map[string]commands.Command, 1),
+		jsEngine:        js.New(),
+		userActiveTimer: time.NewTimer(10 * time.Second),
 	}
+
+	go func() {
+		for {
+			<-window.userActiveTimer.C
+			window.userActive = false
+		}
+	}()
 
 	window.commandView = NewCommandView(window.ExecuteCommand)
 
@@ -306,22 +316,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	go func() {
 		privateChannels := make([]*discordgo.Channel, len(window.session.State.PrivateChannels))
 		copy(privateChannels, window.session.State.PrivateChannels)
-		sort.Slice(privateChannels, func(a, b int) bool {
-			channelA := privateChannels[a]
-			channelB := privateChannels[b]
-
-			messageA, parseError := strconv.ParseInt(channelA.LastMessageID, 10, 64)
-			if parseError != nil {
-				return false
-			}
-
-			messageB, parseError := strconv.ParseInt(channelB.LastMessageID, 10, 64)
-			if parseError != nil {
-				return true
-			}
-
-			return messageA > messageB
-		})
+		discordgoplus.SortPrivateChannels(privateChannels)
 
 		window.app.QueueUpdate(func() {
 			for _, channel := range privateChannels {
@@ -654,7 +649,9 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 					window.app.QueueUpdateDraw(func() {
 						window.AddMessages([]*discordgo.Message{message})
 					})
-				} else {
+				}
+
+				if message.ChannelID != window.selectedChannel.ID || !window.userActive {
 					mentionsYou := false
 					if message.Author.ID != window.session.State.User.ID {
 						for _, user := range message.Mentions {
@@ -895,6 +892,9 @@ func (window *Window) SetCommandModeEnabled(enabled bool) {
 }
 
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
+	window.userActive = true
+	window.userActiveTimer.Reset(10 * time.Second)
+
 	if event.Rune() == '.' &&
 		(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
 

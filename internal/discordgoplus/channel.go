@@ -2,6 +2,8 @@ package discordgoplus
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
 
 	"github.com/Bios-Marcel/discordgo"
 )
@@ -30,4 +32,24 @@ func GetPrivateChannelName(channel *discordgo.Channel) string {
 	}
 
 	return channelName
+}
+
+// SortPrivateChannels sorts private channels depending on their last message.
+func SortPrivateChannels(channels []*discordgo.Channel) {
+	sort.Slice(channels, func(a, b int) bool {
+		channelA := channels[a]
+		channelB := channels[b]
+
+		messageA, parseError := strconv.ParseInt(channelA.LastMessageID, 10, 64)
+		if parseError != nil {
+			return false
+		}
+
+		messageB, parseError := strconv.ParseInt(channelB.LastMessageID, 10, 64)
+		if parseError != nil {
+			return true
+		}
+
+		return messageA > messageB
+	})
 }
