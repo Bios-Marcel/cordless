@@ -95,6 +95,7 @@ func Run() {
 				log.Fatalf("Error constructing window (%s).\n", createError.Error())
 			}
 
+			window.RegisterCommand(commandimpls.NewStatusCommand(discord))
 			window.RegisterCommand(commandimpls.NewHelpCommand(window))
 			window.RegisterCommand(commandimpls.NewManualCommand())
 			window.RegisterCommand(commandimpls.NewFixLayoutCommand(window))
