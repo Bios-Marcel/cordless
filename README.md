@@ -73,10 +73,33 @@ careful with your configuration file.
 **THIS APPLICATION NEVER SAVES YOUR PASSWORD LOCALLY.**
 
 #### How to retrieve your token
+#### How to retrieve your token
 
-In order to retrieve your token, simply follow the steps in the graphic below:
+##### In order to retrieve your token from browser or from discord client, simply follow the steps below:
 
-![Steps to retrieve discord token - by ripcord](https://cancel.fm/ripcord/static/app_misc/discord_token_howto_en-US.png)
+* Press **CTRL+SHIFT+I** or **COMMAND+SHIFT+I** depends on your [OS](https://en.wikipedia.org/wiki/Operating_system).
+
+![Imgur](https://i.imgur.com/38UF1h5.png))
+
+* Click **Network** section.
+
+![Imgur](https://i.imgur.com/k6OhJHt.png)
+
+* Click **XHR** Section
+
+![Imgur](https://i.imgur.com/HXqL7Pp.png)
+
+* Reload it by clicking **F5** and choose **access-token**
+
+![Imgur](https://i.imgur.com/Rkb2krO.png) 
+
+* Get into **Headers** section and scroll down until you find **authorization: <token>**, then *copy* it
+ 
+![Imgur](https://i.imgur.com/PEox6bP.png)
+
+* Paste into terminal, hit enter and there you go !
+
+![Imgur](https://i.imgur.com/UpsrGJt.png)
 
 ## Features
 
