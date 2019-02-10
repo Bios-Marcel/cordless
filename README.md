@@ -72,31 +72,31 @@ careful with your configuration file.
 
 **THIS APPLICATION NEVER SAVES YOUR PASSWORD LOCALLY.**
 
-### In order to retrieve your token from browser or from discord client, simply follow the steps below:
+#### Follow the steps bellow in order to retrieve token
 
-* Press **CTRL+SHIFT+I** or **COMMAND+SHIFT+I** depends on your [OS](https://en.wikipedia.org/wiki/Operating_system).
+* Press `CTRL+SHIFT+I` or `COMMAND+SHIFT+I` depends on your [OS](https://en.wikipedia.org/wiki/Operating_system)
 
-![Imgur](https://i.imgur.com/38UF1h5.png))
+![Default window](https://i.imgur.com/38UF1h5.png))
 
-* Click **Network** section.
+* Click **Network** section
 
-![Imgur](https://i.imgur.com/k6OhJHt.png)
+![Network section](https://i.imgur.com/k6OhJHt.png)
 
 * Click **XHR** Section
 
-![Imgur](https://i.imgur.com/HXqL7Pp.png)
+![XHR section](https://i.imgur.com/HXqL7Pp.png)
 
 * Reload it by clicking **F5** and choose **access-token**
 
-![Imgur](https://i.imgur.com/Rkb2krO.png) 
+![XHR section after reloading it](https://i.imgur.com/Rkb2krO.png) 
 
 * Get into **Headers** section and scroll down until you find **authorization: token**, then *copy* it
  
-![Imgur](https://i.imgur.com/PEox6bP.png)
+![Headers section of acces token](https://i.imgur.com/PEox6bP.png)
 
 * Paste into terminal, hit enter and there you go !
 
-![Imgur](https://i.imgur.com/UpsrGJt.png)
+![Terinal, where you paste ~input your token](https://i.imgur.com/UpsrGJt.png)
 
 ## Features
 
