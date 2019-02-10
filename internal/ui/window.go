@@ -168,6 +168,8 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 	var selectedGuildNode *tview.TreeNode
 
+	discordgoplus.SortGuilds(window.session.State.Settings, guilds)
+
 	for _, tempGuild := range guilds {
 		guild := tempGuild
 		guildNode := tview.NewTreeNode(guild.Name)
