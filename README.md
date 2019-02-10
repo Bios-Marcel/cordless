@@ -90,7 +90,7 @@ careful with your configuration file.
 
 ![Imgur](https://i.imgur.com/Rkb2krO.png) 
 
-* Get into **Headers** section and scroll down until you find **authorization: <token>**, then *copy* it
+* Get into **Headers** section and scroll down until you find **authorization: token**, then *copy* it
  
 ![Imgur](https://i.imgur.com/PEox6bP.png)
 
