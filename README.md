@@ -72,10 +72,7 @@ careful with your configuration file.
 
 **THIS APPLICATION NEVER SAVES YOUR PASSWORD LOCALLY.**
 
-#### How to retrieve your token
-#### How to retrieve your token
-
-##### In order to retrieve your token from browser or from discord client, simply follow the steps below:
+### In order to retrieve your token from browser or from discord client, simply follow the steps below:
 
 * Press **CTRL+SHIFT+I** or **COMMAND+SHIFT+I** depends on your [OS](https://en.wikipedia.org/wiki/Operating_system).
 
