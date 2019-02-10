@@ -72,9 +72,9 @@ careful with your configuration file.
 
 **THIS APPLICATION NEVER SAVES YOUR PASSWORD LOCALLY.**
 
-#### Follow the steps bellow in order to retrieve token
+#### Retrieving your token via discord or chrome
 
-* Press `CTRL+SHIFT+I` or `COMMAND+SHIFT+I` depends on your [OS](https://en.wikipedia.org/wiki/Operating_system)
+* Press `CTRL+SHIFT+I` (or `COMMAND+SHIFT+I` if you are on Mac OS)
 
 ![Default window](https://i.imgur.com/38UF1h5.png))
 
@@ -90,13 +90,13 @@ careful with your configuration file.
 
 ![XHR section after reloading it](https://i.imgur.com/Rkb2krO.png) 
 
-* Get into `Headers` section and scroll down until you find `authorization: token`, then `copy` it
+* Get into `Headers` section and scroll down until you find `authorization: token` and copy it
  
 ![Headers section of acces token](https://i.imgur.com/PEox6bP.png)
 
-* Paste into terminal, hit enter and there you go !
+* Paste the token into the terminal and hit enter
 
-![Terinal, where you paste ~input your token](https://i.imgur.com/UpsrGJt.png)
+![Terimal after pasting the token](https://i.imgur.com/UpsrGJt.png)
 
 ## Features
 
