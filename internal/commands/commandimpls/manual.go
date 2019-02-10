@@ -3,9 +3,10 @@ package commandimpls
 import (
 	"fmt"
 	"io"
+	"strings"
 )
 
-const manualDocumentation = `[orange]# manual[white]
+const manualDocumentation = `[orange][::u]# manual[white]
 
 Please supply a topic that you want to know more about.
 	[-]manual <topic>[white]
@@ -29,8 +30,8 @@ func NewManualCommand() *Manual {
 // Execute runs the command piping its output into the supplied writer.
 func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 1 {
-		switch parameters[0] {
-		case "chat-view":
+		switch strings.ToLower(parameters[0]) {
+		case "chat-view", "chatview":
 			fmt.Fprintln(writer, chatViewDocumentation)
 
 		case "commands":
@@ -39,19 +40,20 @@ func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 		case "configuration":
 			fmt.Fprintln(writer, configurationDocumentation)
 
-		case "message-editor":
+		case "message-editor", "messageeditor":
 			fmt.Fprintln(writer, messageEditorDocumentation)
 
 		case "navigation":
 			fmt.Fprintln(writer, navigationDocumentation)
-
+		default:
+			manual.PrintHelp(writer)
 		}
 	} else {
 		manual.PrintHelp(writer)
 	}
 }
 
-const chatViewDocumentation = `[orange]# Chatview[white]
+const chatViewDocumentation = `[orange][::u]# Chatview[white]
 
 The Chatview is the component that displays the messages of the channel that you are currently looking at.
 
@@ -75,10 +77,32 @@ When in selection mode, those shortcuts are active:
 | Selectino to bottom         | End        |
 --------------------------------------------
 `
-const commandsDocumentation = `[orange]# Commands[white]`
-const configurationDocumentation = `[orange]# Configuration[white]`
-const messageEditorDocumentation = `[orange]# Message editor[white]`
-const navigationDocumentation = `[orange]# Navigation[white]`
+const commandsDocumentation = `[orange][::u]# Commands[white]`
+const configurationDocumentation = `[orange][::u]# Configuration[white]`
+const messageEditorDocumentation = `[orange][::u]# Message editor[white]`
+const navigationDocumentation = `[orange][::u]# Navigation[white]
+
+Currently the navigation is solely via your keyboard.
+
+[::u]## Shortcuts
+
+--------------------------------------------------------------------
+|          Action         | Shortcut |            Scope            |
+| ----------------------- | -------- | ----------------------------|
+| Close application       | Ctrl-C   | Everywhere                  |
+| Focus user container    | Alt+U    | Guild channel / group chat  |
+| Focus private chat page | Alt+F    | Everywhere                  |
+| Focus guild container   | Alt+S    | Everywhere                  |
+| Focus channel container | Alt+C    | Everywhere                  |
+| Focus message input     | Alt+M    | Everywhere                  |
+| Focus message container | Alt+T    | Everywhere                  |
+| Toggle command view     | Alt+Dot  | Everywhere                  |
+| Focus command output    | Ctrl+O   | Everywhere                  |
+| Focus command input     | Ctrl+I   | Everywhere                  |
+| Edit last message       | ArrowUp  | In empty message input      |
+| Leave message edit mode | Esc      | When editing message        |
+--------------------------------------------------------------------
+`
 
 // Name represents this commands indentifier.
 func (manual *Manual) Name() string {

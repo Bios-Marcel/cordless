@@ -885,11 +885,18 @@ func (window *Window) askForMessageDeletion(messageID string, usedWithSelection 
 	window.app.SetRoot(dialog, false)
 }
 
+func (window *Window) SetCommandModeEnabled(enabled bool) {
+	if window.commandMode != enabled {
+		window.commandMode = enabled
+		window.commandView.SetVisible(enabled)
+	}
+}
+
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
 	if event.Rune() == '.' &&
 		(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
 
-		window.commandMode = !window.commandMode
+		window.SetCommandModeEnabled(!window.commandMode)
 
 		if window.commandMode {
 			window.app.SetFocus(window.commandView.commandInput)
@@ -897,21 +904,23 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 			window.app.SetFocus(window.messageInput.GetPrimitive())
 		}
 
-		window.commandView.SetVisible(window.commandMode)
-
 		return nil
 	}
 
 	if window.commandMode && event.Key() == tcell.KeyCtrlO {
-		if window.commandView.commandOutput.IsVisible() {
-			window.app.SetFocus(window.commandView.commandOutput)
+		if !window.commandMode {
+			window.SetCommandModeEnabled(true)
 		}
+
+		window.app.SetFocus(window.commandView.commandOutput)
 	}
 
 	if window.commandMode && event.Key() == tcell.KeyCtrlI {
-		if window.commandView.commandInput.IsVisible() {
-			window.app.SetFocus(window.commandView.commandInput)
+		if !window.commandMode {
+			window.SetCommandModeEnabled(true)
 		}
+
+		window.app.SetFocus(window.commandView.commandInput)
 	}
 
 	if event.Rune() == 'U' &&
