@@ -78,19 +78,19 @@ careful with your configuration file.
 
 ![Default window](https://i.imgur.com/38UF1h5.png))
 
-* Click **Network** section
+* Click `Network` section
 
 ![Network section](https://i.imgur.com/k6OhJHt.png)
 
-* Click **XHR** Section
+* Click `XHR` Section
 
 ![XHR section](https://i.imgur.com/HXqL7Pp.png)
 
-* Reload it by clicking **F5** and choose **access-token**
+* Reload it by clicking `F5` and choose `access-token`
 
 ![XHR section after reloading it](https://i.imgur.com/Rkb2krO.png) 
 
-* Get into **Headers** section and scroll down until you find **authorization: token**, then *copy* it
+* Get into `Headers` section and scroll down until you find `authorization: token`, then `copy` it
  
 ![Headers section of acces token](https://i.imgur.com/PEox6bP.png)
 
