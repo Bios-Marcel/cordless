@@ -467,6 +467,14 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 							mentionWindow.GetRoot().AddChild(userNode)
 						}
 					}
+
+					for _, role := range guild.Roles {
+						if strings.Contains(strings.ToUpper(role.Name), strings.ToUpper(namePart)) {
+							roleNode := tview.NewTreeNode(role.Name)
+							roleNode.SetReference(role)
+							mentionWindow.GetRoot().AddChild(roleNode)
+						}
+					}
 				}
 			} else {
 				for _, user := range window.selectedChannel.Recipients {
@@ -824,10 +832,16 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		beginIdx, endIdx := window.messageInput.GetCurrentMentionIndices()
 		if beginIdx != endIdx {
 			data, ok := node.GetReference().(string)
+			oldText := window.messageInput.GetText()
 			if ok {
-				oldText := window.messageInput.GetText()
 				newText := oldText[:beginIdx] + strings.TrimSpace(data) + oldText[endIdx+1:] + " "
 				window.messageInput.SetText(newText)
+			} else {
+				role, ok := node.GetReference().(*discordgo.Role)
+				if ok {
+					newText := oldText[:beginIdx-1] + "<@&" + strings.TrimSpace(role.ID) + ">" + oldText[endIdx+1:] + " "
+					window.messageInput.SetText(newText)
+				}
 			}
 		}
 		window.messageInput.mentionHideHandler()

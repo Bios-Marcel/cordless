@@ -202,6 +202,16 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 
 		if message.Type == discordgo.MessageTypeDefault {
 			messageText = tview.Escape(message.Content)
+
+			for _, roleID := range message.MentionRoles {
+				role, cacheError := chatView.session.State.Role(message.GuildID, roleID)
+				if cacheError == nil {
+					messageText = strings.NewReplacer(
+						"<@&"+roleID+">", "[blue]@"+role.Name+"[white]",
+					).Replace(messageText)
+				}
+			}
+
 			for _, user := range message.Mentions {
 				var userName string
 				if message.GuildID != "" {
