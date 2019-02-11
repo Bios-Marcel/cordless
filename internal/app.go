@@ -100,6 +100,7 @@ func Run() {
 			window.RegisterCommand(commandimpls.NewManualCommand())
 			window.RegisterCommand(commandimpls.NewFixLayoutCommand(window))
 			window.RegisterCommand(commandimpls.NewChatHeaderCommand(window))
+			window.RegisterCommand(commandimpls.NewLogoutCommand())
 		})
 	}()
 
