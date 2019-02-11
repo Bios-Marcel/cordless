@@ -25,6 +25,7 @@ const (
     ╚██████╗╚██████╔╝██║  ██║██████╔╝███████╗███████╗███████║███████║              
      ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝╚══════╝              
 `
+	defaultLoginMessage = "Please choose wether to login via authentication token (1) or email and password (2)."
 )
 
 // Run launches the whole application and might abort in case it encounters an
@@ -50,24 +51,9 @@ func Run() {
 			log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
 		}
 
-		var (
-			discord      *discordgo.Session
-			discordError error
-		)
+		discord := attemptLogin(defaultLoginMessage, app, configuration)
 
-		if configuration.Token == "" {
-			app.Suspend(func() {
-				discord, discordError = login()
-			})
-			config.GetConfig().Token = discord.Token
-		} else {
-			discord, discordError = discordgo.New(configuration.Token)
-		}
-
-		if discordError != nil {
-			app.Stop()
-			log.Fatalln("Error logging into Discord", discordError)
-		}
+		config.GetConfig().Token = discord.Token
 
 		persistError := config.PersistConfig()
 		if persistError != nil {
@@ -80,7 +66,7 @@ func Run() {
 			readyChan <- struct{}{}
 		})
 
-		discordError = discord.Open()
+		discordError := discord.Open()
 		if discordError != nil {
 			app.Stop()
 			log.Fatalln("Error establishing web socket connection", discordError)
@@ -110,8 +96,37 @@ func Run() {
 	}
 }
 
-func login() (*discordgo.Session, error) {
-	log.Println("Please choose wether to login via authentication token (1) or email and password (2).")
+func attemptLogin(loginMessage string, app *tview.Application, configuration *config.Config) *discordgo.Session {
+	var (
+		session      *discordgo.Session
+		discordError error
+	)
+
+	if configuration.Token == "" {
+		app.Suspend(func() {
+			session, discordError = login(loginMessage)
+		})
+	} else {
+		session, discordError = discordgo.New(configuration.Token)
+	}
+
+	if discordError != nil {
+		configuration.Token = ""
+		return attemptLogin(fmt.Sprintf("Your password or token was incorrect, please try again.\n%s", defaultLoginMessage), app, configuration)
+	}
+
+	//When logging in via token, the token isn't ever validated, therefore we do a test lookup here.
+	_, discordError = session.UserGuilds(0, "", "")
+	if discordError == discordgo.ErrUnauthorized {
+		configuration.Token = ""
+		return attemptLogin(fmt.Sprintf("Your password or token was incorrect, please try again.\n%s", defaultLoginMessage), app, configuration)
+	}
+
+	return session
+}
+
+func login(loginMessage string) (*discordgo.Session, error) {
+	log.Println(loginMessage)
 	var choice int
 
 	var err error
@@ -123,7 +138,7 @@ func login() (*discordgo.Session, error) {
 
 	if err != nil {
 		log.Println("Invalid input, please try again.")
-		return login()
+		return login(loginMessage)
 	}
 
 	if choice == 1 {
@@ -131,8 +146,8 @@ func login() (*discordgo.Session, error) {
 	} else if choice == 2 {
 		return askForEmailAndPassword()
 	} else {
-		log.Println("Invalid choice, please try again.")
-		return login()
+		log.Println()
+		return login(fmt.Sprintf("Invalid choice, please try again.\n%s", defaultLoginMessage))
 	}
 }
 
