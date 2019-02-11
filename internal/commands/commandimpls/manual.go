@@ -91,7 +91,7 @@ Currently the navigation is solely via your keyboard.
 | ----------------------- | -------- | ----------------------------|
 | Close application       | Ctrl-C   | Everywhere                  |
 | Focus user container    | Alt+U    | Guild channel / group chat  |
-| Focus private chat page | Alt+F    | Everywhere                  |
+| Focus private chat page | Alt+P    | Everywhere                  |
 | Focus guild container   | Alt+S    | Everywhere                  |
 | Focus channel container | Alt+C    | Everywhere                  |
 | Focus message input     | Alt+M    | Everywhere                  |

@@ -953,7 +953,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	}
 
 	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt {
-		if event.Rune() == 'f' {
+		if event.Rune() == 'p' {
 			window.SwitchToFriendsPage()
 			window.app.SetFocus(window.privateList)
 			return nil
