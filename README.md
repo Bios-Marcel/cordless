@@ -15,6 +15,7 @@
 * [Login](https://github.com/Bios-Marcel/cordless#login)
 * [Features](https://github.com/Bios-Marcel/cordless#features)
 * [Extending Cordless via the scripting interface](https://github.com/Bios-Marcel/cordless#extending-cordless-via-the-scripting-interface)
+* [Contributing](https://github.com/Bios-Marcel/cordless#contributing)
 * [Similar projects](https://github.com/Bios-Marcel/cordless#similar-projects)
 * [Troubleshooting](https://github.com/Bios-Marcel/cordless#troubleshooting)
 
@@ -156,6 +157,21 @@ config folder.
 
 An example can be found here:
 [Kaomoji](https://github.com/Bios-Marcel/cordless-kaomoji)
+
+## Contributing
+
+All kinds of contributions are welcome. Wether it's correcting typos, fixing
+bugs, adding features or whatever else might be good for the project. If you
+want to contribute code, please create a new branch and commit only changes
+relevant to your planned pull request onto that branch. This will help
+isolating new changes and make merging those into `master` easier.
+
+I also encourage you to report anything you deem a bug, because that means
+that there are problems with the UX that could still be worked on. Obivously
+feature requests are welcome as well, no matter if those are clients that the
+official discord client has or not.
+
+Oh and please try to keep things pragmatic and foul-language free ;)
 
 ## Similar projects
 
