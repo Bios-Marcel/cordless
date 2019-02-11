@@ -895,6 +895,8 @@ func (window *Window) askForMessageDeletion(messageID string, usedWithSelection 
 	window.app.SetRoot(dialog, false)
 }
 
+// SetCommandModeEnabled hides or shows the command ui elements and toggles
+// the commandMode flag.
 func (window *Window) SetCommandModeEnabled(enabled bool) {
 	if window.commandMode != enabled {
 		window.commandMode = enabled
@@ -1178,6 +1180,7 @@ func (window *Window) RegisterCommand(command commands.Command) {
 	window.commands[command.Name()] = command
 }
 
+// GetRegisteredCommands returns the map of all registered commands
 func (window *Window) GetRegisteredCommands() map[string]commands.Command {
 	return window.commands
 }
