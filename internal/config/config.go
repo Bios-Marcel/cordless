@@ -48,6 +48,7 @@ var (
 		OnTypeInListBehaviour:                  SearchOnTypeInList,
 		ShortenLinks:                           false,
 		ShortenerPort:                          51726,
+		DesktopNotifications:                   true,
 	}
 )
 
@@ -93,6 +94,10 @@ type Config struct {
 	// ShortenerPort defines the port, that the webserver for the linkshortener
 	// will be using.
 	ShortenerPort int
+
+	// DesktopNotifications decides wether a popup will be shown in the users
+	// system when a notification needs to be sent.
+	DesktopNotifications bool
 }
 
 var cachedConfigDir string

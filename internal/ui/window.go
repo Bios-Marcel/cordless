@@ -664,38 +664,40 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 							}
 						}
 
-						channel, stateError := window.session.State.Channel(message.ChannelID)
-						if stateError == nil {
-							if !mentionsYou {
-								//TODO Check if channel is muted.
-								if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
-									mentionsYou = true
+						if config.GetConfig().DesktopNotifications {
+							channel, stateError := window.session.State.Channel(message.ChannelID)
+							if stateError == nil {
+								if !mentionsYou {
+									//TODO Check if channel is muted.
+									if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+										mentionsYou = true
+									}
 								}
-							}
 
-							if mentionsYou {
-								var notificationLocation string
+								if mentionsYou {
+									var notificationLocation string
 
-								if channel.Type == discordgo.ChannelTypeDM {
-									notificationLocation = message.Author.Username
-								} else if channel.Type == discordgo.ChannelTypeGroupDM {
-									notificationLocation = channel.Name
-									if notificationLocation == "" {
-										for index, recipient := range channel.Recipients {
-											if index == 0 {
-												notificationLocation = recipient.Username
-											} else {
-												notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
+									if channel.Type == discordgo.ChannelTypeDM {
+										notificationLocation = message.Author.Username
+									} else if channel.Type == discordgo.ChannelTypeGroupDM {
+										notificationLocation = channel.Name
+										if notificationLocation == "" {
+											for index, recipient := range channel.Recipients {
+												if index == 0 {
+													notificationLocation = recipient.Username
+												} else {
+													notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
+												}
 											}
 										}
+
+										notificationLocation = message.Author.Username + " - " + notificationLocation
+									} else if channel.Type == discordgo.ChannelTypeGuildText {
+										notificationLocation = message.Author.Username + " - " + channel.Name
 									}
 
-									notificationLocation = message.Author.Username + " - " + notificationLocation
-								} else if channel.Type == discordgo.ChannelTypeGuildText {
-									notificationLocation = message.Author.Username + " - " + channel.Name
+									beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
 								}
-
-								beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
 							}
 						}
 
