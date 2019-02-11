@@ -110,7 +110,7 @@ func Run() {
 }
 
 func login() (*discordgo.Session, error) {
-	log.Println("Please choose wether to login via username and password (1) or authentication token (2).")
+	log.Println("Please choose wether to login via email and password (1) or authentication token (2).")
 	var choice int
 
 	_, err := fmt.Scanf("%d\n", &choice)
@@ -136,13 +136,13 @@ func askForUsernameAndPassword() (*discordgo.Session, error) {
 
 	nameAsBytes, _, inputError := reader.ReadLine()
 	if inputError != nil {
-		log.Fatalf("Error reading your username (%s).\n", inputError.Error())
+		log.Fatalf("Error reading your email (%s).\n", inputError.Error())
 	}
 	name := string(nameAsBytes[:])
 
 	passwordAsBytes, inputError := getpass.Get("Please input your password.\n")
 	if inputError != nil {
-		log.Fatalf("Error reading your username (%s).\n", inputError.Error())
+		log.Fatalf("Error reading your email (%s).\n", inputError.Error())
 	}
 	password := string(passwordAsBytes[:])
 
