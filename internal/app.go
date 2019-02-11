@@ -160,8 +160,8 @@ func askForToken() (*discordgo.Session, error) {
 
 	token := string(tokenAsBytes[:])
 
-	if token == "" {
-		log.Println("An empty token is not valid, please try again.")
+	if len(token) != 59 {
+		log.Println("Tokens are length of 59, please try again.")
 		return askForToken()
 	}
 
