@@ -180,6 +180,7 @@ Here is a list of similar projects:
 * [terminal-discord](https://github.com/xynxynxyn/terminal-discord)
 * [Discurses](https://github.com/topisani/Discurses)
 * [Discline](https://github.com/MitchWeaver/Discline)
+* [discord-term](https://github.com/cloudrex/discord-term)
 
 ## Troubleshooting
 
