@@ -64,7 +64,7 @@ In order to execute the application, simply run the executable, which lies at
 On launch, cordless will offer you two login methods:
 
 1. Using an authentication token
-2. Using username and password
+2. Using email and password
 
 I recommend the first way, as the second one won't work anyway in case you have
 two-factor authentication enabled. After logging on using either method, your
