@@ -110,7 +110,7 @@ func Run() {
 }
 
 func login() (*discordgo.Session, error) {
-	log.Println("Please choose wether to login via email and password (1) or authentication token (2).")
+	log.Println("Please choose wether to login via authentication token (1) or email and password (2).")
 	var choice int
 
 	_, err := fmt.Scanf("%d\n", &choice)
@@ -121,16 +121,16 @@ func login() (*discordgo.Session, error) {
 	}
 
 	if choice == 1 {
-		return askForUsernameAndPassword()
-	} else if choice == 2 {
 		return askForToken()
+	} else if choice == 2 {
+		return askForEmailAndPassword()
 	} else {
 		log.Println("Invalid choice, please try again.")
 		return login()
 	}
 }
 
-func askForUsernameAndPassword() (*discordgo.Session, error) {
+func askForEmailAndPassword() (*discordgo.Session, error) {
 	log.Println("Please input your username.")
 	reader := bufio.NewReader(os.Stdin)
 
