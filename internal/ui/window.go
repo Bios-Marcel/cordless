@@ -1,11 +1,14 @@
 package ui
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/Bios-Marcel/goclipimg"
 
 	"github.com/atotto/clipboard"
 
@@ -547,6 +550,23 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 		if event.Key() == tcell.KeyEsc {
 			window.exitMessageEditMode()
+			return nil
+		}
+
+		if event.Key() == tcell.KeyCtrlV && window.selectedChannel != nil {
+			data, clipError := goclipimg.GetImageFromClipboard()
+			if clipError == nil {
+				dataChannel := bytes.NewReader(data)
+				currentText := window.messageInput.GetText()
+				if currentText == "" {
+					go window.session.ChannelFileSend(window.selectedChannel.ID, "img.png", dataChannel)
+				} else {
+					go window.session.ChannelFileSendWithMessage(window.selectedChannel.ID, currentText, "img.png", dataChannel)
+					window.messageInput.SetText("")
+				}
+			} else {
+				window.ShowErrorDialog(fmt.Sprintf("Error pasting image: %s", clipError.Error()))
+			}
 			return nil
 		}
 

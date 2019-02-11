@@ -5,9 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/atotto/clipboard"
-
 	"github.com/Bios-Marcel/tview"
+	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
 )
 
@@ -235,28 +234,6 @@ func NewEditor() *Editor {
 				newText = newText + endRegion
 				editor.setAndFixText(newText)
 			}
-		} else if event.Key() == tcell.KeyCtrlV {
-			clipBoardContent, clipError := clipboard.ReadAll()
-			if clipError == nil {
-				if string(selection) == selectionChar {
-					newText = leftRegion + string(left) + clipBoardContent + selRegion + string(selection)
-				} else {
-					newText = leftRegion + string(left) + clipBoardContent
-					if len(selection) == 1 {
-						newText = newText + selRegion + string(selection) + rightRegion + string(right)
-					} else {
-						newText = newText + selRegion
-						if len(right) == 0 {
-							newText = newText + selectionChar
-						} else if len(right) == 0 {
-							newText = newText + string(right[0])
-						} else {
-							newText = newText + string(right[0]) + rightRegion + string(right[1:])
-						}
-					}
-				}
-				editor.setAndFixText(newText + endRegion)
-			}
 		} else {
 			var character rune
 			if event.Key() == tcell.KeyEnter {
@@ -265,6 +242,36 @@ func NewEditor() *Editor {
 				}
 			} else {
 				character = event.Rune()
+			}
+
+			if event.Key() == tcell.KeyCtrlV {
+				result := editor.inputCapture(event)
+				if result == nil {
+					return nil
+				}
+
+				clipBoardContent, clipError := clipboard.ReadAll()
+				if clipError == nil {
+					if string(selection) == selectionChar {
+						newText = leftRegion + string(left) + clipBoardContent + selRegion + string(selection)
+					} else {
+						newText = leftRegion + string(left) + clipBoardContent
+						if len(selection) == 1 {
+							newText = newText + selRegion + string(selection) + rightRegion + string(right)
+						} else {
+							newText = newText + selRegion
+							if len(right) == 0 {
+								newText = newText + selectionChar
+							} else if len(right) == 0 {
+								newText = newText + string(right[0])
+							} else {
+								newText = newText + string(right[0]) + rightRegion + string(right[1:])
+							}
+						}
+					}
+					editor.setAndFixText(newText + endRegion)
+				}
+				return nil
 			}
 
 			if character == 0 {
