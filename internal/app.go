@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 
 	"github.com/princebot/getpass"
 
@@ -113,7 +114,12 @@ func login() (*discordgo.Session, error) {
 	log.Println("Please choose wether to login via authentication token (1) or email and password (2).")
 	var choice int
 
-	_, err := fmt.Scanf("%d\n", &choice)
+	var err error
+	if runtime.GOOS == "windows" {
+		_, err = fmt.Scanf("%d\n", &choice)
+	} else {
+		_, err = fmt.Scanf("%d", &choice)
+	}
 
 	if err != nil {
 		log.Println("Invalid input, please try again.")
@@ -131,7 +137,7 @@ func login() (*discordgo.Session, error) {
 }
 
 func askForEmailAndPassword() (*discordgo.Session, error) {
-	log.Println("Please input your username.")
+	log.Println("Please input your email.")
 	reader := bufio.NewReader(os.Stdin)
 
 	nameAsBytes, _, inputError := reader.ReadLine()
