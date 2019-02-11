@@ -586,11 +586,27 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 					}
 
 					if window.editingMessageID != nil {
-						go window.editMessage(window.selectedChannel.ID, *window.editingMessageID, messageToSend)
-						window.exitMessageEditMode()
+						overLength := len(messageToSend) - 2000
+						if overLength > 0 {
+							window.app.QueueUpdateDraw(func() {
+								window.ShowErrorDialog(fmt.Sprintf("The message you are trying to send is %d characters too long.", overLength))
+							})
+						} else {
+							go window.editMessage(window.selectedChannel.ID, *window.editingMessageID, messageToSend)
+							window.exitMessageEditMode()
+						}
 					} else {
 						go func() {
-							_, sendError := discord.ChannelMessageSend(window.selectedChannel.ID, window.jsEngine.OnMessageSend(messageToSend))
+							messageText := window.jsEngine.OnMessageSend(messageToSend)
+							overLength := len(messageText) - 2000
+							if overLength > 0 {
+								window.app.QueueUpdateDraw(func() {
+									window.ShowErrorDialog(fmt.Sprintf("The message you are trying to send is %d characters too long.", overLength))
+								})
+								return
+							}
+
+							_, sendError := discord.ChannelMessageSend(window.selectedChannel.ID, messageText)
 							window.chatView.internalTextView.ScrollToEnd()
 							if sendError != nil {
 								window.app.QueueUpdateDraw(func() {
