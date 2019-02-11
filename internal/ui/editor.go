@@ -238,8 +238,24 @@ func NewEditor() *Editor {
 		} else if event.Key() == tcell.KeyCtrlV {
 			clipBoardContent, clipError := clipboard.ReadAll()
 			if clipError == nil {
-				newText = leftRegion + string(left) + selRegion + string(selection) + clipBoardContent + rightRegion + string(right) + endRegion
-				editor.setAndFixText(newText)
+				if string(selection) == selectionChar {
+					newText = leftRegion + string(left) + clipBoardContent + selRegion + string(selection)
+				} else {
+					newText = leftRegion + string(left) + clipBoardContent
+					if len(selection) == 1 {
+						newText = newText + selRegion + string(selection) + rightRegion + string(right)
+					} else {
+						newText = newText + selRegion
+						if len(right) == 0 {
+							newText = newText + selectionChar
+						} else if len(right) == 0 {
+							newText = newText + string(right[0])
+						} else {
+							newText = newText + string(right[0]) + rightRegion + string(right[1:])
+						}
+					}
+				}
+				editor.setAndFixText(newText + endRegion)
 			}
 		} else {
 			var character rune
