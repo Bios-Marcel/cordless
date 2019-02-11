@@ -44,6 +44,7 @@ func NewUserTree(state *discordgo.State) *UserTree {
 	return userTree
 }
 
+// Clear removes all nodes and data out of the view.
 func (userTree *UserTree) Clear() {
 	for _, roleNode := range userTree.roleNodes {
 		roleNode.ClearChildren()
@@ -56,6 +57,7 @@ func (userTree *UserTree) Clear() {
 	userTree.rootNode.ClearChildren()
 }
 
+// LoadGroup loads all users for a group-channel.
 func (userTree *UserTree) LoadGroup(channelID string) error {
 	userTree.Clear()
 
@@ -163,6 +165,8 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 	userTree.rootNode.AddChild(userNode)
 }
 
+// AddOrUpdateUser adds a user to the tree, unless the user already exists,
+// in that case the users node gets updated.
 func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
 	nameToUse := discordgoplus.GetUserName(user, nil)
 
@@ -177,6 +181,8 @@ func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
 	userTree.rootNode.AddChild(userNode)
 }
 
+// AddOrUpdateUsers adds users to the tree, unless they already exists, in that
+// case the users nodes gets updated.
 func (userTree *UserTree) AddOrUpdateUsers(users []*discordgo.User) {
 	for _, user := range users {
 		userTree.AddOrUpdateUser(user)
