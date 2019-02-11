@@ -8,6 +8,16 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 )
 
+// GetChannelNameForTree returns the string representation of a channel in
+// the channel tree on the left.
+func GetChannelNameForTree(channel *discordgo.Channel) string {
+	if channel.NSFW {
+		return channel.Name + " NSFW"
+	}
+
+	return channel.Name
+}
+
 // GetPrivateChannelName generates a name for a private channel.
 func GetPrivateChannelName(channel *discordgo.Channel) string {
 	var channelName string

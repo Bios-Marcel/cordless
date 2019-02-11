@@ -226,18 +226,13 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 					}
 
 					window.selectedChannelNode = node
-					node.SetText(channelToConnectTo.Name)
+					node.SetText(discordgoplus.GetChannelNameForTree(channelToConnectTo))
 					node.SetColor(tcell.ColorTeal)
 				})
 			}
 
 			createNodeForChannel := func(channel *discordgo.Channel) *tview.TreeNode {
-				nodeName := channel.Name
-				if channel.NSFW {
-					nodeName = nodeName + " NSFW"
-				}
-
-				return tview.NewTreeNode(nodeName)
+				return tview.NewTreeNode(discordgoplus.GetChannelNameForTree(channel))
 			}
 
 			channelCategories := make(map[string]*tview.TreeNode)
@@ -695,9 +690,9 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 										}
 									}
 
-									notificationLocation = message.Author.Username + "-" + notificationLocation
+									notificationLocation = message.Author.Username + " - " + notificationLocation
 								} else if channel.Type == discordgo.ChannelTypeGuildText {
-									notificationLocation = message.Author.Username + "-" + channel.Name
+									notificationLocation = message.Author.Username + " - " + channel.Name
 								}
 
 								beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
@@ -711,7 +706,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 									if mentionsYou {
 										channel, stateError := window.session.State.Channel(message.ChannelID)
 										if stateError == nil {
-											node.SetText("(@You) " + channel.Name)
+											node.SetText("(@You) " + discordgoplus.GetChannelNameForTree(channel))
 										}
 									}
 
