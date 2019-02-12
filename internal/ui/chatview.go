@@ -346,7 +346,7 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 						continue
 					}
 
-					escaped := strings.Replace(strings.Replace(writer.String(), "*", "\\*", -1), "_", "\\_", -1)
+					escaped := strings.NewReplacer("*", "\\*", "_", "\\_", "|", "\\|").Replace(writer.String())
 					messageText = strings.Replace(messageText, value, escaped, 1)
 				}
 			}
@@ -354,7 +354,6 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 
 		messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
 
-		messageText = strings.Replace(messageText, "|", "\\|", -1)
 		shouldShow, contains := chatView.showSpoilerContent[message.ID]
 		if !contains || !shouldShow {
 			messageText = spoilerRegex.ReplaceAllString(messageText, "[red]!SPOILER![white]")
