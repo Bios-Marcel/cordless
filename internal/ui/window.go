@@ -555,6 +555,11 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 		if event.Key() == tcell.KeyCtrlV && window.selectedChannel != nil {
 			data, clipError := goclipimg.GetImageFromClipboard()
+
+			if clipError == goclipimg.ErrNoImageInClipboard {
+				return event
+			}
+
 			if clipError == nil {
 				dataChannel := bytes.NewReader(data)
 				currentText := window.messageInput.GetText()
@@ -567,6 +572,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			} else {
 				window.ShowErrorDialog(fmt.Sprintf("Error pasting image: %s", clipError.Error()))
 			}
+
 			return nil
 		}
 
