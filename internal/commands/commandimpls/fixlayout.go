@@ -95,9 +95,9 @@ func (fixLayout *FixLayout) Execute(writer io.Writer, parameters []string) {
 		if successOutput != "" {
 			fmt.Fprintln(writer, successOutput)
 		}
+	} else {
+		fixLayout.PrintHelp(writer)
 	}
-
-	fixLayout.PrintHelp(writer)
 }
 
 // Name represents this commands indentifier.
