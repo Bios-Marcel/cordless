@@ -13,7 +13,7 @@ import (
 type PrivateChatList struct {
 	internalTreeView *tview.TreeView
 
-	session *discordgo.Session
+	state *discordgo.State
 
 	chatsNode   *tview.TreeNode
 	friendsNode *tview.TreeNode
@@ -26,9 +26,9 @@ type PrivateChatList struct {
 }
 
 // NewPrivateChatList creates a new ready to use private chat list.
-func NewPrivateChatList(session *discordgo.Session) *PrivateChatList {
+func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 	privateList := &PrivateChatList{
-		session: session,
+		state: state,
 
 		internalTreeView: tview.NewTreeView(),
 		chatsNode:        tview.NewTreeNode("Chats"),
@@ -152,15 +152,15 @@ func (privateList *PrivateChatList) SetOnChannelSelect(handler func(channelID st
 
 // Load loads all present data (chats, groups and friends).
 func (privateList *PrivateChatList) Load() error {
-	privateChannels := make([]*discordgo.Channel, len(privateList.session.State.PrivateChannels))
-	copy(privateChannels, privateList.session.State.PrivateChannels)
+	privateChannels := make([]*discordgo.Channel, len(privateList.state.PrivateChannels))
+	copy(privateChannels, privateList.state.PrivateChannels)
 	discordgoplus.SortPrivateChannels(privateChannels)
 
 	for _, channel := range privateChannels {
 		privateList.addChannel(channel)
 	}
 
-	for _, friend := range privateList.session.State.Relationships {
+	for _, friend := range privateList.state.Relationships {
 		if friend.Type != discordgoplus.RelationTypeFriend {
 			continue
 		}
