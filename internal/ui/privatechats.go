@@ -9,6 +9,14 @@ import (
 	"github.com/Bios-Marcel/tview"
 )
 
+type nodeState int
+
+const (
+	loaded nodeState = iota
+	unread
+	read
+)
+
 // PrivateChatList holds the nodes and handlers for the private view. That
 // is the one responsible for managing private chats and friends.
 type PrivateChatList struct {
@@ -19,8 +27,9 @@ type PrivateChatList struct {
 	chatsNode   *tview.TreeNode
 	friendsNode *tview.TreeNode
 
-	onChannelSelect func(channelID string)
+	onChannelSelect func(node *tview.TreeNode, channelID string)
 	onFriendSelect  func(userID string)
+	nodeStates      map[*tview.TreeNode]nodeState
 
 	userChannels map[string]*tview.TreeNode
 	friends      map[string]*tview.TreeNode
@@ -34,6 +43,8 @@ func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 		internalTreeView: tview.NewTreeView(),
 		chatsNode:        tview.NewTreeNode("Chats"),
 		friendsNode:      tview.NewTreeNode("Friends"),
+
+		nodeStates: make(map[*tview.TreeNode]nodeState, 0),
 	}
 
 	privateList.internalTreeView.
@@ -56,7 +67,7 @@ func (privateList *PrivateChatList) onNodeSelected(node *tview.TreeNode) {
 		if privateList.onChannelSelect != nil {
 			channelID, ok := node.GetReference().(string)
 			if ok {
-				privateList.onChannelSelect(channelID)
+				privateList.onChannelSelect(node, channelID)
 			}
 		}
 	} else if node.GetParent() == privateList.friendsNode {
@@ -167,6 +178,8 @@ func (privateList *PrivateChatList) RemoveChannel(channel *discordgo.Channel) {
 		referenceChannelID, ok := node.GetReference().(string)
 		if !ok || ok && channelID != referenceChannelID {
 			newChildren = append(newChildren, node)
+		} else {
+			delete(privateList.nodeStates, node)
 		}
 	}
 
@@ -183,6 +196,47 @@ func (privateList *PrivateChatList) RemoveChannel(channel *discordgo.Channel) {
 	privateList.chatsNode.SetChildren(newChildren)
 }
 
+func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Channel) {
+	for _, node := range privateList.chatsNode.GetChildren() {
+		referenceChannelID, ok := node.GetReference().(string)
+		if ok && referenceChannelID == channel.ID {
+			privateList.nodeStates[node] = unread
+			node.SetColor(tcell.ColorRed)
+			break
+		}
+	}
+}
+
+func (privateList *PrivateChatList) MarkChannelAsRead(channel *discordgo.Channel) {
+	for _, node := range privateList.chatsNode.GetChildren() {
+		referenceChannelID, ok := node.GetReference().(string)
+		if ok && referenceChannelID == channel.ID {
+			privateList.nodeStates[node] = read
+			node.SetColor(tcell.ColorWhite)
+			break
+		}
+	}
+}
+
+func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Channel) {
+	for node, state := range privateList.nodeStates {
+		if state == loaded {
+			privateList.nodeStates[node] = read
+			node.SetColor(tcell.ColorWhite)
+			break
+		}
+	}
+
+	for _, node := range privateList.chatsNode.GetChildren() {
+		referenceChannelID, ok := node.GetReference().(string)
+		if ok && referenceChannelID == channel.ID {
+			privateList.nodeStates[node] = loaded
+			node.SetColor(tcell.ColorTeal)
+			break
+		}
+	}
+}
+
 // SetOnFriendSelect sets the handler that decides what happens when a friend
 // node gets selected.
 func (privateList *PrivateChatList) SetOnFriendSelect(handler func(userID string)) {
@@ -191,7 +245,7 @@ func (privateList *PrivateChatList) SetOnFriendSelect(handler func(userID string
 
 // SetOnChannelSelect sets the handler that decides what happens when a
 // channel node gets selected.
-func (privateList *PrivateChatList) SetOnChannelSelect(handler func(channelID string)) {
+func (privateList *PrivateChatList) SetOnChannelSelect(handler func(node *tview.TreeNode, channelID string)) {
 	privateList.onChannelSelect = handler
 }
 
