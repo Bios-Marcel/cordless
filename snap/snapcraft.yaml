@@ -1,0 +1,16 @@
+name: cordless
+version: git
+summary: Third party discord client
+description: |
+  A third party discord client for your terminal.
+confinement: devmode
+base: core18
+parts:
+  cordless:
+    plugin: go
+    go-importpath: github.com/Bios-Marcel/cordless
+    source: .
+    source-type: git
+apps:
+  cordless:
+    command: bin/cordless
