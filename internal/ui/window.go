@@ -44,11 +44,10 @@ type Window struct {
 	app           *tview.Application
 	rootContainer *tview.Flex
 
-	leftArea        *tview.Pages
-	guildList       *tview.TreeView
-	channelTree     *tview.TreeView
-	privateList     *tview.TreeView
-	privateRootNode *tview.TreeNode
+	leftArea    *tview.Pages
+	guildList   *tview.TreeView
+	channelTree *tview.TreeView
+	privateList *PrivateChatList
 
 	channelRootNode *tview.TreeNode
 	channelTitle    *tview.TextView
@@ -147,37 +146,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	guildList.SetBorder(true)
 	guildList.SetTopLevel(1)
 
-	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMembersChunk) {
-		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
-			window.app.QueueUpdateDraw(func() {
-				window.userList.AddOrUpdateMembers(event.Members)
-			})
-		}
-	})
-
-	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMemberRemove) {
-		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
-			window.app.QueueUpdateDraw(func() {
-				window.userList.RemoveMember(event.Member)
-			})
-		}
-	})
-
-	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMemberAdd) {
-		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
-			window.app.QueueUpdateDraw(func() {
-				window.userList.AddOrUpdateMember(event.Member)
-			})
-		}
-	})
-
-	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMemberUpdate) {
-		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
-			window.app.QueueUpdateDraw(func() {
-				window.userList.AddOrUpdateMember(event.Member)
-			})
-		}
-	})
+	window.registerGuildMemberHandlers()
 
 	var selectedGuildNode *tview.TreeNode
 
@@ -291,100 +260,52 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
-	window.privateList = tview.NewTreeView().
-		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
-		SetCycleSelection(true).
-		SetTopLevel(1)
-	window.privateList.SetBorder(true)
+	window.privateList = NewPrivateChatList(window.session.State)
+	//TODO Currently there can't be an error ... might as well remove the error
+	window.privateList.Load()
+	window.registerPrivateChatsHandler()
 
-	window.privateRootNode = tview.NewTreeNode("")
-	window.privateList.SetRoot(window.privateRootNode)
-	window.privateRootNode.SetSelectable(false)
+	window.leftArea.AddPage(privatePageName, window.privateList.GetComponent(), true, false)
 
-	privateChatsNode := tview.NewTreeNode("Chats").
-		SetSelectable(false)
-	friendsNode := tview.NewTreeNode("Friends").
-		SetSelectable(false)
+	window.privateList.SetOnChannelSelect(func(node *tview.TreeNode, channelID string) {
+		channel, stateError := window.session.State.Channel(channelID)
+		if stateError != nil {
+			window.ShowErrorDialog(fmt.Sprintf("Error loading chat: %s", stateError.Error()))
+			return
+		}
 
-	window.privateRootNode.AddChild(privateChatsNode)
-	window.privateRootNode.AddChild(friendsNode)
-
-	window.leftArea.AddPage(privatePageName, window.privateList, true, false)
-
-	go func() {
-		privateChannels := make([]*discordgo.Channel, len(window.session.State.PrivateChannels))
-		copy(privateChannels, window.session.State.PrivateChannels)
-		discordgoplus.SortPrivateChannels(privateChannels)
-
-		window.app.QueueUpdate(func() {
-			for _, channel := range privateChannels {
-				channelName := discordgoplus.GetPrivateChannelName(channel)
-				channelCopy := channel
-				newNode := tview.NewTreeNode(channelName)
-
-				privateChatsNode.AddChild(newNode)
-				newNode.SetSelectedFunc(func() {
-					window.LoadChannel(channelCopy)
-					window.channelTitle.SetText(channelName)
-					if channelCopy.Type == discordgo.ChannelTypeDM {
-						window.overrideShowUsers = false
-						window.RefreshLayout()
-					} else if channelCopy.Type == discordgo.ChannelTypeGroupDM {
-						window.overrideShowUsers = true
-						loadError := window.userList.LoadGroup(channelCopy.ID)
-						if loadError != nil {
-							fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
-						}
-
-						window.RefreshLayout()
-					}
-				})
+		window.LoadChannel(channel)
+		window.channelTitle.SetText(discordgoplus.GetPrivateChannelName(channel))
+		if channel.Type == discordgo.ChannelTypeDM {
+			window.overrideShowUsers = false
+		} else if channel.Type == discordgo.ChannelTypeGroupDM {
+			window.overrideShowUsers = true
+			loadError := window.userList.LoadGroup(channel.ID)
+			if loadError != nil {
+				fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
 			}
+		}
 
-		FRIEND_LOOP:
-			for _, friend := range window.session.State.Relationships {
-				if friend.Type != discordgoplus.RelationTypeFriend {
-					continue
-				}
+		window.RefreshLayout()
+	})
 
-				for _, channel := range privateChannels {
-					if channel.Type != discordgo.ChannelTypeDM {
-						continue
-					}
-
-					if channel.Recipients[0].ID == friend.ID ||
-						(len(channel.Recipients) > 1 && channel.Recipients[1].ID == friend.ID) {
-						continue FRIEND_LOOP
-					}
-				}
-
-				newNode := tview.NewTreeNode(friend.User.Username)
-				friendsNode.AddChild(newNode)
-
-				friendCopy := friend.User
-				newNode.SetSelectedFunc(func() {
-					userChannels, _ := window.session.UserChannels()
-					for _, userChannel := range userChannels {
-						if userChannel.Type == discordgo.ChannelTypeDM &&
-							(userChannel.Recipients[0].ID == friendCopy.ID) {
-							window.LoadChannel(userChannel)
-							window.channelTitle.SetText(newNode.GetText())
-							return
-						}
-					}
-
-					newChannel, discordError := window.session.UserChannelCreate(friendCopy.ID)
-					if discordError == nil {
-						window.LoadChannel(newChannel)
-						window.channelTitle.SetText(newChannel.Recipients[0].Username)
-					}
-				})
+	window.privateList.SetOnFriendSelect(func(userID string) {
+		userChannels, _ := window.session.UserChannels()
+		for _, userChannel := range userChannels {
+			if userChannel.Type == discordgo.ChannelTypeDM &&
+				(userChannel.Recipients[0].ID == userID) {
+				window.LoadChannel(userChannel)
+				window.channelTitle.SetText(userChannel.Recipients[0].Username)
+				return
 			}
-			if len(window.privateRootNode.GetChildren()) > 0 {
-				window.privateList.SetCurrentNode(window.privateRootNode)
-			}
-		})
-	}()
+		}
+
+		newChannel, discordError := window.session.UserChannelCreate(userID)
+		if discordError == nil {
+			window.LoadChannel(newChannel)
+			window.channelTitle.SetText(newChannel.Recipients[0].Username)
+		}
+	})
 
 	window.chatArea = tview.NewFlex().
 		SetDirection(tview.FlexRow)
@@ -655,7 +576,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		return event
 	})
 
-	messageInputChan := make(chan *discordgo.Message, 50)
+	messageInputChan := make(chan *discordgo.Message, 200)
 	messageDeleteChan := make(chan *discordgo.Message, 50)
 	messageEditChan := make(chan *discordgo.Message, 50)
 
@@ -696,53 +617,68 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 					})
 				}
 
+				if message.Author.ID == window.session.State.User.ID {
+					continue
+				}
+
+				channel, stateError := window.session.State.Channel(message.ChannelID)
+				if stateError != nil {
+					continue
+				}
+
 				if message.ChannelID != window.selectedChannel.ID || !window.userActive {
 					mentionsYou := false
-					if message.Author.ID != window.session.State.User.ID {
-						for _, user := range message.Mentions {
-							if user.ID == window.session.State.User.ID {
+					for _, user := range message.Mentions {
+						if user.ID == window.session.State.User.ID {
+							mentionsYou = true
+							break
+						}
+					}
+
+					if config.GetConfig().DesktopNotifications {
+						if !mentionsYou {
+							//TODO Check if channel is muted.
+							if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 								mentionsYou = true
-								break
 							}
 						}
 
-						if config.GetConfig().DesktopNotifications {
-							channel, stateError := window.session.State.Channel(message.ChannelID)
-							if stateError == nil {
-								if !mentionsYou {
-									//TODO Check if channel is muted.
-									if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
-										mentionsYou = true
-									}
-								}
+						if mentionsYou {
+							var notificationLocation string
 
-								if mentionsYou {
-									var notificationLocation string
-
-									if channel.Type == discordgo.ChannelTypeDM {
-										notificationLocation = message.Author.Username
-									} else if channel.Type == discordgo.ChannelTypeGroupDM {
-										notificationLocation = channel.Name
-										if notificationLocation == "" {
-											for index, recipient := range channel.Recipients {
-												if index == 0 {
-													notificationLocation = recipient.Username
-												} else {
-													notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
-												}
-											}
+							if channel.Type == discordgo.ChannelTypeDM {
+								notificationLocation = message.Author.Username
+							} else if channel.Type == discordgo.ChannelTypeGroupDM {
+								notificationLocation = channel.Name
+								if notificationLocation == "" {
+									for index, recipient := range channel.Recipients {
+										if index == 0 {
+											notificationLocation = recipient.Username
+										} else {
+											notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
 										}
-
-										notificationLocation = message.Author.Username + " - " + notificationLocation
-									} else if channel.Type == discordgo.ChannelTypeGuildText {
-										notificationLocation = message.Author.Username + " - " + channel.Name
 									}
-
-									beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
 								}
-							}
-						}
 
+								notificationLocation = message.Author.Username + " - " + notificationLocation
+							} else if channel.Type == discordgo.ChannelTypeGuildText {
+								notificationLocation = message.Author.Username + " - " + channel.Name
+							}
+
+							beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
+						}
+					}
+
+					//We needn't adjust the text of the currently selected channel.
+					if message.ChannelID == window.selectedChannel.ID {
+						return
+					}
+
+					if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+						window.app.QueueUpdateDraw(func() {
+							window.privateList.MarkChannelAsUnread(channel)
+						})
+					} else if channel.Type == discordgo.ChannelTypeGuildText {
 						window.app.QueueUpdateDraw(func() {
 							window.channelRootNode.Walk(func(node, parent *tview.TreeNode) bool {
 								data, ok := node.GetReference().(string)
@@ -761,6 +697,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 							})
 						})
 					}
+
 				}
 			}
 		}
@@ -825,7 +762,8 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		var privateJumpBuffer string
 		var privateJumpTime time.Time
 		window.privateList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
-			window.privateList, window.privateRootNode, &privateJumpTime, &privateJumpBuffer))
+			window.privateList.GetComponent(), window.privateList.internalTreeView.GetRoot(),
+			&privateJumpTime, &privateJumpBuffer))
 	} else if config.GetConfig().OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
 		guildList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
 			guildList.Box, window.app, window.messageInput.internalTextView))
@@ -834,7 +772,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		window.userList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
 			window.userList.internalTreeView.Box, window.app, window.messageInput.internalTextView))
 		window.privateList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
-			window.privateList.Box, window.app, window.messageInput.internalTextView))
+			window.privateList.GetComponent().Box, window.app, window.messageInput.internalTextView))
 		window.chatView.internalTextView.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
 			window.chatView.internalTextView.Box, window.app, window.messageInput.internalTextView))
 	}
@@ -910,6 +848,82 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	app.SetFocus(guildList)
 
 	return &window, nil
+}
+
+func (window *Window) registerGuildMemberHandlers() {
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMembersChunk) {
+		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
+			window.app.QueueUpdateDraw(func() {
+				window.userList.AddOrUpdateMembers(event.Members)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMemberRemove) {
+		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
+			window.app.QueueUpdateDraw(func() {
+				window.userList.RemoveMember(event.Member)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMemberAdd) {
+		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
+			window.app.QueueUpdateDraw(func() {
+				window.userList.AddOrUpdateMember(event.Member)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.GuildMemberUpdate) {
+		if window.selectedGuild != nil && window.selectedGuild.ID == event.GuildID {
+			window.app.QueueUpdateDraw(func() {
+				window.userList.AddOrUpdateMember(event.Member)
+			})
+		}
+	})
+}
+
+func (window *Window) registerPrivateChatsHandler() {
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelCreate) {
+		if event.Type == discordgo.ChannelTypeDM || event.Type == discordgo.ChannelTypeGroupDM {
+			window.app.QueueUpdateDraw(func() {
+				window.privateList.AddOrUpdateChannel(event.Channel)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelDelete) {
+		if event.Type == discordgo.ChannelTypeDM || event.Type == discordgo.ChannelTypeGroupDM {
+			window.app.QueueUpdateDraw(func() {
+				window.privateList.RemoveChannel(event.Channel)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelUpdate) {
+		if event.Type == discordgo.ChannelTypeDM || event.Type == discordgo.ChannelTypeGroupDM {
+			window.app.QueueUpdateDraw(func() {
+				window.privateList.AddOrUpdateChannel(event.Channel)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.RelationshipAdd) {
+		if event.Relationship.Type == discordgoplus.RelationTypeFriend {
+			window.app.QueueUpdateDraw(func() {
+				window.privateList.addFriend(event.User)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.RelationshipRemove) {
+		if event.Relationship.Type == discordgoplus.RelationTypeFriend {
+			window.app.QueueUpdateDraw(func() {
+				window.privateList.addFriend(event.User)
+			})
+		}
+	})
 }
 
 func (window *Window) askForMessageDeletion(messageID string, usedWithSelection bool) {
@@ -997,7 +1011,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt {
 		if event.Rune() == 'p' {
 			window.SwitchToFriendsPage()
-			window.app.SetFocus(window.privateList)
+			window.app.SetFocus(window.privateList.GetComponent())
 			return nil
 		}
 
@@ -1194,6 +1208,10 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	window.selectedChannel = channel
 	if channel.GuildID == "" {
 		window.selectedGuild = nil
+	}
+
+	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+		window.privateList.MarkChannelAsLoaded(channel)
 	}
 
 	window.exitMessageEditModeAndKeepText()
