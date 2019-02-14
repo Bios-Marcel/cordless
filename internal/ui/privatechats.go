@@ -110,11 +110,20 @@ func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 }
 
 // AddOrUpdateFriend either adds a friend or updates the node if it is
-// already present
+// already present.
 func (privateList *PrivateChatList) AddOrUpdateFriend(user *discordgo.User) {
-	//TODO I have to check if either a DM channel or a friends node already exists.
-	//If a DM channel exists, I have to update that instead. If a user channel
-	// already exists, there is no need to add a new node at all.
+	for _, node := range privateList.chatsNode.GetChildren() {
+		refrenceChannelID, ok := node.GetReference().(string)
+		if ok {
+			channel, stateError := privateList.state.Channel(refrenceChannelID)
+			if stateError == nil && channel.Type == discordgo.ChannelTypeDM {
+				if channel.Recipients[0].ID == user.ID {
+					node.SetText(discordgoplus.GetUserName(user, &userColor))
+					return
+				}
+			}
+		}
+	}
 
 	for _, node := range privateList.friendsNode.GetChildren() {
 		referenceUserID, ok := node.GetReference().(string)
