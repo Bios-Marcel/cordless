@@ -9,10 +9,10 @@ import (
 	"github.com/Bios-Marcel/tview"
 )
 
-type nodeState int
+type privateChannelState int
 
 const (
-	loaded nodeState = iota
+	loaded privateChannelState = iota
 	unread
 	read
 )
@@ -27,9 +27,9 @@ type PrivateChatList struct {
 	chatsNode   *tview.TreeNode
 	friendsNode *tview.TreeNode
 
-	onChannelSelect func(node *tview.TreeNode, channelID string)
-	onFriendSelect  func(userID string)
-	nodeStates      map[*tview.TreeNode]nodeState
+	onChannelSelect      func(node *tview.TreeNode, channelID string)
+	onFriendSelect       func(userID string)
+	privateChannelStates map[*tview.TreeNode]privateChannelState
 
 	userChannels map[string]*tview.TreeNode
 	friends      map[string]*tview.TreeNode
@@ -44,7 +44,7 @@ func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 		chatsNode:        tview.NewTreeNode("Chats"),
 		friendsNode:      tview.NewTreeNode("Friends"),
 
-		nodeStates: make(map[*tview.TreeNode]nodeState, 0),
+		privateChannelStates: make(map[*tview.TreeNode]privateChannelState, 0),
 	}
 
 	privateList.internalTreeView.
@@ -179,7 +179,7 @@ func (privateList *PrivateChatList) RemoveChannel(channel *discordgo.Channel) {
 		if !ok || ok && channelID != referenceChannelID {
 			newChildren = append(newChildren, node)
 		} else {
-			delete(privateList.nodeStates, node)
+			delete(privateList.privateChannelStates, node)
 		}
 	}
 
@@ -201,7 +201,7 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 	for _, node := range privateList.chatsNode.GetChildren() {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channel.ID {
-			privateList.nodeStates[node] = unread
+			privateList.privateChannelStates[node] = unread
 			node.SetColor(tcell.ColorRed)
 			break
 		}
@@ -213,7 +213,7 @@ func (privateList *PrivateChatList) MarkChannelAsRead(channel *discordgo.Channel
 	for _, node := range privateList.chatsNode.GetChildren() {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channel.ID {
-			privateList.nodeStates[node] = read
+			privateList.privateChannelStates[node] = read
 			node.SetColor(tcell.ColorWhite)
 			break
 		}
@@ -223,9 +223,9 @@ func (privateList *PrivateChatList) MarkChannelAsRead(channel *discordgo.Channel
 // MarkChannelAsLoaded marks a channel as loaded, coloring it blue (teal). If
 // a different channel had loaded before, it's set to read.
 func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Channel) {
-	for node, state := range privateList.nodeStates {
+	for node, state := range privateList.privateChannelStates {
 		if state == loaded {
-			privateList.nodeStates[node] = read
+			privateList.privateChannelStates[node] = read
 			node.SetColor(tcell.ColorWhite)
 			break
 		}
@@ -234,7 +234,7 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 	for _, node := range privateList.chatsNode.GetChildren() {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channel.ID {
-			privateList.nodeStates[node] = loaded
+			privateList.privateChannelStates[node] = loaded
 			node.SetColor(tcell.ColorTeal)
 			break
 		}
