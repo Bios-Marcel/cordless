@@ -787,7 +787,7 @@ func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, del
 
 					//We needn't adjust the text of the currently selected channel.
 					if message.ChannelID == window.selectedChannel.ID {
-						return
+						continue
 					}
 
 					if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
