@@ -20,11 +20,11 @@ import (
 	"github.com/Bios-Marcel/cordless/internal/scripting/js"
 	"github.com/Bios-Marcel/cordless/internal/times"
 	"github.com/Bios-Marcel/cordless/internal/ui/tview/treeview"
+	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
 	"github.com/gen2brain/beeep"
-	"github.com/kyokomi/emoji"
 )
 
 const (
@@ -516,8 +516,12 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 						}
 					}
 
+					messageToSend = codeBlockRegex.ReplaceAllStringFunc(messageToSend, func(input string) string {
+						return strings.Replace(input, ":", "\\:", -1)
+					})
 					//Replace formatter characters and replace emoji codes.
-					messageToSend = emoji.Sprintf(strings.Replace(messageToSend, "%", "%%", -1))
+					messageToSend = discordemojimap.Replace(messageToSend)
+					messageToSend = strings.Replace(messageToSend, "\\:", ":", -1)
 
 					if window.selectedGuild != nil {
 						members, discordError := window.session.State.Members(window.selectedGuild.ID)
