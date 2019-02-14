@@ -18,6 +18,24 @@ func GetChannelNameForTree(channel *discordgo.Channel) string {
 	return channel.Name
 }
 
+// SortMessagesByTimestamp sorts all messages in the given array according to
+// their creation date.
+func SortMessagesByTimestamp(messages []*discordgo.Message) {
+	sort.Slice(messages, func(a, b int) bool {
+		timeA, parseError := messages[a].Timestamp.Parse()
+		if parseError != nil {
+			return false
+		}
+
+		timeB, parseError := messages[b].Timestamp.Parse()
+		if parseError != nil {
+			return true
+		}
+
+		return timeA.Before(timeB)
+	})
+}
+
 // GetPrivateChannelName generates a name for a private channel.
 func GetPrivateChannelName(channel *discordgo.Channel) string {
 	var channelName string
