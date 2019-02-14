@@ -196,6 +196,7 @@ func (privateList *PrivateChatList) RemoveChannel(channel *discordgo.Channel) {
 	privateList.chatsNode.SetChildren(newChildren)
 }
 
+// MarkChannelAsUnread marks the channel as unread, coloring it red.
 func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Channel) {
 	for _, node := range privateList.chatsNode.GetChildren() {
 		referenceChannelID, ok := node.GetReference().(string)
@@ -207,6 +208,7 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 	}
 }
 
+// MarkChannelAsRead marks a channel as read, coloring it white.
 func (privateList *PrivateChatList) MarkChannelAsRead(channel *discordgo.Channel) {
 	for _, node := range privateList.chatsNode.GetChildren() {
 		referenceChannelID, ok := node.GetReference().(string)
@@ -218,6 +220,8 @@ func (privateList *PrivateChatList) MarkChannelAsRead(channel *discordgo.Channel
 	}
 }
 
+// MarkChannelAsLoaded marks a channel as loaded, coloring it blue (teal). If
+// a different channel had loaded before, it's set to read.
 func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Channel) {
 	for node, state := range privateList.nodeStates {
 		if state == loaded {
