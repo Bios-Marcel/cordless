@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
 	"github.com/Bios-Marcel/discordgo"
@@ -40,10 +41,8 @@ func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 		SetRoot(tview.NewTreeNode("")).
 		SetTopLevel(1).
 		SetCycleSelection(true).
-		SetSelectedFunc(privateList.onNodeSelected)
-
-	privateList.chatsNode.SetSelectable(false)
-	privateList.friendsNode.SetSelectable(false)
+		SetSelectedFunc(privateList.onNodeSelected).
+		SetBorder(true)
 
 	privateList.internalTreeView.GetRoot().
 		AddChild(privateList.chatsNode).
@@ -81,18 +80,42 @@ func (privateList *PrivateChatList) AddOrUpdateChannel(channel *discordgo.Channe
 		}
 	}
 
-	privateList.addChannel(channel)
+	if channel.Type == discordgo.ChannelTypeDM {
+		user := channel.Recipients[0]
+		for _, friendNode := range privateList.friendsNode.GetChildren() {
+			userID, ok := friendNode.GetReference().(string)
+			if ok && userID == user.ID {
+				privateList.RemoveFriend(userID)
+				break
+			}
+		}
+	}
+
+	privateList.prependChannel(channel)
+}
+
+func (privateList *PrivateChatList) prependChannel(channel *discordgo.Channel) {
+	newChildren := append([]*tview.TreeNode{createChannelNode(channel)}, privateList.chatsNode.GetChildren()...)
+	privateList.chatsNode.SetChildren(newChildren)
 }
 
 func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
+	privateList.chatsNode.AddChild(createChannelNode(channel))
+}
+
+func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	channelNode := tview.NewTreeNode(discordgoplus.GetPrivateChannelName(channel))
 	channelNode.SetReference(channel.ID)
-	privateList.chatsNode.AddChild(channelNode)
+	return channelNode
 }
 
 // AddOrUpdateFriend either adds a friend or updates the node if it is
 // already present
 func (privateList *PrivateChatList) AddOrUpdateFriend(user *discordgo.User) {
+	//TODO I have to check if either a DM channel or a friends node already exists.
+	//If a DM channel exists, I have to update that instead. If a user channel
+	// already exists, there is no need to add a new node at all.
+
 	for _, node := range privateList.friendsNode.GetChildren() {
 		referenceUserID, ok := node.GetReference().(string)
 		if ok && referenceUserID == user.ID {
@@ -110,7 +133,8 @@ func (privateList *PrivateChatList) addFriend(user *discordgo.User) {
 	privateList.friendsNode.AddChild(friendNode)
 }
 
-// RemoveFriend removes a friend node if present.
+// RemoveFriend removes a friend node if present. This will not trigger any
+// action on the channel list.
 func (privateList *PrivateChatList) RemoveFriend(userID string) {
 	newChildren := make([]*tview.TreeNode, 0)
 
@@ -125,13 +149,25 @@ func (privateList *PrivateChatList) RemoveFriend(userID string) {
 }
 
 // RemoveChannel removes a channel node if present.
-func (privateList *PrivateChatList) RemoveChannel(channelID string) {
+func (privateList *PrivateChatList) RemoveChannel(channel *discordgo.Channel) {
 	newChildren := make([]*tview.TreeNode, 0)
+
+	channelID := channel.ID
 
 	for _, node := range privateList.chatsNode.GetChildren() {
 		referenceChannelID, ok := node.GetReference().(string)
 		if !ok || ok && channelID != referenceChannelID {
 			newChildren = append(newChildren, node)
+		}
+	}
+
+	userID := channel.Recipients[0].ID
+
+	for _, relationship := range privateList.state.Relationships {
+		if relationship.Type == discordgoplus.RelationTypeFriend &&
+			relationship.User.ID == userID {
+			privateList.AddOrUpdateFriend(relationship.User)
+			break
 		}
 	}
 
@@ -160,15 +196,38 @@ func (privateList *PrivateChatList) Load() error {
 		privateList.addChannel(channel)
 	}
 
+FRIEND_LOOP:
 	for _, friend := range privateList.state.Relationships {
 		if friend.Type != discordgoplus.RelationTypeFriend {
 			continue
 		}
 
-		//TODO Add filter logic or not?
+		for _, channel := range privateChannels {
+			if channel.Type != discordgo.ChannelTypeDM {
+				continue
+			}
+
+			if channel.Recipients[0].ID == friend.ID ||
+				(len(channel.Recipients) > 1 && channel.Recipients[1].ID == friend.ID) {
+				continue FRIEND_LOOP
+			}
+		}
 
 		privateList.addFriend(friend.User)
 	}
 
+	privateList.internalTreeView.SetCurrentNode(privateList.chatsNode)
+
 	return nil
+}
+
+// GetComponent returns the TreeView component that is used.
+// This component is the top-level container of this struct.
+func (privateList *PrivateChatList) GetComponent() *tview.TreeView {
+	return privateList.internalTreeView
+}
+
+//SetInputCapture delegates to tviews SetInputCapture
+func (privateList *PrivateChatList) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventKey) {
+	privateList.internalTreeView.SetInputCapture(capture)
 }
