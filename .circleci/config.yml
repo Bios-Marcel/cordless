@@ -16,3 +16,20 @@ jobs:
       - store_artifacts:
           path: /go/src/github.com/Bios-Marcel/cordless/cordless
           destination: cordless
+  
+  snap:
+    docker:
+      - image: cibuilds/snapcraft:stable
+    
+    steps:
+      - checkout
+      - run:
+          name: "Build Snap"
+          command: snapcraft
+
+workflows:
+  version: 2
+  workflow:
+    jobs:
+    - build
+    - snap
