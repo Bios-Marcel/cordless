@@ -3,7 +3,7 @@ version: git
 summary: Third party discord client
 description: |
   A third party discord client for your terminal.
-confinement: devmode
+confinement: strict
 base: core18
 parts:
   cordless:
@@ -11,6 +11,11 @@ parts:
     go-importpath: github.com/Bios-Marcel/cordless
     source: .
     source-type: git
+    stage-packages:
+      - xclip
 apps:
   cordless:
     command: bin/cordless
+    plugs: [x11, network-bind]
+    environment:
+      XDG_CONFIG_DIR: $SNAP_USER_DATA/
