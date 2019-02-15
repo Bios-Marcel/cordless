@@ -47,7 +47,7 @@ var (
 		FocusMessageInputAfterChannelSelection: true,
 		OnTypeInListBehaviour:                  SearchOnTypeInList,
 		ShortenLinks:                           false,
-		ShortenerPort:                          51726,
+		ShortenerPort:                          63212,
 		DesktopNotifications:                   true,
 	}
 )
