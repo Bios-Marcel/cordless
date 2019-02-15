@@ -345,7 +345,7 @@ func (editor *Editor) countRows(text string) int {
 
 	wrappedLines := 0
 	for _, line := range splitLines {
-		if len(line) > width {
+		if len(line) >= width {
 			wrappedLines = wrappedLines + ((len(line) - (len(line) % width)) / width)
 		}
 	}
