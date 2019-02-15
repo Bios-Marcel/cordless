@@ -57,27 +57,33 @@ func statusToString(status discordgo.Status) string {
 
 // Execute runs the command piping its output into the supplied writer.
 func (status *Status) Execute(writer io.Writer, parameters []string) {
+	var settingStatusError error
+	var updatedSettings *discordgo.Settings
+
 	if len(parameters) == 0 {
 		fmt.Fprintf(writer, "Current status: %s \n", statusToString(status.session.State.Settings.Status))
 	} else if len(parameters) == 1 {
 		switch strings.ToLower(parameters[0]) {
 		case "online", "available":
-			fmt.Fprintln(writer, "Settings status to '[green]Online[white]'")
-			status.session.UserUpdateStatus(discordgo.StatusOnline)
+			updatedSettings, settingStatusError = status.session.UserUpdateStatus(discordgo.StatusOnline)
 		case "dnd", "donotdisturb", "busy":
-			fmt.Fprintln(writer, "Settings status to '[red]Do not disturb[white]'")
-			status.session.UserUpdateStatus(discordgo.StatusDoNotDisturb)
+			updatedSettings, settingStatusError = status.session.UserUpdateStatus(discordgo.StatusDoNotDisturb)
 		case "idle":
-			fmt.Fprintln(writer, "Settings status to '[yellw]Idle[white]'")
-			status.session.UserUpdateStatus(discordgo.StatusIdle)
+			updatedSettings, settingStatusError = status.session.UserUpdateStatus(discordgo.StatusIdle)
 		case "invisible":
-			fmt.Fprintln(writer, "Settings status to '[gray]Invisible[white]'")
-			status.session.UserUpdateStatus(discordgo.StatusInvisible)
+			updatedSettings, settingStatusError = status.session.UserUpdateStatus(discordgo.StatusInvisible)
 		default:
 			status.PrintHelp(writer)
 		}
 	} else {
 		status.PrintHelp(writer)
+	}
+
+	if settingStatusError != nil {
+		fmt.Fprintf(writer, "Error setting status: '%s'\n", settingStatusError.Error())
+	} else if updatedSettings != nil {
+		fmt.Fprintf(writer, "Setting status to '%s'\n", statusToString(updatedSettings.Status))
+		status.session.State.Settings = updatedSettings
 	}
 }
 
