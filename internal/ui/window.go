@@ -65,6 +65,7 @@ type Window struct {
 
 	session *discordgo.Session
 
+	selectedGuildNode   *tview.TreeNode
 	selectedGuild       *discordgo.UserGuild
 	selectedChannelNode *tview.TreeNode
 	selectedChannel     *discordgo.Channel
@@ -148,8 +149,6 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 
 	window.registerGuildMemberHandlers()
 
-	var selectedGuildNode *tview.TreeNode
-
 	discordgoplus.SortGuilds(window.session.State.Settings, guilds)
 
 	for _, tempGuild := range guilds {
@@ -158,12 +157,12 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		guildRootNode.AddChild(guildNode)
 		guildNode.SetSelectable(true)
 		guildNode.SetSelectedFunc(func() {
-			if selectedGuildNode != nil {
-				selectedGuildNode.SetColor(tcell.ColorWhite)
+			if window.selectedGuildNode != nil {
+				window.selectedGuildNode.SetColor(tcell.ColorWhite)
 			}
 
-			selectedGuildNode = guildNode
-			selectedGuildNode.SetColor(tcell.ColorTeal)
+			window.selectedGuildNode = guildNode
+			window.selectedGuildNode.SetColor(tcell.ColorTeal)
 
 			window.selectedGuild = guild
 			channelRootNode.ClearChildren()
@@ -1206,7 +1205,15 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	window.selectedChannel = channel
 	if channel.GuildID == "" {
-		window.selectedGuild = nil
+		if window.selectedChannelNode != nil {
+			window.selectedChannelNode.SetColor(tcell.ColorWhite)
+			window.selectedChannelNode = nil
+		}
+
+		if window.selectedGuildNode != nil {
+			window.selectedGuildNode.SetColor(tcell.ColorWhite)
+			window.selectedGuildNode = nil
+		}
 	}
 
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
