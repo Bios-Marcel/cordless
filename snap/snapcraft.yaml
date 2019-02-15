@@ -11,6 +11,8 @@ parts:
     go-importpath: github.com/Bios-Marcel/cordless
     source: .
     source-type: git
+    stage-packages:
+      - xclip
 apps:
   cordless:
     command: bin/cordless
