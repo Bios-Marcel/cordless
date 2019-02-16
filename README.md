@@ -10,7 +10,7 @@
 ## Overview
 
 * How to install it
-  * [Installation on Linux](https://github.com/Bios-Marcel/cordless#installation-on-linux)
+  * [Installing on Linux](https://github.com/Bios-Marcel/cordless#installing-on-linux)
   * [Using pre-built binaries](https://github.com/Bios-Marcel/cordless#using-pre-built-binaries)
   * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
 * [Login](https://github.com/Bios-Marcel/cordless#login)
