@@ -1,2 +1,6 @@
 cordless
 cordless.exe
+*.snap
+stage/
+prime/
+snap/.snapcraft
