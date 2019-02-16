@@ -3,7 +3,6 @@ package ui
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -47,6 +46,8 @@ type ChatView struct {
 	data      []*discordgo.Message
 	ownUserID string
 
+	shortenLinks bool
+
 	selection     int
 	selectionMode bool
 
@@ -64,14 +65,16 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		selection:          -1,
 		selectionMode:      false,
 		showSpoilerContent: make(map[string]bool, 0),
+		shortenLinks:       config.GetConfig().ShortenLinks,
 	}
 
-	if config.GetConfig().ShortenLinks {
+	if chatView.shortenLinks {
 		chatView.shortener = linkshortener.NewShortener(config.GetConfig().ShortenerPort)
 		go func() {
 			shortenerError := chatView.shortener.Start()
 			if shortenerError != nil {
-				log.Fatalln("Error creating shortener:", shortenerError.Error())
+				//Disable shortening in case of start failure.
+				chatView.shortenLinks = false
 			}
 		}()
 	}
@@ -188,8 +191,6 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 
 	newText := ""
 
-	conf := config.GetConfig()
-
 	for _, message := range messages {
 
 		time, parseError := message.Timestamp.Parse()
@@ -280,7 +281,7 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		}
 
 		// FIXME Handle Non-embed links nonetheless?
-		if conf.ShortenLinks {
+		if chatView.shortenLinks {
 			urlMatches := urlRegex.FindAllStringSubmatch(messageText, 1000)
 
 			for _, urlMatch := range urlMatches {
