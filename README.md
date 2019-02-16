@@ -11,6 +11,7 @@
 
 * How to install it
   * [Installing on Linux](https://github.com/Bios-Marcel/cordless#installing-on-linux)
+  * [Installing on Windows](https://github.com/Bios-Marcel/cordless#installing-on-windows)
   * [Using pre-built binaries](https://github.com/Bios-Marcel/cordless#using-pre-built-binaries)
   * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
 * [Login](https://github.com/Bios-Marcel/cordless#login)
@@ -47,6 +48,16 @@ Simply run (Might require sudo):
 
 ```shell
 snap install cordless
+```
+
+### Installing on Windows
+
+In order to install the latest version on Windows, you first need scoop.
+
+After installing scoop, run the following:
+
+```ps1
+scoop install https://raw.githubusercontent.com/Bios-Marcel/cordless/master/cordless.json
 ```
 
 ### Using pre-built binaries
