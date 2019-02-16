@@ -10,6 +10,7 @@
 ## Overview
 
 * How to install it
+  * [Installation on Linux](https://github.com/Bios-Marcel/cordless#installation-on-linux)
   * [Using pre-built binaries](https://github.com/Bios-Marcel/cordless#using-pre-built-binaries)
   * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
 * [Login](https://github.com/Bios-Marcel/cordless#login)
@@ -37,6 +38,16 @@ This application is currently a WIP and will change rather fast.
 ![Cordless 26th January 2019](https://i.imgur.com/xX7dVCw.png)
 
 ## How to install it
+
+### Installing on Linux
+
+On linux the recommended way of installation is the snap.
+
+Simply run (Might require sudo):
+
+```shell
+snap install cordless
+```
 
 ### Using pre-built binaries
 
