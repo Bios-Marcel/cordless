@@ -12,6 +12,7 @@
 * How to install it
   * [Installing on Linux](https://github.com/Bios-Marcel/cordless#installing-on-linux)
   * [Installing on Windows](https://github.com/Bios-Marcel/cordless#installing-on-windows)
+  * [Installing on Mac OS](https://github.com/Bios-Marcel/cordless#installing-on-mac-os)
   * [Using pre-built binaries](https://github.com/Bios-Marcel/cordless#using-pre-built-binaries)
   * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
 * [Login](https://github.com/Bios-Marcel/cordless#login)
@@ -50,6 +51,8 @@ Simply run (Might require sudo):
 snap install cordless
 ```
 
+Snap will automatically install updates.
+
 ### Installing on Windows
 
 In order to install the latest version on Windows, you first need scoop.
@@ -60,13 +63,26 @@ After installing scoop, run the following:
 scoop install https://raw.githubusercontent.com/Bios-Marcel/cordless/master/cordless.json
 ```
 
+In order to intall updates, run:
+
+```ps1
+scoop update cordless
+```
+
+### Installing on Mac OS
+
+**HELP NEEDED. If you are willing to add support for `brew`, I'd be very thankful.**
+
 ### Using pre-built binaries
 
-Currently every commit triggers a build for windows and linux, those builds
-each produce ready to use binaries. The builds can be found at the top, by
-clicking on the respective builds badges.
+**UPDATES HAVE TO BE INSTALLED MANUALLY**
+
+You can always find the latest release in this repositories
+[release page](https://github.com/Bios-Marcel/cordless/releases/latest).
 
 ### Building it from source
+
+**UPDATES HAVE TO BE INSTALLED MANUALLY**
 
 First you have to grab the code via:
 
