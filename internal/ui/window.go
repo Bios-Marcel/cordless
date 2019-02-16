@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -46,7 +45,7 @@ type Window struct {
 
 	leftArea    *tview.Pages
 	guildList   *tview.TreeView
-	channelTree *tview.TreeView
+	channelTree *ChannelTree
 	privateList *PrivateChatList
 
 	channelRootNode *tview.TreeNode
@@ -126,16 +125,18 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	guildPage := tview.NewFlex()
 	guildPage.SetDirection(tview.FlexRow)
 
-	channelTree := tview.NewTreeView().
-		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
-		SetCycleSelection(true)
+	channelTree := NewChannelTree(window.session.State)
 	window.channelTree = channelTree
-
-	channelRootNode := tview.NewTreeNode("")
-	window.channelRootNode = channelRootNode
-	channelTree.SetRoot(channelRootNode)
-	channelTree.SetBorder(true)
-	channelTree.SetTopLevel(1)
+	channelTree.SetOnChannelSelect(func(channelID string) {
+		channel, cacheError := window.session.State.Channel(channelID)
+		if cacheError == nil {
+			loadError := window.LoadChannel(channel)
+			if loadError == nil {
+				channelTree.MarkChannelAsLoaded(channelID)
+			}
+		}
+	})
+	window.registerGuildChannelHandler()
 
 	guildList := tview.NewTreeView().
 		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
@@ -165,87 +166,20 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			window.selectedGuildNode.SetColor(tcell.ColorTeal)
 
 			window.selectedGuild = guild
-			channelRootNode.ClearChildren()
-
-			channels, discordError := discord.GuildChannels(guild.ID)
-
 			discord.RequestGuildMembers(guild.ID, "", 0)
 
-			if discordError != nil {
-				window.ShowErrorDialog(fmt.Sprintf("An error occurred while trying to receive the channels: %s", discordError.Error()))
-				//TODO Is returning here a good idea?
-				return
-			}
-
-			sort.Slice(channels, func(a, b int) bool {
-				return channels[a].Position < channels[b].Position
-			})
-
-			registerChannelForChatting := func(node *tview.TreeNode, channelToConnectTo *discordgo.Channel) {
-				node.SetSelectable(true)
-				node.SetSelectedFunc(func() {
-					discordError := window.LoadChannel(channelToConnectTo)
-					if discordError != nil {
-						errorMessage := fmt.Sprintf("An error occurred while trying to load the channel '%s': %s", channelToConnectTo.Name, discordError.Error())
-						window.ShowErrorDialog(errorMessage)
-						return
-					}
-
-					if window.selectedChannelNode != nil {
-						//For some reason using tcell.ColorDefault causes hovering to render incorrect.
-						window.selectedChannelNode.SetColor(tcell.ColorWhite)
-					}
-
-					window.selectedChannelNode = node
-					node.SetText(discordgoplus.GetChannelNameForTree(channelToConnectTo))
-					node.SetColor(tcell.ColorTeal)
-				})
-			}
-
-			createNodeForChannel := func(channel *discordgo.Channel) *tview.TreeNode {
-				return tview.NewTreeNode(discordgoplus.GetChannelNameForTree(channel))
-			}
-
-			channelCategories := make(map[string]*tview.TreeNode)
-			for _, channel := range channels {
-				if channel.ParentID == "" {
-					newNode := createNodeForChannel(channel)
-					channelRootNode.AddChild(newNode)
-
-					if channel.Type == discordgo.ChannelTypeGuildCategory {
-						//Categories
-						newNode.SetSelectable(false)
-						channelCategories[channel.ID] = newNode
-					} else {
-						//Toplevel channels
-						newNode.SetReference(channel.ID)
-						registerChannelForChatting(newNode, channel)
-					}
+			channelLoadError := window.channelTree.LoadGuild(guild.ID)
+			if channelLoadError != nil {
+				window.ShowErrorDialog(channelLoadError.Error())
+			} else {
+				if config.GetConfig().FocusChannelAfterGuildSelection {
+					app.SetFocus(window.channelTree.internalTreeView)
 				}
 			}
 
-			//Channels that are in categories
-			for _, channel := range channels {
-				if channel.Type == discordgo.ChannelTypeGuildText && channel.ParentID != "" {
-					newNode := createNodeForChannel(channel)
-					newNode.SetReference(channel.ID)
-					registerChannelForChatting(newNode, channel)
-					channelCategories[channel.ParentID].AddChild(newNode)
-				}
-			}
-
-			//No selection will prevent selection from working at all.
-			if len(window.channelRootNode.GetChildren()) > 0 {
-				channelTree.SetCurrentNode(window.channelRootNode)
-			}
-
-			if config.GetConfig().FocusChannelAfterGuildSelection {
-				window.app.SetFocus(channelTree)
-			}
-
-			loadError := window.userList.LoadGuild(guild.ID)
-			if loadError != nil {
-				window.ShowErrorDialog(loadError.Error())
+			userLoadError := window.userList.LoadGuild(guild.ID)
+			if userLoadError != nil {
+				window.ShowErrorDialog(userLoadError.Error())
 			}
 		})
 	}
@@ -255,7 +189,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	}
 
 	guildPage.AddItem(guildList, 0, 1, true)
-	guildPage.AddItem(channelTree, 0, 2, true)
+	guildPage.AddItem(channelTree.internalTreeView, 0, 2, true)
 
 	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
@@ -599,8 +533,9 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 			guildList, guildRootNode, &guildJumpTime, &guildJumpBuffer))
 		var channelJumpBuffer string
 		var channelJumpTime time.Time
-		channelTree.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
-			channelTree, channelRootNode, &channelJumpTime, &channelJumpBuffer))
+		channelTree.internalTreeView.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
+			channelTree.internalTreeView, channelTree.internalTreeView.GetRoot(),
+			&channelJumpTime, &channelJumpBuffer))
 		var userJumpBuffer string
 		var userJumpTime time.Time
 		window.userList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
@@ -613,8 +548,8 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	} else if config.GetConfig().OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
 		guildList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
 			guildList.Box, window.app, window.messageInput.internalTextView))
-		channelTree.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
-			channelTree.Box, window.app, window.messageInput.internalTextView))
+		channelTree.internalTreeView.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+			channelTree.internalTreeView.Box, window.app, window.messageInput.internalTextView))
 		window.userList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
 			window.userList.internalTreeView.Box, window.app, window.messageInput.internalTextView))
 		window.privateList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
@@ -799,21 +734,11 @@ func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, del
 						})
 					} else if channel.Type == discordgo.ChannelTypeGuildText {
 						window.app.QueueUpdateDraw(func() {
-							window.channelRootNode.Walk(func(node, parent *tview.TreeNode) bool {
-								data, ok := node.GetReference().(string)
-								if ok && data == message.ChannelID && window.selectedChannel.ID != data {
-									if mentionsYou {
-										channel, stateError := window.session.State.Channel(message.ChannelID)
-										if stateError == nil {
-											node.SetText("(@You) " + discordgoplus.GetChannelNameForTree(channel))
-										}
-									}
-
-									node.SetColor(tcell.ColorRed)
-									return false
-								}
-								return true
-							})
+							if mentionsYou {
+								window.channelTree.MarkChannelAsMentioned(channel.ID)
+							} else {
+								window.channelTree.MarkChannelAsUnread(channel.ID)
+							}
 						})
 					}
 
@@ -936,6 +861,44 @@ func (window *Window) registerPrivateChatsHandler() {
 	})
 }
 
+func (window *Window) registerGuildChannelHandler() {
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelCreate) {
+		if window.selectedGuild == nil {
+			return
+		}
+
+		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
+			window.app.QueueUpdateDraw(func() {
+				window.channelTree.AddOrUpdateChannel(event.Channel)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelUpdate) {
+		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
+			if window.selectedGuild == nil {
+				return
+			}
+
+			window.app.QueueUpdateDraw(func() {
+				window.channelTree.AddOrUpdateChannel(event.Channel)
+			})
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelDelete) {
+		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
+			if window.selectedGuild == nil {
+				return
+			}
+
+			window.app.QueueUpdateDraw(func() {
+				window.channelTree.RemoveChannel(event.Channel)
+			})
+		}
+	})
+}
+
 func (window *Window) askForMessageDeletion(messageID string, usedWithSelection bool) {
 	previousFocus := window.app.GetFocus()
 	dialog := tview.NewModal()
@@ -1027,7 +990,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 		if event.Rune() == 'c' {
 			window.SwitchToGuildsPage()
-			window.app.SetFocus(window.channelTree)
+			window.app.SetFocus(window.channelTree.internalTreeView)
 			return nil
 		}
 

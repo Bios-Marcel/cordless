@@ -75,6 +75,10 @@ func SortUserRoles(roles []string, guildRoles []*discordgo.Role) {
 			}
 		}
 
+		if secondRole == nil {
+			return true
+		}
+
 		return firstRole.Position > secondRole.Position
 	})
 }

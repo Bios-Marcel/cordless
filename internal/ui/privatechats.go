@@ -106,15 +106,15 @@ func (privateList *PrivateChatList) AddOrUpdateChannel(channel *discordgo.Channe
 }
 
 func (privateList *PrivateChatList) prependChannel(channel *discordgo.Channel) {
-	newChildren := append([]*tview.TreeNode{createChannelNode(channel)}, privateList.chatsNode.GetChildren()...)
+	newChildren := append([]*tview.TreeNode{createPrivateChannelNode(channel)}, privateList.chatsNode.GetChildren()...)
 	privateList.chatsNode.SetChildren(newChildren)
 }
 
 func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
-	privateList.chatsNode.AddChild(createChannelNode(channel))
+	privateList.chatsNode.AddChild(createPrivateChannelNode(channel))
 }
 
-func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
+func createPrivateChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	channelNode := tview.NewTreeNode(discordgoplus.GetPrivateChannelName(channel))
 	channelNode.SetReference(channel.ID)
 	return channelNode
@@ -203,18 +203,6 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 		if ok && referenceChannelID == channel.ID {
 			privateList.privateChannelStates[node] = unread
 			node.SetColor(tcell.ColorRed)
-			break
-		}
-	}
-}
-
-// MarkChannelAsRead marks a channel as read, coloring it white.
-func (privateList *PrivateChatList) MarkChannelAsRead(channel *discordgo.Channel) {
-	for _, node := range privateList.chatsNode.GetChildren() {
-		referenceChannelID, ok := node.GetReference().(string)
-		if ok && referenceChannelID == channel.ID {
-			privateList.privateChannelStates[node] = read
-			node.SetColor(tcell.ColorWhite)
 			break
 		}
 	}
