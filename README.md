@@ -55,7 +55,8 @@ Snap will automatically install updates.
 
 ### Installing on Windows
 
-In order to install the latest version on Windows, you first need scoop.
+In order to install the latest version on Windows, you first need
+[scoop](https://scoop.sh/#installs-in-seconds).
 
 After installing scoop, run the following:
 
