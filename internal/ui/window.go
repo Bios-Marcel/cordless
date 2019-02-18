@@ -105,8 +105,7 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 		return nil, err
 	}
 
-	//FIXME Bug: If you are in more than 100 guilds, you won't see a lot of them!
-	guilds, discordError := discord.UserGuilds(100, "", "")
+	guilds, discordError := discordgoplus.LoadGuilds(window.session)
 	if discordError != nil {
 		return nil, discordError
 	}
