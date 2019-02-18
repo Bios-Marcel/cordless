@@ -667,7 +667,7 @@ func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, del
 
 				if message.ChannelID == window.selectedChannel.ID {
 					window.app.QueueUpdateDraw(func() {
-						window.AddMessages([]*discordgo.Message{message})
+						window.chatView.AddMessage(message)
 					})
 				}
 
@@ -753,10 +753,10 @@ func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, del
 			case messageDeleted := <-deleteChannel:
 				//UPDATE CACHE
 				window.session.State.MessageRemove(messageDeleted)
-				for index, message := range window.chatView.data {
+				for _, message := range window.chatView.data {
 					if message.ID == messageDeleted.ID {
 						window.app.QueueUpdateDraw(func() {
-							window.SetMessages(append(window.chatView.data[:index], window.chatView.data[index+1:]...))
+							window.chatView.DeleteMessage(message)
 						})
 						break
 					}
@@ -775,7 +775,7 @@ func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, del
 					if message.ID == messageEdited.ID {
 						message.Content = messageEdited.Content
 						window.app.QueueUpdateDraw(func() {
-							window.SetMessages(window.chatView.data)
+							window.chatView.UpdateMessage(message)
 						})
 						break
 					}
@@ -1156,7 +1156,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	discordgoplus.SortMessagesByTimestamp(messages)
 
-	window.SetMessages(messages)
+	window.chatView.SetMessages(messages)
 	window.chatView.ClearSelection()
 	window.chatView.internalTextView.ScrollToEnd()
 
@@ -1190,16 +1190,6 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 
 	return nil
-}
-
-//AddMessages adds the passed array of messages to the chat.
-func (window *Window) AddMessages(messages []*discordgo.Message) {
-	window.chatView.AddMessages(messages)
-}
-
-//SetMessages clears the current chat and adds the passed messages.s
-func (window *Window) SetMessages(messages []*discordgo.Message) {
-	window.chatView.SetMessages(messages)
 }
 
 //RegisterCommand register a command. That makes the command available for

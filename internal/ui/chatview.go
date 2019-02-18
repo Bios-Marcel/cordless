@@ -34,6 +34,10 @@ var (
 	userColor = "green"
 )
 
+const (
+	maxMessagesAmount = 150
+)
+
 // ChatView is using a tview.TextView in order to be able to display messages
 // in a simple way. It supports highlighting specific element types and it
 // also supports multiline.
@@ -52,6 +56,7 @@ type ChatView struct {
 	selectionMode bool
 
 	showSpoilerContent map[string]bool
+	formattedMessages  map[string]string
 
 	onMessageAction func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey
 }
@@ -66,6 +71,7 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		selectionMode:      false,
 		showSpoilerContent: make(map[string]bool, 0),
 		shortenLinks:       config.GetConfig().ShortenLinks,
+		formattedMessages:  make(map[string]string),
 	}
 
 	if chatView.shortenLinks {
@@ -183,209 +189,265 @@ func (chatView *ChatView) GetPrimitive() tview.Primitive {
 	return chatView.internalTextView
 }
 
-//AddMessages adds additional messages to the ChatView.
-func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
-	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
-	nextIndex := len(chatView.data)
-	chatView.data = append(chatView.data, messages...)
-
-	newText := ""
-
-	for _, message := range messages {
-
-		time, parseError := message.Timestamp.Parse()
-		var timeCellText string
-		if parseError == nil {
-			timeCellText = times.TimeToString(&time)
+// UpdateMessage reformats the passed message, updates the cache and triggers
+// a rerender.
+func (chatView *ChatView) UpdateMessage(updatedMessage *discordgo.Message) {
+	for _, message := range chatView.data {
+		if message.ID == updatedMessage.ID {
+			chatView.formattedMessages[updatedMessage.ID] = chatView.formatMessage(updatedMessage)
+			break
 		}
-
-		var messageText string
-
-		if message.Type == discordgo.MessageTypeDefault {
-			messageText = tview.Escape(message.Content)
-
-			for _, roleID := range message.MentionRoles {
-				role, cacheError := chatView.session.State.Role(message.GuildID, roleID)
-				if cacheError == nil {
-					messageText = strings.NewReplacer(
-						"<@&"+roleID+">", "[blue]@"+role.Name+"[white]",
-					).Replace(messageText)
-				}
-			}
-
-			for _, user := range message.Mentions {
-				var userName string
-				if message.GuildID != "" {
-					member, cacheError := chatView.session.State.Member(message.GuildID, user.ID)
-					if cacheError == nil {
-						userName = discordgoplus.GetMemberName(member, nil)
-					}
-				}
-
-				if userName == "" {
-					userName = discordgoplus.GetUserName(user, nil)
-				}
-
-				messageText = strings.NewReplacer(
-					"<@"+chatView.session.State.User.ID+">", "[orange]@"+userName+"[white]",
-					"<@!"+chatView.session.State.User.ID+">", "[orange]@"+userName+"[white]",
-				).Replace(messageText)
-
-				messageText = strings.NewReplacer(
-					"<@"+user.ID+">", "[blue]@"+userName+"[white]",
-					"<@!"+user.ID+">", "[blue]@"+userName+"[white]",
-				).Replace(messageText)
-			}
-		} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
-			messageText = "[gray]joined the server."
-		} else if message.Type == discordgo.MessageTypeCall {
-			messageText = "[gray]is calling you."
-		} else if message.Type == discordgo.MessageTypeChannelIconChange {
-			messageText = "[gray]changed the channel icon."
-		} else if message.Type == discordgo.MessageTypeChannelNameChange {
-			messageText = "[gray]changed the channel name to " + message.Content + "."
-		} else if message.Type == discordgo.MessageTypeChannelPinnedMessage {
-			messageText = "[gray]pinned a message."
-		} else if message.Type == discordgo.MessageTypeRecipientAdd {
-			messageText = "[gray]added " + message.Mentions[0].Username + " to the group."
-		} else if message.Type == discordgo.MessageTypeRecipientRemove {
-			messageText = "[gray]removed " + message.Mentions[0].Username + " from the group."
-		}
-
-		messageText = channelMentionRegex.
-			ReplaceAllStringFunc(messageText, func(data string) string {
-				channelID := strings.TrimSuffix(strings.TrimPrefix(data, "<#"), ">")
-				channel, cacheError := chatView.session.State.Channel(channelID)
-				if cacheError != nil {
-					return data
-				}
-
-				return "[blue]#" + channel.Name + "[white]"
-			})
-
-		// FIXME Needs improvement, as it wastes space and breaks things
-		if message.Attachments != nil && len(message.Attachments) > 0 {
-			attachmentsAsText := ""
-			for attachmentIndex, attachment := range message.Attachments {
-				attachmentsAsText = attachmentsAsText + attachment.URL
-				if attachmentIndex != len(message.Attachments)-1 {
-					attachmentsAsText = attachmentsAsText + "\n"
-				}
-			}
-
-			if messageText != "" {
-				messageText = attachmentsAsText + "\n" + messageText
-			} else {
-				messageText = attachmentsAsText + messageText
-			}
-		}
-
-		// FIXME Handle Non-embed links nonetheless?
-		if chatView.shortenLinks {
-			urlMatches := urlRegex.FindAllStringSubmatch(messageText, 1000)
-
-			for _, urlMatch := range urlMatches {
-				newURL := urlMatch[1] + urlMatch[2]
-				if len(urlMatch) == 5 || (len(urlMatch) == 4 && len(urlMatch[3]) > 1) {
-					newURL = newURL + urlMatch[3]
-				}
-				if (len(urlMatch[2]) + 35) < len(newURL) {
-					newURL = fmt.Sprintf("(%s) %s", urlMatch[2], chatView.shortener.Shorten(newURL))
-				}
-				if len(urlMatch) == 5 {
-					newURL = newURL + strings.TrimSuffix(urlMatch[4], ">")
-				}
-				messageText = strings.Replace(messageText, urlMatch[0], newURL, 1)
-			}
-		}
-
-		groupValues := codeBlockRegex.
-			// Magicnumber, because message aren't gonna be that long anyway.
-			FindAllStringSubmatch(messageText, 1000)
-
-		for _, values := range groupValues {
-			language := ""
-			for index, value := range values {
-				if index == 0 {
-					continue
-				}
-
-				if index == 1 {
-					language = value
-				} else if index == 2 {
-					// Determine lexer.
-					l := lexers.Get(language)
-					if l == nil {
-						l = lexers.Analyse(value)
-					}
-					if l == nil {
-						l = lexers.Fallback
-					}
-					l = chroma.Coalesce(l)
-
-					// Determine formatter.
-					f := formatters.Get("tview-8bit")
-					if f == nil {
-						f = formatters.Fallback
-					}
-
-					// Determine style.
-					s := styles.Get("monokai")
-					if s == nil {
-						s = styles.Fallback
-					}
-
-					it, tokeniseError := l.Tokenise(nil, value)
-					if tokeniseError != nil {
-						continue
-					}
-
-					writer := bytes.NewBufferString("")
-
-					formatError := f.Format(writer, s, it)
-					if formatError != nil {
-						continue
-					}
-
-					escaped := strings.NewReplacer("*", "\\*", "_", "\\_", "|", "\\|").Replace(writer.String())
-					messageText = strings.Replace(messageText, value, escaped, 1)
-				}
-			}
-		}
-
-		messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
-
-		shouldShow, contains := chatView.showSpoilerContent[message.ID]
-		if !contains || !shouldShow {
-			messageText = spoilerRegex.ReplaceAllString(messageText, "[red]!SPOILER![white]")
-		}
-		messageText = strings.Replace(messageText, "\\|", "|", -1)
-
-		var messageAuthor string
-		if message.GuildID != "" {
-			member, cacheError := chatView.session.State.Member(message.GuildID, message.Author.ID)
-			if cacheError == nil {
-				messageAuthor = discordgoplus.GetMemberName(member, &userColor)
-			}
-		}
-
-		if messageAuthor == "" {
-			messageAuthor = discordgoplus.GetUserName(message.Author, &userColor)
-		}
-
-		messageText = fmt.Sprintf("[\"%d\"][red]%s [green]%s [white]%s[\"\"][\"\"]", nextIndex, timeCellText, messageAuthor, messageText)
-		newText = fmt.Sprintf("%s\n%s", newText, messageText)
-
-		nextIndex++
 	}
 
-	fmt.Fprint(chatView.internalTextView, newText)
+	chatView.Rerender()
+}
+
+// DeleteMessage drops the message from the cache and triggers a rerender
+func (chatView *ChatView) DeleteMessage(deletedMessage *discordgo.Message) {
+	delete(chatView.showSpoilerContent, deletedMessage.ID)
+	delete(chatView.formattedMessages, deletedMessage.ID)
+	filteredMessages := make([]*discordgo.Message, 0)
+	for _, message := range chatView.data {
+		if message.ID != deletedMessage.ID {
+			filteredMessages = append(filteredMessages, message)
+		}
+	}
+	chatView.data = filteredMessages
+	chatView.Rerender()
+}
+
+//AddMessage add an additional message to the ChatView.
+func (chatView *ChatView) AddMessage(message *discordgo.Message) {
+	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
+
+	var rerender bool
+	if len(chatView.data) >= maxMessagesAmount {
+		delete(chatView.showSpoilerContent, chatView.data[0].ID)
+		delete(chatView.formattedMessages, chatView.data[0].ID)
+		chatView.data = append(chatView.data[1:], message)
+		rerender = true
+	} else {
+		chatView.data = append(chatView.data, message)
+	}
+
+	var newText string
+	formattedMessage, contains := chatView.formattedMessages[message.ID]
+	if contains {
+		newText = formattedMessage
+	} else {
+		newText = chatView.formatMessage(message)
+		chatView.formattedMessages[message.ID] = newText
+	}
+
+	if rerender {
+		chatView.Rerender()
+	} else {
+		fmt.Fprint(chatView.internalTextView, "\n[\""+intToString(len(chatView.data)-1)+"\"]"+newText)
+	}
 
 	chatView.updateHighlights()
 
 	if wasScrolledToTheEnd {
 		chatView.internalTextView.ScrollToEnd()
 	}
+}
+
+// Rerender clears the text view and fills it again using the current cache.
+func (chatView *ChatView) Rerender() {
+	chatView.internalTextView.SetText("")
+	for index, message := range chatView.data {
+		formattedMessage, contains := chatView.formattedMessages[message.ID]
+		//Should always be true, otherwise we got ourselves a bug.
+		if contains {
+			fmt.Fprint(chatView.internalTextView, "\n[\""+intToString(index)+"\"]"+formattedMessage)
+		} else {
+			panic("Bug in chatview, a message could not be found.")
+		}
+	}
+}
+
+func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
+	time, parseError := message.Timestamp.Parse()
+	var timeCellText string
+	if parseError == nil {
+		timeCellText = times.TimeToString(&time)
+	}
+
+	var messageText string
+
+	if message.Type == discordgo.MessageTypeDefault {
+		messageText = tview.Escape(message.Content)
+
+		for _, roleID := range message.MentionRoles {
+			role, cacheError := chatView.session.State.Role(message.GuildID, roleID)
+			if cacheError == nil {
+				messageText = strings.NewReplacer(
+					"<@&"+roleID+">", "[blue]@"+role.Name+"[white]",
+				).Replace(messageText)
+			}
+		}
+
+		for _, user := range message.Mentions {
+			var userName string
+			if message.GuildID != "" {
+				member, cacheError := chatView.session.State.Member(message.GuildID, user.ID)
+				if cacheError == nil {
+					userName = discordgoplus.GetMemberName(member, nil)
+				}
+			}
+
+			if userName == "" {
+				userName = discordgoplus.GetUserName(user, nil)
+			}
+
+			messageText = strings.NewReplacer(
+				"<@"+chatView.session.State.User.ID+">", "[orange]@"+userName+"[white]",
+				"<@!"+chatView.session.State.User.ID+">", "[orange]@"+userName+"[white]",
+			).Replace(messageText)
+
+			messageText = strings.NewReplacer(
+				"<@"+user.ID+">", "[blue]@"+userName+"[white]",
+				"<@!"+user.ID+">", "[blue]@"+userName+"[white]",
+			).Replace(messageText)
+		}
+	} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
+		messageText = "[gray]joined the server."
+	} else if message.Type == discordgo.MessageTypeCall {
+		messageText = "[gray]is calling you."
+	} else if message.Type == discordgo.MessageTypeChannelIconChange {
+		messageText = "[gray]changed the channel icon."
+	} else if message.Type == discordgo.MessageTypeChannelNameChange {
+		messageText = "[gray]changed the channel name to " + message.Content + "."
+	} else if message.Type == discordgo.MessageTypeChannelPinnedMessage {
+		messageText = "[gray]pinned a message."
+	} else if message.Type == discordgo.MessageTypeRecipientAdd {
+		messageText = "[gray]added " + message.Mentions[0].Username + " to the group."
+	} else if message.Type == discordgo.MessageTypeRecipientRemove {
+		messageText = "[gray]removed " + message.Mentions[0].Username + " from the group."
+	}
+
+	messageText = channelMentionRegex.
+		ReplaceAllStringFunc(messageText, func(data string) string {
+			channelID := strings.TrimSuffix(strings.TrimPrefix(data, "<#"), ">")
+			channel, cacheError := chatView.session.State.Channel(channelID)
+			if cacheError != nil {
+				return data
+			}
+
+			return "[blue]#" + channel.Name + "[white]"
+		})
+
+	// FIXME Needs improvement, as it wastes space and breaks things
+	if message.Attachments != nil && len(message.Attachments) > 0 {
+		attachmentsAsText := ""
+		for attachmentIndex, attachment := range message.Attachments {
+			attachmentsAsText = attachmentsAsText + attachment.URL
+			if attachmentIndex != len(message.Attachments)-1 {
+				attachmentsAsText = attachmentsAsText + "\n"
+			}
+		}
+
+		if messageText != "" {
+			messageText = attachmentsAsText + "\n" + messageText
+		} else {
+			messageText = attachmentsAsText + messageText
+		}
+	}
+
+	// FIXME Handle Non-embed links nonetheless?
+	if chatView.shortenLinks {
+		urlMatches := urlRegex.FindAllStringSubmatch(messageText, 1000)
+
+		for _, urlMatch := range urlMatches {
+			newURL := urlMatch[1] + urlMatch[2]
+			if len(urlMatch) == 5 || (len(urlMatch) == 4 && len(urlMatch[3]) > 1) {
+				newURL = newURL + urlMatch[3]
+			}
+			if (len(urlMatch[2]) + 35) < len(newURL) {
+				newURL = fmt.Sprintf("(%s) %s", urlMatch[2], chatView.shortener.Shorten(newURL))
+			}
+			if len(urlMatch) == 5 {
+				newURL = newURL + strings.TrimSuffix(urlMatch[4], ">")
+			}
+			messageText = strings.Replace(messageText, urlMatch[0], newURL, 1)
+		}
+	}
+
+	groupValues := codeBlockRegex.
+		// Magicnumber, because message aren't gonna be that long anyway.
+		FindAllStringSubmatch(messageText, 1000)
+
+	for _, values := range groupValues {
+		language := ""
+		for index, value := range values {
+			if index == 0 {
+				continue
+			}
+
+			if index == 1 {
+				language = value
+			} else if index == 2 {
+				// Determine lexer.
+				l := lexers.Get(language)
+				if l == nil {
+					l = lexers.Analyse(value)
+				}
+				if l == nil {
+					l = lexers.Fallback
+				}
+				l = chroma.Coalesce(l)
+
+				// Determine formatter.
+				f := formatters.Get("tview-8bit")
+				if f == nil {
+					f = formatters.Fallback
+				}
+
+				// Determine style.
+				s := styles.Get("monokai")
+				if s == nil {
+					s = styles.Fallback
+				}
+
+				it, tokeniseError := l.Tokenise(nil, value)
+				if tokeniseError != nil {
+					continue
+				}
+
+				writer := bytes.NewBufferString("")
+
+				formatError := f.Format(writer, s, it)
+				if formatError != nil {
+					continue
+				}
+
+				escaped := strings.NewReplacer("*", "\\*", "_", "\\_", "|", "\\|").Replace(writer.String())
+				messageText = strings.Replace(messageText, value, escaped, 1)
+			}
+		}
+	}
+
+	messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
+
+	shouldShow, contains := chatView.showSpoilerContent[message.ID]
+	if !contains || !shouldShow {
+		messageText = spoilerRegex.ReplaceAllString(messageText, "[red]!SPOILER![white]")
+	}
+	messageText = strings.Replace(messageText, "\\|", "|", -1)
+
+	var messageAuthor string
+	if message.GuildID != "" {
+		member, cacheError := chatView.session.State.Member(message.GuildID, message.Author.ID)
+		if cacheError == nil {
+			messageAuthor = discordgoplus.GetMemberName(member, &userColor)
+		}
+	}
+
+	if messageAuthor == "" {
+		messageAuthor = discordgoplus.GetUserName(message.Author, &userColor)
+	}
+
+	return fmt.Sprintf("[red]%s [green]%s [white]%s[\"\"][\"\"]", timeCellText, messageAuthor, messageText)
 }
 
 func parseBoldAndUnderline(messageText string) string {
@@ -517,5 +579,7 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 	chatView.data = make([]*discordgo.Message, 0)
 	chatView.internalTextView.SetText("")
 
-	chatView.AddMessages(messages)
+	for _, message := range messages {
+		chatView.AddMessage(message)
+	}
 }
