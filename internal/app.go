@@ -42,6 +42,7 @@ func Run() {
 	splashScreen.SetTextAlign(tview.AlignCenter)
 	splashScreen.SetText(tview.Escape(splashText + "\n\nConfig lies at: " + configDir))
 	app.SetRoot(splashScreen, true)
+	runNext := make(chan bool, 1)
 
 	go func() {
 		configuration, configLoadError := config.LoadConfig()
@@ -75,7 +76,7 @@ func Run() {
 		<-readyChan
 
 		app.QueueUpdateDraw(func() {
-			window, createError := ui.NewWindow(app, discord)
+			window, createError := ui.NewWindow(runNext, app, discord)
 
 			if createError != nil {
 				app.Stop()
@@ -83,6 +84,7 @@ func Run() {
 			}
 
 			window.RegisterCommand(commandimpls.NewStatusCommand(discord))
+			window.RegisterCommand(commandimpls.NewAccount(runNext, window))
 			window.RegisterCommand(commandimpls.NewHelpCommand(window))
 			window.RegisterCommand(commandimpls.NewManualCommand())
 			window.RegisterCommand(commandimpls.NewFixLayoutCommand(window))
@@ -93,6 +95,11 @@ func Run() {
 	runError := app.Run()
 	if runError != nil {
 		log.Fatalf("Error launching View (%s).\n", runError.Error())
+	}
+
+	run := <-runNext
+	if run {
+		Run()
 	}
 }
 

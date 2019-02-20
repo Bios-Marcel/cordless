@@ -98,6 +98,17 @@ type Config struct {
 	// DesktopNotifications decides wether a popup will be shown in the users
 	// system when a notification needs to be sent.
 	DesktopNotifications bool
+
+	// Accounts contains all saved accounts, allowing the user to dynamicly
+	// switch between the accounts.
+	Accounts []*Account
+}
+
+// Account has a name and a token. The name is just for the users recognition.
+// The token is the actual token used to authenticate against the discord API.
+type Account struct {
+	Name  string
+	Token string
 }
 
 var cachedConfigDir string

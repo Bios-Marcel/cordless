@@ -13,6 +13,7 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
+//FIXME Remove global state
 var _ scripting.Engine = &JavaScriptEngine{}
 
 // JavaScriptEngine stores scripting engine state

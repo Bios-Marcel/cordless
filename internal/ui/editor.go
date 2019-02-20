@@ -318,11 +318,15 @@ func NewEditor() *Editor {
 
 			editor.currentMentionBeginIdx = atIndex + 1
 			editor.currentMentionEndIdx = endIndex + atIndex
-			editor.mentionShowHandler(lookup[:endIndex])
+			if editor.mentionShowHandler != nil {
+				editor.mentionShowHandler(lookup[:endIndex])
+			}
 		} else {
 			editor.currentMentionBeginIdx = 0
 			editor.currentMentionEndIdx = 0
-			editor.mentionHideHandler()
+			if editor.mentionHideHandler != nil {
+				editor.mentionHideHandler()
+			}
 		}
 
 		editor.triggerHeightRequestIfNeccessary()

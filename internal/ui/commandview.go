@@ -11,7 +11,7 @@ import (
 // input. All commands are added to the history when confirmed via enter.
 type CommandView struct {
 	commandOutput *tview.TextView
-	commandInput  *tview.InputField
+	commandInput  *Editor
 
 	commandHistoryIndex int
 	commandHistory      []string
@@ -28,8 +28,10 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 	commandOutput.SetWordWrap(true)
 	commandOutput.SetWrap(true)
 
-	commandInput := tview.NewInputField()
-	commandInput.SetBorder(true)
+	commandInput := NewEditor()
+	commandInput.internalTextView.
+		SetWrap(false).
+		SetWordWrap(false)
 
 	cmdView := &CommandView{
 		commandOutput: commandOutput,
@@ -124,8 +126,8 @@ func (cmdView *CommandView) handleInput(event *tcell.EventKey) *tcell.EventKey {
 
 // GetCommandInputWidget returns the component that can be added to the layout
 // for the users command input.
-func (cmdView *CommandView) GetCommandInputWidget() *tview.InputField {
-	return cmdView.commandInput
+func (cmdView *CommandView) GetCommandInputWidget() *tview.TextView {
+	return cmdView.commandInput.internalTextView
 }
 
 // GetCommandOutputWidget is the component that can be added to the layout
@@ -137,7 +139,7 @@ func (cmdView *CommandView) GetCommandOutputWidget() *tview.TextView {
 // SetVisible sets the given visible state to both the input component and
 // the output component
 func (cmdView *CommandView) SetVisible(visible bool) {
-	cmdView.commandInput.SetVisible(visible)
+	cmdView.commandInput.internalTextView.SetVisible(visible)
 	cmdView.commandOutput.SetVisible(visible)
 }
 

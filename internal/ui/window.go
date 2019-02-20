@@ -77,13 +77,16 @@ type Window struct {
 
 	userActive      bool
 	userActiveTimer *time.Timer
+
+	doRestart chan bool
 }
 
 //NewWindow constructs the whole application window and also registers all
 //necessary handlers and functions. If this function returns an error, we can't
 //start the application.
-func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, error) {
+func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.Session) (*Window, error) {
 	window := Window{
+		doRestart:       doRestart,
 		session:         discord,
 		app:             app,
 		commands:        make(map[string]commands.Command, 1),
@@ -610,10 +613,10 @@ func NewWindow(app *tview.Application, discord *discordgo.Session) (*Window, err
 	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.messageInput.GetRequestedHeight(), 0, false)
 
 	window.commandView.commandOutput.SetVisible(false)
-	window.commandView.commandInput.SetVisible(false)
+	window.commandView.commandInput.internalTextView.SetVisible(false)
 
 	window.chatArea.AddItem(window.commandView.commandOutput, 0, 1, false)
-	window.chatArea.AddItem(window.commandView.commandInput, 3, 0, false)
+	window.chatArea.AddItem(window.commandView.commandInput.internalTextView, 3, 0, false)
 
 	if conf.ShowFrame {
 		window.rootContainer.SetTitle("Cordless")
@@ -933,6 +936,11 @@ func (window *Window) SetCommandModeEnabled(enabled bool) {
 }
 
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
+	if event.Key() == tcell.KeyCtrlC {
+		window.doRestart <- false
+		return event
+	}
+
 	window.userActive = true
 	window.userActiveTimer.Reset(10 * time.Second)
 
@@ -942,7 +950,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		window.SetCommandModeEnabled(!window.commandMode)
 
 		if window.commandMode {
-			window.app.SetFocus(window.commandView.commandInput)
+			window.app.SetFocus(window.commandView.commandInput.internalTextView)
 		} else {
 			window.app.SetFocus(window.messageInput.GetPrimitive())
 		}
@@ -963,7 +971,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 			window.SetCommandModeEnabled(true)
 		}
 
-		window.app.SetFocus(window.commandView.commandInput)
+		window.app.SetFocus(window.commandView.commandInput.internalTextView)
 	}
 
 	if event.Rune() == 'U' &&
@@ -1206,4 +1214,12 @@ func (window *Window) GetRegisteredCommands() map[string]commands.Command {
 //Run Shows the window optionally returning an error.
 func (window *Window) Run() error {
 	return window.app.Run()
+}
+
+// Shutdown disconnects from the discord API and stops the tview application.
+// TODO: Kill Linkshortener
+func (window *Window) Shutdown() {
+	window.chatView.shortener.Close()
+	window.session.Close()
+	window.app.Stop()
 }
