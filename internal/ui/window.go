@@ -1203,7 +1203,6 @@ func (window *Window) Run() error {
 }
 
 // Shutdown disconnects from the discord API and stops the tview application.
-// TODO: Kill Linkshortener
 func (window *Window) Shutdown() {
 	window.chatView.shortener.Close()
 	window.session.Close()
