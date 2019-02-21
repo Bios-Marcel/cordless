@@ -616,7 +616,87 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 
 	app.SetFocus(guildList)
 
+	window.registerMouseFocusListeners()
+
 	return &window, nil
+}
+
+func (window *Window) registerMouseFocusListeners() {
+	window.chatView.internalTextView.SetMouseHandler(func(event *tcell.EventMouse) bool {
+		if event.Buttons() == tcell.Button1 {
+			window.app.SetFocus(window.chatView.internalTextView)
+			return true
+		}
+
+		return false
+	})
+
+	window.guildList.SetMouseHandler(func(event *tcell.EventMouse) bool {
+		if event.Buttons() == tcell.Button1 {
+			window.app.SetFocus(window.guildList)
+			return true
+		}
+
+		return false
+	})
+	window.channelTree.internalTreeView.SetMouseHandler(func(event *tcell.EventMouse) bool {
+		if event.Buttons() == tcell.Button1 {
+			window.app.SetFocus(window.channelTree.internalTreeView)
+
+			return true
+		}
+
+		return false
+	})
+
+	window.userList.internalTreeView.SetMouseHandler(func(event *tcell.EventMouse) bool {
+		if event.Buttons() == tcell.Button1 {
+			window.app.SetFocus(window.userList.internalTreeView)
+
+			return true
+		}
+
+		return false
+	})
+
+	window.privateList.internalTreeView.SetMouseHandler(func(event *tcell.EventMouse) bool {
+		if event.Buttons() == tcell.Button1 {
+			window.app.SetFocus(window.privateList.internalTreeView)
+
+			return true
+		}
+
+		return false
+	})
+
+	window.messageInput.internalTextView.SetMouseHandler(func(event *tcell.EventMouse) bool {
+		if event.Buttons() == tcell.Button1 {
+			window.app.SetFocus(window.messageInput.internalTextView)
+
+			return true
+		}
+
+		return false
+	})
+
+	window.commandView.commandInput.internalTextView.SetMouseHandler(func(event *tcell.EventMouse) bool {
+		if event.Buttons() == tcell.Button1 {
+			window.app.SetFocus(window.commandView.commandInput.internalTextView)
+
+			return true
+		}
+
+		return false
+	})
+	window.commandView.commandOutput.SetMouseHandler(func(event *tcell.EventMouse) bool {
+		if event.Buttons() == tcell.Button1 {
+			window.app.SetFocus(window.commandView.commandOutput)
+
+			return true
+		}
+
+		return false
+	})
 }
 
 func (window *Window) addMessageEventHandler(inputChannel, editChannel, deleteChannel chan *discordgo.Message) {
