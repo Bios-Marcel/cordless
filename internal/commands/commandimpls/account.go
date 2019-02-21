@@ -149,7 +149,7 @@ func (account *Account) switchAccount(writer io.Writer, accountName string) {
 	config.GetConfig().Token = newToken
 	config.PersistConfig()
 
-	//Using a go routine, so this instance doesn't stay alive and polutes the memory.
+	//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
 	account.runNext <- true
 	account.window.Shutdown()
 }

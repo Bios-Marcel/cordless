@@ -96,7 +96,7 @@ func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 		jsValue, jsError := vm.Run(fmt.Sprintf("onMessageSend(\"%s\")", escapeNewlines(newText)))
 		if jsError != nil {
 			if engine.errorOutput != nil {
-				fmt.Fprintf(engine.errorOutput, "Error occured during execution of javascript: %s", jsError.Error())
+				fmt.Fprintf(engine.errorOutput, "Error occurred during execution of javascript: %s", jsError.Error())
 			}
 			//This script failed, go to next one
 			continue
