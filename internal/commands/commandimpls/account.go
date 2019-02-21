@@ -15,12 +15,12 @@ The account command allows you to manage multiple discord accounts within
 cordless.
 
 Subcommands:
-  * add
-  * delete
-  * switch
-  * list
-  * current
-  * add-current
+  * add         - Adds a new account
+  * delete      - Deletes the given account
+  * switch      - Allows you to switch your active account
+  * list        - Lists all available accounts
+  * current     - Displays the currently used account
+  * add-current - Add the token currently in use as a new account
 `
 
 // Account manages the users account

@@ -79,7 +79,40 @@ When in selection mode, those shortcuts are active:
 `
 const commandsDocumentation = `[orange][::u]# Commands[white]`
 const configurationDocumentation = `[orange][::u]# Configuration[white]`
-const messageEditorDocumentation = `[orange][::u]# Message editor[white]`
+const messageEditorDocumentation = `[orange][::u]# Message editor[white]
+
+The editor is a custom written widget and builds on top of the tview.TextView.
+It utilizes regions and highlighting in order to implement the complete selection behaviour
+Currently it is not a finished widget. 
+
+## Shortcuts
+
+----------------------------------------------------
+|           Action           |       Shortcut      |
+| -------------------------- | ------------------- |
+| Delete left                | Backspace           |
+| Delete Right               | Delete              |
+| Delete Selection           | Backspace or Delete |
+| Jump to beginning          | Ctrl+A -> Left      |
+| Jump to end                | Ctrl+A -> Right     |
+| Jump one word to the left  | Ctrl+Left           |
+| Jump one word to the right | Ctrl+Right          |
+| Select all                 | Ctrl+A              |
+| Select word to left        | Ctrl+Shift+Left     |
+| Select word to right       | Ctrl+Shift+Right    |
+| Scroll chatview up         | Ctrl+Up             |
+| Scroll chatview down       | Ctrl+Down           |
+| Paste Image / text         | Ctrl+V              |
+| Insert new line            | Alt+Enter           |
+| Send message               | Enter               |
+----------------------------------------------------
+
+## Other features
+
+* Send emojis using ":emoji_code:"
+* Mention people using autocomplete by typing an "@" followed by part of their name
+`
+
 const navigationDocumentation = `[orange][::u]# Navigation[white]
 
 Currently the navigation is solely via your keyboard.
