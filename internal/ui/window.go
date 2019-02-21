@@ -529,24 +529,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 	window.userList = NewUserTree(window.session.State)
 
 	if config.GetConfig().OnTypeInListBehaviour == config.SearchOnTypeInList {
-		var guildJumpBuffer string
-		var guildJumpTime time.Time
-		guildList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
-			guildList, guildRootNode, &guildJumpTime, &guildJumpBuffer))
-		var channelJumpBuffer string
-		var channelJumpTime time.Time
-		channelTree.internalTreeView.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
-			channelTree.internalTreeView, channelTree.internalTreeView.GetRoot(),
-			&channelJumpTime, &channelJumpBuffer))
-		var userJumpBuffer string
-		var userJumpTime time.Time
-		window.userList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
-			window.userList.internalTreeView, window.userList.rootNode, &userJumpTime, &userJumpBuffer))
-		var privateJumpBuffer string
-		var privateJumpTime time.Time
-		window.privateList.SetInputCapture(treeview.CreateSearchOnTypeInuptHandler(
-			window.privateList.GetComponent(), window.privateList.internalTreeView.GetRoot(),
-			&privateJumpTime, &privateJumpBuffer))
+		guildList.SetSearchOnTypeEnabled(true)
+		channelTree.internalTreeView.SetSearchOnTypeEnabled(true)
+		window.userList.internalTreeView.SetSearchOnTypeEnabled(true)
+		window.privateList.internalTreeView.SetSearchOnTypeEnabled(true)
 	} else if config.GetConfig().OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
 		guildList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
 			guildList.Box, window.app, window.messageInput.internalTextView))

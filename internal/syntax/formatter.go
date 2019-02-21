@@ -168,7 +168,7 @@ var ttyTables = map[int]*ttyTable{
 }
 
 func entryToEscapeSequence(table *ttyTable, entry chroma.StyleEntry) string {
-	out := ""
+	var out string
 	if entry.Colour.IsSet() {
 		out += table.foreground[findClosest(table, entry.Colour)]
 	}
