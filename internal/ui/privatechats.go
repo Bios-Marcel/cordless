@@ -186,7 +186,7 @@ func (privateList *PrivateChatList) RemoveChannel(channel *discordgo.Channel) {
 	userID := channel.Recipients[0].ID
 
 	for _, relationship := range privateList.state.Relationships {
-		if relationship.Type == discordgoplus.RelationTypeFriend &&
+		if relationship.Type == discordgo.RelationTypeFriend &&
 			relationship.User.ID == userID {
 			privateList.AddOrUpdateFriend(relationship.User)
 			break
@@ -253,7 +253,7 @@ func (privateList *PrivateChatList) Load() error {
 
 FRIEND_LOOP:
 	for _, friend := range privateList.state.Relationships {
-		if friend.Type != discordgoplus.RelationTypeFriend {
+		if friend.Type != discordgo.RelationTypeFriend {
 			continue
 		}
 

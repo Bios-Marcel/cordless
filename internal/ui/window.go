@@ -920,7 +920,7 @@ func (window *Window) registerPrivateChatsHandler() {
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.RelationshipAdd) {
-		if event.Relationship.Type == discordgoplus.RelationTypeFriend {
+		if event.Relationship.Type == discordgo.RelationTypeFriend {
 			window.app.QueueUpdateDraw(func() {
 				window.privateList.addFriend(event.User)
 			})
@@ -928,7 +928,7 @@ func (window *Window) registerPrivateChatsHandler() {
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.RelationshipRemove) {
-		if event.Relationship.Type == discordgoplus.RelationTypeFriend {
+		if event.Relationship.Type == discordgo.RelationTypeFriend {
 			window.app.QueueUpdateDraw(func() {
 				window.privateList.addFriend(event.User)
 			})
