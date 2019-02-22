@@ -367,17 +367,14 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 
 		if event.Modifiers() == tcell.ModCtrl {
 			if event.Key() == tcell.KeyUp {
-				handler := window.chatView.internalTextView.InputHandler()
-				handler(tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone), nil)
+				window.chatView.internalTextView.ScrollUp()
 				return nil
 			}
 
 			if event.Key() == tcell.KeyDown {
-				handler := window.chatView.internalTextView.InputHandler()
-				handler(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
+				window.chatView.internalTextView.ScrollDown()
 				return nil
 			}
-
 		}
 
 		if event.Key() == tcell.KeyPgUp {
@@ -625,10 +622,16 @@ func (window *Window) registerMouseFocusListeners() {
 	window.chatView.internalTextView.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
 			window.app.SetFocus(window.chatView.internalTextView)
-			return true
+		} else if event.Buttons() == tcell.WheelDown {
+			window.chatView.internalTextView.ScrollDown()
+		} else if event.Buttons() == tcell.WheelUp {
+			//row, column := window.chatView.internalTextView.GetScrollOffset()
+			window.chatView.internalTextView.ScrollUp()
+		} else {
+			return false
 		}
 
-		return false
+		return true
 	})
 
 	window.guildList.SetMouseHandler(func(event *tcell.EventMouse) bool {
@@ -688,14 +691,20 @@ func (window *Window) registerMouseFocusListeners() {
 
 		return false
 	})
+
 	window.commandView.commandOutput.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
 			window.app.SetFocus(window.commandView.commandOutput)
-
-			return true
+		} else if event.Buttons() == tcell.WheelDown {
+			window.commandView.commandOutput.ScrollDown()
+		} else if event.Buttons() == tcell.WheelUp {
+			//row, column := window.chatView.internalTextView.GetScrollOffset()
+			window.commandView.commandOutput.ScrollUp()
+		} else {
+			return false
 		}
 
-		return false
+		return true
 	})
 }
 
