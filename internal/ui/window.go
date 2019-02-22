@@ -625,7 +625,6 @@ func (window *Window) registerMouseFocusListeners() {
 		} else if event.Buttons() == tcell.WheelDown {
 			window.chatView.internalTextView.ScrollDown()
 		} else if event.Buttons() == tcell.WheelUp {
-			//row, column := window.chatView.internalTextView.GetScrollOffset()
 			window.chatView.internalTextView.ScrollUp()
 		} else {
 			return false
@@ -698,7 +697,6 @@ func (window *Window) registerMouseFocusListeners() {
 		} else if event.Buttons() == tcell.WheelDown {
 			window.commandView.commandOutput.ScrollDown()
 		} else if event.Buttons() == tcell.WheelUp {
-			//row, column := window.chatView.internalTextView.GetScrollOffset()
 			window.commandView.commandOutput.ScrollUp()
 		} else {
 			return false
