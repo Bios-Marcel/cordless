@@ -8,94 +8,146 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-var shortcuts map[string]*tcell.EventKey
+const (
+	actionCellIndex int = iota
+	scopeCellIndex
+	shortcutCellIndex
+)
 
-func main() {
-	shortcuts = map[string]*tcell.EventKey{
-		"exit":  tcell.NewEventKey(tcell.KeyCtrlC, 0, tcell.ModNone),
-		"dunno": tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone),
+// Shortcut defines a shortcut within the application. The scope might for
+// example be a widget or situation in which the user is.
+type Shortcut struct {
+	name  string
+	scope string
+	event *tcell.EventKey
+}
+
+// ShortcutTable is a component that displays shortcuts and allows changing
+// them.
+type ShortcutTable struct {
+	table     *tview.Table
+	shortcuts []*Shortcut
+	selection int
+}
+
+// NewShortcutTable creates a new shortcut table that doesn't contain any data.
+func NewShortcutTable() *ShortcutTable {
+	table := tview.NewTable()
+	shortcutsTable := &ShortcutTable{
+		table:     table,
+		selection: -1,
 	}
 
-	table := tview.NewTable()
 	table.SetSelectable(true, false)
-
-	table.SetFixed(2, 2)
-	actionCell := tview.NewTableCell("Action")
-	actionCell.SetSelectable(false)
-	actionCell.SetAlign(tview.AlignCenter)
-	actionCell.SetExpansion(1)
-
-	shortcutCell := tview.NewTableCell("Shortcut")
-	shortcutCell.SetSelectable(false)
-	shortcutCell.SetAlign(tview.AlignCenter)
-	shortcutCell.SetExpansion(1)
-
-	table.SetCell(0, 0, actionCell)
-	table.SetCell(0, 1, shortcutCell)
 	table.SetBorder(true)
 
-	emptyCellOne := tview.NewTableCell("")
-	emptyCellOne.SetSelectable(false)
-	table.SetCell(1, 0, emptyCellOne)
-	emptyCellTwo := tview.NewTableCell("")
-	emptyCellTwo.SetSelectable(false)
-	table.SetCell(2, 0, emptyCellTwo)
+	//Header + emptyrow
+	table.SetFixed(2, 3)
 
-	rows := make([]string, len(shortcuts))
+	table.SetCell(0, actionCellIndex, createHeaderCell("Action"))
+	table.SetCell(0, scopeCellIndex, createHeaderCell("Scope"))
+	table.SetCell(0, shortcutCellIndex, createHeaderCell("Shortcut"))
+
+	table.SetInputCapture(shortcutsTable.handleInput)
+
+	return shortcutsTable
+}
+
+func createHeaderCell(text string) *tview.TableCell {
+	return tview.NewTableCell(text).
+		SetSelectable(false).
+		SetAlign(tview.AlignCenter).
+		SetExpansion(1)
+}
+
+// SetShortcuts sets the shortcut data and changes the UI accordingly.
+func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*Shortcut) {
+	shortcutTable.shortcuts = shortcuts
+
+	row, _ := shortcutTable.table.GetFixed()
+
+	//Using clear will remove the content of the fixed rows, therefore we
+	// manually remove starting from the first non-fixed row.
+	for index := row; index < shortcutTable.table.GetRowCount(); index++ {
+		shortcutTable.table.RemoveRow(index)
+	}
+
+	for _, shortcut := range shortcuts {
+		nameCell := tview.NewTableCell(shortcut.name)
+		nameCell.SetExpansion(1)
+		shortcutTable.table.SetCell(row, actionCellIndex, nameCell)
+
+		scopeCell := tview.NewTableCell(shortcut.scope)
+		scopeCell.SetExpansion(1)
+		shortcutTable.table.SetCell(row, scopeCellIndex, scopeCell)
+
+		eventCell := tview.NewTableCell(EventToString(shortcut.event))
+		eventCell.SetExpansion(1)
+		shortcutTable.table.SetCell(row, shortcutCellIndex, eventCell)
+
+		row++
+	}
+}
+
+// GetShortcuts returns the array containing the currently displayed shortcuts.
+func (shortcutTable *ShortcutTable) GetShortcuts() []*Shortcut {
+	return shortcutTable.shortcuts
+}
+
+func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.EventKey {
+	if shortcutTable.selection == -1 && (event.Key() == tcell.KeyUp || event.Key() == tcell.KeyDown) {
+		return event
+	}
+
+	firstNonFixedRow, _ := shortcutTable.table.GetFixed()
+	selectedRow, _ := shortcutTable.table.GetSelection()
+	//The first row of the table isn't the first row containing data
+	dataIndex := selectedRow - firstNonFixedRow
+	if shortcutTable.selection == -1 && selectedRow >= firstNonFixedRow {
+		if event.Key() == tcell.KeyEnter {
+			if selectedRow != -1 {
+				shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("Hit the desired keycombination")
+				shortcutTable.selection = selectedRow
+				return nil
+			}
+		} else if event.Key() == tcell.KeyBackspace || event.Key() == tcell.KeyBackspace2 {
+			shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("")
+			shortcutTable.shortcuts[dataIndex].event = nil
+			return nil
+		}
+	} else if selectedRow >= firstNonFixedRow && shortcutTable.selection != -1 {
+		shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText(EventToString(event))
+		//Make a copy of the event?
+		shortcutTable.shortcuts[dataIndex].event = event
+		shortcutTable.selection = -1
+		return nil
+	}
+
+	return event
+}
+
+func main() {
 
 	app := tview.NewApplication()
 
-	selection := -1
-	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyUp || event.Key() == tcell.KeyDown {
-			return event
-		}
-
-		selectedRow, _ := table.GetSelection()
-		if selection == -1 && selectedRow >= 2 {
-			if event.Key() == tcell.KeyEnter {
-				if selectedRow != -1 {
-					table.SetCellSimple(selectedRow, 1, "Please hit your desired keystroke")
-					selection = selectedRow
-				}
-			} else if event.Key() == tcell.KeyBackspace || event.Key() == tcell.KeyBackspace2 {
-				table.SetCellSimple(selectedRow, 1, "")
-				shortcuts[rows[selectedRow-2]] = nil
-			}
-		} else if selectedRow >= 2 && selection != -1 {
-			name := rows[selectedRow-2]
-			_, available := shortcuts[name]
-			if available {
-				table.SetCellSimple(selectedRow, 1, EventToString(event))
-				shortcuts[name] = event
-				selection = -1
-			}
-		}
-
-		return event
+	shortcutTable := NewShortcutTable()
+	shortcutTable.SetShortcuts([]*Shortcut{
+		&Shortcut{"dunno", "somewhere", tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone)},
+		&Shortcut{"dunno2", "somewhere", tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone)},
+		&Shortcut{"ooof", "ok", tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone)},
+		&Shortcut{"whatever", "nowhere", tcell.NewEventKey(tcell.KeyCtrlK, 0, tcell.ModNone)},
 	})
 
-	row := 2
-
-	for name, event := range shortcuts {
-		nameCell := tview.NewTableCell(name)
-		nameCell.SetExpansion(1)
-		table.SetCell(row, 0, nameCell)
-
-		eventCell := tview.NewTableCell(EventToString(event))
-		eventCell.SetExpansion(1)
-		table.SetCell(row, 1, eventCell)
-
-		rows[row-2] = name
-		row++
-	}
-
-	app.SetRoot(table, true).Run()
+	app.SetRoot(shortcutTable.table, true).Run()
 }
 
 // EventsEqual compares the given events, respecting everything except for the
 // When field.
 func EventsEqual(eventOne, eventTwo *tcell.EventKey) bool {
+	if (eventOne == nil && eventTwo != nil) || (eventOne != nil && eventTwo == nil) {
+		return false
+	}
+
 	return eventOne.Rune() == eventTwo.Rune() &&
 		eventOne.Modifiers() == eventTwo.Modifiers() &&
 		eventOne.Key() == eventTwo.Key()
