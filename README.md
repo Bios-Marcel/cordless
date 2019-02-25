@@ -10,17 +10,17 @@
 ## Overview
 
 * How to install it
-  * [Installing on Linux](https://github.com/Bios-Marcel/cordless#installing-on-linux)
-  * [Installing on Windows](https://github.com/Bios-Marcel/cordless#installing-on-windows)
-  * [Installing on Mac OS](https://github.com/Bios-Marcel/cordless#installing-on-mac-os)
-  * [Using pre-built binaries](https://github.com/Bios-Marcel/cordless#using-pre-built-binaries)
-  * [Building it from source](https://github.com/Bios-Marcel/cordless#building-it-from-source)
-* [Login](https://github.com/Bios-Marcel/cordless#login)
-* [Features](https://github.com/Bios-Marcel/cordless#features)
-* [Extending Cordless via the scripting interface](https://github.com/Bios-Marcel/cordless#extending-cordless-via-the-scripting-interface)
-* [Contributing](https://github.com/Bios-Marcel/cordless#contributing)
-* [Similar projects](https://github.com/Bios-Marcel/cordless#similar-projects)
-* [Troubleshooting](https://github.com/Bios-Marcel/cordless#troubleshooting)
+  * [Installing on Linux](#installing-on-linux)
+  * [Installing on Windows](#installing-on-windows)
+  * [Installing on Mac OS](#installing-on-mac-os)
+  * [Using pre-built binaries](#using-pre-built-binaries)
+  * [Building it from source](#building-it-from-source)
+* [Login](#login)
+* [Features](#features)
+* [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
+* [Contributing](#contributing)
+* [Similar projects](#similar-projects)
+* [Troubleshooting](#troubleshooting)
 
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at powerusers.
@@ -79,7 +79,7 @@ scoop update cordless
 **UPDATES HAVE TO BE INSTALLED MANUALLY**
 
 You can always find the latest release in this repositories
-[release page](https://github.com/Bios-Marcel/cordless/releases/latest).
+[release page](../../releases/latest).
 
 ### Building it from source
 
