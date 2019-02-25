@@ -9,13 +9,14 @@
 
 ## Overview
 
-* How to install it
+* [How to install it](#how-to-install-it)
   * [Installing on Linux](#installing-on-linux)
   * [Installing on Windows](#installing-on-windows)
   * [Installing on Mac OS](#installing-on-mac-os)
   * [Using pre-built binaries](#using-pre-built-binaries)
   * [Building it from source](#building-it-from-source)
-* [Login](#login)
+  * [Login](#login)
+    * [Retrieving your token via discord or chrome](#retrieving-your-token-via-discord-or-chrome)
 * [Features](#features)
 * [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
 * [Contributing](#contributing)
