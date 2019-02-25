@@ -17,6 +17,7 @@
   * [Building it from source](#building-it-from-source)
   * [Login](#login)
     * [Retrieving your token via discord or chrome](#retrieving-your-token-via-discord-or-chrome)
+* [Quick overview - Navigation](#quick-overview---navigation-switching-between-boxes--containers)
 * [Features](#features)
 * [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
 * [Contributing](#contributing)
@@ -138,6 +139,20 @@ careful with your configuration file.
 * Paste the token into the terminal and hit enter
 
 ![Terimal after pasting the token](https://i.imgur.com/UpsrGJt.png)
+
+## Quick overview - Navigation (switching between boxes / containers)
+
+| Shortcut | Action |
+| - |:- |
+| <kbd>Alt</kbd> + <kbd>S</kbd> | Sets the focus on the servers (guilds) container |
+| <kbd>Alt</kbd> + <kbd>C</kbd> | Sets the focus on the channels container |
+| <kbd>Alt</kbd> + <kbd>T</kbd> | Sets the focus on the messages container |
+| <kbd>Alt</kbd> + <kbd>M</kbd> | Sets the focus on the messages input field |
+| <kbd>Alt</kbd> + <kbd>U</kbd> | Sets the focus on the users container |
+| <kbd>Alt</kbd> + <kbd>P</kbd> | Opens the direct messages container |
+| <kbd>Alt</kbd> + <kbd>.</kbd> | Toggles the internal console view |
+
+Further shortcuts / keybinds can be found in the manual on the internal console with the command `manual`.
 
 ## Features
 
