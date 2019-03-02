@@ -515,9 +515,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 	messageInputChan := make(chan *discordgo.Message, 200)
 	messageDeleteChan := make(chan *discordgo.Message, 50)
 	messageEditChan := make(chan *discordgo.Message, 50)
+	messageBulkDeleteChan := make(chan *discordgo.MessageDeleteBulk, 50)
 
-	window.addMessageEventHandler(messageInputChan, messageEditChan, messageDeleteChan)
-	window.startMessageHandlerRoutines(messageInputChan, messageEditChan, messageDeleteChan)
+	window.addMessageEventHandler(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
+	window.startMessageHandlerRoutines(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
 
 	window.channelTitle = tview.NewTextView()
 	window.channelTitle.SetBorderSides(true, true, false, true)
@@ -706,41 +707,42 @@ func (window *Window) registerMouseFocusListeners() {
 	})
 }
 
-func (window *Window) addMessageEventHandler(inputChannel, editChannel, deleteChannel chan *discordgo.Message) {
+func (window *Window) addMessageEventHandler(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
 	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		if window.selectedChannel != nil {
-			inputChannel <- m.Message
-		}
+		input <- m.Message
+	})
+	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDeleteBulk) {
+		bulkDelete <- m
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDelete) {
-		if window.selectedChannel != nil {
-			if m.ChannelID == window.selectedChannel.ID {
-				deleteChannel <- m.Message
-			}
-		}
+		delete <- m.Message
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
-		if window.selectedChannel != nil {
-			if m.ChannelID == window.selectedChannel.ID &&
-				//Ignore just-embed edits
-				m.Content != "" {
-				editChannel <- m.Message
-			}
+		//Ignore just-embed edits
+		if m.Content != "" {
+			edit <- m.Message
 		}
 	})
 }
 
-func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, deleteChannel chan *discordgo.Message) {
+// startMessageHandlerRoutines registers the handlers for certain message events.
+// It updates the cache and the UI if necessary.
+func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
 	go func() {
 		for {
 			select {
-			case message := <-inputChannel:
-				//UPDATE CACHE
+			case message := <-input:
 				window.session.State.MessageAdd(message)
 
-				if message.ChannelID == window.selectedChannel.ID {
+				var currentChannelID string
+				if window.selectedChannel != nil {
+					currentChannelID = window.selectedChannel.ID
+				} else {
+					currentChannelID = ""
+				}
+				if message.ChannelID == currentChannelID {
 					window.app.QueueUpdateDraw(func() {
 						window.chatView.AddMessage(message)
 					})
@@ -754,8 +756,7 @@ func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, del
 				if stateError != nil {
 					continue
 				}
-
-				if message.ChannelID != window.selectedChannel.ID || !window.userActive {
+				if message.ChannelID != currentChannelID || !window.userActive {
 					mentionsYou := false
 					for _, user := range message.Mentions {
 						if user.ID == window.session.State.User.ID {
@@ -799,7 +800,7 @@ func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, del
 					}
 
 					//We needn't adjust the text of the currently selected channel.
-					if message.ChannelID == window.selectedChannel.ID {
+					if message.ChannelID == currentChannelID {
 						continue
 					}
 
@@ -825,17 +826,14 @@ func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, del
 	go func() {
 		for {
 			select {
-			case messageDeleted := <-deleteChannel:
-				//UPDATE CACHE
+			case messageDeleted := <-delete:
 				window.session.State.MessageRemove(messageDeleted)
-				for _, message := range window.chatView.data {
-					if message.ID == messageDeleted.ID {
-						window.app.QueueUpdateDraw(func() {
-							window.chatView.DeleteMessage(message)
-						})
-						break
-					}
+				if window.selectedChannel != nil && window.selectedChannel.ID == messageDeleted.ChannelID {
+					window.app.QueueUpdateDraw(func() {
+						window.chatView.DeleteMessage(messageDeleted)
+					})
 				}
+				break
 			}
 		}
 	}()
@@ -843,16 +841,38 @@ func (window *Window) startMessageHandlerRoutines(inputChannel, editChannel, del
 	go func() {
 		for {
 			select {
-			case messageEdited := <-editChannel:
-				//UPDATE CACHE
+			case messagesDeleted := <-bulkDelete:
+				for _, messageID := range messagesDeleted.Messages {
+					message, stateError := window.session.State.Message(messagesDeleted.ChannelID, messageID)
+					if stateError == nil {
+						window.session.State.MessageRemove(message)
+					}
+				}
+
+				if window.selectedChannel != nil && window.selectedChannel.ID == messagesDeleted.ChannelID {
+					window.app.QueueUpdateDraw(func() {
+						window.chatView.DeleteMessages(messagesDeleted.Messages)
+					})
+				}
+				break
+			}
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case messageEdited := <-edit:
 				window.session.State.MessageAdd(messageEdited)
-				for _, message := range window.chatView.data {
-					if message.ID == messageEdited.ID {
-						message.Content = messageEdited.Content
-						window.app.QueueUpdateDraw(func() {
-							window.chatView.UpdateMessage(message)
-						})
-						break
+				if window.selectedChannel != nil && window.selectedChannel.ID == messageEdited.ChannelID {
+					for _, message := range window.chatView.data {
+						if message.ID == messageEdited.ID {
+							message.Content = messageEdited.Content
+							window.app.QueueUpdateDraw(func() {
+								window.chatView.UpdateMessage(message)
+							})
+							break
+						}
 					}
 				}
 			}

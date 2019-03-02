@@ -216,6 +216,31 @@ func (chatView *ChatView) DeleteMessage(deletedMessage *discordgo.Message) {
 	chatView.Rerender()
 }
 
+// DeleteMessages drops the messages from the cache and triggers a rerender
+func (chatView *ChatView) DeleteMessages(deletedMessages []string) {
+	filteredMessages := make([]*discordgo.Message, 0)
+
+	for _, message := range deletedMessages {
+		delete(chatView.showSpoilerContent, message)
+		delete(chatView.formattedMessages, message)
+
+	}
+
+OUTER_LOOP:
+	for _, message := range chatView.data {
+		for _, toDelete := range deletedMessages {
+			if toDelete == message.ID {
+				continue OUTER_LOOP
+			}
+		}
+
+		filteredMessages = append(filteredMessages, message)
+	}
+
+	chatView.data = filteredMessages
+	chatView.Rerender()
+}
+
 //AddMessage add an additional message to the ChatView.
 func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
