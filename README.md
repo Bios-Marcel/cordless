@@ -35,11 +35,11 @@ develop any further.
 
 The application only uses the official Discord API and doesn't send data to
 any third party. However, this application is not an product official product
-of Discord (Hammer & Chisel).
+by Discord (Hammer & Chisel).
 
 This application is currently a WIP and will change rather fast.
 
-![Cordless 26th January 2019](https://i.imgur.com/xX7dVCw.png)
+[Small demo video made by me](https://peertube.social/videos/watch/15ae8076-2de6-4f97-8947-93d8b356ad08)
 
 ## How to install it
 
