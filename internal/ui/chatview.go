@@ -141,14 +141,16 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 			}
 
 			if chatView.selection > 0 && chatView.selection < len(chatView.data) && event.Rune() == 's' {
-				messageID := chatView.data[chatView.selection].ID
+				message := chatView.data[chatView.selection]
+				messageID := message.ID
 				currentValue, contains := chatView.showSpoilerContent[messageID]
 				if contains {
 					chatView.showSpoilerContent[messageID] = !currentValue
 				} else {
 					chatView.showSpoilerContent[messageID] = true
 				}
-				chatView.SetMessages(chatView.data)
+				chatView.formattedMessages[messageID] = chatView.formatMessage(message)
+				chatView.Rerender()
 				return nil
 			}
 
