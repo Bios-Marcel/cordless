@@ -118,27 +118,27 @@ careful with your configuration file.
 
 * Press `CTRL+SHIFT+I` (or `COMMAND+SHIFT+I` if you are on Mac OS)
 
-![Default window](https://i.imgur.com/38UF1h5.png)
+![Default window](https://user-images.githubusercontent.com/19377618/53696114-2b3fda00-3dc4-11e9-9111-50a1e77ca838.png)
 
 * Click `Network` section
 
-![Network section](https://i.imgur.com/k6OhJHt.png)
+![Network section](https://user-images.githubusercontent.com/19377618/53696066-ac4aa180-3dc3-11e9-8585-df9f579a44a6.png)
 
 * Click `XHR` Section
 
-![XHR section](https://i.imgur.com/HXqL7Pp.png)
+![XHR section](https://user-images.githubusercontent.com/19377618/53696115-2d099d80-3dc4-11e9-914f-6bb3769853f9.png)
 
 * Reload it by clicking `F5` and choose `access-token`
 
-![XHR section after reloading it](https://i.imgur.com/Rkb2krO.png) 
+![XHR section after reloading it](https://user-images.githubusercontent.com/19377618/53696068-aeacfb80-3dc3-11e9-8af7-8f93fd226eff.png) 
 
 * Get into `Headers` section and scroll down until you find `authorization: token` and copy it
  
-![Headers section of acces token](https://i.imgur.com/PEox6bP.png)
+![Headers section of acces token](https://user-images.githubusercontent.com/19377618/53696070-afde2880-3dc3-11e9-8859-d307677f51de.png)
 
 * Paste the token into the terminal and hit enter
 
-![Terimal after pasting the token](https://i.imgur.com/UpsrGJt.png)
+![Terimal after pasting the token](https://user-images.githubusercontent.com/19377618/53696072-b1a7ec00-3dc3-11e9-9ce5-d4d2534602de.png)
 
 ## Quick overview - Navigation (switching between boxes / containers)
 
