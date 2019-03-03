@@ -154,7 +154,7 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 				return nil
 			}
 
-			if chatView.selection > 0 && chatView.selection < len(chatView.data) && chatView.onMessageAction != nil {
+			if chatView.selection >= 0 && chatView.selection < len(chatView.data) && chatView.onMessageAction != nil {
 				return chatView.onMessageAction(chatView.data[chatView.selection], event)
 			}
 		}
