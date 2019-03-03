@@ -6,6 +6,7 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 )
 
+// LoadGuilds loads all guilds the current user is part of.
 func LoadGuilds(session *discordgo.Session) ([]*discordgo.UserGuild, error) {
 	guilds := make([]*discordgo.UserGuild, 0)
 	var beforeID string
