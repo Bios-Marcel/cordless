@@ -57,7 +57,8 @@ func createHeaderCell(text string) *tview.TableCell {
 	return tview.NewTableCell(text).
 		SetSelectable(false).
 		SetAlign(tview.AlignCenter).
-		SetExpansion(1)
+		SetExpansion(1).
+		SetMaxWidth(1)
 }
 
 // SetShortcuts sets the shortcut data and changes the UI accordingly.
@@ -73,16 +74,19 @@ func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*Shortcut) {
 	}
 
 	for _, shortcut := range shortcuts {
-		nameCell := tview.NewTableCell(shortcut.name)
-		nameCell.SetExpansion(1)
+		nameCell := tview.NewTableCell(shortcut.name).
+			SetExpansion(1).
+			SetMaxWidth(1)
 		shortcutTable.table.SetCell(row, actionCellIndex, nameCell)
 
-		scopeCell := tview.NewTableCell(shortcut.scope)
-		scopeCell.SetExpansion(1)
+		scopeCell := tview.NewTableCell(shortcut.scope).
+			SetExpansion(1).
+			SetMaxWidth(1)
 		shortcutTable.table.SetCell(row, scopeCellIndex, scopeCell)
 
-		eventCell := tview.NewTableCell(EventToString(shortcut.event))
-		eventCell.SetExpansion(1)
+		eventCell := tview.NewTableCell(EventToString(shortcut.event)).
+			SetExpansion(1).
+			SetMaxWidth(1)
 		shortcutTable.table.SetCell(row, shortcutCellIndex, eventCell)
 
 		row++
@@ -106,7 +110,7 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 	if shortcutTable.selection == -1 && selectedRow >= firstNonFixedRow {
 		if event.Key() == tcell.KeyEnter {
 			if selectedRow != -1 {
-				shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("Hit the desired keycombination")
+				shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("[blue][::ub]Hit the desired keycombination")
 				shortcutTable.selection = selectedRow
 				return nil
 			}
