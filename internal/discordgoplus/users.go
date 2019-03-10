@@ -64,7 +64,7 @@ func GetUserColor(userID string) string {
 }
 
 func getRandomColorString() string {
-	number, err := rand.Int(rand.Reader, big.NewInt(int64(len(colors) )))
+	number, err := rand.Int(rand.Reader, big.NewInt(int64(len(colors))))
 	if err != nil {
 		return colors[0]
 	}
@@ -73,6 +73,8 @@ func getRandomColorString() string {
 	if numberInt64 == lastRandomNumber {
 		return getRandomColorString()
 	}
+
+	lastRandomNumber = numberInt64
 
 	return colors[numberInt64]
 }
