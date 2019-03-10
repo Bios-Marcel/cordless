@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -14,12 +15,128 @@ const (
 	shortcutCellIndex
 )
 
+var (
+	globalScope = &Scope{
+		Parent:     nil,
+		Identifier: "global",
+		Name:       "Application wide",
+	}
+
+	componentOneScope = &Scope{
+		Parent:     globalScope,
+		Identifier: "componentOne",
+		Name:       "Component one",
+	}
+
+	componentTwoScope = &Scope{
+		Parent:     globalScope,
+		Identifier: "componentTwo",
+		Name:       "Component Two",
+	}
+
+	globalShortcutOne = &Shortcut{
+		Identifier: "globalShortcutOne",
+		Name:       "Do global thing",
+		scope:      globalScope,
+		Event:      tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone),
+	}
+
+	componentOneShortcutOne = &Shortcut{
+		Identifier: "componentOneShortcutOne",
+		Name:       "Do component one thing",
+		scope:      componentOneScope,
+		Event:      tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone),
+	}
+
+	componentOneShortcutTwo = &Shortcut{
+		Identifier: "componentOneShortcutTwo",
+		Name:       "Do component one thing two",
+		scope:      componentOneScope,
+		Event:      tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone),
+	}
+
+	componentTwoShortcutOne = &Shortcut{
+		Identifier: "componentTwoShortcutOne",
+		Name:       "Do component two thing",
+		scope:      componentTwoScope,
+		Event:      tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone),
+	}
+
+	scopes = []*Scope{
+		globalScope,
+		componentOneScope,
+		componentTwoScope,
+	}
+)
+
 // Shortcut defines a shortcut within the application. The scope might for
 // example be a widget or situation in which the user is.
 type Shortcut struct {
-	name  string
-	scope string
-	event *tcell.EventKey
+	// Identifier will be used for persistence and should never change
+	Identifier string
+
+	// Name will be shown on the UI
+	Name string
+
+	// The scope will be omitted, as this needed be persisted anyway.
+	scope *Scope
+
+	// Event is the shortcut expressed as it's resulting tcell Event.
+	Event *tcell.EventKey
+}
+
+// ShortcutDataRepresentation represents a shortcut on the users harddrive.
+// This prevents redudancy of scopes.
+type ShortcutDataRepresentation struct {
+	Identifier      string
+	Name            string
+	ScopeIdentifier string
+	Event           *tcell.EventKey
+}
+
+func (shortcut Shortcut) MarshalJSON() ([]byte, error) {
+	return json.MarshalIndent(&ShortcutDataRepresentation{
+		Identifier:      shortcut.Identifier,
+		Name:            shortcut.Name,
+		ScopeIdentifier: shortcut.scope.Identifier,
+		Event:           shortcut.Event,
+	}, "", "    ")
+}
+
+func (shortcut Shortcut) UnmarshallJSON(data []byte) error {
+	var temp ShortcutDataRepresentation
+	err := json.Unmarshal(data, &temp)
+	if err != nil {
+		return err
+	}
+
+	shortcut.Event = temp.Event
+	shortcut.Name = temp.Name
+	shortcut.Identifier = temp.Identifier
+
+	for _, scope := range scopes {
+		if scope.Identifier == temp.ScopeIdentifier {
+			shortcut.scope = scope
+			return nil
+		}
+	}
+
+	return fmt.Errorf(fmt.Sprintf("error finding scope '%s'", temp.ScopeIdentifier))
+}
+
+// Scope is what describes a shortcuts scope within the application. Usually
+// a scope can only have a specific shortcut once and a children scope will
+// overwrite that shortcut, since that lower scope has the upper hand.
+type Scope struct {
+	// Parent is this scopes upper Scope, which may be null, in case this is a
+	// root scope.
+	Parent *Scope
+
+	// Identifier will be used for persistence and should never change
+	Identifier string
+
+	// Name will be shown on the UI
+	Name string
 }
 
 // ShortcutTable is a component that displays shortcuts and allows changing
@@ -74,17 +191,17 @@ func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*Shortcut) {
 	}
 
 	for _, shortcut := range shortcuts {
-		nameCell := tview.NewTableCell(shortcut.name).
+		nameCell := tview.NewTableCell(shortcut.Name).
 			SetExpansion(1).
 			SetMaxWidth(1)
 		shortcutTable.table.SetCell(row, actionCellIndex, nameCell)
 
-		scopeCell := tview.NewTableCell(shortcut.scope).
+		scopeCell := tview.NewTableCell(shortcut.scope.Name).
 			SetExpansion(1).
 			SetMaxWidth(1)
 		shortcutTable.table.SetCell(row, scopeCellIndex, scopeCell)
 
-		eventCell := tview.NewTableCell(EventToString(shortcut.event)).
+		eventCell := tview.NewTableCell(EventToString(shortcut.Event)).
 			SetExpansion(1).
 			SetMaxWidth(1)
 		shortcutTable.table.SetCell(row, shortcutCellIndex, eventCell)
@@ -112,17 +229,18 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 			if selectedRow != -1 {
 				shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("[blue][::ub]Hit the desired keycombination")
 				shortcutTable.selection = selectedRow
+
 				return nil
 			}
 		} else if event.Key() == tcell.KeyBackspace || event.Key() == tcell.KeyBackspace2 {
 			shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("")
-			shortcutTable.shortcuts[dataIndex].event = nil
+			shortcutTable.shortcuts[dataIndex].Event = nil
 			return nil
 		}
 	} else if selectedRow >= firstNonFixedRow && shortcutTable.selection != -1 {
 		shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText(EventToString(event))
 		//Make a copy of the event?
-		shortcutTable.shortcuts[dataIndex].event = event
+		shortcutTable.shortcuts[dataIndex].Event = event
 		shortcutTable.selection = -1
 		return nil
 	}
@@ -131,16 +249,11 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 }
 
 func main() {
-
+	shortcuts := []*Shortcut{globalShortcutOne, componentOneShortcutOne, componentOneShortcutTwo, componentTwoShortcutOne}
 	app := tview.NewApplication()
 
 	shortcutTable := NewShortcutTable()
-	shortcutTable.SetShortcuts([]*Shortcut{
-		&Shortcut{"dunno", "somewhere", tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone)},
-		&Shortcut{"dunno2", "somewhere", tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone)},
-		&Shortcut{"ooof", "ok", tcell.NewEventKey(tcell.KeyCtrlD, 0, tcell.ModNone)},
-		&Shortcut{"whatever", "nowhere", tcell.NewEventKey(tcell.KeyCtrlK, 0, tcell.ModNone)},
-	})
+	shortcutTable.SetShortcuts(shortcuts)
 
 	app.SetRoot(shortcutTable.table, true).Run()
 }
