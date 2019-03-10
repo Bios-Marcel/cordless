@@ -30,8 +30,6 @@ var (
 	channelMentionRegex = regexp.MustCompile("<#\\d*>")
 	urlRegex            = regexp.MustCompile("<?(https?://)(.+?)(/.+?)?($|\\s|\\||>)")
 	spoilerRegex        = regexp.MustCompile("(?s)\\|\\|(.+?)\\|\\|")
-
-	userColor = "green"
 )
 
 const (
@@ -162,12 +160,19 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		return event
 	})
 
-	chatView.internalTextView.SetDynamicColors(true)
-	chatView.internalTextView.SetRegions(true)
-	chatView.internalTextView.SetWordWrap(true)
-	chatView.internalTextView.SetBorder(true)
+	chatView.internalTextView.
+		SetDynamicColors(true).
+		SetRegions(true).
+		SetWordWrap(true).
+		SetBorder(true).
+		SetTitleColor(tcell.ColorGreen)
 
 	return &chatView
+}
+
+// SetTitle sets the border text of the chatview.
+func (chatView *ChatView) SetTitle(text string) {
+	chatView.internalTextView.SetTitle(text)
 }
 
 // SetOnMessageAction sets the handler that will get called if the user tries
@@ -319,12 +324,16 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 			if message.GuildID != "" {
 				member, cacheError := chatView.session.State.Member(message.GuildID, user.ID)
 				if cacheError == nil {
-					userName = discordgoplus.GetMemberName(member, nil)
+					if member.Nick != "" {
+						userName = tview.Escape(member.Nick)
+					} else {
+						userName = tview.Escape(member.User.Username)
+					}
 				}
 			}
 
 			if userName == "" {
-				userName = discordgoplus.GetUserName(user, nil)
+				userName = tview.Escape(user.Username)
 			}
 
 			messageText = strings.NewReplacer(
@@ -466,15 +475,15 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 	if message.GuildID != "" {
 		member, cacheError := chatView.session.State.Member(message.GuildID, message.Author.ID)
 		if cacheError == nil {
-			messageAuthor = discordgoplus.GetMemberName(member, &userColor)
+			messageAuthor = discordgoplus.GetMemberName(member)
 		}
 	}
 
 	if messageAuthor == "" {
-		messageAuthor = discordgoplus.GetUserName(message.Author, &userColor)
+		messageAuthor = discordgoplus.GetUserName(message.Author)
 	}
 
-	return fmt.Sprintf("[red]%s [green]%s [white]%s[\"\"][\"\"]", timeCellText, messageAuthor, messageText)
+	return fmt.Sprintf("[silver]%s [::b]%s[::-] [white]%s[\"\"][\"\"]", timeCellText, messageAuthor, messageText)
 }
 
 func parseBoldAndUnderline(messageText string) string {

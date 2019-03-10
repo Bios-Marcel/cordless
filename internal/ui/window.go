@@ -49,7 +49,6 @@ type Window struct {
 	privateList *PrivateChatList
 
 	channelRootNode *tview.TreeNode
-	channelTitle    *tview.TextView
 
 	chatArea         *tview.Flex
 	chatView         *ChatView
@@ -210,7 +209,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 		}
 
 		window.LoadChannel(channel)
-		window.channelTitle.SetText(discordgoplus.GetPrivateChannelName(channel))
+		window.UpdateChannelTitle(channel)
 		if channel.Type == discordgo.ChannelTypeDM {
 			window.overrideShowUsers = false
 		} else if channel.Type == discordgo.ChannelTypeGroupDM {
@@ -230,7 +229,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 			if userChannel.Type == discordgo.ChannelTypeDM &&
 				(userChannel.Recipients[0].ID == userID) {
 				window.LoadChannel(userChannel)
-				window.channelTitle.SetText(userChannel.Recipients[0].Username)
+				window.UpdateChannelTitle(userChannel)
 				return
 			}
 		}
@@ -238,7 +237,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 		newChannel, discordError := window.session.UserChannelCreate(userID)
 		if discordError == nil {
 			window.LoadChannel(newChannel)
-			window.channelTitle.SetText(newChannel.Recipients[0].Username)
+			window.UpdateChannelTitle(newChannel)
 		}
 	})
 
@@ -520,10 +519,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 	window.addMessageEventHandler(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
 	window.startMessageHandlerRoutines(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
 
-	window.channelTitle = tview.NewTextView()
-	window.channelTitle.SetBorderSides(true, true, false, true)
-	window.channelTitle.SetBorder(true)
-
 	window.userList = NewUserTree(window.session.State)
 
 	if config.GetConfig().OnTypeInListBehaviour == config.SearchOnTypeInList {
@@ -591,7 +586,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 		window.messageInput.mentionHideHandler()
 	})
 
-	window.chatArea.AddItem(window.channelTitle, 2, 0, false)
 	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
 	window.chatArea.AddItem(mentionWindow, 2, 2, true)
 	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.messageInput.GetRequestedHeight(), 0, false)
@@ -1212,7 +1206,6 @@ func (window *Window) RefreshLayout() {
 	conf := config.GetConfig()
 
 	window.userList.internalTreeView.SetVisible(conf.ShowUserContainer && window.overrideShowUsers)
-	window.channelTitle.SetVisible(conf.ShowChatHeader)
 
 	if conf.UseFixedLayout {
 		window.rootContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
@@ -1259,11 +1252,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	window.chatView.ClearSelection()
 	window.chatView.internalTextView.ScrollToEnd()
 
-	if channel.Topic != "" {
-		window.channelTitle.SetText(channel.Name + " - " + channel.Topic)
-	} else {
-		window.channelTitle.SetText(channel.Name)
-	}
+	window.UpdateChannelTitle(channel)
 
 	window.selectedChannel = channel
 	if channel.GuildID == "" {
@@ -1289,6 +1278,33 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 
 	return nil
+}
+
+// RefreshChannelTitle calls UpdateChannelTitle using the current channel.
+func (window *Window) RefreshChannelTitle() {
+	window.UpdateChannelTitle(window.selectedChannel)
+}
+
+// UpdateChannelTitle sets the the current channels titel into the chatview.
+// The title consist of the channel name and its topic for guild channels.
+// For private channels it's either the recipient in a dm, or all recipients
+// in a group dm channel. If the channel has a nickname, that is chosen.
+func (window *Window) UpdateChannelTitle(channel *discordgo.Channel) {
+	if !config.GetConfig().ShowChatHeader || channel == nil {
+		window.chatView.SetTitle("")
+	} else {
+		if channel.Type == discordgo.ChannelTypeGuildText {
+			if channel.Topic != "" {
+				window.chatView.SetTitle(channel.Name + " - " + channel.Topic)
+			} else {
+				window.chatView.SetTitle(channel.Name)
+			}
+		} else if channel.Type == discordgo.ChannelTypeDM {
+			window.chatView.SetTitle(channel.Recipients[0].Username)
+		} else {
+			window.chatView.SetTitle(discordgoplus.GetPrivateChannelName(channel))
+		}
+	}
 }
 
 //RegisterCommand register a command. That makes the command available for

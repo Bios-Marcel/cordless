@@ -41,7 +41,7 @@ func (chatHeader *ChatHeader) Execute(writer io.Writer, parameters []string) {
 		}
 
 		config.GetConfig().ShowChatHeader = choice
-		chatHeader.window.RefreshLayout()
+		chatHeader.window.RefreshChannelTitle()
 
 		persistError := config.PersistConfig()
 		if persistError != nil {

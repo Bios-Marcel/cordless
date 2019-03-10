@@ -129,7 +129,7 @@ func (privateList *PrivateChatList) AddOrUpdateFriend(user *discordgo.User) {
 			channel, stateError := privateList.state.Channel(refrenceChannelID)
 			if stateError == nil && channel.Type == discordgo.ChannelTypeDM {
 				if channel.Recipients[0].ID == user.ID {
-					node.SetText(discordgoplus.GetUserName(user, &userColor))
+					node.SetText(discordgoplus.GetUserName(user))
 					return
 				}
 			}
@@ -139,7 +139,7 @@ func (privateList *PrivateChatList) AddOrUpdateFriend(user *discordgo.User) {
 	for _, node := range privateList.friendsNode.GetChildren() {
 		referenceUserID, ok := node.GetReference().(string)
 		if ok && referenceUserID == user.ID {
-			node.SetText(discordgoplus.GetUserName(user, &userColor))
+			node.SetText(discordgoplus.GetUserName(user))
 			return
 		}
 	}

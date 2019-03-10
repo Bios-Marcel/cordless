@@ -141,7 +141,7 @@ func (userTree *UserTree) loadGuildRoles(guildID string) ([]*discordgo.Role, err
 // AddOrUpdateMember adds the passed member to the tree, unless it is
 // already part of the tree, in that case the nodes name is updated.
 func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
-	nameToUse := discordgoplus.GetMemberName(member, nil)
+	nameToUse := discordgoplus.GetMemberName(member)
 
 	userNode, contains := userTree.userNodes[member.User.ID]
 	if contains && userNode != nil {
@@ -168,7 +168,7 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 // AddOrUpdateUser adds a user to the tree, unless the user already exists,
 // in that case the users node gets updated.
 func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
-	nameToUse := discordgoplus.GetUserName(user, nil)
+	nameToUse := discordgoplus.GetUserName(user)
 
 	userNode, contains := userTree.userNodes[user.ID]
 	if contains && userNode != nil {
