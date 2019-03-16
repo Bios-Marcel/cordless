@@ -155,7 +155,7 @@ func GetConfigDirectory() (string, error) {
 
 	_, statError := os.Stat(directory)
 	if os.IsNotExist(statError) {
-		createDirsError := os.MkdirAll(directory, 0755)
+		createDirsError := os.MkdirAll(directory, 0666)
 		if createDirsError != nil {
 			return "", createDirsError
 		}
@@ -216,7 +216,7 @@ func PersistConfig() error {
 		return jsonError
 	}
 
-	writeError := ioutil.WriteFile(configFilePath, configAsJSON, 0755)
+	writeError := ioutil.WriteFile(configFilePath, configAsJSON, 0666)
 	if writeError != nil {
 		return writeError
 	}
