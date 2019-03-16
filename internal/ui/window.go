@@ -957,32 +957,38 @@ func (window *Window) registerGuildChannelHandler() {
 		}
 
 		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
-			window.app.QueueUpdateDraw(func() {
-				window.channelTree.AddOrUpdateChannel(event.Channel)
-			})
+			if window.selectedGuild.ID == event.Channel.GuildID {
+				window.app.QueueUpdateDraw(func() {
+					window.channelTree.AddOrUpdateChannel(event.Channel)
+				})
+			}
 		}
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelUpdate) {
-		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
-			if window.selectedGuild == nil {
-				return
-			}
+		if window.selectedGuild == nil {
+			return
+		}
 
+		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
 			window.app.QueueUpdateDraw(func() {
-				window.channelTree.AddOrUpdateChannel(event.Channel)
+				if window.selectedGuild.ID == event.Channel.GuildID {
+					window.channelTree.AddOrUpdateChannel(event.Channel)
+				}
 			})
 		}
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelDelete) {
-		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
-			if window.selectedGuild == nil {
-				return
-			}
+		if window.selectedGuild == nil {
+			return
+		}
 
+		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
 			window.app.QueueUpdateDraw(func() {
-				window.channelTree.RemoveChannel(event.Channel)
+				if window.selectedGuild.ID == event.Channel.GuildID {
+					window.channelTree.RemoveChannel(event.Channel)
+				}
 			})
 		}
 	})
