@@ -349,7 +349,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 	} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
 		messageText = "[gray]joined the server."
 	} else if message.Type == discordgo.MessageTypeCall {
-		messageText = "[gray]is calling you."
+		messageText = "[gray]has started a call."
 	} else if message.Type == discordgo.MessageTypeChannelIconChange {
 		messageText = "[gray]changed the channel icon."
 	} else if message.Type == discordgo.MessageTypeChannelNameChange {
