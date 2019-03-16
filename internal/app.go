@@ -7,6 +7,8 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/Bios-Marcel/cordless/internal/shortcuts"
+
 	"github.com/princebot/getpass"
 
 	"github.com/Bios-Marcel/cordless/internal/commands/commandimpls"
@@ -50,6 +52,11 @@ func Run() {
 		if configLoadError != nil {
 			app.Stop()
 			log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
+		}
+
+		shortcutsLoadError := shortcuts.Load()
+		if shortcutsLoadError != nil {
+			panic(shortcutsLoadError)
 		}
 
 		discord := attemptLogin(defaultLoginMessage, app, configuration)

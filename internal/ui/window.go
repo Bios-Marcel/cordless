@@ -17,6 +17,7 @@ import (
 	"github.com/Bios-Marcel/cordless/internal/maths"
 	"github.com/Bios-Marcel/cordless/internal/scripting"
 	"github.com/Bios-Marcel/cordless/internal/scripting/js"
+	"github.com/Bios-Marcel/cordless/internal/shortcuts"
 	"github.com/Bios-Marcel/cordless/internal/times"
 	"github.com/Bios-Marcel/cordless/internal/ui/tview/treeview"
 	"github.com/Bios-Marcel/discordemojimap"
@@ -40,8 +41,9 @@ var (
 // Window is basically the whole application, as it contains all the
 // components and the necccessary global state.
 type Window struct {
-	app           *tview.Application
-	rootContainer *tview.Flex
+	app              *tview.Application
+	rootContainer    *tview.Flex
+	currentContainer tview.Primitive
 
 	leftArea    *tview.Pages
 	guildList   *tview.TreeView
@@ -544,6 +546,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 	window.rootContainer.SetTitleAlign(tview.AlignCenter)
 
 	app.SetRoot(window.rootContainer, true)
+	window.currentContainer = window.rootContainer
 	app.SetInputCapture(window.handleGlobalShortcuts)
 
 	conf := config.GetConfig()
@@ -1007,6 +1010,7 @@ func (window *Window) askForMessageDeletion(messageID string, usedWithSelection 
 
 		window.exitMessageEditMode()
 		window.app.SetRoot(window.rootContainer, true)
+		window.currentContainer = window.rootContainer
 		if usedWithSelection {
 			window.app.SetFocus(previousFocus)
 			window.chatView.SignalSelectionDeleted()
@@ -1017,6 +1021,7 @@ func (window *Window) askForMessageDeletion(messageID string, usedWithSelection 
 	})
 
 	window.app.SetRoot(dialog, false)
+	window.currentContainer = dialog
 }
 
 // SetCommandModeEnabled hides or shows the command ui elements and toggles
@@ -1034,12 +1039,27 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return event
 	}
 
+	// Maybe compare directly to table?
+	if window.currentContainer != window.rootContainer {
+		return event
+	}
+
 	window.userActive = true
 	window.userActiveTimer.Reset(10 * time.Second)
 
-	if event.Rune() == '.' &&
-		(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
+	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt && event.Rune() == 'S' {
+		table := shortcuts.NewShortcutTable()
+		table.SetShortcuts(shortcuts.Shortcuts)
+		table.SetOnClose(func() {
+			window.app.SetRoot(window.rootContainer, true)
+			window.currentContainer = window.rootContainer
 
+		})
+		window.app.SetRoot(table.GetPrimitive(), true)
+		window.currentContainer = table.GetPrimitive()
+	}
+
+	if shortcuts.EventsEqual(event, shortcuts.ToggleCommandView.Event) {
 		window.SetCommandModeEnabled(!window.commandMode)
 
 		if window.commandMode {
@@ -1051,7 +1071,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
-	if window.commandMode && event.Key() == tcell.KeyCtrlO {
+	if shortcuts.EventsEqual(event, shortcuts.FocusCommandOutput.Event) {
 		if !window.commandMode {
 			window.SetCommandModeEnabled(true)
 		}
@@ -1059,7 +1079,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		window.app.SetFocus(window.commandView.commandOutput)
 	}
 
-	if window.commandMode && event.Key() == tcell.KeyCtrlI {
+	if shortcuts.EventsEqual(event, shortcuts.FocusCommandInput.Event) {
 		if !window.commandMode {
 			window.SetCommandModeEnabled(true)
 		}
@@ -1067,8 +1087,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		window.app.SetFocus(window.commandView.commandInput.internalTextView)
 	}
 
-	if event.Rune() == 'U' &&
-		(event.Modifiers()&tcell.ModAlt) == tcell.ModAlt {
+	if shortcuts.EventsEqual(event, shortcuts.ToggleUserContainer.Event) {
 		conf := config.GetConfig()
 		conf.ShowUserContainer = !conf.ShowUserContainer
 
@@ -1081,41 +1100,39 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
-	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt {
-		if event.Rune() == 'p' {
-			window.SwitchToFriendsPage()
-			window.app.SetFocus(window.privateList.GetComponent())
-			return nil
-		}
+	if shortcuts.EventsEqual(event, shortcuts.FocusChannelContainer.Event) {
+		window.SwitchToGuildsPage()
+		window.app.SetFocus(window.channelTree.internalTreeView)
+		return nil
+	}
 
-		if event.Rune() == 'c' {
-			window.SwitchToGuildsPage()
-			window.app.SetFocus(window.channelTree.internalTreeView)
-			return nil
-		}
+	if shortcuts.EventsEqual(event, shortcuts.FocusPrivateChatPage.Event) {
+		window.SwitchToFriendsPage()
+		window.app.SetFocus(window.privateList.GetComponent())
+		return nil
+	}
 
-		if event.Rune() == 's' {
-			window.SwitchToGuildsPage()
-			window.app.SetFocus(window.guildList)
-			return nil
-		}
+	if shortcuts.EventsEqual(event, shortcuts.FocusGuildContainer.Event) {
+		window.SwitchToGuildsPage()
+		window.app.SetFocus(window.guildList)
+		return nil
+	}
 
-		if event.Rune() == 't' {
-			window.app.SetFocus(window.chatView.internalTextView)
-			return nil
-		}
+	if shortcuts.EventsEqual(event, shortcuts.FocusMessageContainer.Event) {
+		window.app.SetFocus(window.chatView.internalTextView)
+		return nil
+	}
 
-		if event.Rune() == 'u' {
-			if window.leftArea.GetCurrentPage() == guildPageName && window.userList.internalTreeView.IsVisible() {
-				window.app.SetFocus(window.userList.internalTreeView)
-			}
-			return nil
+	if shortcuts.EventsEqual(event, shortcuts.FocusUserContainer.Event) {
+		if window.leftArea.GetCurrentPage() == guildPageName && window.userList.internalTreeView.IsVisible() {
+			window.app.SetFocus(window.userList.internalTreeView)
 		}
+		return nil
+	}
 
-		if event.Rune() == 'm' {
-			window.app.SetFocus(window.messageInput.GetPrimitive())
-			return nil
-		}
+	if shortcuts.EventsEqual(event, shortcuts.FocusMessageInput.Event) {
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+		return nil
 	}
 
 	return event
@@ -1165,10 +1182,12 @@ func (window *Window) ShowErrorDialog(text string) {
 
 	dialog.SetDoneFunc(func(index int, label string) {
 		window.app.SetRoot(window.rootContainer, true)
+		window.currentContainer = window.rootContainer
 		window.app.SetFocus(previousFocus)
 	})
 
 	window.app.SetRoot(dialog, false)
+	window.currentContainer = dialog
 }
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
