@@ -30,6 +30,7 @@ var (
 	channelMentionRegex = regexp.MustCompile("<#\\d*>")
 	urlRegex            = regexp.MustCompile("<?(https?://)(.+?)(/.+?)?($|\\s|\\||>)")
 	spoilerRegex        = regexp.MustCompile("(?s)\\|\\|(.+?)\\|\\|")
+	roleMentionRegex    = regexp.MustCompile("<@&\\d*>")
 )
 
 const (
@@ -310,40 +311,48 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 	if message.Type == discordgo.MessageTypeDefault {
 		messageText = tview.Escape(message.Content)
 
-		for _, roleID := range message.MentionRoles {
-			role, cacheError := chatView.session.State.Role(message.GuildID, roleID)
-			if cacheError == nil {
-				messageText = strings.NewReplacer(
-					"<@&"+roleID+">", "[blue]@"+role.Name+"[white]",
-				).Replace(messageText)
-			}
-		}
+		//Message.MentionRoles only contains the mentions for mentionable.
+		//Therefore we do it like this, in order to render every mention.
+		messageText = roleMentionRegex.
+			ReplaceAllStringFunc(messageText, func(data string) string {
+				roleID := strings.TrimSuffix(strings.TrimPrefix(data, "<@&"), ">")
+				role, cacheError := chatView.session.State.Role(message.GuildID, roleID)
+				if cacheError != nil {
+					return data
+				}
+
+				return "[blue]@" + role.Name + "[white]"
+			})
+
+		messageText = strings.NewReplacer(
+			"@everyone", "[blue]@everyone[white]",
+			"@here", "[blue]@here[white]",
+		).Replace(messageText)
 
 		for _, user := range message.Mentions {
 			var userName string
 			if message.GuildID != "" {
 				member, cacheError := chatView.session.State.Member(message.GuildID, user.ID)
 				if cacheError == nil {
-					if member.Nick != "" {
-						userName = tview.Escape(member.Nick)
-					} else {
-						userName = tview.Escape(member.User.Username)
-					}
+					userName = discordgoplus.GetMemberName(member)
 				}
 			}
 
 			if userName == "" {
-				userName = tview.Escape(user.Username)
+				userName = discordgoplus.GetUserName(user)
 			}
 
-			messageText = strings.NewReplacer(
-				"<@"+chatView.session.State.User.ID+">", "[orange]@"+userName+"[white]",
-				"<@!"+chatView.session.State.User.ID+">", "[orange]@"+userName+"[white]",
-			).Replace(messageText)
+			var color string
+			if chatView.session.State.User.ID == user.ID {
+				color = "[orange]"
+			} else {
+				color = "[blue]"
+			}
 
+			replacement := color + "@" + userName + "[white]"
 			messageText = strings.NewReplacer(
-				"<@"+user.ID+">", "[blue]@"+userName+"[white]",
-				"<@!"+user.ID+">", "[blue]@"+userName+"[white]",
+				"<@"+user.ID+">", replacement,
+				"<@!"+user.ID+">", replacement,
 			).Replace(messageText)
 		}
 	} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
