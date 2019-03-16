@@ -142,6 +142,9 @@ func (userTree *UserTree) loadGuildRoles(guildID string) ([]*discordgo.Role, err
 // already part of the tree, in that case the nodes name is updated.
 func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 	nameToUse := discordgoplus.GetMemberName(member)
+	if config.GetConfig().UseRandomUserColors {
+		nameToUse = "[" + discordgoplus.GetUserColor(member.User) + "]" + nameToUse
+	}
 
 	userNode, contains := userTree.userNodes[member.User.ID]
 	if contains && userNode != nil {
@@ -169,6 +172,9 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 // in that case the users node gets updated.
 func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
 	nameToUse := discordgoplus.GetUserName(user)
+	if config.GetConfig().UseRandomUserColors {
+		nameToUse = "[" + discordgoplus.GetUserColor(user) + "]" + nameToUse
+	}
 
 	userNode, contains := userTree.userNodes[user.ID]
 	if contains && userNode != nil {

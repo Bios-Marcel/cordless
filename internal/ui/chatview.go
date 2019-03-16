@@ -483,7 +483,13 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 		messageAuthor = discordgoplus.GetUserName(message.Author)
 	}
 
-	return fmt.Sprintf("[silver]%s [::b]%s[::-] [white]%s[\"\"][\"\"]", timeCellText, messageAuthor, messageText)
+	if config.GetConfig().UseRandomUserColors {
+		messageAuthor = "[" + discordgoplus.GetUserColor(message.Author) + "]" + messageAuthor
+	} else {
+		messageAuthor = "[green]" + messageAuthor
+	}
+
+	return fmt.Sprintf("[gray]%s %s [white]%s[\"\"][\"\"]", timeCellText, messageAuthor, messageText)
 }
 
 func parseBoldAndUnderline(messageText string) string {

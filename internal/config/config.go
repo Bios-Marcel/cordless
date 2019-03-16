@@ -37,6 +37,7 @@ const (
 var (
 	currentConfig = Config{
 		Times:                                  HourMinuteAndSeconds,
+		UseRandomUserColors:                    false,
 		ShowUserContainer:                      true,
 		ShowChatHeader:                         true,
 		ShowFrame:                              false,
@@ -59,6 +60,9 @@ type Config struct {
 
 	//Times decides on the time format (none, short and long).
 	Times int
+	//UseRandomUserColors decides wether the users get assigned a random color
+	//out of a pool for the current session.
+	UseRandomUserColors bool
 
 	//FocusChannelAfterGuildSelection will cause the widget focus to move over
 	//to the channel tree after selecting a guild.

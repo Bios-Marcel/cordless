@@ -22,7 +22,6 @@ var (
 		"red",
 		"lime",
 		"yellow",
-		"blue",
 		"fuchsia",
 		"aqua",
 	}
@@ -32,34 +31,20 @@ var (
 	lastRandomNumber int64 = -1
 )
 
-// GetUserName returns a name for the user.
-// Names will be escaped and bots will get the "[BOT]" prefix and a blue color.
-func GetUserName(user *discordgo.User) string {
-	color := GetUserColor(user.ID)
-	var nameToUse string
-	if user.Bot {
-		nameToUse = "[blue]" + botPrefix
-	} else {
-		if color != "" {
-			nameToUse = nameToUse + "[" + color + "]"
-		}
-	}
-
-	nameToUse = nameToUse + tview.Escape(user.Username)
-
-	return nameToUse
-}
-
 // GetUserColor gets the users color for this session. If no color can be found
 // a new color will be a generated and cached.
-func GetUserColor(userID string) string {
-	color, ok := userColorCache[userID]
+func GetUserColor(user *discordgo.User) string {
+	if user.Bot {
+		return "blue"
+	}
+
+	color, ok := userColorCache[user.ID]
 	if ok {
 		return color
 	}
 
 	newColor := getRandomColorString()
-	userColorCache[userID] = newColor
+	userColorCache[user.ID] = newColor
 	return newColor
 }
 
@@ -79,9 +64,9 @@ func getRandomColorString() string {
 	return colors[numberInt64]
 }
 
-// GetMemberName returns a name for the member using his nickname if available.
-// Names will be escaped and bots get a special "[BOT]" prefix and a blue
-// color.
+// GetMemberName returns the name to use for representing this user. This is
+// either the username or the nickname. In case the member is a bot, the bot
+// prefix will be prepended.
 func GetMemberName(member *discordgo.Member) string {
 	var discordName string
 	if member.Nick != "" {
@@ -91,10 +76,22 @@ func GetMemberName(member *discordgo.Member) string {
 	}
 
 	if member.User.Bot {
-		return "[blue]" + botPrefix + discordName
+		return botPrefix + discordName
 	}
 
-	return "[" + GetUserColor(member.User.ID) + "]" + discordName
+	return discordName
+}
+
+// GetUserName returns the users username, prepending the bot prefix in case he
+// is a bot.
+func GetUserName(user *discordgo.User) string {
+	discordName := tview.Escape(user.Username)
+
+	if user.Bot {
+		return botPrefix + discordName
+	}
+
+	return discordName
 }
 
 // SortUserRoles sorts an array of roleIDs according to the guilds roles.
