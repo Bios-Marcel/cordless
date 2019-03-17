@@ -414,58 +414,51 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 		}
 	}
 
-	groupValues := codeBlockRegex.
+	codeBlocks := codeBlockRegex.
 		// Magicnumber, because message aren't gonna be that long anyway.
 		FindAllStringSubmatch(messageText, 1000)
 
-	for _, values := range groupValues {
-		language := ""
-		for index, value := range values {
-			if index == 0 {
-				continue
-			}
+	for _, values := range codeBlocks {
+		wholeMatch := values[0]
+		language := values[1]
+		code := values[2]
 
-			if index == 1 {
-				language = value
-			} else if index == 2 {
-				// Determine lexer.
-				l := lexers.Get(language)
-				if l == nil {
-					l = lexers.Analyse(value)
-				}
-				if l == nil {
-					l = lexers.Fallback
-				}
-				l = chroma.Coalesce(l)
-
-				// Determine formatter.
-				f := formatters.Get("tview-8bit")
-				if f == nil {
-					f = formatters.Fallback
-				}
-
-				// Determine style.
-				s := styles.Get("monokai")
-				if s == nil {
-					s = styles.Fallback
-				}
-
-				it, tokeniseError := l.Tokenise(nil, value)
-				if tokeniseError != nil {
-					continue
-				}
-
-				writer := bytes.NewBufferString("")
-
-				formatError := f.Format(writer, s, it)
-				if formatError != nil {
-					continue
-				}
-
-				escaped := strings.NewReplacer("*", "\\*", "_", "\\_", "|", "\\|").Replace(writer.String())
-				messageText = strings.Replace(messageText, value, escaped, 1)
-			}
+		// Determine lexer.
+		l := lexers.Get(language)
+		if l == nil {
+			l = lexers.Analyse(code)
 		}
+		if l == nil {
+			l = lexers.Fallback
+		}
+		l = chroma.Coalesce(l)
+
+		// Determine formatter.
+		f := formatters.Get("tview-8bit")
+		if f == nil {
+			f = formatters.Fallback
+		}
+
+		// Determine style.
+		s := styles.Get("monokai")
+		if s == nil {
+			s = styles.Fallback
+		}
+
+		it, tokeniseError := l.Tokenise(nil, code)
+		if tokeniseError != nil {
+			continue
+		}
+
+		writer := bytes.NewBufferString("")
+
+		formatError := f.Format(writer, s, it)
+		if formatError != nil {
+			continue
+		}
+
+		escapedCode := strings.NewReplacer("*", "\\*", "_", "\\_", "|", "\\|").Replace(writer.String())
+		messageText = strings.Replace(messageText, wholeMatch, "\n"+escapedCode+"\n", 1)
 	}
 
 	messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
