@@ -142,16 +142,16 @@ func (account *Account) switchAccount(writer io.Writer, accountName string) {
 		}
 	}
 
-	if newToken == "" {
-		//TODO Not found. Throw error?
+	config.GetConfig().Token = newToken
+	persistError := config.PersistConfig()
+	if persistError != nil {
+		fmt.Fprintf(writer, "[red]Error switching accounts '%s'.\n", persistError.Error())
+	} else {
+		//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
+		account.runNext <- true
+		account.window.Shutdown()
 	}
 
-	config.GetConfig().Token = newToken
-	config.PersistConfig()
-
-	//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
-	account.runNext <- true
-	account.window.Shutdown()
 }
 
 func (account *Account) printAccountListHelp(writer io.Writer) {

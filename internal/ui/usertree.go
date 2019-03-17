@@ -97,7 +97,7 @@ func (userTree *UserTree) LoadGuild(guildID string) error {
 func (userTree *UserTree) selectFirstNode() {
 	if userTree.internalTreeView.GetCurrentNode() == nil {
 		userNodes := userTree.rootNode.GetChildren()
-		if userNodes != nil && len(userNodes) > 0 {
+		if len(userNodes) > 0 {
 			userTree.internalTreeView.SetCurrentNode(userTree.rootNode.GetChildren()[0])
 		}
 	}

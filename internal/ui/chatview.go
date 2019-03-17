@@ -27,10 +27,10 @@ import (
 
 var (
 	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)")
-	channelMentionRegex = regexp.MustCompile("<#\\d*>")
-	urlRegex            = regexp.MustCompile("<?(https?://)(.+?)(/.+?)?($|\\s|\\||>)")
-	spoilerRegex        = regexp.MustCompile("(?s)\\|\\|(.+?)\\|\\|")
-	roleMentionRegex    = regexp.MustCompile("<@&\\d*>")
+	channelMentionRegex = regexp.MustCompile(`<#\d*>`)
+	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
+	spoilerRegex        = regexp.MustCompile(`(?s)\|\|(.+?)\|\|`)
+	roleMentionRegex    = regexp.MustCompile(`<@&\d*>`)
 )
 
 const (
@@ -68,7 +68,7 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		ownUserID:          ownUserID,
 		selection:          -1,
 		selectionMode:      false,
-		showSpoilerContent: make(map[string]bool, 0),
+		showSpoilerContent: make(map[string]bool),
 		shortenLinks:       config.GetConfig().ShortenLinks,
 		formattedMessages:  make(map[string]string),
 	}
@@ -98,10 +98,8 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 			if event.Key() == tcell.KeyUp {
 				if chatView.selection == -1 {
 					chatView.selection = len(chatView.data) - 1
-				} else {
-					if chatView.selection >= 1 {
-						chatView.selection--
-					}
+				} else if chatView.selection >= 1 {
+					chatView.selection--
 				}
 
 				chatView.updateHighlights()
@@ -112,10 +110,8 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 			if event.Key() == tcell.KeyDown {
 				if chatView.selection == -1 {
 					chatView.selection = 0
-				} else {
-					if chatView.selection <= len(chatView.data)-2 {
-						chatView.selection++
-					}
+				} else if chatView.selection <= len(chatView.data)-2 {
+					chatView.selection++
 				}
 
 				chatView.updateHighlights()

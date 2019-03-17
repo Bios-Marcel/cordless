@@ -3,7 +3,6 @@ package ui
 import (
 	"bytes"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -28,14 +27,8 @@ import (
 )
 
 const (
-	userListUpdateInterval = 5 * time.Second
-
 	guildPageName   = "Guilds"
 	privatePageName = "Private"
-)
-
-var (
-	mentionRegex = regexp.MustCompile("@.*?(?:$|\\s)")
 )
 
 // Window is basically the whole application, as it contains all the
@@ -49,8 +42,6 @@ type Window struct {
 	guildList   *tview.TreeView
 	channelTree *ChannelTree
 	privateList *PrivateChatList
-
-	channelRootNode *tview.TreeNode
 
 	chatArea         *tview.Flex
 	chatView         *ChatView
@@ -169,7 +160,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 			window.selectedGuildNode.SetColor(tcell.ColorTeal)
 
 			window.selectedGuild = guild
-			discord.RequestGuildMembers(guild.ID, "", 0)
+			requestError := discord.RequestGuildMembers(guild.ID, "", 0)
+			if requestError != nil {
+				fmt.Fprintln(window.commandView, "Error retrieving all guild members.")
+			}
 
 			channelLoadError := window.channelTree.LoadGuild(guild.ID)
 			if channelLoadError != nil {
@@ -197,7 +191,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
 	window.privateList = NewPrivateChatList(window.session.State)
-	//TODO Currently there can't be an error ... might as well remove the error
 	window.privateList.Load()
 	window.registerPrivateChatsHandler()
 
@@ -728,148 +721,133 @@ func (window *Window) addMessageEventHandler(input, edit, delete chan *discordgo
 // It updates the cache and the UI if necessary.
 func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
 	go func() {
-		for {
-			select {
-			case message := <-input:
-				window.session.State.MessageAdd(message)
+		for message := range input {
+			window.session.State.MessageAdd(message)
 
-				var currentChannelID string
-				if window.selectedChannel != nil {
-					currentChannelID = window.selectedChannel.ID
-				} else {
-					currentChannelID = ""
-				}
-				if message.ChannelID == currentChannelID {
-					window.app.QueueUpdateDraw(func() {
-						window.chatView.AddMessage(message)
-					})
+			var currentChannelID string
+			if window.selectedChannel != nil {
+				currentChannelID = window.selectedChannel.ID
+			} else {
+				currentChannelID = ""
+			}
+			if message.ChannelID == currentChannelID {
+				window.app.QueueUpdateDraw(func() {
+					window.chatView.AddMessage(message)
+				})
+			}
+
+			if message.Author.ID == window.session.State.User.ID {
+				continue
+			}
+
+			channel, stateError := window.session.State.Channel(message.ChannelID)
+			if stateError != nil {
+				continue
+			}
+			if message.ChannelID != currentChannelID || !window.userActive {
+				mentionsYou := false
+				for _, user := range message.Mentions {
+					if user.ID == window.session.State.User.ID {
+						mentionsYou = true
+						break
+					}
 				}
 
-				if message.Author.ID == window.session.State.User.ID {
-					continue
-				}
-
-				channel, stateError := window.session.State.Channel(message.ChannelID)
-				if stateError != nil {
-					continue
-				}
-				if message.ChannelID != currentChannelID || !window.userActive {
-					mentionsYou := false
-					for _, user := range message.Mentions {
-						if user.ID == window.session.State.User.ID {
+				if config.GetConfig().DesktopNotifications {
+					if !mentionsYou {
+						//TODO Check if channel is muted.
+						if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 							mentionsYou = true
-							break
 						}
 					}
 
-					if config.GetConfig().DesktopNotifications {
-						if !mentionsYou {
-							//TODO Check if channel is muted.
-							if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
-								mentionsYou = true
-							}
-						}
+					if mentionsYou {
+						var notificationLocation string
 
-						if mentionsYou {
-							var notificationLocation string
-
-							if channel.Type == discordgo.ChannelTypeDM {
-								notificationLocation = message.Author.Username
-							} else if channel.Type == discordgo.ChannelTypeGroupDM {
-								notificationLocation = channel.Name
-								if notificationLocation == "" {
-									for index, recipient := range channel.Recipients {
-										if index == 0 {
-											notificationLocation = recipient.Username
-										} else {
-											notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
-										}
+						if channel.Type == discordgo.ChannelTypeDM {
+							notificationLocation = message.Author.Username
+						} else if channel.Type == discordgo.ChannelTypeGroupDM {
+							notificationLocation = channel.Name
+							if notificationLocation == "" {
+								for index, recipient := range channel.Recipients {
+									if index == 0 {
+										notificationLocation = recipient.Username
+									} else {
+										notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
 									}
 								}
-
-								notificationLocation = message.Author.Username + " - " + notificationLocation
-							} else if channel.Type == discordgo.ChannelTypeGuildText {
-								notificationLocation = message.Author.Username + " - " + channel.Name
 							}
 
-							beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
+							notificationLocation = message.Author.Username + " - " + notificationLocation
+						} else if channel.Type == discordgo.ChannelTypeGuildText {
+							notificationLocation = message.Author.Username + " - " + channel.Name
 						}
-					}
 
-					//We needn't adjust the text of the currently selected channel.
-					if message.ChannelID == currentChannelID {
-						continue
+						beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
 					}
-
-					if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
-						window.app.QueueUpdateDraw(func() {
-							window.privateList.MarkChannelAsUnread(channel)
-						})
-					} else if channel.Type == discordgo.ChannelTypeGuildText {
-						window.app.QueueUpdateDraw(func() {
-							if mentionsYou {
-								window.channelTree.MarkChannelAsMentioned(channel.ID)
-							} else {
-								window.channelTree.MarkChannelAsUnread(channel.ID)
-							}
-						})
-					}
-
 				}
-			}
-		}
-	}()
 
-	go func() {
-		for {
-			select {
-			case messageDeleted := <-delete:
-				window.session.State.MessageRemove(messageDeleted)
-				if window.selectedChannel != nil && window.selectedChannel.ID == messageDeleted.ChannelID {
+				//We needn't adjust the text of the currently selected channel.
+				if message.ChannelID == currentChannelID {
+					continue
+				}
+
+				if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 					window.app.QueueUpdateDraw(func() {
-						window.chatView.DeleteMessage(messageDeleted)
+						window.privateList.MarkChannelAsUnread(channel)
+					})
+				} else if channel.Type == discordgo.ChannelTypeGuildText {
+					window.app.QueueUpdateDraw(func() {
+						if mentionsYou {
+							window.channelTree.MarkChannelAsMentioned(channel.ID)
+						} else {
+							window.channelTree.MarkChannelAsUnread(channel.ID)
+						}
 					})
 				}
-				break
 			}
 		}
 	}()
 
 	go func() {
-		for {
-			select {
-			case messagesDeleted := <-bulkDelete:
-				for _, messageID := range messagesDeleted.Messages {
-					message, stateError := window.session.State.Message(messagesDeleted.ChannelID, messageID)
-					if stateError == nil {
-						window.session.State.MessageRemove(message)
-					}
-				}
-
-				if window.selectedChannel != nil && window.selectedChannel.ID == messagesDeleted.ChannelID {
-					window.app.QueueUpdateDraw(func() {
-						window.chatView.DeleteMessages(messagesDeleted.Messages)
-					})
-				}
-				break
+		for messageDeleted := range delete {
+			window.session.State.MessageRemove(messageDeleted)
+			if window.selectedChannel != nil && window.selectedChannel.ID == messageDeleted.ChannelID {
+				window.app.QueueUpdateDraw(func() {
+					window.chatView.DeleteMessage(messageDeleted)
+				})
 			}
 		}
 	}()
 
 	go func() {
-		for {
-			select {
-			case messageEdited := <-edit:
-				window.session.State.MessageAdd(messageEdited)
-				if window.selectedChannel != nil && window.selectedChannel.ID == messageEdited.ChannelID {
-					for _, message := range window.chatView.data {
-						if message.ID == messageEdited.ID {
-							message.Content = messageEdited.Content
-							window.app.QueueUpdateDraw(func() {
-								window.chatView.UpdateMessage(message)
-							})
-							break
-						}
+		for messagesDeleted := range bulkDelete {
+			for _, messageID := range messagesDeleted.Messages {
+				message, stateError := window.session.State.Message(messagesDeleted.ChannelID, messageID)
+				if stateError == nil {
+					window.session.State.MessageRemove(message)
+				}
+			}
+
+			if window.selectedChannel != nil && window.selectedChannel.ID == messagesDeleted.ChannelID {
+				window.app.QueueUpdateDraw(func() {
+					window.chatView.DeleteMessages(messagesDeleted.Messages)
+				})
+			}
+		}
+	}()
+
+	go func() {
+		for messageEdited := range edit {
+			window.session.State.MessageAdd(messageEdited)
+			if window.selectedChannel != nil && window.selectedChannel.ID == messageEdited.ChannelID {
+				for _, message := range window.chatView.data {
+					if message.ID == messageEdited.ID {
+						message.Content = messageEdited.Content
+						window.app.QueueUpdateDraw(func() {
+							window.chatView.UpdateMessage(message)
+						})
+						break
 					}
 				}
 			}

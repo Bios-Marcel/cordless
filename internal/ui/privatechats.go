@@ -30,9 +30,6 @@ type PrivateChatList struct {
 	onChannelSelect      func(node *tview.TreeNode, channelID string)
 	onFriendSelect       func(userID string)
 	privateChannelStates map[*tview.TreeNode]privateChannelState
-
-	userChannels map[string]*tview.TreeNode
-	friends      map[string]*tview.TreeNode
 }
 
 // NewPrivateChatList creates a new ready to use private chat list.
@@ -44,7 +41,7 @@ func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 		chatsNode:        tview.NewTreeNode("Chats"),
 		friendsNode:      tview.NewTreeNode("Friends"),
 
-		privateChannelStates: make(map[*tview.TreeNode]privateChannelState, 0),
+		privateChannelStates: make(map[*tview.TreeNode]privateChannelState),
 	}
 
 	privateList.internalTreeView.
@@ -242,7 +239,7 @@ func (privateList *PrivateChatList) SetOnChannelSelect(handler func(node *tview.
 }
 
 // Load loads all present data (chats, groups and friends).
-func (privateList *PrivateChatList) Load() error {
+func (privateList *PrivateChatList) Load() {
 	privateChannels := make([]*discordgo.Channel, len(privateList.state.PrivateChannels))
 	copy(privateChannels, privateList.state.PrivateChannels)
 	discordgoplus.SortPrivateChannels(privateChannels)
@@ -272,8 +269,6 @@ FRIEND_LOOP:
 	}
 
 	privateList.internalTreeView.SetCurrentNode(privateList.chatsNode)
-
-	return nil
 }
 
 // GetComponent returns the TreeView component that is used.

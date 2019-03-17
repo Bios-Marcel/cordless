@@ -163,7 +163,6 @@ func EventsEqual(eventOne, eventTwo *tcell.EventKey) bool {
 
 // EventToString renders a tcell.EventKey as a human readable string
 func EventToString(event *tcell.EventKey) string {
-	s := ""
 	m := []string{}
 	if event.Modifiers()&tcell.ModCtrl != 0 {
 		m = append(m, "Ctrl")
@@ -178,7 +177,11 @@ func EventToString(event *tcell.EventKey) string {
 		m = append(m, "Meta")
 	}
 
-	ok := false
+	var (
+		s  string
+		ok bool
+	)
+
 	if s, ok = tcell.KeyNames[event.Key()]; !ok {
 		if event.Key() == tcell.KeyRune {
 			if event.Rune() >= 'A' && event.Rune() <= 'Z' {

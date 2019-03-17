@@ -17,7 +17,6 @@ var (
 )
 
 const (
-	selectionRune = '\u205F'
 	selectionChar = string('\u205F')
 	emptyText     = "[\"selection\"]\u205F[\"\"]"
 	leftRegion    = "[\"left\"]"
@@ -245,9 +244,11 @@ func NewEditor() *Editor {
 			}
 
 			if event.Key() == tcell.KeyCtrlV {
-				result := editor.inputCapture(event)
-				if result == nil {
-					return nil
+				if editor.inputCapture != nil {
+					result := editor.inputCapture(event)
+					if result == nil {
+						return nil
+					}
 				}
 
 				clipBoardContent, clipError := clipboard.ReadAll()
@@ -274,7 +275,7 @@ func NewEditor() *Editor {
 				return nil
 			}
 
-			if character == 0 {
+			if character == 0 && editor.inputCapture != nil {
 				editor.inputCapture(event)
 				return nil
 			}
