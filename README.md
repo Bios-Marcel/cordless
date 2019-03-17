@@ -152,57 +152,11 @@ careful with your configuration file.
 | <kbd>Alt</kbd> + <kbd>P</kbd> | Opens the direct messages container |
 | <kbd>Alt</kbd> + <kbd>.</kbd> | Toggles the internal console view |
 
-Further shortcuts / keybinds can be found in the manual on the internal console with the command `manual`.
+Further shortcuts / keybinds can be found in the manual on the internal
+console with the command `manual`.
 
-## Features
-
-*This list might be incomplete.*
-
-* Guilds
-  * Enter channels
-  * See channels
-  * See members
-* Channels
-  * See NSFW flag
-  * See group
-  * See topic
-* Members
-  * See Nickname
-  * See hoist group
-* Chatting
-  * conversation with a friend
-  * Groupchats
-  * Talk in a channel
-  * Timestamps `HH:MM(:SS)`
-* See all your friends
-* Messages
-  * Send messages
-  * Mention people using their full username or nickname
-  * Mention a channel
-  * Edit last message
-  * Edit any message
-  * Delete last message
-  * Delete any message
-  * Quoting
-  * Copying
-  * Spoiler
-  * Multiline
-  * Highlighting
-    * Code
-    * Mentions (Channels/Users)
-  * Special highlighting when you get mentioned
-  * Send Emojis with `:name:`
-* Custom layout to a specific point
-* Notifications 
-  * System notifications on mention (not considering muted servers and such)
-  * Mark channels read when unread messages in the current session exist
-  * Prefix channel with `(@You)` if you got mentioned
-* Basic scripting interface
-  * Languages
-    * JavaScript
-    * More to come ...
-  * Hooks
-    * onMessageSend Event that can manipulate the message before sending
+If any of the default commands don't work for you, open the keyboard shortcut
+changer via <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>.
 
 ## Extending Cordless via the scripting interface
 
@@ -222,8 +176,8 @@ relevant to your planned pull request onto that branch. This will help
 isolating new changes and make merging those into `master` easier.
 
 I also encourage you to report anything you deem a bug, because that means
-that there are problems with the UX that could still be worked on. Obivously
-feature requests are welcome as well, no matter if those are clients that the
+that there might problems with the UX that could still be worked on. Obivously
+feature requests are welcome as well, no matter if those are features that the
 official discord client has or not.
 
 Oh and please try to keep things pragmatic and foul-language free ;)
@@ -236,6 +190,7 @@ Here is a list of similar projects:
 * [Discurses](https://github.com/topisani/Discurses)
 * [Discline](https://github.com/MitchWeaver/Discline)
 * [discord-term](https://github.com/cloudrex/discord-term)
+* [6cord](https://github.com/cloudrex/6cord)
 
 ## Troubleshooting
 
@@ -244,3 +199,5 @@ If you happen to encounter a crash or a bug, please submit a bug request.
 In case that you simply can't use any shortcuts that the application has, this
 might be due to your terminal emulator accepting those instead of letting
 cordless handle them.
+
+Or message me on Discord at `Marcel#7299`.
