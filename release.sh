@@ -11,6 +11,7 @@
 #   * git
 #   * date
 #   * go
+#   * xclip
 #
 
 #
@@ -72,3 +73,9 @@ git push --tags
 
 snapcraft
 snapcraft push "cordless_$RELEASE_DATE_amd64.snap"
+
+#
+# Copies the changelog for pasting into the github release.
+#
+
+git log --pretty=oneline --abbrev-commit $(git describe --abbrev=0 $(git describe --abbrev=0)^)..$(git describe --abbrev=0) | xclip -sel clip
