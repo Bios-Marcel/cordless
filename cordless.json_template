@@ -1,0 +1,9 @@
+{
+	"homepage": "https://github.com/Bios-Marcel/cordless",
+	"description": "A third party discord client alternative.",
+	"license": "BSD-3-Clause",
+	"version": "$RELEASE_DATE",
+	"url": "https://github.com/Bios-Marcel/cordless/releases/download/$RELEASE_DATE/cordless.exe",
+	"bin": "cordless.exe",
+	"hash": "${EXE_HASH}"
+}
