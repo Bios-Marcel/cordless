@@ -13,17 +13,22 @@ var (
 	botPrefix = tview.Escape("[BOT]")
 
 	colors = []string{
-		"maroon",
-		"green",
-		"olive",
-		"navy",
-		"purple",
-		"teal",
-		"red",
-		"lime",
-		"yellow",
-		"fuchsia",
-		"aqua",
+		"#d8504e",
+		"#d87e4e",
+		"#d8a54e",
+		"#d8c64e",
+		"#b8d84e",
+		"#91d84e",
+		"#67d84e",
+		"#4ed87c",
+		"#4ed8aa",
+		"#4ed8cf",
+		"#4eb6d8",
+		"#4e57d8",
+		"#754ed8",
+		"#a34ed8",
+		"#cf4ed8",
+		"#d84e9c",
 	}
 	//global state that persist during a session.
 	userColorCache = make(map[string]string)
