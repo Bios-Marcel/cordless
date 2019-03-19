@@ -40,7 +40,7 @@ var (
 // a new color will be a generated and cached.
 func GetUserColor(user *discordgo.User) string {
 	if user.Bot {
-		return "blue"
+		return "#9496fc"
 	}
 
 	color, ok := userColorCache[user.ID]

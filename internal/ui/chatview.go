@@ -26,6 +26,7 @@ import (
 )
 
 var (
+	linkColor           = "[#efec1c]"
 	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)")
 	channelMentionRegex = regexp.MustCompile(`<#\d*>`)
 	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
@@ -317,12 +318,12 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 					return data
 				}
 
-				return "[blue]@" + role.Name + "[white]"
+				return linkColor + "@" + role.Name + "[white]"
 			})
 
 		messageText = strings.NewReplacer(
-			"@everyone", "[blue]@everyone[white]",
-			"@here", "[blue]@here[white]",
+			"@everyone", linkColor+"@everyone[white]",
+			"@here", linkColor+"@here[white]",
 		).Replace(messageText)
 
 		for _, user := range message.Mentions {
@@ -340,9 +341,9 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 
 			var color string
 			if chatView.session.State.User.ID == user.ID {
-				color = "[orange]"
+				color = "[#ef9826]"
 			} else {
-				color = "[blue]"
+				color = linkColor
 			}
 
 			replacement := color + "@" + userName + "[white]"
@@ -375,7 +376,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 				return data
 			}
 
-			return "[blue]#" + channel.Name + "[white]"
+			return linkColor + "#" + channel.Name + "[white]"
 		})
 
 	// FIXME Needs improvement, as it wastes space and breaks things

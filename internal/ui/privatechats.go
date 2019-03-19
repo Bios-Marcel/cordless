@@ -205,7 +205,7 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 	}
 }
 
-// MarkChannelAsLoaded marks a channel as loaded, coloring it blue (teal). If
+// MarkChannelAsLoaded marks a channel as loaded, coloring it blue. If
 // a different channel had loaded before, it's set to read.
 func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Channel) {
 	for node, state := range privateList.privateChannelStates {
