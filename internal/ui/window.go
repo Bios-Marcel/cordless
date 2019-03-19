@@ -1034,6 +1034,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 		})
 		window.app.SetRoot(table.GetPrimitive(), true)
+		window.app.SetFocus(table.GetPrimitive())
 		window.currentContainer = table.GetPrimitive()
 	}
 
