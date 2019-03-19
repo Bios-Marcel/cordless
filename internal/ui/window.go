@@ -1146,7 +1146,7 @@ func (window *Window) exitMessageEditMode() {
 
 func (window *Window) exitMessageEditModeAndKeepText() {
 	window.editingMessageID = nil
-	window.messageInput.SetBackgroundColor(tcell.ColorBlack)
+	window.messageInput.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
 }
 
 //ShowErrorDialog shows a simple error dialog that has only an Okay button,
