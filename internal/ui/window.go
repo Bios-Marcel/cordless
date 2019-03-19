@@ -157,7 +157,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 			}
 
 			window.selectedGuildNode = guildNode
-			window.selectedGuildNode.SetColor(tcell.ColorTeal)
+			window.selectedGuildNode.SetColor(tview.Styles.ContrastBackgroundColor)
 
 			window.selectedGuild = guild
 			requestError := discord.RequestGuildMembers(guild.ID, "", 0)

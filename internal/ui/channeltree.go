@@ -273,7 +273,7 @@ func (channelTree *ChannelTree) MarkChannelAsLoaded(channelID string) {
 			if stateError == nil {
 				node.SetText(discordgoplus.GetChannelNameForTree(channel))
 			}
-			node.SetColor(tcell.ColorTeal)
+			node.SetColor(tview.Styles.ContrastBackgroundColor)
 			return false
 		}
 

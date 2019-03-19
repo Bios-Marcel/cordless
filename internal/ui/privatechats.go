@@ -220,7 +220,7 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channel.ID {
 			privateList.privateChannelStates[node] = loaded
-			node.SetColor(tcell.ColorTeal)
+			node.SetColor(tview.Styles.ContrastBackgroundColor)
 			break
 		}
 	}
