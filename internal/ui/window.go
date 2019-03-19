@@ -1036,9 +1036,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		window.app.SetRoot(table.GetPrimitive(), true)
 		window.app.SetFocus(table.GetPrimitive())
 		window.currentContainer = table.GetPrimitive()
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.ToggleCommandView.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.ToggleCommandView.Event) {
 		window.SetCommandModeEnabled(!window.commandMode)
 
 		if window.commandMode {
@@ -1046,27 +1044,19 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		} else {
 			window.app.SetFocus(window.messageInput.GetPrimitive())
 		}
-
-		return nil
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.FocusCommandOutput.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.FocusCommandOutput.Event) {
 		if !window.commandMode {
 			window.SetCommandModeEnabled(true)
 		}
 
 		window.app.SetFocus(window.commandView.commandOutput)
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.FocusCommandInput.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.FocusCommandInput.Event) {
 		if !window.commandMode {
 			window.SetCommandModeEnabled(true)
 		}
 
 		window.app.SetFocus(window.commandView.commandInput.internalTextView)
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.ToggleUserContainer.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.ToggleUserContainer.Event) {
 		conf := config.GetConfig()
 		conf.ShowUserContainer = !conf.ShowUserContainer
 
@@ -1076,45 +1066,28 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 		config.PersistConfig()
 		window.RefreshLayout()
-		return nil
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.FocusChannelContainer.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.FocusChannelContainer.Event) {
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.channelTree.internalTreeView)
-		return nil
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.FocusPrivateChatPage.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.FocusPrivateChatPage.Event) {
 		window.SwitchToFriendsPage()
 		window.app.SetFocus(window.privateList.GetComponent())
-		return nil
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.FocusGuildContainer.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.FocusGuildContainer.Event) {
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.guildList)
-		return nil
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.FocusMessageContainer.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.FocusMessageContainer.Event) {
 		window.app.SetFocus(window.chatView.internalTextView)
-		return nil
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.FocusUserContainer.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.FocusUserContainer.Event) {
 		if window.leftArea.GetCurrentPage() == guildPageName && window.userList.internalTreeView.IsVisible() {
 			window.app.SetFocus(window.userList.internalTreeView)
 		}
-		return nil
-	}
-
-	if shortcuts.EventsEqual(event, shortcuts.FocusMessageInput.Event) {
+	} else if shortcuts.EventsEqual(event, shortcuts.FocusMessageInput.Event) {
 		window.app.SetFocus(window.messageInput.GetPrimitive())
-		return nil
+	} else {
+		return event
 	}
 
-	return event
+	return nil
 }
 
 //ExecuteCommand tries to execute the given input as a command. The first word
