@@ -24,8 +24,6 @@ set -e
 # Building cordless for darwin, linux and windows.
 #
 
-go dfgsdfogi
-
 GOOS=linux go build -o cordless_linux_64
 GOOS=windows go build -o cordless.exe
 GOOS=darwin go build -o cordless_darwin
@@ -75,7 +73,8 @@ snapcraft
 snapcraft push "cordless_$RELEASE_DATE_amd64.snap"
 
 #
-# Copies the changelog for pasting into the github release.
+# Copies the changelog for pasting into the github release. The changes will
+# include all commits between the latest and the previous tag.
 #
 
 git log --pretty=oneline --abbrev-commit $(git describe --abbrev=0 $(git describe --abbrev=0)^)..$(git describe --abbrev=0) | xclip -sel clip
