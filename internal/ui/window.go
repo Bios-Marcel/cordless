@@ -27,8 +27,9 @@ import (
 )
 
 const (
-	guildPageName   = "Guilds"
-	privatePageName = "Private"
+	guildPageName    = "Guilds"
+	privatePageName  = "Private"
+	userInactiveTime = 10 * time.Second
 )
 
 // Window is basically the whole application, as it contains all the
@@ -52,8 +53,6 @@ type Window struct {
 
 	userList *UserTree
 
-	overrideShowUsers bool
-
 	session *discordgo.Session
 
 	selectedGuildNode   *tview.TreeNode
@@ -76,14 +75,14 @@ type Window struct {
 //NewWindow constructs the whole application window and also registers all
 //necessary handlers and functions. If this function returns an error, we can't
 //start the application.
-func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.Session) (*Window, error) {
+func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.Session) (*Window, error) {
 	window := Window{
 		doRestart:       doRestart,
-		session:         discord,
+		session:         session,
 		app:             app,
-		commands:        make(map[string]commands.Command, 1),
+		commands:        make(map[string]commands.Command),
 		jsEngine:        js.New(),
-		userActiveTimer: time.NewTimer(10 * time.Second),
+		userActiveTimer: time.NewTimer(userInactiveTime),
 	}
 
 	go func() {
@@ -160,7 +159,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 			window.selectedGuildNode.SetColor(tview.Styles.ContrastBackgroundColor)
 
 			window.selectedGuild = guild
-			requestError := discord.RequestGuildMembers(guild.ID, "", 0)
+			requestError := session.RequestGuildMembers(guild.ID, "", 0)
 			if requestError != nil {
 				fmt.Fprintln(window.commandView, "Error retrieving all guild members.")
 			}
@@ -204,11 +203,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 		}
 
 		window.LoadChannel(channel)
-		window.UpdateChannelTitle(channel)
-		if channel.Type == discordgo.ChannelTypeDM {
-			window.overrideShowUsers = false
-		} else if channel.Type == discordgo.ChannelTypeGroupDM {
-			window.overrideShowUsers = true
+		window.UpdateChatHeader(channel)
+		if channel.Type == discordgo.ChannelTypeGroupDM {
 			loadError := window.userList.LoadGroup(channel.ID)
 			if loadError != nil {
 				fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
@@ -224,7 +220,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 			if userChannel.Type == discordgo.ChannelTypeDM &&
 				(userChannel.Recipients[0].ID == userID) {
 				window.LoadChannel(userChannel)
-				window.UpdateChannelTitle(userChannel)
+				window.UpdateChatHeader(userChannel)
 				return
 			}
 		}
@@ -232,7 +228,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 		newChannel, discordError := window.session.UserChannelCreate(userID)
 		if discordError == nil {
 			window.LoadChannel(newChannel)
-			window.UpdateChannelTitle(newChannel)
+			window.UpdateChatHeader(newChannel)
 		}
 	})
 
@@ -483,7 +479,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, discord *discordgo.S
 								return
 							}
 
-							_, sendError := discord.ChannelMessageSend(window.selectedChannel.ID, messageText)
+							_, sendError := session.ChannelMessageSend(window.selectedChannel.ID, messageText)
 							window.chatView.internalTextView.ScrollToEnd()
 							if sendError != nil {
 								window.app.QueueUpdateDraw(func() {
@@ -937,12 +933,11 @@ func (window *Window) registerGuildChannelHandler() {
 			return
 		}
 
-		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
-			if window.selectedGuild.ID == event.Channel.GuildID {
-				window.app.QueueUpdateDraw(func() {
-					window.channelTree.AddOrUpdateChannel(event.Channel)
-				})
-			}
+		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory &&
+			window.selectedGuild.ID == event.Channel.GuildID {
+			window.app.QueueUpdateDraw(func() {
+				window.channelTree.AddOrUpdateChannel(event.Channel)
+			})
 		}
 	})
 
@@ -951,11 +946,10 @@ func (window *Window) registerGuildChannelHandler() {
 			return
 		}
 
-		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
+		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory &&
+			window.selectedGuild.ID == event.Channel.GuildID {
 			window.app.QueueUpdateDraw(func() {
-				if window.selectedGuild.ID == event.Channel.GuildID {
-					window.channelTree.AddOrUpdateChannel(event.Channel)
-				}
+				window.channelTree.AddOrUpdateChannel(event.Channel)
 			})
 		}
 	})
@@ -965,11 +959,10 @@ func (window *Window) registerGuildChannelHandler() {
 			return
 		}
 
-		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory {
+		if (event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory) &&
+			window.selectedGuild.ID == event.Channel.GuildID {
 			window.app.QueueUpdateDraw(func() {
-				if window.selectedGuild.ID == event.Channel.GuildID {
-					window.channelTree.RemoveChannel(event.Channel)
-				}
+				window.channelTree.RemoveChannel(event.Channel)
 			})
 		}
 	})
@@ -979,10 +972,11 @@ func (window *Window) askForMessageDeletion(messageID string, usedWithSelection 
 	previousFocus := window.app.GetFocus()
 	dialog := tview.NewModal()
 	dialog.SetText("Do you really want to delete the message?")
-	dialog.AddButtons([]string{"Abort", "Delete"})
+	deleteButtonText := "Delete"
+	dialog.AddButtons([]string{"Abort", deleteButtonText})
 
 	dialog.SetDoneFunc(func(index int, label string) {
-		if index == 1 {
+		if label == deleteButtonText {
 			go window.session.ChannelMessageDelete(window.selectedChannel.ID, messageID)
 		}
 
@@ -1023,7 +1017,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	}
 
 	window.userActive = true
-	window.userActiveTimer.Reset(10 * time.Second)
+	window.userActiveTimer.Reset(userInactiveTime)
 
 	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt && event.Rune() == 'S' {
 		table := shortcuts.NewShortcutTable()
@@ -1161,7 +1155,6 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 func (window *Window) SwitchToGuildsPage() {
 	if window.leftArea.GetCurrentPage() != guildPageName {
 		window.leftArea.SwitchToPage(guildPageName)
-		window.overrideShowUsers = true
 		window.RefreshLayout()
 	}
 }
@@ -1172,7 +1165,6 @@ func (window *Window) SwitchToGuildsPage() {
 func (window *Window) SwitchToFriendsPage() {
 	if window.leftArea.GetCurrentPage() != privatePageName {
 		window.leftArea.SwitchToPage(privatePageName)
-		window.overrideShowUsers = false
 		window.RefreshLayout()
 	}
 }
@@ -1182,7 +1174,8 @@ func (window *Window) SwitchToFriendsPage() {
 func (window *Window) RefreshLayout() {
 	conf := config.GetConfig()
 
-	window.userList.internalTreeView.SetVisible(conf.ShowUserContainer && window.overrideShowUsers)
+	window.userList.internalTreeView.SetVisible(conf.ShowUserContainer && window.selectedChannel != nil &&
+		(window.selectedChannel.GuildID != "" || window.selectedChannel.Type == discordgo.ChannelTypeGroupDM))
 
 	if conf.UseFixedLayout {
 		window.rootContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
@@ -1229,17 +1222,17 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	window.chatView.ClearSelection()
 	window.chatView.internalTextView.ScrollToEnd()
 
-	window.UpdateChannelTitle(channel)
+	window.UpdateChatHeader(channel)
 
 	window.selectedChannel = channel
 	if channel.GuildID == "" {
 		if window.selectedChannelNode != nil {
-			window.selectedChannelNode.SetColor(tcell.ColorWhite)
+			window.selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
 			window.selectedChannelNode = nil
 		}
 
 		if window.selectedGuildNode != nil {
-			window.selectedGuildNode.SetColor(tcell.ColorWhite)
+			window.selectedGuildNode.SetColor(tview.Styles.PrimaryTextColor)
 			window.selectedGuildNode = nil
 		}
 	}
@@ -1259,14 +1252,14 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 // RefreshChannelTitle calls UpdateChannelTitle using the current channel.
 func (window *Window) RefreshChannelTitle() {
-	window.UpdateChannelTitle(window.selectedChannel)
+	window.UpdateChatHeader(window.selectedChannel)
 }
 
-// UpdateChannelTitle sets the the current channels titel into the chatview.
+// UpdateChatHeader updates the bordertitle of the chatviews container.o
 // The title consist of the channel name and its topic for guild channels.
 // For private channels it's either the recipient in a dm, or all recipients
 // in a group dm channel. If the channel has a nickname, that is chosen.
-func (window *Window) UpdateChannelTitle(channel *discordgo.Channel) {
+func (window *Window) UpdateChatHeader(channel *discordgo.Channel) {
 	if !config.GetConfig().ShowChatHeader || channel == nil {
 		window.chatView.SetTitle("")
 	} else {
