@@ -177,6 +177,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if userLoadError != nil {
 				window.ShowErrorDialog(userLoadError.Error())
 			}
+
+			window.RefreshLayout()
 		})
 	}
 
@@ -230,6 +232,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			window.LoadChannel(newChannel)
 			window.UpdateChatHeader(newChannel)
 		}
+
+		window.RefreshLayout()
 	})
 
 	window.chatArea = tview.NewFlex().
@@ -1174,8 +1178,8 @@ func (window *Window) SwitchToFriendsPage() {
 func (window *Window) RefreshLayout() {
 	conf := config.GetConfig()
 
-	window.userList.internalTreeView.SetVisible(conf.ShowUserContainer && window.selectedChannel != nil &&
-		(window.selectedChannel.GuildID != "" || window.selectedChannel.Type == discordgo.ChannelTypeGroupDM))
+	window.userList.internalTreeView.SetVisible(conf.ShowUserContainer && (window.selectedGuild != nil ||
+		(window.selectedChannel != nil && window.selectedChannel.Type == discordgo.ChannelTypeGroupDM)))
 
 	if conf.UseFixedLayout {
 		window.rootContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
