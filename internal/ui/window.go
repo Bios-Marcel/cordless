@@ -223,6 +223,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				(userChannel.Recipients[0].ID == userID) {
 				window.LoadChannel(userChannel)
 				window.UpdateChatHeader(userChannel)
+				window.RefreshLayout()
 				return
 			}
 		}
@@ -231,9 +232,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		if discordError == nil {
 			window.LoadChannel(newChannel)
 			window.UpdateChatHeader(newChannel)
+			window.RefreshLayout()
 		}
-
-		window.RefreshLayout()
 	})
 
 	window.chatArea = tview.NewFlex().
@@ -511,7 +511,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	messageEditChan := make(chan *discordgo.Message, 50)
 	messageBulkDeleteChan := make(chan *discordgo.MessageDeleteBulk, 50)
 
-	window.addMessageEventHandler(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
+	window.registerMessageEventHandler(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
 	window.startMessageHandlerRoutines(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
 
 	window.userList = NewUserTree(window.session.State)
@@ -697,7 +697,7 @@ func (window *Window) registerMouseFocusListeners() {
 	})
 }
 
-func (window *Window) addMessageEventHandler(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
+func (window *Window) registerMessageEventHandler(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
 	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		input <- m.Message
 	})
@@ -1239,6 +1239,11 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 			window.selectedGuildNode.SetColor(tview.Styles.PrimaryTextColor)
 			window.selectedGuildNode = nil
 		}
+	}
+
+	if channel.GuildID == "" {
+		window.selectedGuild = nil
+		window.selectedGuildNode = nil
 	}
 
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
