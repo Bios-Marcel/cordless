@@ -155,7 +155,8 @@ func GetConfigDirectory() (string, error) {
 
 	_, statError := os.Stat(directory)
 	if os.IsNotExist(statError) {
-		createDirsError := os.MkdirAll(directory, 0666)
+		//Folders have to be executable for some reason, therefore 766 instead of 666.
+		createDirsError := os.MkdirAll(directory, 0766)
 		if createDirsError != nil {
 			return "", createDirsError
 		}
