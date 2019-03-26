@@ -90,7 +90,7 @@ func TestParseBoldAndUnderline(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ParseBoldAndUnderline(tt.input); got != tt.want {
+			if got := parseBoldAndUnderline(tt.input); got != tt.want {
 				t.Errorf("ParseBoldAndUnderline() = '%v', want '%v'", got, tt.want)
 			}
 		})

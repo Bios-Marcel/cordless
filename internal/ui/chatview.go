@@ -463,7 +463,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 		messageText = strings.Replace(messageText, wholeMatch, "\n"+escapedCode+"\n", 1)
 	}
 
-	messageText = strings.Replace(strings.Replace(ParseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
+	messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
 
 	shouldShow, contains := chatView.showSpoilerContent[message.ID]
 	if !contains || !shouldShow {
@@ -492,7 +492,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 	return fmt.Sprintf("[gray]%s %s [white]%s[\"\"][\"\"]", timeCellText, messageAuthor, messageText)
 }
 
-func ParseBoldAndUnderline(messageText string) string {
+func parseBoldAndUnderline(messageText string) string {
 	messageTextTemp := make([]rune, 0)
 
 	firstBoldFound := false
