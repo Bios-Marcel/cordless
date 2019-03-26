@@ -230,6 +230,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		newChannel, discordError := window.session.UserChannelCreate(userID)
 		if discordError == nil {
+			messages, discordError := window.session.ChannelMessages(newChannel.ID, 100, "", "", "")
+			if discordError == nil {
+				for _, message := range messages {
+					window.session.State.MessageAdd(message)
+				}
+			}
 			window.LoadChannel(newChannel)
 			window.UpdateChatHeader(newChannel)
 			window.RefreshLayout()
@@ -1202,7 +1208,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	if channel.LastMessageID != "" && len(channel.Messages) == 0 {
 		//Check Cache first
 		cache, cacheError := window.session.State.Channel(channel.ID)
-		if cacheError != nil || len(cache.Messages) == 0 {
+		if cacheError == nil || cache != nil && len(cache.Messages) == 0 {
 			var discordError error
 			messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", "", "")
 			if discordError == nil {
@@ -1214,7 +1220,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 				cache.Messages = append(cache.Messages, messages...)
 			}
 		} else {
-			messages = cache.Messages
+			messages = make([]*discordgo.Message, 0)
 		}
 	} else {
 		messages = channel.Messages
