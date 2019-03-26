@@ -459,7 +459,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 		}
 
 		escapedCode := strings.NewReplacer("*", "\\*", "_", "\\_", "|", "\\|").Replace(writer.String())
-		escapedCode = regexp.MustCompile("^|\n").ReplaceAllString(escapedCode, "$0 [blue]█ ")
+		escapedCode = regexp.MustCompile("^|\n").ReplaceAllString(escapedCode, "$0 [#4cf7ee]█[white] ")
 		messageText = strings.Replace(messageText, wholeMatch, "\n"+escapedCode+"\n", 1)
 	}
 
