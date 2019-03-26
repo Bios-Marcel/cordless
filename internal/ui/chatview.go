@@ -486,7 +486,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 	if config.GetConfig().UseRandomUserColors {
 		messageAuthor = "[" + discordgoplus.GetUserColor(message.Author) + "]" + messageAuthor
 	} else {
-		messageAuthor = "[green]" + messageAuthor
+		messageAuthor = "[#44e544]" + messageAuthor
 	}
 
 	return fmt.Sprintf("[gray]%s %s [white]%s[\"\"][\"\"]", timeCellText, messageAuthor, messageText)
