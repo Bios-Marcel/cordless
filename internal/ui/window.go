@@ -932,14 +932,25 @@ func (window *Window) registerPrivateChatsHandler() {
 	})
 }
 
+func (window *Window) isChannelEventRelevant(channelEvent *discordgo.Channel) bool {
+	if window.selectedGuild == nil {
+		return false
+	}
+
+	if channelEvent.Type != discordgo.ChannelTypeGuildText && channelEvent.Type != discordgo.ChannelTypeGuildCategory {
+		return false
+	}
+
+	if window.selectedGuild.ID != channelEvent.GuildID {
+		return false
+	}
+
+	return true
+}
+
 func (window *Window) registerGuildChannelHandler() {
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelCreate) {
-		if window.selectedGuild == nil {
-			return
-		}
-
-		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory &&
-			window.selectedGuild.ID == event.Channel.GuildID {
+		if window.isChannelEventRelevant(event.Channel) {
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.AddOrUpdateChannel(event.Channel)
 			})
@@ -947,12 +958,7 @@ func (window *Window) registerGuildChannelHandler() {
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelUpdate) {
-		if window.selectedGuild == nil {
-			return
-		}
-
-		if event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory &&
-			window.selectedGuild.ID == event.Channel.GuildID {
+		if window.isChannelEventRelevant(event.Channel) {
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.AddOrUpdateChannel(event.Channel)
 			})
@@ -960,12 +966,7 @@ func (window *Window) registerGuildChannelHandler() {
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelDelete) {
-		if window.selectedGuild == nil {
-			return
-		}
-
-		if (event.Type == discordgo.ChannelTypeGuildText || event.Type == discordgo.ChannelTypeGuildCategory) &&
-			window.selectedGuild.ID == event.Channel.GuildID {
+		if window.isChannelEventRelevant(event.Channel) {
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.RemoveChannel(event.Channel)
 			})
