@@ -21,12 +21,20 @@
 set -e
 
 #
+# Define executable names for later usage.
+#
+
+BIN_LINUX="cordless_linux_64"
+BIN_DARWIN="cordless_darwin"
+BIN_WINDOWS="cordless.exe"
+
+#
 # Building cordless for darwin, linux and windows.
 #
 
-GOOS=linux go build -o cordless_linux_64
-GOOS=windows go build -o cordless.exe
-GOOS=darwin go build -o cordless_darwin
+GOOS=linux go build -o $BIN_LINUX
+GOOS=darwin go build -o $BIN_DARAWIN
+GOOS=windows go build -o $BIN_WINDOWS
 
 #
 # Setup environment variables.
@@ -78,4 +86,7 @@ snapcraft push "cordless_${RELEASE_DATE}_amd64.snap"
 # include all commits between the latest and the previous tag.
 #
 
-git log --pretty=oneline --abbrev-commit $(git describe --abbrev=0 $(git describe --abbrev=0)^)..$(git describe --abbrev=0) | xclip -sel clip
+RELEASE_BODY="$(git log --pretty=oneline --abbrev-commit $(git describe --abbrev=0 $(git describe --abbrev=0)^)..$(git describe --abbrev=0))"
+
+hub release edit -a $BIN_LUNUX -a $BIN_DAWIN -a $BIN_WINDOWS -m "" -m "${RELEASE_BODY}" $RELEASE_DATE
+
