@@ -730,13 +730,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 		for message := range input {
 			window.session.State.MessageAdd(message)
 
-			var currentChannelID string
-			if window.selectedChannel != nil {
-				currentChannelID = window.selectedChannel.ID
-			} else {
-				currentChannelID = ""
-			}
-			if message.ChannelID == currentChannelID {
+			if window.selectedChannel != nil && message.ChannelID == window.selectedChannel.ID {
 				window.app.QueueUpdateDraw(func() {
 					window.chatView.AddMessage(message)
 				})
@@ -750,7 +744,8 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			if stateError != nil {
 				continue
 			}
-			if message.ChannelID != currentChannelID || !window.userActive {
+			if (window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID) ||
+				!window.userActive {
 				mentionsYou := false
 				for _, user := range message.Mentions {
 					if user.ID == window.session.State.User.ID {
@@ -794,7 +789,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				}
 
 				//We needn't adjust the text of the currently selected channel.
-				if message.ChannelID == currentChannelID {
+				if window.selectedChannel == nil || message.ChannelID == window.selectedChannel.ID {
 					continue
 				}
 
