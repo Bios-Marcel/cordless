@@ -45,9 +45,12 @@ GOOS=windows go build -o $BIN_WINDOWS
 # EXE_HASH is sha256 of the previously built cordless.exe and is required
 # for scoop to properly work.
 #
+# Since envsubst can not see the unexported variables, we export them here
+# and unexport them at a later point and time.
+#
 
-RELEASE_DATE=$(date +%Y-%m-%d)
-EXE_HASH=$(sha256sum ./cordless.exe)
+export RELEASE_DATE="$(date +%Y-%m-%d)"
+export EXE_HASH="$(sha256sum ./$BIN_WINDOWS | cut -f 1 -d " ")"
 
 #
 # Substituting the variables in the scoop manifest tempalte into the actual
@@ -90,3 +93,9 @@ RELEASE_BODY="$(git log --pretty=oneline --abbrev-commit $(git describe --abbrev
 
 hub release edit -a $BIN_LUNUX -a $BIN_DAWIN -a $BIN_WINDOWS -m "" -m "${RELEASE_BODY}" $RELEASE_DATE
 
+#
+# Unsetting previously exported environment variables.
+#
+
+unset RELEASE_DATE
+unset EXE_HASH
