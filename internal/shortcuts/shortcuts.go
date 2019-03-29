@@ -19,10 +19,6 @@ var (
 		Name:       "Application wide",
 	}
 
-	scopes = []*Scope{
-		globalScope,
-	}
-
 	FocusChannelContainer = &Shortcut{
 		Name:       "Focus channel container",
 		Identifier: "focus_channel_container",
@@ -93,6 +89,31 @@ var (
 		Event:      tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt),
 	}
 
+	multilineTextInput = &Scope{
+		Parent:     globalScope,
+		Identifier: "multiline_text_input",
+		Name:       "Multiline text input",
+	}
+
+	InputNewLine = &Shortcut{
+		Name:       "Add new line character",
+		Identifier: "add_new_line_character",
+		scope:      multilineTextInput,
+		Event:      tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModAlt),
+	}
+
+	SendMessage = &Shortcut{
+		Name:       "Sends the typed message",
+		Identifier: "send_message",
+		scope:      multilineTextInput,
+		Event:      tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModNone),
+	}
+
+	scopes = []*Scope{
+		globalScope,
+		multilineTextInput,
+	}
+
 	Shortcuts = []*Shortcut{
 		FocusChannelContainer,
 		FocusUserContainer,
@@ -104,6 +125,8 @@ var (
 		FocusCommandInput,
 		FocusCommandOutput,
 		ToggleCommandView,
+		InputNewLine,
+		SendMessage,
 	}
 )
 

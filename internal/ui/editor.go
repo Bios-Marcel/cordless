@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/internal/shortcuts"
+
 	"github.com/Bios-Marcel/tview"
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
@@ -235,11 +237,9 @@ func NewEditor() *Editor {
 			}
 		} else {
 			var character rune
-			if event.Key() == tcell.KeyEnter {
-				if (event.Modifiers() & tcell.ModAlt) == tcell.ModAlt {
-					character = '\n'
-				}
-			} else {
+			if shortcuts.EventsEqual(event, shortcuts.InputNewLine.Event) {
+				character = '\n'
+			} else if !shortcuts.EventsEqual(event, shortcuts.SendMessage.Event) {
 				character = event.Rune()
 			}
 
