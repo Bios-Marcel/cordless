@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/cordless/internal/discordutil"
 	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
@@ -83,7 +83,7 @@ func (privateList *PrivateChatList) AddOrUpdateChannel(channel *discordgo.Channe
 	for _, node := range privateList.chatsNode.GetChildren() {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channel.ID {
-			node.SetText(discordgoplus.GetPrivateChannelName(channel))
+			node.SetText(discordutil.GetPrivateChannelName(channel))
 			return
 		}
 	}
@@ -112,7 +112,7 @@ func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
 }
 
 func createPrivateChannelNode(channel *discordgo.Channel) *tview.TreeNode {
-	channelNode := tview.NewTreeNode(discordgoplus.GetPrivateChannelName(channel))
+	channelNode := tview.NewTreeNode(discordutil.GetPrivateChannelName(channel))
 	channelNode.SetReference(channel.ID)
 	return channelNode
 }
@@ -126,7 +126,7 @@ func (privateList *PrivateChatList) AddOrUpdateFriend(user *discordgo.User) {
 			channel, stateError := privateList.state.Channel(refrenceChannelID)
 			if stateError == nil && channel.Type == discordgo.ChannelTypeDM {
 				if channel.Recipients[0].ID == user.ID {
-					node.SetText(discordgoplus.GetUserName(user))
+					node.SetText(discordutil.GetUserName(user))
 					return
 				}
 			}
@@ -136,7 +136,7 @@ func (privateList *PrivateChatList) AddOrUpdateFriend(user *discordgo.User) {
 	for _, node := range privateList.friendsNode.GetChildren() {
 		referenceUserID, ok := node.GetReference().(string)
 		if ok && referenceUserID == user.ID {
-			node.SetText(discordgoplus.GetUserName(user))
+			node.SetText(discordutil.GetUserName(user))
 			return
 		}
 	}
@@ -242,7 +242,7 @@ func (privateList *PrivateChatList) SetOnChannelSelect(handler func(node *tview.
 func (privateList *PrivateChatList) Load() {
 	privateChannels := make([]*discordgo.Channel, len(privateList.state.PrivateChannels))
 	copy(privateChannels, privateList.state.PrivateChannels)
-	discordgoplus.SortPrivateChannels(privateChannels)
+	discordutil.SortPrivateChannels(privateChannels)
 
 	for _, channel := range privateChannels {
 		privateList.addChannel(channel)

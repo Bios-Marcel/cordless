@@ -1,4 +1,4 @@
-package discordgoplus
+package discordutil
 
 import (
 	"fmt"

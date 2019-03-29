@@ -12,7 +12,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/internal/commands"
 	"github.com/Bios-Marcel/cordless/internal/config"
-	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/cordless/internal/discordutil"
 	"github.com/Bios-Marcel/cordless/internal/maths"
 	"github.com/Bios-Marcel/cordless/internal/scripting"
 	"github.com/Bios-Marcel/cordless/internal/scripting/js"
@@ -99,7 +99,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		return nil, err
 	}
 
-	guilds, discordError := discordgoplus.LoadGuilds(window.session)
+	guilds, discordError := discordutil.LoadGuilds(window.session)
 	if discordError != nil {
 		return nil, discordError
 	}
@@ -143,7 +143,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.registerGuildMemberHandlers()
 
-	discordgoplus.SortGuilds(window.session.State.Settings, guilds)
+	discordutil.SortGuilds(window.session.State.Settings, guilds)
 
 	for _, tempGuild := range guilds {
 		guild := tempGuild
@@ -1222,7 +1222,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		messages = channel.Messages
 	}
 
-	discordgoplus.SortMessagesByTimestamp(messages)
+	discordutil.SortMessagesByTimestamp(messages)
 
 	window.chatView.SetMessages(messages)
 	window.chatView.ClearSelection()
@@ -1283,7 +1283,7 @@ func (window *Window) UpdateChatHeader(channel *discordgo.Channel) {
 		} else if channel.Type == discordgo.ChannelTypeDM {
 			window.chatView.SetTitle(channel.Recipients[0].Username)
 		} else {
-			window.chatView.SetTitle(discordgoplus.GetPrivateChannelName(channel))
+			window.chatView.SetTitle(discordutil.GetPrivateChannelName(channel))
 		}
 	}
 }

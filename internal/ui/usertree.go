@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
-	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/cordless/internal/discordutil"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
@@ -141,9 +141,9 @@ func (userTree *UserTree) loadGuildRoles(guildID string) ([]*discordgo.Role, err
 // AddOrUpdateMember adds the passed member to the tree, unless it is
 // already part of the tree, in that case the nodes name is updated.
 func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
-	nameToUse := discordgoplus.GetMemberName(member)
+	nameToUse := discordutil.GetMemberName(member)
 	if config.GetConfig().UseRandomUserColors {
-		nameToUse = "[" + discordgoplus.GetUserColor(member.User) + "]" + nameToUse
+		nameToUse = "[" + discordutil.GetUserColor(member.User) + "]" + nameToUse
 	}
 
 	userNode, contains := userTree.userNodes[member.User.ID]
@@ -155,7 +155,7 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 	userNode = tview.NewTreeNode(nameToUse)
 	userTree.userNodes[member.User.ID] = userNode
 
-	discordgoplus.SortUserRoles(member.Roles, userTree.roles)
+	discordutil.SortUserRoles(member.Roles, userTree.roles)
 
 	for _, userRole := range member.Roles {
 		roleNode, exists := userTree.roleNodes[userRole]
@@ -171,9 +171,9 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 // AddOrUpdateUser adds a user to the tree, unless the user already exists,
 // in that case the users node gets updated.
 func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
-	nameToUse := discordgoplus.GetUserName(user)
+	nameToUse := discordutil.GetUserName(user)
 	if config.GetConfig().UseRandomUserColors {
-		nameToUse = "[" + discordgoplus.GetUserColor(user) + "]" + nameToUse
+		nameToUse = "[" + discordutil.GetUserColor(user) + "]" + nameToUse
 	}
 
 	userNode, contains := userTree.userNodes[user.ID]

@@ -9,7 +9,7 @@ import (
 
 	linkshortener "github.com/Bios-Marcel/shortnotforlong"
 
-	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/cordless/internal/discordutil"
 	"github.com/Bios-Marcel/cordless/internal/times"
 	"github.com/gdamore/tcell"
 
@@ -331,12 +331,12 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 			if message.GuildID != "" {
 				member, cacheError := chatView.session.State.Member(message.GuildID, user.ID)
 				if cacheError == nil {
-					userName = discordgoplus.GetMemberName(member)
+					userName = discordutil.GetMemberName(member)
 				}
 			}
 
 			if userName == "" {
-				userName = discordgoplus.GetUserName(user)
+				userName = discordutil.GetUserName(user)
 			}
 
 			var color string
@@ -475,16 +475,16 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 	if message.GuildID != "" {
 		member, cacheError := chatView.session.State.Member(message.GuildID, message.Author.ID)
 		if cacheError == nil {
-			messageAuthor = discordgoplus.GetMemberName(member)
+			messageAuthor = discordutil.GetMemberName(member)
 		}
 	}
 
 	if messageAuthor == "" {
-		messageAuthor = discordgoplus.GetUserName(message.Author)
+		messageAuthor = discordutil.GetUserName(message.Author)
 	}
 
 	if config.GetConfig().UseRandomUserColors {
-		messageAuthor = "[" + discordgoplus.GetUserColor(message.Author) + "]" + messageAuthor
+		messageAuthor = "[" + discordutil.GetUserColor(message.Author) + "]" + messageAuthor
 	} else {
 		messageAuthor = "[#44e544]" + messageAuthor
 	}

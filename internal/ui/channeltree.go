@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	"github.com/Bios-Marcel/cordless/internal/config"
-	"github.com/Bios-Marcel/cordless/internal/discordgoplus"
+	"github.com/Bios-Marcel/cordless/internal/discordutil"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
@@ -119,7 +119,7 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 }
 
 func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
-	channelNode := tview.NewTreeNode(discordgoplus.GetChannelNameForTree(channel))
+	channelNode := tview.NewTreeNode(discordutil.GetChannelNameForTree(channel))
 	channelNode.SetReference(channel.ID)
 	return channelNode
 }
@@ -140,7 +140,7 @@ func (channelTree *ChannelTree) AddOrUpdateChannel(channel *discordgo.Channel) {
 			}*/
 
 			updated = true
-			node.SetText(discordgoplus.GetChannelNameForTree(channel))
+			node.SetText(discordutil.GetChannelNameForTree(channel))
 
 			return false
 		}
@@ -243,7 +243,7 @@ func (channelTree *ChannelTree) MarkChannelAsMentioned(channelID string) {
 			channelTree.channelStates[node] = channelMentioned
 			channel, stateError := channelTree.state.Channel(channelID)
 			if stateError == nil {
-				node.SetText("(@You) " + discordgoplus.GetChannelNameForTree(channel))
+				node.SetText("(@You) " + discordutil.GetChannelNameForTree(channel))
 			}
 			node.SetColor(tcell.ColorRed)
 
@@ -271,7 +271,7 @@ func (channelTree *ChannelTree) MarkChannelAsLoaded(channelID string) {
 			channelTree.channelStates[node] = channelLoaded
 			channel, stateError := channelTree.state.Channel(channelID)
 			if stateError == nil {
-				node.SetText(discordgoplus.GetChannelNameForTree(channel))
+				node.SetText(discordutil.GetChannelNameForTree(channel))
 			}
 			node.SetColor(tview.Styles.ContrastBackgroundColor)
 			return false
