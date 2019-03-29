@@ -40,6 +40,10 @@ func TestParseCommand(t *testing.T) {
 			input: "command argument \"argument2 is long\"",
 			want:  []string{"command", "argument", "argument2 is long"},
 		}, {
+			name:  "command with one simple argument and a string containing a newline",
+			input: "command argument \"argument2 is \nlong\"",
+			want:  []string{"command", "argument", "argument2 is \nlong"},
+		}, {
 			name:  "command with one simple argument and single arguments containing escaped quotes",
 			input: "command argument \\\"argument2 argument3\\\"",
 			want:  []string{"command", "argument", "\"argument2", "argument3\""},
