@@ -94,7 +94,7 @@ RELEASE_BODY="$(git log --pretty=oneline --abbrev-commit $(git describe --abbrev
 hub release edit -a $BIN_LUNUX -a $BIN_DAWIN -a $BIN_WINDOWS -m "" -m "${RELEASE_BODY}" $RELEASE_DATE
 
 #
-# Unsetting previously exported environment variables.
+# Unsetting(and unexporting) previously exported environment variables.
 #
 
 unset RELEASE_DATE
