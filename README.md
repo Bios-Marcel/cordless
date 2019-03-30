@@ -25,7 +25,7 @@
 * [Troubleshooting](#troubleshooting)
 
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
-that aims to have a low memory footprint and be aimed at powerusers.
+that aims to have a low memory footprint and be aimed at power-users.
 
 **WARNING: Self-bots are discouraged and against Discords TOS.**
 
@@ -66,7 +66,7 @@ After installing scoop, run the following:
 scoop install https://raw.githubusercontent.com/Bios-Marcel/cordless/master/cordless.json
 ```
 
-In order to intall updates, run:
+In order to install updates, run:
 
 ```ps1
 scoop update cordless
@@ -134,11 +134,11 @@ careful with your configuration file.
 
 * Get into `Headers` section and scroll down until you find `authorization: token` and copy it
  
-![Headers section of acces token](https://user-images.githubusercontent.com/19377618/53696070-afde2880-3dc3-11e9-8859-d307677f51de.png)
+![Headers section of access token](https://user-images.githubusercontent.com/19377618/53696070-afde2880-3dc3-11e9-8859-d307677f51de.png)
 
 * Paste the token into the terminal and hit enter
 
-![Terimal after pasting the token](https://user-images.githubusercontent.com/19377618/53696072-b1a7ec00-3dc3-11e9-9ce5-d4d2534602de.png)
+![Terminal after pasting the token](https://user-images.githubusercontent.com/19377618/53696072-b1a7ec00-3dc3-11e9-9ce5-d4d2534602de.png)
 
 ## Quick overview - Navigation (switching between boxes / containers)
 
@@ -152,7 +152,7 @@ careful with your configuration file.
 | <kbd>Alt</kbd> + <kbd>P</kbd> | Opens the direct messages container |
 | <kbd>Alt</kbd> + <kbd>.</kbd> | Toggles the internal console view |
 
-Further shortcuts / keybinds can be found in the manual on the internal
+Further shortcuts / key-bindings can be found in the manual on the internal
 console with the command `manual`.
 
 If any of the default commands don't work for you, open the keyboard shortcut
@@ -162,21 +162,21 @@ changer via <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>.
 
 Cordless has a very basic scripting interface that exposes predefined events.
 Scripts can simply be dumped into the subfolder `scripts` of the cordless
-config folder.
+configuration folder.
 
 An example can be found here:
 [Kaomoji](https://github.com/Bios-Marcel/cordless-kaomoji)
 
 ## Contributing
 
-All kinds of contributions are welcome. Wether it's correcting typos, fixing
+All kinds of contributions are welcome. Whether it's correcting typos, fixing
 bugs, adding features or whatever else might be good for the project. If you
 want to contribute code, please create a new branch and commit only changes
 relevant to your planned pull request onto that branch. This will help
 isolating new changes and make merging those into `master` easier.
 
 I also encourage you to report anything you deem a bug, because that means
-that there might problems with the UX that could still be worked on. Obivously
+that there might problems with the UX that could still be worked on. Obviously
 feature requests are welcome as well, no matter if those are features that the
 official discord client has or not.
 
