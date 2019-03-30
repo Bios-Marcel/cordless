@@ -17,10 +17,12 @@ const (
 // ShortcutTable is a component that displays shortcuts and allows changing
 // them.
 type ShortcutTable struct {
-	table     *tview.Table
-	shortcuts []*Shortcut
-	onClose   func()
-	selection int
+	table         *tview.Table
+	shortcuts     []*Shortcut
+	onClose       func()
+	selection     int
+	focusNext     func()
+	focusPrevious func()
 }
 
 // NewShortcutTable creates a new shortcut table that doesn't contain any data.
@@ -62,6 +64,7 @@ func createHeaderCell(text string) *tview.TableCell {
 // SetShortcuts sets the shortcut data and changes the UI accordingly.
 func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*Shortcut) {
 	shortcutTable.shortcuts = shortcuts
+	shortcutTable.selection = -1
 
 	row, _ := shortcutTable.table.GetFixed()
 
@@ -96,6 +99,17 @@ func (shortcutTable *ShortcutTable) GetShortcuts() []*Shortcut {
 	return shortcutTable.shortcuts
 }
 
+// SetFocusNext decides which component will be focused when hitting tab
+func (shortcutTable *ShortcutTable) SetFocusNext(function func()) {
+	shortcutTable.focusNext = function
+}
+
+// SetFocusPrevious decides which component will be focused when hitting
+// shift+tab
+func (shortcutTable *ShortcutTable) SetFocusPrevious(function func()) {
+	shortcutTable.focusPrevious = function
+}
+
 func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.EventKey {
 	if shortcutTable.selection == -1 {
 		if event.Key() == tcell.KeyESC {
@@ -103,6 +117,16 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 				shortcutTable.onClose()
 			}
 			return nil
+		}
+
+		if event.Key() == tcell.KeyTab {
+			if shortcutTable.focusNext != nil {
+				shortcutTable.focusNext()
+			}
+		} else if event.Key() == tcell.KeyBacktab {
+			if shortcutTable.focusPrevious != nil {
+				shortcutTable.focusPrevious()
+			}
 		}
 
 		if event.Key() == tcell.KeyUp || event.Key() == tcell.KeyDown {

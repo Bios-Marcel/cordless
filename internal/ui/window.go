@@ -1026,16 +1026,71 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	window.userActiveTimer.Reset(userInactiveTime)
 
 	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt && event.Rune() == 'S' {
-		table := shortcuts.NewShortcutTable()
+		var table *shortcuts.ShortcutTable
+		var exitButton *tview.Button
+		var resetButton *tview.Button
+
+		table = shortcuts.NewShortcutTable()
 		table.SetShortcuts(shortcuts.Shortcuts)
-		table.SetOnClose(func() {
+
+		doClose := func() {
 			window.app.SetRoot(window.rootContainer, true)
 			window.currentContainer = window.rootContainer
+			window.app.ForceDraw()
+		}
+		table.SetOnClose(doClose)
 
+		exitButton = tview.NewButton("Go back")
+		exitButton.SetSelectedFunc(doClose)
+		exitButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Key() == tcell.KeyTab {
+				window.app.SetFocus(table.GetPrimitive())
+			} else if event.Key() == tcell.KeyBacktab {
+				window.app.SetFocus(resetButton)
+			}
+
+			return event
 		})
-		window.app.SetRoot(table.GetPrimitive(), true)
+
+		resetButton = tview.NewButton("Restore defaults")
+		resetButton.SetSelectedFunc(func() {
+			for _, shortcut := range shortcuts.Shortcuts {
+				shortcut.Reset()
+			}
+			shortcuts.Persist()
+
+			table.SetShortcuts(shortcuts.Shortcuts)
+			window.app.ForceDraw()
+		})
+		resetButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Key() == tcell.KeyTab {
+				window.app.SetFocus(exitButton)
+			} else if event.Key() == tcell.KeyBacktab {
+				window.app.SetFocus(table.GetPrimitive())
+			}
+
+			return event
+		})
+
+		table.SetFocusNext(func() { window.app.SetFocus(resetButton) })
+		table.SetFocusPrevious(func() { window.app.SetFocus(exitButton) })
+
+		buttonBar := tview.NewFlex()
+		buttonBar.SetDirection(tview.FlexColumn)
+
+		buttonBar.AddItem(resetButton, 0, 1, false)
+		buttonBar.AddItem(tview.NewBox(), 1, 0, false)
+		buttonBar.AddItem(exitButton, 0, 1, false)
+
+		shortcutsView := tview.NewFlex()
+		shortcutsView.SetDirection(tview.FlexRow)
+
+		shortcutsView.AddItem(table.GetPrimitive(), 0, 1, false)
+		shortcutsView.AddItem(buttonBar, 1, 0, false)
+
+		window.app.SetRoot(shortcutsView, true)
 		window.app.SetFocus(table.GetPrimitive())
-		window.currentContainer = table.GetPrimitive()
+		window.currentContainer = shortcutsView
 	} else if shortcuts.EventsEqual(event, shortcuts.ToggleCommandView.Event) {
 		window.SetCommandModeEnabled(!window.commandMode)
 

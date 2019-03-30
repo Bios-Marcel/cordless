@@ -20,73 +20,83 @@ var (
 	}
 
 	FocusChannelContainer = &Shortcut{
-		Name:       "Focus channel container",
-		Identifier: "focus_channel_container",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyRune, 'c', tcell.ModAlt),
+		Name:         "Focus channel container",
+		Identifier:   "focus_channel_container",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyRune, 'c', tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRune, 'c', tcell.ModAlt),
 	}
 
 	FocusUserContainer = &Shortcut{
-		Name:       "Focus user container",
-		Identifier: "focus_user_container",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyRune, 'u', tcell.ModAlt),
+		Name:         "Focus user container",
+		Identifier:   "focus_user_container",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyRune, 'u', tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRune, 'u', tcell.ModAlt),
 	}
 
 	ToggleUserContainer = &Shortcut{
-		Name:       "Toggle user container",
-		Identifier: "toggle_user_container",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyRune, 'U', tcell.ModAlt),
+		Name:         "Toggle user container",
+		Identifier:   "toggle_user_container",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyRune, 'U', tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRune, 'U', tcell.ModAlt),
 	}
 
 	FocusGuildContainer = &Shortcut{
-		Name:       "Focus guild container",
-		Identifier: "focus_guild_container",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModAlt),
+		Name:         "Focus guild container",
+		Identifier:   "focus_guild_container",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModAlt),
 	}
 
 	FocusPrivateChatPage = &Shortcut{
-		Name:       "Focus private chat page",
-		Identifier: "focus_private_chat_page",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModAlt),
+		Name:         "Focus private chat page",
+		Identifier:   "focus_private_chat_page",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModAlt),
 	}
 
 	FocusMessageInput = &Shortcut{
-		Name:       "Focus message input",
-		Identifier: "focus_message_input",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModAlt),
+		Name:         "Focus message input",
+		Identifier:   "focus_message_input",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModAlt),
 	}
 
 	FocusMessageContainer = &Shortcut{
-		Name:       "Focus message container",
-		Identifier: "focus_message_container",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyRune, 't', tcell.ModAlt),
+		Name:         "Focus message container",
+		Identifier:   "focus_message_container",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyRune, 't', tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRune, 't', tcell.ModAlt),
 	}
 
 	FocusCommandInput = &Shortcut{
-		Name:       "Focus command input",
-		Identifier: "focus_command_input",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyCtrlI, rune(tcell.KeyCtrlI), tcell.ModNone),
+		Name:         "Focus command input",
+		Identifier:   "focus_command_input",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyCtrlI, rune(tcell.KeyCtrlI), tcell.ModNone),
+		defaultEvent: tcell.NewEventKey(tcell.KeyCtrlI, rune(tcell.KeyCtrlI), tcell.ModNone),
 	}
 
 	FocusCommandOutput = &Shortcut{
-		Name:       "Focus command output",
-		Identifier: "focus_command_output",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyCtrlO, rune(tcell.KeyCtrlO), tcell.ModCtrl),
+		Name:         "Focus command output",
+		Identifier:   "focus_command_output",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyCtrlO, rune(tcell.KeyCtrlO), tcell.ModCtrl),
+		defaultEvent: tcell.NewEventKey(tcell.KeyCtrlO, rune(tcell.KeyCtrlO), tcell.ModCtrl),
 	}
 
 	ToggleCommandView = &Shortcut{
-		Name:       "Toggle command view",
-		Identifier: "toggle_command_view",
-		scope:      globalScope,
-		Event:      tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt),
+		Name:         "Toggle command view",
+		Identifier:   "toggle_command_view",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt),
 	}
 
 	multilineTextInput = &Scope{
@@ -96,17 +106,19 @@ var (
 	}
 
 	InputNewLine = &Shortcut{
-		Name:       "Add new line character",
-		Identifier: "add_new_line_character",
-		scope:      multilineTextInput,
-		Event:      tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModAlt),
+		Name:         "Add new line character",
+		Identifier:   "add_new_line_character",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModAlt),
 	}
 
 	SendMessage = &Shortcut{
-		Name:       "Sends the typed message",
-		Identifier: "send_message",
-		scope:      multilineTextInput,
-		Event:      tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModNone),
+		Name:         "Sends the typed message",
+		Identifier:   "send_message",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModNone),
+		defaultEvent: tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModNone),
 	}
 
 	scopes = []*Scope{
@@ -144,6 +156,9 @@ type Shortcut struct {
 
 	// Event is the shortcut expressed as it's resulting tcell Event.
 	Event *tcell.EventKey
+
+	//This shortcuts default, in order to be able to reset it.
+	defaultEvent *tcell.EventKey
 }
 
 // Scope is what describes a shortcuts scope within the application. Usually
@@ -205,6 +220,11 @@ func (shortcut *Shortcut) UnmarshalJSON(data []byte) error {
 	}
 
 	return fmt.Errorf(fmt.Sprintf("error finding scope '%s'", temp.ScopeIdentifier))
+}
+
+// Reset resets this shortcuts event value to the default one.
+func (shortcut *Shortcut) Reset() {
+	shortcut.Event = shortcut.defaultEvent
 }
 
 func getShortcutsPath() (string, error) {
