@@ -781,7 +781,16 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 							notificationLocation = message.Author.Username + " - " + notificationLocation
 						} else if channel.Type == discordgo.ChannelTypeGuildText {
-							notificationLocation = message.Author.Username + " - " + channel.Name
+							if message.GuildID != "" {
+								guild, cacheError := window.session.State.Guild(message.GuildID)
+								if guild != nil && cacheError == nil {
+									notificationLocation = fmt.Sprintf("%s - %s - %s", guild.Name, channel.Name, message.Author.Username)
+								} else {
+									notificationLocation = fmt.Sprintf("%s - %s", message.Author.Username, channel.Name)
+								}
+							} else {
+								notificationLocation = fmt.Sprintf("%s - %s", message.Author.Username, channel.Name)
+							}
 						}
 
 						beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
