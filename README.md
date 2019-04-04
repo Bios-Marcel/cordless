@@ -9,20 +9,23 @@
 
 ## Overview
 
-* [How to install it](#how-to-install-it)
-  * [Installing on Linux](#installing-on-linux)
-  * [Installing on Windows](#installing-on-windows)
-  * [Installing on Mac OS](#installing-on-mac-os)
-  * [Using pre-built binaries](#using-pre-built-binaries)
-  * [Building it from source](#building-it-from-source)
-  * [Login](#login)
-    * [Retrieving your token via discord or chrome](#retrieving-your-token-via-discord-or-chrome)
-* [Quick overview - Navigation](#quick-overview---navigation-switching-between-boxes--containers)
-* [Features](#features)
-* [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
-* [Contributing](#contributing)
-* [Similar projects](#similar-projects)
-* [Troubleshooting](#troubleshooting)
+- [Cordless](#cordless)
+  - [Overview](#overview)
+  - [How to install it](#how-to-install-it)
+    - [Installing on Linux](#installing-on-linux)
+      - [Snap](#snap)
+      - [Arch-Linux](#arch-linux)
+    - [Installing on Windows](#installing-on-windows)
+    - [Installing on Mac OS](#installing-on-mac-os)
+    - [Using pre-built binaries](#using-pre-built-binaries)
+    - [Building it from source](#building-it-from-source)
+    - [Login](#login)
+      - [Retrieving your token via discord or chrome](#retrieving-your-token-via-discord-or-chrome)
+  - [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
+  - [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
+  - [Contributing](#contributing)
+  - [Similar projects](#similar-projects)
+  - [Troubleshooting](#troubleshooting)
 
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at power-users.
@@ -45,6 +48,8 @@ This application is currently a WIP and will change rather fast.
 
 ### Installing on Linux
 
+#### Snap
+
 On linux the recommended way of installation is the snap.
 
 Simply run (Might require sudo):
@@ -54,6 +59,14 @@ snap install cordless
 ```
 
 Snap will automatically install updates.
+
+#### Arch-Linux
+
+If you are on arch, you could use the AUR package:
+
+```shell
+yaourt -S cordless-git
+```
 
 ### Installing on Windows
 
