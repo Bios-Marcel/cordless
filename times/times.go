@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Bios-Marcel/cordless/internal/config"
+	"github.com/Bios-Marcel/cordless/config"
 )
 
 // TimeToString formats a time to a string depending on the users settings.

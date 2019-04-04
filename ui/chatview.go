@@ -9,13 +9,13 @@ import (
 
 	linkshortener "github.com/Bios-Marcel/shortnotforlong"
 
-	"github.com/Bios-Marcel/cordless/internal/discordutil"
-	"github.com/Bios-Marcel/cordless/internal/times"
+	"github.com/Bios-Marcel/cordless/discordutil"
+	"github.com/Bios-Marcel/cordless/times"
 	"github.com/gdamore/tcell"
 
-	"github.com/Bios-Marcel/cordless/internal/config"
+	"github.com/Bios-Marcel/cordless/config"
 	// Blank import for initializing the tview formatter
-	_ "github.com/Bios-Marcel/cordless/internal/syntax"
+	_ "github.com/Bios-Marcel/cordless/syntax"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 

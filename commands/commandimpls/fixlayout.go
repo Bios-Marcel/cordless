@@ -5,8 +5,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/Bios-Marcel/cordless/internal/config"
-	"github.com/Bios-Marcel/cordless/internal/ui"
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui"
 )
 
 const fixLayoutDocumentation = `[orange]# fixlayout[white]

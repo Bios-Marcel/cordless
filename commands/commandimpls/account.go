@@ -5,8 +5,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Bios-Marcel/cordless/internal/config"
-	"github.com/Bios-Marcel/cordless/internal/ui"
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui"
 )
 
 const accountDocumentation = `[orange][::u]# account command[white]

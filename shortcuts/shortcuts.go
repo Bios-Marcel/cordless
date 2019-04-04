@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Bios-Marcel/cordless/internal/config"
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/gdamore/tcell"
 )
 

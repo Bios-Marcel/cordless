@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Bios-Marcel/cordless/internal/ui"
+	"github.com/Bios-Marcel/cordless/ui"
 )
 
 const helpDocumentation = `[orange]# help[white]

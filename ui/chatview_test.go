@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	_ "github.com/Bios-Marcel/cordless/internal/syntax"
+	_ "github.com/Bios-Marcel/cordless/syntax"
 )
 
 func TestParseBoldAndUnderline(t *testing.T) {

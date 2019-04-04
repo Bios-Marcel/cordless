@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Bios-Marcel/cordless/internal/scripting"
+	"github.com/Bios-Marcel/cordless/scripting"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )

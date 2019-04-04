@@ -1,6 +1,6 @@
 // +build !windows
 
-package internal
+package app
 
 import (
 	"github.com/Bios-Marcel/tview"

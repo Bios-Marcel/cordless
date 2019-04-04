@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Bios-Marcel/cordless/internal/shortcuts"
+	"github.com/Bios-Marcel/cordless/shortcuts"
 
 	"github.com/Bios-Marcel/tview"
 	"github.com/atotto/clipboard"

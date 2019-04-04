@@ -1,7 +1,7 @@
 package main
 
-import "github.com/Bios-Marcel/cordless/internal"
+import "github.com/Bios-Marcel/cordless/app"
 
 func main() {
-	internal.Run()
+	app.Run()
 }

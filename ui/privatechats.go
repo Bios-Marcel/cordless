@@ -1,10 +1,10 @@
 package ui
 
 import (
-	"github.com/Bios-Marcel/cordless/internal/discordutil"
+	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/gdamore/tcell"
 
-	"github.com/Bios-Marcel/cordless/internal/config"
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 )

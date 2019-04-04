@@ -1,4 +1,4 @@
-package internal
+package app
 
 import (
 	"bufio"
@@ -7,13 +7,13 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/Bios-Marcel/cordless/internal/shortcuts"
+	"github.com/Bios-Marcel/cordless/shortcuts"
 
 	"github.com/princebot/getpass"
 
-	"github.com/Bios-Marcel/cordless/internal/commands/commandimpls"
-	"github.com/Bios-Marcel/cordless/internal/config"
-	"github.com/Bios-Marcel/cordless/internal/ui"
+	"github.com/Bios-Marcel/cordless/commands/commandimpls"
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 )
