@@ -60,13 +60,16 @@ snap install cordless
 
 Snap will automatically install updates.
 
-#### Arch-Linux
+#### Arch based Linux distributions
 
-If you are on arch, you could use the AUR package:
+If you are on an arch based distribution, you could use the AUR package:
 
 ```shell
 yaourt -S cordless-git
 ```
+
+Depending on your installation, you might not have `yaourt` installed or even
+have a different AUR package manager.
 
 ### Installing on Windows
 
