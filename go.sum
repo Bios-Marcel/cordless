@@ -1,7 +1,7 @@
 github.com/Bios-Marcel/discordemojimap v0.0.0-20190302185634-d034ee5c1db3 h1:PfYBb6LBaX5LfXR5kF7Tk1EryDd2fF3jou0M0i/tGBI=
 github.com/Bios-Marcel/discordemojimap v0.0.0-20190302185634-d034ee5c1db3/go.mod h1:D1W9gRQXP1UESEobmNIng2i+E8UvdDF4NJ9EOXn9Ano=
-github.com/Bios-Marcel/discordgo v0.20.0 h1:f3ku23uYPM00dpy13SO1Bayav7dxG/HqmXIhkcW2SPg=
-github.com/Bios-Marcel/discordgo v0.20.0/go.mod h1:bLnfQU0j/SejmPozgW5GepmKvd8CrbMIml2I0IZENVE=
+github.com/Bios-Marcel/discordgo v0.20.1 h1:0J8oB1fm+rCpJIcdLCZGQWkiTxAWlczJAkCEfsztW9A=
+github.com/Bios-Marcel/discordgo v0.20.1/go.mod h1:bLnfQU0j/SejmPozgW5GepmKvd8CrbMIml2I0IZENVE=
 github.com/Bios-Marcel/goclipimg v0.0.0-20190223142034-bd49245d5f23 h1:hGywiE/Da9MoiyzPstIyM1b+jl3nxkuDAT+Q8ScZW7Q=
 github.com/Bios-Marcel/goclipimg v0.0.0-20190223142034-bd49245d5f23/go.mod h1:u7z9t086HoIbA/uuoA2KcRDhKS47DRYCDZ39aegTR4c=
 github.com/Bios-Marcel/shortnotforlong v0.0.0-20190220133053-9074a923cf4d h1:E5Ib/SFJsCd9gw8boEaBBo/X8Vj3NaJaIFNoBrCsqq8=
