@@ -728,26 +728,27 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
 	go func() {
 		for message := range input {
-			window.session.State.MessageAdd(message)
+			tempMessage := message
+			window.session.State.MessageAdd(tempMessage)
 
-			if window.selectedChannel != nil && message.ChannelID == window.selectedChannel.ID {
+			if window.selectedChannel != nil && tempMessage.ChannelID == window.selectedChannel.ID {
 				window.app.QueueUpdateDraw(func() {
-					window.chatView.AddMessage(message)
+					window.chatView.AddMessage(tempMessage)
 				})
 			}
 
-			if message.Author.ID == window.session.State.User.ID {
+			if tempMessage.Author.ID == window.session.State.User.ID {
 				continue
 			}
 
-			channel, stateError := window.session.State.Channel(message.ChannelID)
+			channel, stateError := window.session.State.Channel(tempMessage.ChannelID)
 			if stateError != nil {
 				continue
 			}
-			if (window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID) ||
+			if (window.selectedChannel == nil || tempMessage.ChannelID != window.selectedChannel.ID) ||
 				!window.userActive {
 				mentionsYou := false
-				for _, user := range message.Mentions {
+				for _, user := range tempMessage.Mentions {
 					if user.ID == window.session.State.User.ID {
 						mentionsYou = true
 						break
@@ -766,7 +767,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						var notificationLocation string
 
 						if channel.Type == discordgo.ChannelTypeDM {
-							notificationLocation = message.Author.Username
+							notificationLocation = tempMessage.Author.Username
 						} else if channel.Type == discordgo.ChannelTypeGroupDM {
 							notificationLocation = channel.Name
 							if notificationLocation == "" {
@@ -779,26 +780,26 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 								}
 							}
 
-							notificationLocation = message.Author.Username + " - " + notificationLocation
+							notificationLocation = tempMessage.Author.Username + " - " + notificationLocation
 						} else if channel.Type == discordgo.ChannelTypeGuildText {
-							if message.GuildID != "" {
-								guild, cacheError := window.session.State.Guild(message.GuildID)
+							if tempMessage.GuildID != "" {
+								guild, cacheError := window.session.State.Guild(tempMessage.GuildID)
 								if guild != nil && cacheError == nil {
-									notificationLocation = fmt.Sprintf("%s - %s - %s", guild.Name, channel.Name, message.Author.Username)
+									notificationLocation = fmt.Sprintf("%s - %s - %s", guild.Name, channel.Name, tempMessage.Author.Username)
 								} else {
-									notificationLocation = fmt.Sprintf("%s - %s", message.Author.Username, channel.Name)
+									notificationLocation = fmt.Sprintf("%s - %s", tempMessage.Author.Username, channel.Name)
 								}
 							} else {
-								notificationLocation = fmt.Sprintf("%s - %s", message.Author.Username, channel.Name)
+								notificationLocation = fmt.Sprintf("%s - %s", tempMessage.Author.Username, channel.Name)
 							}
 						}
 
-						beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
+						beeep.Notify("Cordless - "+notificationLocation, tempMessage.ContentWithMentionsReplaced(), "assets/information.png")
 					}
 				}
 
 				//We needn't adjust the text of the currently selected channel.
-				if window.selectedChannel == nil || message.ChannelID == window.selectedChannel.ID {
+				if window.selectedChannel == nil || tempMessage.ChannelID == window.selectedChannel.ID {
 					continue
 				}
 
@@ -821,10 +822,11 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 	go func() {
 		for messageDeleted := range delete {
-			window.session.State.MessageRemove(messageDeleted)
-			if window.selectedChannel != nil && window.selectedChannel.ID == messageDeleted.ChannelID {
+			tempMessageDeleted := messageDeleted
+			window.session.State.MessageRemove(tempMessageDeleted)
+			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageDeleted.ChannelID {
 				window.app.QueueUpdateDraw(func() {
-					window.chatView.DeleteMessage(messageDeleted)
+					window.chatView.DeleteMessage(tempMessageDeleted)
 				})
 			}
 		}
@@ -832,16 +834,17 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 	go func() {
 		for messagesDeleted := range bulkDelete {
+			tempMessagesDeleted := messagesDeleted
 			for _, messageID := range messagesDeleted.Messages {
-				message, stateError := window.session.State.Message(messagesDeleted.ChannelID, messageID)
+				message, stateError := window.session.State.Message(tempMessagesDeleted.ChannelID, messageID)
 				if stateError == nil {
 					window.session.State.MessageRemove(message)
 				}
 			}
 
-			if window.selectedChannel != nil && window.selectedChannel.ID == messagesDeleted.ChannelID {
+			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessagesDeleted.ChannelID {
 				window.app.QueueUpdateDraw(func() {
-					window.chatView.DeleteMessages(messagesDeleted.Messages)
+					window.chatView.DeleteMessages(tempMessagesDeleted.Messages)
 				})
 			}
 		}
@@ -849,11 +852,12 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 	go func() {
 		for messageEdited := range edit {
-			window.session.State.MessageAdd(messageEdited)
-			if window.selectedChannel != nil && window.selectedChannel.ID == messageEdited.ChannelID {
+			tempMessageEdited := messageEdited
+			window.session.State.MessageAdd(tempMessageEdited)
+			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
 				for _, message := range window.chatView.data {
-					if message.ID == messageEdited.ID {
-						message.Content = messageEdited.Content
+					if message.ID == tempMessageEdited.ID {
+						message.Content = tempMessageEdited.Content
 						window.app.QueueUpdateDraw(func() {
 							window.chatView.UpdateMessage(message)
 						})
