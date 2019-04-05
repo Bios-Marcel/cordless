@@ -18,7 +18,7 @@ import (
 	"github.com/Bios-Marcel/cordless/scripting/js"
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/times"
-	"github.com/Bios-Marcel/cordless/ui/tview/treeview"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
@@ -532,15 +532,15 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.userList.internalTreeView.SetSearchOnTypeEnabled(true)
 		window.privateList.internalTreeView.SetSearchOnTypeEnabled(true)
 	} else if config.GetConfig().OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
-		guildList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+		guildList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			guildList.Box, window.app, window.messageInput.internalTextView))
-		channelTree.internalTreeView.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+		channelTree.internalTreeView.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			channelTree.internalTreeView.Box, window.app, window.messageInput.internalTextView))
-		window.userList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+		window.userList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			window.userList.internalTreeView.Box, window.app, window.messageInput.internalTextView))
-		window.privateList.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+		window.privateList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			window.privateList.GetComponent().Box, window.app, window.messageInput.internalTextView))
-		window.chatView.internalTextView.SetInputCapture(treeview.CreateFocusTextViewOnTypeInputHandler(
+		window.chatView.internalTextView.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			window.chatView.internalTextView.Box, window.app, window.messageInput.internalTextView))
 	}
 
@@ -687,9 +687,12 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 	}
 	window.dialogTextView.SetText(text)
 	window.dialogTextView.SetBackgroundColor(color)
-
 	window.dialogReplacement.SetVisible(true)
 	window.app.SetFocus(buttonWidgets[0])
+
+	_, _, width, _ := window.rootContainer.GetRect()
+	height := tviewutil.CalculateNeccessaryHeight(width, window.dialogTextView.GetText(true))
+	window.rootContainer.ResizeItem(window.dialogReplacement, 1+height, 0)
 }
 
 func (window *Window) registerMouseFocusListeners() {

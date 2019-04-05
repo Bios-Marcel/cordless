@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/shortcuts"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
 	"github.com/Bios-Marcel/tview"
 	"github.com/atotto/clipboard"
@@ -345,17 +346,8 @@ func (editor *Editor) setAndFixText(text string) {
 }
 
 func (editor *Editor) countRows(text string) int {
-	splitLines := strings.Split(text, "\n")
 	_, _, width, _ := editor.internalTextView.GetInnerRect()
-
-	wrappedLines := 0
-	for _, line := range splitLines {
-		if len(line) >= width {
-			wrappedLines = wrappedLines + ((len(line) - (len(line) % width)) / width)
-		}
-	}
-
-	return len(splitLines) + wrappedLines
+	return tviewutil.CalculateNeccessaryHeight(width, text)
 }
 
 func (editor *Editor) triggerHeightRequestIfNeccessary() {

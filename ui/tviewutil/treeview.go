@@ -1,4 +1,4 @@
-package treeview
+package tviewutil
 
 import (
 	"github.com/Bios-Marcel/tview"
