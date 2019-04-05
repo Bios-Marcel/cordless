@@ -394,7 +394,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if event.Key() == tcell.KeyUp && messageToSend == "" {
-			for i := len(window.chatView.data) - 1; i > 0; i-- {
+			for i := len(window.chatView.data) - 1; i >=	 0; i-- {
 				message := window.chatView.data[i]
 				if message.Author.ID == window.session.State.User.ID {
 					window.startEditingMessage(message)
