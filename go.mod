@@ -3,7 +3,7 @@ module github.com/Bios-Marcel/cordless
 go 1.12
 
 require (
-	github.com/Bios-Marcel/discordemojimap v0.0.0-20190302185634-d034ee5c1db3
+	github.com/Bios-Marcel/discordemojimap v0.0.0-20190404160132-506fd0e8d912
 	github.com/Bios-Marcel/discordgo v0.20.1
 	github.com/Bios-Marcel/goclipimg v0.0.0-20190223142034-bd49245d5f23
 	github.com/Bios-Marcel/shortnotforlong v0.0.0-20190220133053-9074a923cf4d
