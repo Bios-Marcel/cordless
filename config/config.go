@@ -40,7 +40,6 @@ var (
 		UseRandomUserColors:                    false,
 		ShowUserContainer:                      true,
 		ShowChatHeader:                         true,
-		ShowFrame:                              false,
 		UseFixedLayout:                         false,
 		FixedSizeLeft:                          12,
 		FixedSizeRight:                         12,
@@ -72,8 +71,6 @@ type Config struct {
 	//move over to the message input widget after channel selection
 	FocusMessageInputAfterChannelSelection bool
 
-	//ShowFrame decides wether the application will have a border and a title.
-	ShowFrame bool
 	//ShowChatHeader decides wether the box above the chat will be shown
 	//or not.
 	ShowChatHeader bool

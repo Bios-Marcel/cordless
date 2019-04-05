@@ -620,14 +620,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.chatArea.AddItem(window.commandView.commandOutput, 0, 1, false)
 	window.chatArea.AddItem(window.commandView.commandInput.internalTextView, 3, 0, false)
 
-	if conf.ShowFrame {
-		window.rootContainer.SetTitle("Cordless")
-		window.rootContainer.SetBorder(true)
-	} else {
-		window.rootContainer.SetTitle("")
-		window.rootContainer.SetBorder(false)
-	}
-
 	window.SwitchToGuildsPage()
 
 	app.SetFocus(guildList)
