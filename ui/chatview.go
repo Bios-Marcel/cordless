@@ -200,11 +200,10 @@ func (chatView *ChatView) UpdateMessage(updatedMessage *discordgo.Message) {
 	for _, message := range chatView.data {
 		if message.ID == updatedMessage.ID {
 			chatView.formattedMessages[updatedMessage.ID] = chatView.formatMessage(updatedMessage)
+			chatView.Rerender()
 			break
 		}
 	}
-
-	chatView.Rerender()
 }
 
 // DeleteMessage drops the message from the cache and triggers a rerender
@@ -248,6 +247,13 @@ OUTER_LOOP:
 
 //AddMessage add an additional message to the ChatView.
 func (chatView *ChatView) AddMessage(message *discordgo.Message) {
+	for _, relationship := range chatView.session.State.Relationships {
+		if relationship.User.ID == message.Author.ID &&
+			relationship.Type == discordgo.RelationTypeBlocked {
+			return
+		}
+	}
+
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 
 	var rerender bool
