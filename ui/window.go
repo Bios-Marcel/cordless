@@ -35,9 +35,13 @@ const (
 // Window is basically the whole application, as it contains all the
 // components and the necccessary global state.
 type Window struct {
-	app              *tview.Application
-	rootContainer    *tview.Flex
-	currentContainer tview.Primitive
+	app               *tview.Application
+	middleContainer   *tview.Flex
+	rootContainer     *tview.Flex
+	dialogReplacement *tview.Flex
+	dialogButtonBar   *tview.Flex
+	dialogTextView    *tview.TextView
+	currentContainer  tview.Primitive
 
 	leftArea    *tview.Pages
 	guildList   *tview.TreeView
@@ -540,9 +544,26 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			window.chatView.internalTextView.Box, window.app, window.messageInput.internalTextView))
 	}
 
-	window.rootContainer = tview.NewFlex().
+	window.middleContainer = tview.NewFlex().
 		SetDirection(tview.FlexColumn)
+
+	window.rootContainer = tview.NewFlex().
+		SetDirection(tview.FlexRow)
 	window.rootContainer.SetTitleAlign(tview.AlignCenter)
+	window.rootContainer.AddItem(window.middleContainer, 0, 1, false)
+
+	window.dialogReplacement = tview.NewFlex().
+		SetDirection(tview.FlexRow)
+	window.dialogTextView = tview.NewTextView()
+	window.dialogReplacement.AddItem(window.dialogTextView, 0, 1, false)
+
+	window.dialogButtonBar = tview.NewFlex().
+		SetDirection(tview.FlexColumn)
+
+	window.dialogReplacement.AddItem(window.dialogButtonBar, 1, 0, false)
+	window.dialogReplacement.SetVisible(false)
+
+	window.rootContainer.AddItem(window.dialogReplacement, 2, 0, false)
 
 	app.SetRoot(window.rootContainer, true)
 	window.currentContainer = window.rootContainer
@@ -551,13 +572,13 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	conf := config.GetConfig()
 
 	if conf.UseFixedLayout {
-		window.rootContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 7, true)
-		window.rootContainer.AddItem(window.chatArea, 0, 1, false)
-		window.rootContainer.AddItem(window.userList.internalTreeView, conf.FixedSizeRight, 6, false)
+		window.middleContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 7, true)
+		window.middleContainer.AddItem(window.chatArea, 0, 1, false)
+		window.middleContainer.AddItem(window.userList.internalTreeView, conf.FixedSizeRight, 6, false)
 	} else {
-		window.rootContainer.AddItem(window.leftArea, 0, 7, true)
-		window.rootContainer.AddItem(window.chatArea, 0, 20, false)
-		window.rootContainer.AddItem(window.userList.internalTreeView, 0, 6, false)
+		window.middleContainer.AddItem(window.chatArea, 0, 20, false)
+		window.middleContainer.AddItem(window.userList.internalTreeView, 0, 6, false)
+		window.middleContainer.AddItem(window.leftArea, 0, 7, true)
 	}
 
 	mentionWindow.SetVisible(false)
@@ -613,6 +634,62 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerMouseFocusListeners()
 
 	return &window, nil
+}
+
+// ShowDialog shows a dialog at the bottom of the window. It doesn't surrender
+// its focus and requires action before allowing the user to proceed. The
+// buttons are handled depending on their text.
+func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler func(button string), buttons ...string) {
+	window.dialogButtonBar.RemoveAllItems()
+
+	if len(buttons) == 0 {
+		return
+	}
+
+	previousFocus := window.app.GetFocus()
+
+	buttonWidgets := make([]*tview.Button, 0)
+	window.dialogButtonBar.AddItem(tview.NewBox(), 1, 0, false)
+	for index, button := range buttons {
+		newButton := tview.NewButton(button)
+		newButton.SetSelectedFunc(func() {
+			buttonHandler(newButton.GetLabel())
+			window.dialogReplacement.SetVisible(false)
+			window.app.SetFocus(previousFocus)
+		})
+		buttonWidgets = append(buttonWidgets, newButton)
+
+		indexCopy := index
+		newButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Key() == tcell.KeyRight {
+				if len(buttonWidgets) <= indexCopy+1 {
+					window.app.SetFocus(buttonWidgets[0])
+				} else {
+					window.app.SetFocus(buttonWidgets[indexCopy+1])
+				}
+				return nil
+			}
+
+			if event.Key() == tcell.KeyLeft {
+				if indexCopy == 0 {
+					window.app.SetFocus(buttonWidgets[len(buttonWidgets)-1])
+				} else {
+					window.app.SetFocus(buttonWidgets[indexCopy-1])
+				}
+				return nil
+			}
+
+			return event
+		})
+
+		window.dialogButtonBar.AddItem(newButton, 0, 1, false)
+		window.dialogButtonBar.AddItem(tview.NewBox(), 1, 0, false)
+	}
+	window.dialogTextView.SetText(text)
+	window.dialogTextView.SetBackgroundColor(color)
+
+	window.dialogReplacement.SetVisible(true)
+	window.app.SetFocus(buttonWidgets[0])
 }
 
 func (window *Window) registerMouseFocusListeners() {
@@ -988,31 +1065,20 @@ func (window *Window) registerGuildChannelHandler() {
 }
 
 func (window *Window) askForMessageDeletion(messageID string, usedWithSelection bool) {
-	previousFocus := window.app.GetFocus()
-	dialog := tview.NewModal()
-	dialog.SetText("Do you really want to delete the message?")
 	deleteButtonText := "Delete"
-	dialog.AddButtons([]string{"Abort", deleteButtonText})
+	window.ShowDialog(tview.Styles.PrimitiveBackgroundColor,
+		"Do you really want to delete the message?", func(button string) {
+			if button == deleteButtonText {
+				go window.session.ChannelMessageDelete(window.selectedChannel.ID, messageID)
+			}
 
-	dialog.SetDoneFunc(func(index int, label string) {
-		if label == deleteButtonText {
-			go window.session.ChannelMessageDelete(window.selectedChannel.ID, messageID)
-		}
-
-		window.exitMessageEditMode()
-		window.app.SetRoot(window.rootContainer, true)
-		window.currentContainer = window.rootContainer
-		if usedWithSelection {
-			window.app.SetFocus(previousFocus)
-			window.chatView.SignalSelectionDeleted()
-		} else {
-			window.app.SetFocus(window.messageInput.GetPrimitive())
-
-		}
-	})
-
-	window.app.SetRoot(dialog, false)
-	window.currentContainer = dialog
+			window.exitMessageEditMode()
+			window.app.SetRoot(window.rootContainer, true)
+			window.currentContainer = window.rootContainer
+			if usedWithSelection {
+				window.chatView.SignalSelectionDeleted()
+			}
+		}, deleteButtonText, "Abort")
 }
 
 // SetCommandModeEnabled hides or shows the command ui elements and toggles
@@ -1037,6 +1103,10 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 	window.userActive = true
 	window.userActiveTimer.Reset(userInactiveTime)
+
+	if window.dialogReplacement.IsVisible() {
+		return event
+	}
 
 	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt && event.Rune() == 'S' {
 		var table *shortcuts.ShortcutTable
@@ -1193,21 +1263,7 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 //ShowErrorDialog shows a simple error dialog that has only an Okay button,
 // a generic title and the given text.
 func (window *Window) ShowErrorDialog(text string) {
-	previousFocus := window.app.GetFocus()
-
-	dialog := tview.NewModal()
-	dialog.SetTitle("An error occurred")
-	dialog.SetText(text)
-	dialog.AddButtons([]string{"Okay"})
-
-	dialog.SetDoneFunc(func(index int, label string) {
-		window.app.SetRoot(window.rootContainer, true)
-		window.currentContainer = window.rootContainer
-		window.app.SetFocus(previousFocus)
-	})
-
-	window.app.SetRoot(dialog, false)
-	window.currentContainer = dialog
+	window.ShowDialog(tcell.ColorRed, "An error occured - "+text, func(_ string) {}, "Okay")
 }
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
@@ -1252,13 +1308,13 @@ func (window *Window) RefreshLayout() {
 		(window.selectedChannel != nil && window.selectedChannel.Type == discordgo.ChannelTypeGroupDM)))
 
 	if conf.UseFixedLayout {
-		window.rootContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
-		window.rootContainer.ResizeItem(window.chatArea, 0, 1)
-		window.rootContainer.ResizeItem(window.userList.internalTreeView, conf.FixedSizeRight, 6)
+		window.middleContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
+		window.middleContainer.ResizeItem(window.chatArea, 0, 1)
+		window.middleContainer.ResizeItem(window.userList.internalTreeView, conf.FixedSizeRight, 6)
 	} else {
-		window.rootContainer.ResizeItem(window.leftArea, 0, 7)
-		window.rootContainer.ResizeItem(window.chatArea, 0, 20)
-		window.rootContainer.ResizeItem(window.userList.internalTreeView, 0, 6)
+		window.middleContainer.ResizeItem(window.leftArea, 0, 7)
+		window.middleContainer.ResizeItem(window.chatArea, 0, 20)
+		window.middleContainer.ResizeItem(window.userList.internalTreeView, 0, 6)
 	}
 
 	window.app.ForceDraw()
