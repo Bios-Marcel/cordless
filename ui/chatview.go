@@ -247,11 +247,17 @@ OUTER_LOOP:
 
 //AddMessage add an additional message to the ChatView.
 func (chatView *ChatView) AddMessage(message *discordgo.Message) {
+	var isBlocked bool
 	for _, relationship := range chatView.session.State.Relationships {
 		if relationship.User.ID == message.Author.ID &&
 			relationship.Type == discordgo.RelationTypeBlocked {
-			return
+			isBlocked = true
+			break
 		}
+	}
+
+	if !config.GetConfig().ShowPlaceholderForBlockedMessages && isBlocked {
+		return
 	}
 
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
@@ -271,8 +277,13 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	if contains {
 		newText = formattedMessage
 	} else {
-		newText = chatView.formatMessage(message)
-		chatView.formattedMessages[message.ID] = newText
+		if isBlocked {
+			newText = messagePartsToColouredString(message.Timestamp, "Blocked user", "Blocked message")
+			chatView.formattedMessages[message.ID] = newText
+		} else {
+			newText = chatView.formatMessage(message)
+			chatView.formattedMessages[message.ID] = newText
+		}
 	}
 
 	if rerender {
@@ -303,12 +314,6 @@ func (chatView *ChatView) Rerender() {
 }
 
 func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
-	time, parseError := message.Timestamp.Parse()
-	var timeCellText string
-	if parseError == nil {
-		timeCellText = times.TimeToString(&time)
-	}
-
 	var messageText string
 
 	if message.Type == discordgo.MessageTypeDefault {
@@ -495,7 +500,17 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 		messageAuthor = "[#44e544]" + messageAuthor
 	}
 
-	return fmt.Sprintf("[gray]%s %s [white]%s[\"\"][\"\"]", timeCellText, messageAuthor, messageText)
+	return messagePartsToColouredString(message.Timestamp, messageAuthor, messageText)
+}
+
+func messagePartsToColouredString(timestamp discordgo.Timestamp, author, message string) string {
+	time, parseError := timestamp.Parse()
+	var timeCellText string
+	if parseError == nil {
+		timeCellText = times.TimeToString(&time)
+	}
+
+	return fmt.Sprintf("[gray]%s %s [white]%s[\"\"][\"\"]", timeCellText, author, message)
 }
 
 func parseBoldAndUnderline(messageText string) string {

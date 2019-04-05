@@ -50,6 +50,7 @@ var (
 		ShortenLinks:                           false,
 		ShortenerPort:                          63212,
 		DesktopNotifications:                   true,
+		ShowPlaceholderForBlockedMessages:      false,
 	}
 )
 
@@ -102,6 +103,12 @@ type Config struct {
 	// DesktopNotifications decides wether a popup will be shown in the users
 	// system when a notification needs to be sent.
 	DesktopNotifications bool
+
+	// ShowPlaceholderForBlockedMessages will cause blocked message to shown
+	// as a placeholder message, replacing user and message with generic text.
+	// The time of the message will still be correct in order to not mess up
+	// the timeline of messages.
+	ShowPlaceholderForBlockedMessages bool
 
 	// Accounts contains all saved accounts, allowing the user to dynamicly
 	// switch between the accounts.
