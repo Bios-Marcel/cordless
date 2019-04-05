@@ -10,7 +10,7 @@ require (
 	github.com/Bios-Marcel/tview v0.0.0-20190330171306-7230c3b1fce8
 	github.com/alecthomas/chroma v0.6.3
 	github.com/atotto/clipboard v0.1.2
-	github.com/gdamore/tcell v1.1.1
+	github.com/gdamore/tcell v1.1.2-0.20190319073105-ec71b09872d7
 	github.com/gen2brain/beeep v0.0.0-20190317152856-aa3d7c1499fd
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
