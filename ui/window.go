@@ -554,6 +554,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.dialogReplacement = tview.NewFlex().
 		SetDirection(tview.FlexRow)
+
 	window.dialogTextView = tview.NewTextView()
 	window.dialogReplacement.AddItem(window.dialogTextView, 0, 1, false)
 
@@ -649,7 +650,6 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 	previousFocus := window.app.GetFocus()
 
 	buttonWidgets := make([]*tview.Button, 0)
-	window.dialogButtonBar.AddItem(tview.NewBox(), 1, 0, false)
 	for index, button := range buttons {
 		newButton := tview.NewButton(button)
 		newButton.SetSelectedFunc(func() {
@@ -682,9 +682,11 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 			return event
 		})
 
-		window.dialogButtonBar.AddItem(newButton, 0, 1, false)
+		window.dialogButtonBar.AddItem(newButton, len(button)+2, 0, false)
 		window.dialogButtonBar.AddItem(tview.NewBox(), 1, 0, false)
 	}
+	window.dialogButtonBar.AddItem(tview.NewBox(), 0, 1, false)
+
 	window.dialogTextView.SetText(text)
 	window.dialogTextView.SetBackgroundColor(color)
 	window.dialogReplacement.SetVisible(true)
@@ -692,7 +694,7 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 
 	_, _, width, _ := window.rootContainer.GetRect()
 	height := tviewutil.CalculateNeccessaryHeight(width, window.dialogTextView.GetText(true))
-	window.rootContainer.ResizeItem(window.dialogReplacement, 1+height, 0)
+	window.rootContainer.ResizeItem(window.dialogReplacement, height+2, 0)
 }
 
 func (window *Window) registerMouseFocusListeners() {
