@@ -392,18 +392,16 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 
 	// FIXME Needs improvement, as it wastes space and breaks things
 	if message.Attachments != nil && len(message.Attachments) > 0 {
-		attachmentsAsText := ""
-		for attachmentIndex, attachment := range message.Attachments {
-			attachmentsAsText = attachmentsAsText + attachment.URL
-			if attachmentIndex != len(message.Attachments)-1 {
-				attachmentsAsText = attachmentsAsText + "\n"
-			}
+		var attachments []string
+		for _, attachment := range message.Attachments {
+			attachments = append(attachments, attachment.URL)
 		}
+		attachmentsAsText := strings.Join(attachments, " ")
 
 		if messageText != "" {
-			messageText = attachmentsAsText + "\n" + messageText
+			messageText = messageText + "\n" + attachmentsAsText
 		} else {
-			messageText = attachmentsAsText + messageText
+			messageText = attachmentsAsText
 		}
 	}
 
