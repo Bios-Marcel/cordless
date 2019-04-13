@@ -34,10 +34,6 @@ var (
 	roleMentionRegex    = regexp.MustCompile(`<@&\d*>`)
 )
 
-const (
-	maxMessagesAmount = 150
-)
-
 // ChatView is using a tview.TextView in order to be able to display messages
 // in a simple way. It supports highlighting specific element types and it
 // also supports multiline.
@@ -46,9 +42,10 @@ type ChatView struct {
 
 	shortener *linkshortener.Shortener
 
-	session   *discordgo.Session
-	data      []*discordgo.Message
-	ownUserID string
+	session    *discordgo.Session
+	data       []*discordgo.Message
+	bufferSize int
+	ownUserID  string
 
 	shortenLinks bool
 
@@ -68,6 +65,7 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		session:            session,
 		ownUserID:          ownUserID,
 		selection:          -1,
+		bufferSize:         100,
 		selectionMode:      false,
 		showSpoilerContent: make(map[string]bool),
 		shortenLinks:       config.GetConfig().ShortenLinks,
@@ -263,9 +261,10 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 
 	var rerender bool
-	if len(chatView.data) >= maxMessagesAmount {
-		delete(chatView.showSpoilerContent, chatView.data[0].ID)
-		delete(chatView.formattedMessages, chatView.data[0].ID)
+	if len(chatView.data) >= chatView.bufferSize {
+		idToDrop := chatView.data[0].ID
+		delete(chatView.showSpoilerContent, idToDrop)
+		delete(chatView.formattedMessages, idToDrop)
 		chatView.data = append(chatView.data[1:], message)
 		rerender = true
 	} else {
@@ -273,17 +272,16 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	}
 
 	var newText string
-	formattedMessage, contains := chatView.formattedMessages[message.ID]
-	if contains {
+	formattedMessage, messageAlreadyFormatted := chatView.formattedMessages[message.ID]
+	if messageAlreadyFormatted {
 		newText = formattedMessage
 	} else {
 		if isBlocked {
 			newText = messagePartsToColouredString(message.Timestamp, "Blocked user", "Blocked message")
-			chatView.formattedMessages[message.ID] = newText
 		} else {
 			newText = chatView.formatMessage(message)
-			chatView.formattedMessages[message.ID] = newText
 		}
+		chatView.formattedMessages[message.ID] = newText
 	}
 
 	if rerender {
@@ -302,15 +300,17 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 // Rerender clears the text view and fills it again using the current cache.
 func (chatView *ChatView) Rerender() {
 	chatView.internalTextView.SetText("")
+	var newContent string
 	for index, message := range chatView.data {
 		formattedMessage, contains := chatView.formattedMessages[message.ID]
 		//Should always be true, otherwise we got ourselves a bug.
 		if contains {
-			fmt.Fprint(chatView.internalTextView, "\n[\""+intToString(index)+"\"]"+formattedMessage)
+			newContent = newContent + "\n[\"" + intToString(index) + "\"]" + formattedMessage
 		} else {
 			panic("Bug in chatview, a message could not be found.")
 		}
 	}
+	fmt.Fprint(chatView.internalTextView, newContent)
 }
 
 func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
