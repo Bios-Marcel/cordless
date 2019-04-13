@@ -394,7 +394,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if event.Key() == tcell.KeyUp && messageToSend == "" {
-			for i := len(window.chatView.data) - 1; i >=	 0; i-- {
+			for i := len(window.chatView.data) - 1; i >= 0; i-- {
 				message := window.chatView.data[i]
 				if message.Author.ID == window.session.State.User.ID {
 					window.startEditingMessage(message)
@@ -573,13 +573,13 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	conf := config.GetConfig()
 
 	if conf.UseFixedLayout {
-		window.middleContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 7, true)
+		window.middleContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 0, true)
 		window.middleContainer.AddItem(window.chatArea, 0, 1, false)
-		window.middleContainer.AddItem(window.userList.internalTreeView, conf.FixedSizeRight, 6, false)
+		window.middleContainer.AddItem(window.userList.internalTreeView, conf.FixedSizeRight, 0, false)
 	} else {
+		window.middleContainer.AddItem(window.leftArea, 0, 7, true)
 		window.middleContainer.AddItem(window.chatArea, 0, 20, false)
 		window.middleContainer.AddItem(window.userList.internalTreeView, 0, 6, false)
-		window.middleContainer.AddItem(window.leftArea, 0, 7, true)
 	}
 
 	mentionWindow.SetVisible(false)
