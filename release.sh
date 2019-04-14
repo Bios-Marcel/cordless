@@ -33,7 +33,7 @@ BIN_WINDOWS="cordless.exe"
 #
 
 GOOS=linux go build -o $BIN_LINUX
-GOOS=darwin go build -o $BIN_DARAWIN
+GOOS=darwin go build -o $BIN_DARWIN
 GOOS=windows go build -o $BIN_WINDOWS
 
 #
