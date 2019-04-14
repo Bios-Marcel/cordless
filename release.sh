@@ -49,8 +49,10 @@ GOOS=windows go build -o $BIN_WINDOWS
 # and unexport them at a later point and time.
 #
 
-export RELEASE_DATE="$(date +%Y-%m-%d)"
-export EXE_HASH="$(sha256sum ./$BIN_WINDOWS | cut -f 1 -d " ")"
+RELEASE_DATE="$(date +%Y-%m-%d)"
+export RELEASE_DATE
+EXE_HASH="$(sha256sum ./$BIN_WINDOWS | cut -f 1 -d " ")"
+export EXE_HASH
 
 #
 # Substituting the variables in the scoop manifest tempalte into the actual
@@ -70,7 +72,7 @@ git push
 # Create a new tag and push it.
 #
 
-git tag -s $RELEASE_DATE -m "Update scoop package to version $RELEASE_DATE"
+git tag -s "$RELEASE_DATE" -m "Update scoop package to version ${RELEASE_DATE}"
 git push --tags
 
 #
@@ -89,9 +91,41 @@ snapcraft push "cordless_${RELEASE_DATE}_amd64.snap"
 # include all commits between the latest and the previous tag.
 #
 
-RELEASE_BODY="$(git log --pretty=oneline --abbrev-commit $(git describe --abbrev=0 $(git describe --abbrev=0)^)..$(git describe --abbrev=0))"
+RELEASE_BODY="$(git log --pretty=oneline --abbrev-commit "$(git describe --abbrev=0 "$(git describe --abbrev=0)"^)".."$(git describe --abbrev=0)")"
 
-hub release create -a $BIN_LUNUX -a $BIN_DAWIN -a $BIN_WINDOWS -m "${RELEASE_DATE}" -m "${RELEASE_BODY}" $RELEASE_DATE
+#
+# Temprarily disable that the script exists on subcommand failure.
+#
+
+set +e
+
+#
+# Look up the release to create and save whether the lookup was successful.
+# This has to be manually saved due to the fact that the next `set -e` would
+# reset the `$?` variable.
+#
+
+hub release show "$RELEASE_DATE"
+RELEASE_EXISTS=$?
+
+#
+# Let script exit again on subcommand failure.
+#
+
+set -e
+
+#
+# If the release already exists, we edit the existing one instead of creating a
+# new one.
+#
+
+if [ $RELEASE_EXISTS -eq 1 ]
+then
+    hub release edit -a "$BIN_LINUX" -a "$BIN_DARWIN" -a "$BIN_WINDOWS" -m "" -m "${RELEASE_BODY}" "$RELEASE_DATE"
+else
+    hub release create -a "$BIN_LINUX" -a "$BIN_DARWIN" -a "$BIN_WINDOWS" -m "${RELEASE_DATE}" -m "${RELEASE_BODY}" "$RELEASE_DATE"
+fi
+
 
 #
 # Unsetting(and unexporting) previously exported environment variables.
