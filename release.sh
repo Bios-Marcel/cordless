@@ -91,7 +91,7 @@ snapcraft push "cordless_${RELEASE_DATE}_amd64.snap"
 
 RELEASE_BODY="$(git log --pretty=oneline --abbrev-commit $(git describe --abbrev=0 $(git describe --abbrev=0)^)..$(git describe --abbrev=0))"
 
-hub release edit -a $BIN_LUNUX -a $BIN_DAWIN -a $BIN_WINDOWS -m "" -m "${RELEASE_BODY}" $RELEASE_DATE
+hub release create -a $BIN_LUNUX -a $BIN_DAWIN -a $BIN_WINDOWS -m "${RELEASE_DATE}" -m "${RELEASE_BODY}" $RELEASE_DATE
 
 #
 # Unsetting(and unexporting) previously exported environment variables.
