@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -30,6 +31,10 @@ const (
 	guildPageName    = "Guilds"
 	privatePageName  = "Private"
 	userInactiveTime = 10 * time.Second
+)
+
+var (
+	emojiRegex = regexp.MustCompile(":.+:")
 )
 
 // Window is basically the whole application, as it contains all the
@@ -438,6 +443,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				window.messageInput.SetText("")
 
 				if len(messageToSend) != 0 {
+					messageToSend = codeBlockRegex.ReplaceAllStringFunc(messageToSend, func(input string) string {
+						return strings.Replace(input, ":", "\\:", -1)
+					})
+
 					if window.selectedGuild != nil {
 						guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
 						if discordError == nil {
@@ -449,12 +458,19 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 								}
 							}
 
+							messageToSend = emojiRegex.ReplaceAllStringFunc(messageToSend, func(match string) string {
+								matchStripped := strings.TrimPrefix(strings.TrimSuffix(match, ":"), ":")
+								for _, emoji := range guild.Emojis {
+									if emoji.Name == matchStripped {
+										return "<:" + emoji.Name + ":" + emoji.ID + ">"
+									}
+								}
+
+								return match
+							})
 						}
 					}
 
-					messageToSend = codeBlockRegex.ReplaceAllStringFunc(messageToSend, func(input string) string {
-						return strings.Replace(input, ":", "\\:", -1)
-					})
 					//Replace formatter characters and replace emoji codes.
 					messageToSend = discordemojimap.Replace(messageToSend)
 					messageToSend = strings.Replace(messageToSend, "\\:", ":", -1)
