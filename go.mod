@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/Bios-Marcel/discordemojimap v0.0.0-20190404160132-506fd0e8d912
 	github.com/Bios-Marcel/discordgo v0.20.1
-	github.com/Bios-Marcel/goclipimg v0.0.0-20190223142034-bd49245d5f23
+	github.com/Bios-Marcel/goclipimg v0.0.0-20190417192721-b58a8831f27d
 	github.com/Bios-Marcel/shortnotforlong v0.0.0-20190220133053-9074a923cf4d
 	github.com/Bios-Marcel/tview v0.0.0-20190405085044-a91fccfc5cec
 	github.com/alecthomas/chroma v0.6.3
