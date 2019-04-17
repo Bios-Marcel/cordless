@@ -119,7 +119,7 @@ set -e
 # new one.
 #
 
-if [ $RELEASE_EXISTS -eq 1 ]
+if [ $RELEASE_EXISTS -eq 0 ]
 then
     hub release edit -a "$BIN_LINUX" -a "$BIN_DARWIN" -a "$BIN_WINDOWS" -m "" -m "${RELEASE_BODY}" "$RELEASE_DATE"
 else
