@@ -439,6 +439,8 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 			code = values[2]
 		}
 
+		code = strings.TrimSuffix(strings.TrimSuffix(code, "\n"), "\r")
+
 		// Determine lexer.
 		l := lexers.Get(language)
 		if l == nil {
