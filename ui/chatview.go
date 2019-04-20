@@ -27,7 +27,7 @@ import (
 
 var (
 	linkColor           = "[#efec1c]"
-	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.+?)\n(.+?)\x60\x60\x60(?:$|\n)")
+	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60(?:$|\n)")
 	channelMentionRegex = regexp.MustCompile(`<#\d*>`)
 	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
 	spoilerRegex        = regexp.MustCompile(`(?s)\|\|(.+?)\|\|`)
@@ -430,8 +430,14 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 
 	for _, values := range codeBlocks {
 		wholeMatch := values[0]
-		language := values[1]
-		code := values[2]
+		var language, code string
+		if len(values) == 2 {
+			language = "unknown"
+			code = values[2]
+		} else if len(values) == 3 {
+			language = values[1]
+			code = values[2]
+		}
 
 		// Determine lexer.
 		l := lexers.Get(language)
