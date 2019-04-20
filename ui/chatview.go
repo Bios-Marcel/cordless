@@ -439,7 +439,9 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 			code = values[2]
 		}
 
+		//Remove trailing newline
 		code = strings.TrimSuffix(strings.TrimSuffix(code, "\n"), "\r")
+		code = removeLeadingWhitespaceInCode(code)
 
 		// Determine lexer.
 		l := lexers.Get(language)
@@ -507,6 +509,71 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 	}
 
 	return messagePartsToColouredString(message.Timestamp, messageAuthor, messageText)
+}
+
+func removeLeadingWhitespaceInCode(code string) string {
+	// Try removing leading whitespace to save space.
+	lines := strings.Split(code, "\n")
+	minAmountOfWhiteSpaceCharacters := 1000
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+
+		amountOfCharacters := 0
+		for _, character := range []rune(line) {
+			if character != ' ' {
+				break
+			}
+
+			amountOfCharacters++
+		}
+
+		if amountOfCharacters < minAmountOfWhiteSpaceCharacters {
+			minAmountOfWhiteSpaceCharacters = amountOfCharacters
+		}
+
+		if amountOfCharacters == 0 {
+			break
+		}
+	}
+
+	if minAmountOfWhiteSpaceCharacters > 0 {
+		toTrim := strings.Repeat(" ", minAmountOfWhiteSpaceCharacters)
+		for index, line := range lines {
+			lines[index] = strings.TrimPrefix(line, toTrim)
+		}
+	} else {
+		minAmountOfWhiteSpaceCharacters = 1000
+		// If no spaces were used, try tabs instead
+		for _, line := range lines {
+			if len(line) == 0 {
+				continue
+			}
+
+			amountOfCharacters := 0
+			for _, character := range []rune(line) {
+				if character != '	' {
+					break
+				}
+
+				amountOfCharacters++
+			}
+
+			if amountOfCharacters > minAmountOfWhiteSpaceCharacters {
+				minAmountOfWhiteSpaceCharacters = amountOfCharacters
+			}
+		}
+
+		if minAmountOfWhiteSpaceCharacters > 0 {
+			toTrim := strings.Repeat("\t", minAmountOfWhiteSpaceCharacters)
+			for index, line := range lines {
+				lines[index] = strings.TrimPrefix(line, toTrim)
+			}
+		}
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 func messagePartsToColouredString(timestamp discordgo.Timestamp, author, message string) string {
