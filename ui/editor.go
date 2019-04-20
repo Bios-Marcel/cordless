@@ -272,6 +272,7 @@ func NewEditor() *Editor {
 						}
 					}
 					editor.setAndFixText(newText + endRegion)
+					editor.triggerHeightRequestIfNeccessary()
 				}
 				return nil
 			}
