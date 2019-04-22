@@ -20,6 +20,8 @@ require (
 	github.com/rivo/uniseg v0.0.0-20190313204849-f699dde9c340 // indirect
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
+	golang.org/x/crypto v0.0.0-20190418165655-df01cb2cc480 // indirect
+	golang.org/x/sys v0.0.0-20190419153524-e8e3143a4f4a // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/toast.v1 v1.0.0-20180812000517-0a84660828b2 // indirect
 )

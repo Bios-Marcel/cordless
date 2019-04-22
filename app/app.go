@@ -98,6 +98,7 @@ func Run() {
 			window.RegisterCommand(commandimpls.NewManualCommand())
 			window.RegisterCommand(commandimpls.NewFixLayoutCommand(window))
 			window.RegisterCommand(commandimpls.NewChatHeaderCommand(window))
+			window.RegisterCommand(commandimpls.NewFriendsCommand(discord))
 		})
 	}()
 
@@ -123,7 +124,7 @@ func attemptLogin(loginMessage string, app *tview.Application, configuration *co
 			session, discordError = login(loginMessage)
 		})
 	} else {
-		session, discordError = discordgo.New(configuration.Token)
+		session, discordError = discordgo.New("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0", configuration.Token)
 	}
 
 	if discordError != nil {
