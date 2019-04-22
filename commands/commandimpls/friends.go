@@ -55,12 +55,12 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 		if len(matches) == 0 {
 			fmt.Fprintln(writer, "Oopsie woopsie, there was a fuckie wuckie.")
 		} else if len(matches) == 1 {
-			fmt.Println(writer, "Accepting friends request of "+matches[0].User.String())
+			fmt.Fprintln(writer, "Accepting friends request of "+matches[0].User.String())
 			acceptErr := f.session.RelationshipFriendRequestAccept(matches[0].User.ID)
 			if acceptErr != nil {
 				fmt.Fprintf(writer, "Error accepting friendsrequest (%s).\n", acceptErr.Error())
 			} else {
-				fmt.Println(writer, matches[0].User.String()+" is now your friend.")
+				fmt.Fprintln(writer, matches[0].User.String()+" is now your friend.")
 			}
 		} else {
 			fmt.Fprintln(writer, "Oopsie woopsie, there was a fuckie wuckie.")
