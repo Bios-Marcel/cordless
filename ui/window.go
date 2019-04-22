@@ -1029,7 +1029,7 @@ func (window *Window) registerPrivateChatsHandler() {
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.RelationshipRemove) {
 		if event.Relationship.Type == discordgo.RelationTypeFriend {
 			window.app.QueueUpdateDraw(func() {
-				window.privateList.addFriend(event.User)
+				window.privateList.RemoveFriend(event.User.ID)
 			})
 		}
 	})
