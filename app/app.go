@@ -28,6 +28,7 @@ const (
      ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝╚══════╝              
 `
 	defaultLoginMessage = "Please choose wether to login via authentication token (1) or email and password (2)."
+	userSession         = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0"
 )
 
 // Run launches the whole application and might abort in case it encounters an
@@ -124,12 +125,14 @@ func attemptLogin(loginMessage string, app *tview.Application, configuration *co
 			session, discordError = login(loginMessage)
 		})
 	} else {
-		session, discordError = discordgo.New("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0", configuration.Token)
+		session, discordError = discordgo.NewWithToken(
+			userSession,
+			configuration.Token)
 	}
 
 	if discordError != nil {
 		configuration.Token = ""
-		return attemptLogin(fmt.Sprintf("Your password or token was incorrect, please try again.\n%s", defaultLoginMessage), app, configuration)
+		return attemptLogin(fmt.Sprintf("Error during login attempt (%s).\n%s", discordError, defaultLoginMessage), app, configuration)
 	}
 
 	//When logging in via token, the token isn't ever validated, therefore we do a test lookup here.
@@ -184,7 +187,7 @@ func askForEmailAndPassword() (*discordgo.Session, error) {
 	}
 	password := string(passwordAsBytes[:])
 
-	return discordgo.New(name, password)
+	return discordgo.NewWithPassword(userSession, name, password)
 }
 
 func askForToken() (*discordgo.Session, error) {
@@ -203,5 +206,5 @@ func askForToken() (*discordgo.Session, error) {
 		return askForToken()
 	}
 
-	return discordgo.New(token)
+	return discordgo.NewWithToken(userSession, token)
 }
