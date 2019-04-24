@@ -3,6 +3,7 @@ package commandimpls
 import (
 	"fmt"
 	"io"
+	"strings"
 	"unicode"
 
 	"github.com/Bios-Marcel/discordgo"
@@ -18,9 +19,11 @@ The friend currently command offers 3 subcommands:
   * accept   - accept a friends-request
   * befriend - send a friends-request
   * requests - shows all current requests
+  * search   - finds friends by name, name#discriminator or id
+  * list     - shows all friends
+  * remove   - removes a friend from your friendslist
 
 The following features are currently unsupported:
-  * Deleting friends
   * Bocking users
   * Unblocking users
 `
@@ -45,6 +48,49 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 	}
 
 	switch parameters[0] {
+	case "list", "show", "which":
+		fmt.Fprintln(writer, "Friends:")
+		for _, rel := range f.session.State.Relationships {
+			if rel.Type == discordgo.RelationTypeFriend {
+				fmt.Fprintln(writer, "  "+rel.User.Username)
+			}
+		}
+	case "delete", "unfriend", "remove", "decline":
+		if len(parameters) != 2 {
+			fmt.Fprintln(writer, "Usage: friends remove <Username|Username#NNNN|UserID")
+			return
+		}
+
+		input := parameters[1]
+		var matches []*discordgo.Relationship
+		for _, rel := range f.session.State.Relationships {
+			if rel.Type == discordgo.RelationTypeFriend ||
+				rel.Type == discordgo.RelationTypeOutgoingRequest ||
+				rel.Type == discordgo.RelationTypeIncommingRequest {
+				if rel.User.ID == input || rel.User.Username == input || rel.User.String() == input {
+					matches = append(matches, rel)
+				}
+			}
+		}
+
+		if len(matches) == 0 {
+			fmt.Fprintf(writer, "No matches for '%s' found.\n", input)
+		} else if len(matches) == 1 {
+			user := matches[0]
+			fmt.Fprintln(writer, "Removing friend "+user.User.String())
+			acceptErr := f.session.RelationshipDelete(user.User.ID)
+			if acceptErr != nil {
+				fmt.Fprintf(writer, "Error removing friend (%s).\n", acceptErr.Error())
+			} else {
+				fmt.Fprintln(writer, user.User.String()+" has been removed as your friend.")
+			}
+		} else {
+			fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", input)
+			fmt.Fprintln(writer, "The following matches were found:")
+			for _, match := range matches {
+				fmt.Fprintln(writer, "  "+match.User.String())
+			}
+		}
 	case "requests", "invites", "outstanding", "unanswered":
 		var incomming, outgoing string
 		for _, rel := range f.session.State.Relationships {
@@ -74,17 +120,17 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 			return
 		}
 
-		accept := parameters[1]
+		input := parameters[1]
 		var matches []*discordgo.Relationship
 		for _, rel := range f.session.State.Relationships {
 			if rel.Type == discordgo.RelationTypeIncommingRequest {
-				if rel.User.ID == accept || rel.User.Username == accept || rel.User.String() == accept {
+				if rel.User.ID == input || rel.User.Username == input || rel.User.String() == input {
 					matches = append(matches, rel)
 				}
 			}
 		}
 		if len(matches) == 0 {
-			fmt.Fprintf(writer, "No matches for '%s' found.\n", accept)
+			fmt.Fprintf(writer, "No matches for '%s' found.\n", input)
 		} else if len(matches) == 1 {
 			fmt.Fprintln(writer, "Accepting friends request of "+matches[0].User.String())
 			acceptErr := f.session.RelationshipFriendRequestAccept(matches[0].User.ID)
@@ -94,13 +140,40 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 				fmt.Fprintln(writer, matches[0].User.String()+" is now your friend.")
 			}
 		} else {
-			fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", accept)
+			fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", input)
 			fmt.Fprintln(writer, "The following matches were found:")
 			for _, match := range matches {
 				fmt.Fprintln(writer, "  "+match.User.String())
 			}
 		}
-	case "befriend", "send", "ask", "invite", "request":
+	case "search", "find":
+		if len(parameters) != 2 {
+			fmt.Fprintln(writer, "Usage: friends find <Username|Username#NNNN|UserID")
+		}
+
+		input := parameters[1]
+
+		var matches []*discordgo.Relationship
+		for _, rel := range f.session.State.Relationships {
+			if rel.Type == discordgo.RelationTypeFriend {
+				if strings.Contains(rel.User.ID, input) ||
+					strings.Contains(rel.User.Username, input) ||
+					strings.Contains(rel.User.String(), input) {
+					matches = append(matches, rel)
+				}
+			}
+		}
+
+		if len(matches) == 0 {
+			fmt.Fprintf(writer, "No matches were found for '%s'.\n", input)
+		} else {
+			fmt.Fprintln(writer, "The following matches were found:")
+			for _, match := range matches {
+				fmt.Fprintln(writer, "  "+match.User.String())
+			}
+		}
+
+	case "befriend", "add", "send", "ask", "invite", "request":
 		if len(parameters) != 2 {
 			fmt.Fprintln(writer, "Usage: friends befriend <Username|Username#NNNN|UserID")
 		}
@@ -139,12 +212,12 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 			}
 		} else if len(matches) == 1 {
 			user := matches[0]
-			fmt.Fprintln(writer, "Sending friendsrequest to "+user.String())
+
 			requestError := f.session.RelationshipFriendRequestSend(user.ID)
 			if requestError != nil {
 				fmt.Fprintf(writer, "Error sending friends-request (%s).\n", requestError)
 			} else {
-				fmt.Fprintln(writer, "Friends-request has been sent.")
+				fmt.Fprintf(writer, "A friends-reuest has been sent to '%s'.\n", user.String())
 			}
 		} else {
 			fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", input)
@@ -153,6 +226,8 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 				fmt.Fprintln(writer, "  "+match.String())
 			}
 		}
+	default:
+		f.PrintHelp(writer)
 	}
 }
 
