@@ -12,10 +12,10 @@ import (
 const friendsDocumentation = `[orange][::u]# friends[white]
 
 The friends command allows you to manage your friends on discord. You can add
-new friends by sending or accept friendsrequests. You can also see your current
-requets, that goes for the incomming and the outgoing ones.
+new friends by sending or accepting friendsrequests. You can also see your
+current requests, that goes for the incomming and the outgoing ones.
 
-The friend currently command offers 3 subcommands:
+The friend currently command offers the following subcommands:
   * accept   - accept a friends-request
   * befriend - send a friends-request
   * requests - shows all current requests
@@ -24,7 +24,7 @@ The friend currently command offers 3 subcommands:
   * remove   - removes a friend from your friendslist
 
 The following features are currently unsupported:
-  * Bocking users
+  * Blocking users
   * Unblocking users
 `
 
