@@ -7,6 +7,8 @@
 | windows | [![Build status](https://ci.appveyor.com/api/projects/status/svv866htsr33hdoh/branch/master?svg=true)](https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master) |
 | freebsd | [![builds.sr.ht status](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml.svg)](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml?) |
 
+[![Donate using librepay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/biosmarcel/donate)
+
 ## Overview
 
 - [Cordless](#cordless)
@@ -197,6 +199,11 @@ feature requests are welcome as well, no matter if those are features that the
 official discord client has or not.
 
 Oh and please try to keep things pragmatic and foul-language free ;)
+
+If none of those ways of contributing are your kind of thing, feel free to
+donate something via https://liberapay.com/biosmarcel/donate. It may not
+directly have an impact on the project, but it will surely motivate me to
+keep working on this project, as it shows that people care about it.
 
 ## Similar projects
 
