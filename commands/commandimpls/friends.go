@@ -126,7 +126,7 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 		if len(matches) == 0 {
 			for _, char := range input {
 				if !unicode.IsNumber(char) {
-					fmt.Fprintf(writer, "No matches for '%s' found.\n", input)
+					fmt.Fprintf(writer, "No matches for '%s' found. Please ask that person to add you or find out the UserID.\n", input)
 					return
 				}
 			}
