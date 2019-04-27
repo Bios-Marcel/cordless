@@ -604,6 +604,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if event.Key() == tcell.KeyLeft {
 				if window.userList.internalTreeView.IsVisible() {
 					window.app.SetFocus(window.userList.internalTreeView)
+				} else {
+					window.app.SetFocus(window.chatView.internalTextView)
 				}
 				return nil
 			}
