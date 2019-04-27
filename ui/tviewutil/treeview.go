@@ -5,7 +5,7 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-func CreateFocusTextViewOnTypeInputHandler(treeView *tview.Box, app *tview.Application, component *tview.TextView) func(event *tcell.EventKey) *tcell.EventKey {
+func CreateFocusTextViewOnTypeInputHandler(app *tview.Application, component *tview.TextView) func(event *tcell.EventKey) *tcell.EventKey {
 	eventHandler := func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers() == tcell.ModNone {
 			if event.Key() == tcell.KeyEnter {
