@@ -374,6 +374,38 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		messageToSend := window.messageInput.GetText()
 
+		if event.Modifiers() == tcell.ModAlt {
+			if event.Key() == tcell.KeyUp || event.Key() == tcell.KeyDown {
+				window.app.SetFocus(window.chatView.internalTextView)
+				return nil
+			}
+
+			if event.Key() == tcell.KeyRight {
+				if window.userList.internalTreeView.IsVisible() {
+					window.app.SetFocus(window.userList.internalTreeView)
+				} else {
+					if window.leftArea.GetCurrentPage() == guildPageName {
+						window.app.SetFocus(window.channelTree.internalTreeView)
+						return nil
+					} else if window.leftArea.GetCurrentPage() == privatePageName {
+						window.app.SetFocus(window.privateList.internalTreeView)
+						return nil
+					}
+				}
+				return nil
+			}
+
+			if event.Key() == tcell.KeyLeft {
+				if window.leftArea.GetCurrentPage() == guildPageName {
+					window.app.SetFocus(window.channelTree.internalTreeView)
+					return nil
+				} else if window.leftArea.GetCurrentPage() == privatePageName {
+					window.app.SetFocus(window.privateList.internalTreeView)
+					return nil
+				}
+			}
+		}
+
 		if event.Modifiers() == tcell.ModCtrl {
 			if event.Key() == tcell.KeyUp {
 				window.chatView.internalTextView.ScrollUp()
@@ -549,15 +581,215 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.privateList.internalTreeView.SetSearchOnTypeEnabled(true)
 	} else if config.GetConfig().OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
 		guildList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			guildList.Box, window.app, window.messageInput.internalTextView))
+			window.app, window.messageInput.internalTextView))
 		channelTree.internalTreeView.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			channelTree.internalTreeView.Box, window.app, window.messageInput.internalTextView))
+			window.app, window.messageInput.internalTextView))
 		window.userList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			window.userList.internalTreeView.Box, window.app, window.messageInput.internalTextView))
+			window.app, window.messageInput.internalTextView))
 		window.privateList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			window.privateList.GetComponent().Box, window.app, window.messageInput.internalTextView))
+			window.app, window.messageInput.internalTextView))
 		window.chatView.internalTextView.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			window.chatView.internalTextView.Box, window.app, window.messageInput.internalTextView))
+			window.app, window.messageInput.internalTextView))
+	}
+
+	//Guild Container arrow key navigation. Please end my life.
+	oldGuildListHandler := guildList.GetInputCapture()
+	newGuildHandler := func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Modifiers() == tcell.ModAlt {
+			if event.Key() == tcell.KeyDown || event.Key() == tcell.KeyUp {
+				window.app.SetFocus(window.channelTree.internalTreeView)
+				return nil
+			}
+
+			if event.Key() == tcell.KeyLeft {
+				if window.userList.internalTreeView.IsVisible() {
+					window.app.SetFocus(window.userList.internalTreeView)
+				}
+				return nil
+			}
+
+			if event.Key() == tcell.KeyRight {
+				window.app.SetFocus(window.chatView.internalTextView)
+				return nil
+			}
+		}
+
+		return event
+	}
+
+	if oldGuildListHandler == nil {
+		guildList.SetInputCapture(newGuildHandler)
+	} else {
+		guildList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			handledEvent := newGuildHandler(event)
+			if handledEvent != nil {
+				return oldGuildListHandler(event)
+			}
+
+			return event
+		})
+	}
+
+	//Channel Container arrow key navigation. Please end my life.
+	oldChannelListHandler := channelTree.internalTreeView.GetInputCapture()
+	newChannelListHandler := func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Modifiers() == tcell.ModAlt {
+			if event.Key() == tcell.KeyDown || event.Key() == tcell.KeyUp {
+				window.app.SetFocus(window.guildList)
+				return nil
+			}
+
+			if event.Key() == tcell.KeyLeft {
+				if window.userList.internalTreeView.IsVisible() {
+					window.app.SetFocus(window.userList.internalTreeView)
+				} else {
+					window.app.SetFocus(window.messageInput.GetPrimitive())
+				}
+				return nil
+			}
+
+			if event.Key() == tcell.KeyRight {
+				window.app.SetFocus(window.messageInput.GetPrimitive())
+				return nil
+			}
+		}
+
+		return event
+	}
+
+	if oldChannelListHandler == nil {
+		channelTree.internalTreeView.SetInputCapture(newChannelListHandler)
+	} else {
+		channelTree.internalTreeView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			handledEvent := newChannelListHandler(event)
+			if handledEvent != nil {
+				return oldChannelListHandler(event)
+			}
+
+			return event
+		})
+	}
+
+	//Chatview arrow key navigation. Please end my life.
+	oldChatViewHandler := window.chatView.internalTextView.GetInputCapture()
+	newChatViewHandler := func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Modifiers() == tcell.ModAlt {
+			if event.Key() == tcell.KeyDown || event.Key() == tcell.KeyUp {
+				window.app.SetFocus(window.messageInput.GetPrimitive())
+				return nil
+			}
+
+			if event.Key() == tcell.KeyLeft {
+				if window.leftArea.GetCurrentPage() == guildPageName {
+					window.app.SetFocus(window.guildList)
+					return nil
+				} else if window.leftArea.GetCurrentPage() == guildPageName {
+					window.app.SetFocus(window.privateList.internalTreeView)
+					return nil
+				}
+			}
+
+			if event.Key() == tcell.KeyRight {
+				if window.userList.internalTreeView.IsVisible() {
+					window.app.SetFocus(window.userList.internalTreeView)
+				} else {
+					if window.leftArea.GetCurrentPage() == guildPageName {
+						window.app.SetFocus(window.guildList)
+						return nil
+					} else if window.leftArea.GetCurrentPage() == guildPageName {
+						window.app.SetFocus(window.privateList.internalTreeView)
+						return nil
+					}
+				}
+				return nil
+			}
+		}
+
+		return event
+	}
+
+	if oldChatViewHandler == nil {
+		window.chatView.internalTextView.SetInputCapture(newChatViewHandler)
+	} else {
+		window.chatView.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			handledEvent := newChatViewHandler(event)
+			if handledEvent != nil {
+				return oldChatViewHandler(event)
+			}
+
+			return event
+		})
+	}
+
+	//User Container arrow key navigation. Please end my life.
+	oldUserListHandler := window.userList.internalTreeView.GetInputCapture()
+	newUserListHandler := func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Modifiers() == tcell.ModAlt {
+			if event.Key() == tcell.KeyRight {
+				if window.leftArea.GetCurrentPage() == guildPageName {
+					window.app.SetFocus(window.guildList)
+					return nil
+				} else if window.leftArea.GetCurrentPage() == guildPageName {
+					window.app.SetFocus(window.privateList.internalTreeView)
+					return nil
+				}
+				return nil
+			}
+			if event.Key() == tcell.KeyLeft {
+				window.app.SetFocus(window.chatView.GetPrimitive())
+				return nil
+			}
+		}
+
+		return event
+	}
+
+	if oldUserListHandler == nil {
+		window.userList.internalTreeView.SetInputCapture(newUserListHandler)
+	} else {
+		window.userList.internalTreeView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			handledEvent := newUserListHandler(event)
+			if handledEvent != nil {
+				return oldUserListHandler(event)
+			}
+
+			return event
+		})
+	}
+
+	//Private Container arrow key navigation. Please end my life.
+	oldPrivateListHandler := window.privateList.internalTreeView.GetInputCapture()
+	newPrivateListHandler := func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Modifiers() == tcell.ModAlt {
+			if event.Key() == tcell.KeyLeft {
+				if window.userList.internalTreeView.IsVisible() {
+					window.app.SetFocus(window.userList.internalTreeView)
+				} else {
+					window.app.SetFocus(window.chatView.internalTextView)
+				}
+				return nil
+			}
+
+			if event.Key() == tcell.KeyRight {
+				window.app.SetFocus(window.chatView.internalTextView)
+				return nil
+			}
+		}
+
+		return event
+	}
+
+	if oldPrivateListHandler == nil {
+		window.privateList.internalTreeView.SetInputCapture(newPrivateListHandler)
+	} else {
+		window.privateList.internalTreeView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			handledEvent := newPrivateListHandler(event)
+			if handledEvent != nil {
+				return oldPrivateListHandler(event)
+			}
+
+			return event
+		})
 	}
 
 	window.middleContainer = tview.NewFlex().
