@@ -90,9 +90,14 @@ In order to install updates, run:
 scoop update cordless
 ```
 
-### Installing on Mac OS
+### Installing on macOS
 
-**HELP NEEDED. If you are willing to add support for `brew`, I'd be very thankful.**
+Use [Homebrew](https://brew.sh) to install `cordless` on macOS:
+
+```shell
+brew tap Bios-Marcel/cordless
+brew install cordless
+```
 
 ### Using pre-built binaries
 
