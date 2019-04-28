@@ -18,7 +18,7 @@
       - [Snap](#snap)
       - [Arch-Linux](#arch-linux)
     - [Installing on Windows](#installing-on-windows)
-    - [Installing on Mac OS](#installing-on-mac-os)
+    - [Installing on Mac OS](#installing-on-macos)
     - [Using pre-built binaries](#using-pre-built-binaries)
     - [Building it from source](#building-it-from-source)
     - [Login](#login)
@@ -90,9 +90,14 @@ In order to install updates, run:
 scoop update cordless
 ```
 
-### Installing on Mac OS
+### Installing on macOS
 
-**HELP NEEDED. If you are willing to add support for `brew`, I'd be very thankful.**
+Use [Homebrew](https://brew.sh) to install `cordless` on macOS:
+
+```shell
+brew tap Bios-Marcel/cordless
+brew install cordless
+```
 
 ### Using pre-built binaries
 
