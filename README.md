@@ -18,7 +18,7 @@
       - [Snap](#snap)
       - [Arch-Linux](#arch-linux)
     - [Installing on Windows](#installing-on-windows)
-    - [Installing on Mac OS](#installing-on-mac-os)
+    - [Installing on Mac OS](#installing-on-macos)
     - [Using pre-built binaries](#using-pre-built-binaries)
     - [Building it from source](#building-it-from-source)
     - [Login](#login)
