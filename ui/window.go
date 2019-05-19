@@ -1325,8 +1325,6 @@ func (window *Window) askForMessageDeletion(messageID string, usedWithSelection 
 			}
 
 			window.exitMessageEditMode()
-			window.app.SetRoot(window.rootContainer, true)
-			window.currentContainer = window.rootContainer
 			if usedWithSelection {
 				window.chatView.SignalSelectionDeleted()
 			}
