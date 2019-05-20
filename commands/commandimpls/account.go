@@ -21,6 +21,7 @@ Subcommands:
   * list        - Lists all available accounts
   * current     - Displays the currently used account
   * add-current - Add the token currently in use as a new account
+  * logout      - Resets the token, which will cause cordless to prompt you for credentials again
 `
 
 // Account manages the users account
@@ -76,7 +77,16 @@ func (account *Account) Execute(writer io.Writer, parameters []string) {
 			} else {
 				account.addCurrentAccount(writer, parameters[1])
 			}
+		case "logout", "sign-out", "signout", "logoff":
+			if len(parameters) != 1 {
+				account.printAccountLogoutHelp(writer)
+			} else {
+				account.logout(writer)
+			}
+		default:
+			account.PrintHelp(writer)
 		}
+
 	}
 }
 
@@ -142,16 +152,36 @@ func (account *Account) switchAccount(writer io.Writer, accountName string) {
 		}
 	}
 
+	oldToken := config.GetConfig().Token
 	config.GetConfig().Token = newToken
+	persistError := account.saveAndRestart(writer)
+	if persistError != nil {
+		config.GetConfig().Token = oldToken
+		fmt.Fprintf(writer, "[red]Error switching accounts '%s'.\n", persistError.Error())
+	}
+}
+
+func (account *Account) logout(writer io.Writer) {
+	oldToken := config.GetConfig().Token
+	config.GetConfig().Token = ""
+	err := account.saveAndRestart(writer)
+	if err != nil {
+		config.GetConfig().Token = oldToken
+		fmt.Fprintf(writer, "[red]Error logging you out '%s'.\n", err.Error())
+	}
+}
+
+func (account *Account) saveAndRestart(writer io.Writer) error {
 	persistError := config.PersistConfig()
 	if persistError != nil {
-		fmt.Fprintf(writer, "[red]Error switching accounts '%s'.\n", persistError.Error())
-	} else {
-		//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
-		account.runNext <- true
-		account.window.Shutdown()
+		return persistError
 	}
 
+	//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
+	account.runNext <- true
+	account.window.Shutdown()
+
+	return nil
 }
 
 func (account *Account) printAccountListHelp(writer io.Writer) {
@@ -167,6 +197,10 @@ func (account *Account) listAccounts(writer io.Writer) {
 
 func (account *Account) printAccountCurrentHelp(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage: account current")
+}
+
+func (account *Account) printAccountLogoutHelp(writer io.Writer) {
+	fmt.Fprintln(writer, "Usage: account logout")
 }
 
 func (account *Account) currentAccount(writer io.Writer) {
