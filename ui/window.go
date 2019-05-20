@@ -315,8 +315,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.commandView.commandOutput.Clear()
 
 		if window.selectedChannel != nil {
-			if window.selectedGuild != nil {
-				guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+			if window.selectedChannel.GuildID != "" {
+				guild, discordError := window.session.State.Guild(window.selectedChannel.GuildID)
 				if discordError == nil {
 					for _, user := range guild.Members {
 						if strings.Contains(strings.ToUpper(user.Nick), strings.ToUpper(namePart)) || strings.Contains(strings.ToUpper(user.User.Username)+"#"+user.User.Discriminator, strings.ToUpper(namePart)) {
