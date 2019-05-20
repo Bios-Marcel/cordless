@@ -10,6 +10,8 @@ github.com/Bios-Marcel/shortnotforlong v0.0.0-20190220133053-9074a923cf4d h1:E5I
 github.com/Bios-Marcel/shortnotforlong v0.0.0-20190220133053-9074a923cf4d/go.mod h1:baXE5Qfk1rJLPL8LZK6mDNv7x84m1+OVKfJw24Wu4W4=
 github.com/Bios-Marcel/tview v0.0.0-20190420141116-9d8107874a47 h1:0Wrf+/c4gpjS2Sf5enxEAdIGvZ8DJPEwd5Ik6Z/nCcw=
 github.com/Bios-Marcel/tview v0.0.0-20190420141116-9d8107874a47/go.mod h1:GMXdWTT0HANfXLSKD86y+L0ZNzigLVtZB76T01m3VvI=
+github.com/Bios-Marcel/tview v0.0.0-20190520085441-3a707d5c3185 h1:m/gS5OnCG/DDhOJKPCnzKqyBE0Tf5+0GEf714GBSggQ=
+github.com/Bios-Marcel/tview v0.0.0-20190520085441-3a707d5c3185/go.mod h1:GMXdWTT0HANfXLSKD86y+L0ZNzigLVtZB76T01m3VvI=
 github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38 h1:smF2tmSOzy2Mm+0dGI2AIUHY+w0BUc+4tn40djz7+6U=
 github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38/go.mod h1:r7bzyVFMNntcxPZXK3/+KdruV1H5KSlyVY0gc+NgInI=
 github.com/alecthomas/chroma v0.6.3 h1:8H1D0yddf0mvgvO4JDBKnzLd9ERmzzAijBxnZXGV/FA=

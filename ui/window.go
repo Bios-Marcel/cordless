@@ -1496,7 +1496,8 @@ func (window *Window) ExecuteCommand(command string) {
 func (window *Window) startEditingMessage(message *discordgo.Message) {
 	if message.Author.ID == window.session.State.User.ID {
 		window.messageInput.SetText(message.Content)
-		window.messageInput.SetBackgroundColor(tcell.ColorDarkGoldenrod)
+		window.messageInput.SetBorderColor(tcell.ColorYellow)
+		window.messageInput.SetBorderFocusColor(tcell.ColorYellow)
 		window.editingMessageID = &message.ID
 		window.app.SetFocus(window.messageInput.GetPrimitive())
 	}
@@ -1509,7 +1510,8 @@ func (window *Window) exitMessageEditMode() {
 
 func (window *Window) exitMessageEditModeAndKeepText() {
 	window.editingMessageID = nil
-	window.messageInput.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
+	window.messageInput.SetBorderColor(tview.Styles.BorderColor)
+	window.messageInput.SetBorderFocusColor(tview.Styles.BorderFocusColor)
 }
 
 //ShowErrorDialog shows a simple error dialog that has only an Okay button,

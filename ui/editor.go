@@ -393,6 +393,18 @@ func (editor *Editor) SetText(text string) {
 	editor.triggerHeightRequestIfNeccessary()
 }
 
+// SetBorderFocusColor delegates to the underlying components
+// SetBorderFocusColor method.
+func (editor *Editor) SetBorderFocusColor(color tcell.Color) {
+	editor.internalTextView.SetBorderFocusColor(color)
+}
+
+// SetBorderColor delegates to the underlying components SetBorderColor
+// method.
+func (editor *Editor) SetBorderColor(color tcell.Color) {
+	editor.internalTextView.SetBorderColor(color)
+}
+
 // SetInputCapture sets the alternative input capture that will be used if the
 // components default controls aren't being triggered.
 func (editor *Editor) SetInputCapture(captureFunc func(event *tcell.EventKey) *tcell.EventKey) {
