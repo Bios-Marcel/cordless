@@ -33,16 +33,12 @@ func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 		switch strings.ToLower(parameters[0]) {
 		case "chat-view", "chatview":
 			fmt.Fprintln(writer, chatViewDocumentation)
-
 		case "commands":
 			fmt.Fprintln(writer, commandsDocumentation)
-
 		case "configuration":
 			fmt.Fprintln(writer, configurationDocumentation)
-
 		case "message-editor", "messageeditor":
 			fmt.Fprintln(writer, messageEditorDocumentation)
-
 		case "navigation":
 			fmt.Fprintln(writer, navigationDocumentation)
 		default:
@@ -77,7 +73,19 @@ When in selection mode, those shortcuts are active:
 | Selectino to bottom         | End        |
 --------------------------------------------
 `
-const commandsDocumentation = `[orange][::u]# Commands[white]`
+const commandsDocumentation = `[orange][::u]# Commands[white]
+
+All commands can only be entered via the command-input component. Commands can't be called from outside the application or on startup.
+
+All commands follow a certain symantics pattern:
+	COMMAND SUBCOMMAND --SETTING "Some setting value" MAIN_VALUE
+	
+Not every command makes use of all of the possible combinations. Each command may have zero or more subcommands and zero or more settings. There may also be settings that do not require you passing a value. If a value contains spaces it needs to be quoted beforehand, otherwise the input will be seperated at each given space. Some commands require some main value, which is basically the non-optional input for that command. That value doesn't require a setting-name to be prepended in front of it.
+
+After typing a command, it will be added to your history. The history doesn't persist between cordless sessions, it will be forgotten every time you close the application. The history can be travelled through by using the arrow up and down keys. An exception for historization are secret inputs like passwords, those aren't directly typed into the command-input. Instead cordless shows an extra dialog that as soon as you are required to input sensitive information like passwords.
+
+Since the command-input component uses the same underlying component as the message-input, you can use the same shortcuts for editing your input.
+`
 const configurationDocumentation = `[orange][::u]# Configuration[white]`
 const messageEditorDocumentation = `[orange][::u]# Message editor[white]
 
@@ -115,7 +123,8 @@ Currently it is not a finished widget.
 
 const navigationDocumentation = `[orange][::u]# Navigation[white]
 
-Currently the navigation is solely via your keyboard.
+Most of the controlling is currently done via the keyboard. However, the focus
+between components can be changed by using a mouse as well.
 
 [::u]## Shortcuts
 
@@ -135,6 +144,8 @@ Currently the navigation is solely via your keyboard.
 | Edit last message       | ArrowUp  | In empty message input      |
 | Leave message edit mode | Esc      | When editing message        |
 --------------------------------------------------------------------
+
+Some shortcuts can be changed via the shortcut dialog. The dialog can be opened via Alt+Shift+S.
 `
 
 // Name represents this commands indentifier.
