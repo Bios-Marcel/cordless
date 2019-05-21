@@ -243,8 +243,7 @@ OUTER_LOOP:
 	chatView.Rerender()
 }
 
-//AddMessage add an additional message to the ChatView.
-func (chatView *ChatView) AddMessage(message *discordgo.Message) {
+func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 	var isBlocked bool
 	for _, relationship := range chatView.session.State.Relationships {
 		if relationship.User.ID == message.Author.ID &&
@@ -257,8 +256,6 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	if !config.GetConfig().ShowPlaceholderForBlockedMessages && isBlocked {
 		return
 	}
-
-	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 
 	var rerender bool
 	if len(chatView.data) >= chatView.bufferSize {
@@ -289,9 +286,32 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	} else {
 		fmt.Fprint(chatView.internalTextView, "\n[\""+intToString(len(chatView.data)-1)+"\"]"+newText)
 	}
+}
+
+//AddMessage add an additional message to the ChatView.
+func (chatView *ChatView) AddMessage(message *discordgo.Message) {
+	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
+
+	chatView.addMessageInternal(message)
 
 	chatView.updateHighlights()
+	if wasScrolledToTheEnd {
+		chatView.internalTextView.ScrollToEnd()
+	}
+}
 
+// AddMessages is the same as AddMessage, but for an array of messages instead
+// of a single message. Calling this method will not repeat certain actions and
+// therefore be slightly more performant than calling AddMessage multiple
+// times.
+func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
+	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
+
+	for _, message := range messages {
+		chatView.addMessageInternal(message)
+	}
+
+	chatView.updateHighlights()
 	if wasScrolledToTheEnd {
 		chatView.internalTextView.ScrollToEnd()
 	}
@@ -715,7 +735,5 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 	chatView.data = make([]*discordgo.Message, 0)
 	chatView.internalTextView.SetText("")
 
-	for _, message := range messages {
-		chatView.AddMessage(message)
-	}
+	chatView.AddMessages(messages)
 }
