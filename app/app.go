@@ -100,6 +100,7 @@ func Run() {
 			window.RegisterCommand(commandimpls.NewFixLayoutCommand(window))
 			window.RegisterCommand(commandimpls.NewChatHeaderCommand(window))
 			window.RegisterCommand(commandimpls.NewFriendsCommand(discord))
+			window.RegisterCommand(commandimpls.NewUserUpdateCommand(window, discord))
 		})
 	}()
 

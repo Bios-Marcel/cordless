@@ -1325,8 +1325,6 @@ func (window *Window) askForMessageDeletion(messageID string, usedWithSelection 
 			}
 
 			window.exitMessageEditMode()
-			window.app.SetRoot(window.rootContainer, true)
-			window.currentContainer = window.rootContainer
 			if usedWithSelection {
 				window.chatView.SignalSelectionDeleted()
 			}
@@ -1666,16 +1664,74 @@ func (window *Window) UpdateChatHeader(channel *discordgo.Channel) {
 	}
 }
 
-//RegisterCommand register a command. That makes the command available for
-//being called from the message input field, in case the user-defined prefix
-//is in front of the input.
+// RegisterCommand register a command. That makes the command available for
+// being called from the message input field, in case the user-defined prefix
+// is in front of the input.
 func (window *Window) RegisterCommand(command commands.Command) {
 	window.commands[command.Name()] = command
 }
 
-// GetRegisteredCommands returns the map of all registered commands
+// GetRegisteredCommands returns the map of all registered commands.
 func (window *Window) GetRegisteredCommands() map[string]commands.Command {
 	return window.commands
+}
+
+// GetSelectedGuild returns a reference to the currently selected UserGuild.
+func (window *Window) GetSelectedGuild() *discordgo.UserGuild {
+	return window.selectedGuild
+}
+
+// PromptSecretInput shows an input dialog that masks the user input. The
+// returned value will either be empty or what the user has entered.
+func (window *Window) PromptSecretInput(title, message string) string {
+	waitChannel := make(chan struct{})
+	var output string
+	var previousFocus tview.Primitive
+	window.app.QueueUpdateDraw(func() {
+		previousFocus = window.app.GetFocus()
+		inputField := tview.NewInputField()
+		inputField.SetMaskCharacter('*')
+		inputField.SetDoneFunc(func(key tcell.Key) {
+			if key == tcell.KeyEnter {
+				output = inputField.GetText()
+				waitChannel <- struct{}{}
+			} else if key == tcell.KeyEscape {
+				waitChannel <- struct{}{}
+			}
+		})
+		inputField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			if event.Key() == tcell.KeyCtrlV {
+				content, clipError := clipboard.ReadAll()
+				if clipError == nil {
+					inputField.SetText(content)
+				}
+				return nil
+			}
+
+			return event
+		})
+		frame := tview.NewFrame(inputField)
+		frame.SetTitle(title)
+		frame.SetBorder(true)
+		frame.AddText(message, true, tview.AlignLeft, tcell.ColorDefault)
+		window.app.SetRoot(frame, true)
+		window.currentContainer = frame
+	})
+	<-waitChannel
+	window.app.QueueUpdateDraw(func() {
+		window.app.SetRoot(window.rootContainer, true)
+		window.currentContainer = window.rootContainer
+		window.app.SetFocus(previousFocus)
+		waitChannel <- struct{}{}
+	})
+	<-waitChannel
+	return output
+}
+
+// ForceRedraw triggers ForceDraw on the underlying tview application, causing
+// it to redraw all currently shown components.
+func (window *Window) ForceRedraw() {
+	window.app.ForceDraw()
 }
 
 //Run Shows the window optionally returning an error.
