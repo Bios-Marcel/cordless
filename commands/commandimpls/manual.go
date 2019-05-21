@@ -86,7 +86,12 @@ After typing a command, it will be added to your history. The history doesn't pe
 
 Since the command-input component uses the same underlying component as the message-input, you can use the same shortcuts for editing your input.
 `
-const configurationDocumentation = `[orange][::u]# Configuration[white]`
+const configurationDocumentation = `[orange][::u]# Configuration[white]
+
+Currently all almost configuration is done via manually editing the configuration file. There are however some settings like the fix-layout setting and the chatheader setting that can be set via the commands feature.
+
+At some point there will be a user-interface for changing settings and commands will be removed.
+`
 const messageEditorDocumentation = `[orange][::u]# Message editor[white]
 
 The editor is a custom written widget and builds on top of the tview.TextView.
