@@ -1047,8 +1047,8 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 	})
 }
 
-// startMessageHandlerRoutines registers the handlers for certain message events.
-// It updates the cache and the UI if necessary.
+// startMessageHandlerRoutines registers the handlers for certain message
+// events. It updates the cache and the UI if necessary.
 func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
 	go func() {
 		for message := range input {
@@ -1061,14 +1061,25 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				})
 			}
 
-			if tempMessage.Author.ID == window.session.State.User.ID {
-				continue
-			}
-
 			channel, stateError := window.session.State.Channel(tempMessage.ChannelID)
 			if stateError != nil {
 				continue
 			}
+
+			if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+				// TODO,HACK.FIXME Since the cache is inconsistent, I have to
+				// update it myself. This should be moved over into the
+				// discordgo code ASAP.
+				channel.LastMessageID = message.ID
+				window.app.QueueUpdateDraw(func() {
+					window.privateList.ReorderChannelList()
+				})
+			}
+
+			if tempMessage.Author.ID == window.session.State.User.ID {
+				continue
+			}
+
 			if (window.selectedChannel == nil || tempMessage.ChannelID != window.selectedChannel.ID) ||
 				!window.userActive {
 				mentionsYou := false
@@ -1576,9 +1587,7 @@ func (window *Window) RefreshLayout() {
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	var messages []*discordgo.Message
 
-	// Data not present
 	if channel.LastMessageID != "" && len(channel.Messages) == 0 {
-		//Check Cache first
 		cache, cacheError := window.session.State.Channel(channel.ID)
 		if cacheError == nil || cache != nil && len(cache.Messages) == 0 {
 			var discordError error
@@ -1617,9 +1626,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 			window.selectedGuildNode.SetColor(tview.Styles.PrimaryTextColor)
 			window.selectedGuildNode = nil
 		}
-	}
 
-	if channel.GuildID == "" {
 		window.selectedGuild = nil
 		window.selectedGuildNode = nil
 	}

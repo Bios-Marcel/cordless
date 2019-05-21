@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"sort"
+
 	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/gdamore/tcell"
 
@@ -203,6 +205,34 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 			break
 		}
 	}
+}
+
+func (privateList *PrivateChatList) ReorderChannelList() {
+	children := privateList.chatsNode.GetChildren()
+	sort.Slice(children, func(a, b int) bool {
+		nodeA := children[a]
+		nodeB := children[b]
+
+		referenceA, ok := nodeA.GetReference().(string)
+		if !ok {
+			return false
+		}
+		referenceB, ok := nodeB.GetReference().(string)
+		if !ok {
+			return true
+		}
+
+		channelA, stateError := privateList.state.Channel(referenceA)
+		if stateError != nil {
+			return false
+		}
+		channelB, stateError := privateList.state.Channel(referenceB)
+		if stateError != nil {
+			return true
+		}
+
+		return discordutil.CompareChannels(channelA, channelB)
+	})
 }
 
 // MarkChannelAsLoaded marks a channel as loaded, coloring it blue. If

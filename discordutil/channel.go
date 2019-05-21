@@ -62,22 +62,25 @@ func GetPrivateChannelName(channel *discordgo.Channel) string {
 	return channelName
 }
 
+// CompareChannels checks which channel is smaller. Smaller meaning it is the
+// one with the more recent message.
+func CompareChannels(a, b *discordgo.Channel) bool {
+	messageA, parseError := strconv.ParseInt(a.LastMessageID, 10, 64)
+	if parseError != nil {
+		return false
+	}
+
+	messageB, parseError := strconv.ParseInt(b.LastMessageID, 10, 64)
+	if parseError != nil {
+		return true
+	}
+
+	return messageA > messageB
+}
+
 // SortPrivateChannels sorts private channels depending on their last message.
 func SortPrivateChannels(channels []*discordgo.Channel) {
 	sort.Slice(channels, func(a, b int) bool {
-		channelA := channels[a]
-		channelB := channels[b]
-
-		messageA, parseError := strconv.ParseInt(channelA.LastMessageID, 10, 64)
-		if parseError != nil {
-			return false
-		}
-
-		messageB, parseError := strconv.ParseInt(channelB.LastMessageID, 10, 64)
-		if parseError != nil {
-			return true
-		}
-
-		return messageA > messageB
+		return CompareChannels(channels[a], channels[b])
 	})
 }
