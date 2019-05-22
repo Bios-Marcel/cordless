@@ -104,8 +104,14 @@ brew install cordless
 
 **UPDATES HAVE TO BE INSTALLED MANUALLY**
 
-You can always find the latest release in this repositories
+You can always find the latest release on this repositories
 [release page](../../releases/latest).
+
+For your information, since May 22th 2019 all binaries will be build using
+the following parameters: `-ldflags="-w -s"`. So checksums of binaries built
+without those parameters will not align with the ones built with those
+parameters. Meaning that if you want to compare checksums, please keep this
+in mind.
 
 ### Building it from source
 

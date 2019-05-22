@@ -31,10 +31,12 @@ BIN_WINDOWS="cordless.exe"
 #
 # Building cordless for darwin, linux and windows.
 #
+# The binaries are built without debug symbols in order to save filesize.
+#
 
-GOOS=linux go build -o $BIN_LINUX
-GOOS=darwin go build -o $BIN_DARWIN
-GOOS=windows go build -o $BIN_WINDOWS
+GOOS=linux go build -o $BIN_LINUX -ldflags="-s -w"
+GOOS=darwin go build -o $BIN_DARWIN -ldflags="-s -w"
+GOOS=windows go build -o $BIN_WINDOWS -ldflags="-s -w"
 
 #
 # Setup environment variables.
