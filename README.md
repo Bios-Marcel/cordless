@@ -16,9 +16,9 @@
   - [How to install it](#how-to-install-it)
     - [Installing on Linux](#installing-on-linux)
       - [Snap](#snap)
-      - [Arch-Linux](#arch-linux)
+      - [Arch based Linux distributions](#arch-based-linux-distributions)
     - [Installing on Windows](#installing-on-windows)
-    - [Installing on Mac OS](#installing-on-macos)
+    - [Installing on macOS](#installing-on-macos)
     - [Using pre-built binaries](#using-pre-built-binaries)
     - [Building it from source](#building-it-from-source)
     - [Login](#login)
@@ -26,6 +26,7 @@
   - [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
   - [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
   - [Contributing](#contributing)
+  - [Why should or shouldn't you use this project](#why-should-or-shouldnt-you-use-this-project)
   - [Similar projects](#similar-projects)
   - [Troubleshooting](#troubleshooting)
 
@@ -135,6 +136,9 @@ two-factor authentication enabled. After logging on using either method, your
 token is stored locally on your machine. The token will not be encrypted, so be
 careful with your configuration file.
 
+If you are logging in with a bot token, you have to append `Bot ` (yes, with
+the space) in front of the token.
+
 **THIS APPLICATION NEVER SAVES YOUR PASSWORD LOCALLY.**
 
 #### Retrieving your token via discord or chrome
@@ -210,6 +214,20 @@ donate something via https://liberapay.com/biosmarcel/donate. It may not
 directly have an impact on the project, but it will surely motivate me to
 keep working on this project, as it shows that people care about it.
 
+## Why should or shouldn't you use this project
+
+Reason to use it:
+  * Your PC is not very powerful
+  * Your on a mobile device and value your battery life
+  * You just like terminal applications
+  * You are scared that the discord client communicates too much with the HQ
+
+Reasons not to use it:
+  * You like fancy GUI
+  * You want to see images, videos and whatnot inside of the application itself
+  * You need the voice/video calling features
+  * You need to administrate a server (no adminsitration features yet)
+
 ## Similar projects
 
 Here is a list of similar projects:
@@ -219,6 +237,8 @@ Here is a list of similar projects:
 * [Discline](https://github.com/MitchWeaver/Discline)
 * [discord-term](https://github.com/cloudrex/discord-term)
 * [6cord](https://github.com/cloudrex/6cord)
+
+Hit me up if you have a similar project as well :D
 
 ## Troubleshooting
 
