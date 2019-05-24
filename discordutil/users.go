@@ -132,3 +132,16 @@ func SortUserRoles(roles []string, guildRoles []*discordgo.Role) {
 		return firstRole.Position > secondRole.Position
 	})
 }
+
+// IsBlocked checks whether the state contains any relationship that says the
+// given user has been blocked.
+func IsBlocked(state *discordgo.State, user *discordgo.User) bool {
+	for _, relationship := range state.Relationships {
+		if relationship.User.ID == user.ID &&
+			relationship.Type == discordgo.RelationTypeBlocked {
+			return true
+		}
+	}
+
+	return false
+}

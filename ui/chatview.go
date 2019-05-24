@@ -244,14 +244,7 @@ OUTER_LOOP:
 }
 
 func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
-	var isBlocked bool
-	for _, relationship := range chatView.session.State.Relationships {
-		if relationship.User.ID == message.Author.ID &&
-			relationship.Type == discordgo.RelationTypeBlocked {
-			isBlocked = true
-			break
-		}
-	}
+	isBlocked := discordutil.IsBlocked(chatView.session.State, message.Author)
 
 	if !config.GetConfig().ShowPlaceholderForBlockedMessages && isBlocked {
 		return
