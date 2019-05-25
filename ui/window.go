@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/goclipimg"
 
 	"github.com/atotto/clipboard"
@@ -20,7 +21,6 @@ import (
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/times"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
-	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
@@ -456,7 +456,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 			if clipError == nil {
 				dataChannel := bytes.NewReader(data)
-				currentText := window.messageInput.GetText()
+				currentText := window.prepareMessage(window.messageInput.GetText())
 				if currentText == "" {
 					go window.session.ChannelFileSend(window.selectedChannel.ID, "img.png", dataChannel)
 				} else {
@@ -475,50 +475,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				window.messageInput.SetText("")
 
 				if len(messageToSend) != 0 {
-					messageToSend = codeBlockRegex.ReplaceAllStringFunc(messageToSend, func(input string) string {
-						return strings.Replace(input, ":", "\\:", -1)
-					})
-
-					if window.selectedGuild != nil {
-						guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
-						if discordError == nil {
-
-							//Those could be optimized by searching the string for patterns.
-							for _, channel := range guild.Channels {
-								if channel.Type == discordgo.ChannelTypeGuildText {
-									messageToSend = strings.Replace(messageToSend, "#"+channel.Name, "<#"+channel.ID+">", -1)
-								}
-							}
-
-							messageToSend = emojiRegex.ReplaceAllStringFunc(messageToSend, func(match string) string {
-								matchStripped := strings.TrimPrefix(strings.TrimSuffix(match, ":"), ":")
-								for _, emoji := range guild.Emojis {
-									if emoji.Name == matchStripped {
-										return "<:" + emoji.Name + ":" + emoji.ID + ">"
-									}
-								}
-
-								return match
-							})
-						}
-					}
-
-					//Replace formatter characters and replace emoji codes.
-					messageToSend = discordemojimap.Replace(messageToSend)
-					messageToSend = strings.Replace(messageToSend, "\\:", ":", -1)
-
-					if window.selectedGuild != nil {
-						members, discordError := window.session.State.Members(window.selectedGuild.ID)
-						if discordError == nil {
-							for _, member := range members {
-								messageToSend = strings.Replace(messageToSend, "@"+member.User.Username+"#"+member.User.Discriminator, "<@"+member.User.ID+">", -1)
-							}
-						}
-					} else if window.selectedChannel != nil {
-						for _, user := range window.selectedChannel.Recipients {
-							messageToSend = strings.Replace(messageToSend, "@"+user.Username+"#"+user.Discriminator, "<@"+user.ID+">", -1)
-						}
-					}
+					messageToSend = window.prepareMessage(messageToSend)
 
 					if window.editingMessageID != nil {
 						overLength := len(messageToSend) - 2000
@@ -877,6 +834,55 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerMouseFocusListeners()
 
 	return &window, nil
+}
+
+func (window *Window) prepareMessage(inputText string) string {
+	output := codeBlockRegex.ReplaceAllStringFunc(inputText, func(input string) string {
+		return strings.Replace(input, ":", "\\:", -1)
+	})
+
+	if window.selectedGuild != nil {
+		guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+		if discordError == nil {
+
+			//Those could be optimized by searching the string for patterns.
+			for _, channel := range guild.Channels {
+				if channel.Type == discordgo.ChannelTypeGuildText {
+					output = strings.Replace(output, "#"+channel.Name, "<#"+channel.ID+">", -1)
+				}
+			}
+
+			output = emojiRegex.ReplaceAllStringFunc(output, func(match string) string {
+				matchStripped := strings.TrimPrefix(strings.TrimSuffix(match, ":"), ":")
+				for _, emoji := range guild.Emojis {
+					if emoji.Name == matchStripped {
+						return "<:" + emoji.Name + ":" + emoji.ID + ">"
+					}
+				}
+
+				return match
+			})
+		}
+	}
+
+	//Replace formatter characters and replace emoji codes.
+	output = discordemojimap.Replace(output)
+	output = strings.Replace(output, "\\:", ":", -1)
+
+	if window.selectedGuild != nil {
+		members, discordError := window.session.State.Members(window.selectedGuild.ID)
+		if discordError == nil {
+			for _, member := range members {
+				output = strings.Replace(output, "@"+member.User.Username+"#"+member.User.Discriminator, "<@"+member.User.ID+">", -1)
+			}
+		}
+	} else if window.selectedChannel != nil {
+		for _, user := range window.selectedChannel.Recipients {
+			output = strings.Replace(output, "@"+user.Username+"#"+user.Discriminator, "<@"+user.ID+">", -1)
+		}
+	}
+
+	return output
 }
 
 // ShowDialog shows a dialog at the bottom of the window. It doesn't surrender
