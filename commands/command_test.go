@@ -15,10 +15,30 @@ func TestParseCommand(t *testing.T) {
 			name:  "no command",
 			input: "",
 			want:  nil,
+		},  {
+			name:  "evil whitespace attack",
+			input: "zeige\u200Bmir\u200Bdeins",
+			want:  []string{"zeige\u200Bmir\u200Bdeins"},
+		}, {
+			name:  "kaomojis???",
+			input: `¯\_(ツ)_/¯`,
+			want:  []string{`¯\_(ツ)_/¯`},
+		}, {
+			name:  "just poo",
+			input: "💩",
+			want:  []string{"💩"},
 		}, {
 			name:  "no command, just whitespace",
 			input: "   ",
 			want:  nil,
+		}, {
+			name:  "just quoted whitespace",
+			input: "\"   \"",
+			want:  []string{"   "},
+		}, {
+			name:  "just quoted whitespace as an argument",
+			input: "echo \"   \"",
+			want:  []string{"echo", "   "},
 		}, {
 			name:  "simple, no arguments",
 			input: "command",
