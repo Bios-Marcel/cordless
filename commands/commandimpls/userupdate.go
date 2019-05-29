@@ -90,7 +90,7 @@ func (nick *UserUpdate) Execute(writer io.Writer, parameters []string) {
 		}
 
 		currentPassword := nick.window.PromptSecretInput("Updating your user information", "Please enter your current password.")
-		if currentPassword != "" {
+		if currentPassword == "" {
 			fmt.Fprintln(writer, "[red]Empty password, aborting.")
 		} else {
 			_, err := nick.session.UserUpdate(newEmail, currentPassword, newName, nick.session.State.User.Avatar, newPassword)
