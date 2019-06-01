@@ -8,6 +8,7 @@
 | freebsd | [![builds.sr.ht status](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml.svg)](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml?) |
 
 [![Donate using librepay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/biosmarcel/donate)
+[![codecov](https://codecov.io/gh/Bios-Marcel/cordless/branch/master/graph/badge.svg)](https://codecov.io/gh/Bios-Marcel/cordless)
 
 ## Overview
 
