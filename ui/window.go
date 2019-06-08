@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	emojiRegex = regexp.MustCompile(":.+:")
+	emojiRegex = regexp.MustCompile("(m?)(^|[^<]):.+?:")
 )
 
 // Window is basically the whole application, as it contains all the
@@ -853,10 +853,11 @@ func (window *Window) prepareMessage(inputText string) string {
 			}
 
 			output = emojiRegex.ReplaceAllStringFunc(output, func(match string) string {
-				matchStripped := strings.TrimPrefix(strings.TrimSuffix(match, ":"), ":")
+				firstDoubleColon := strings.IndexRune(match, ':')
+				emjoiSequence := match[firstDoubleColon+1 : len(match)-1]
 				for _, emoji := range guild.Emojis {
-					if emoji.Name == matchStripped {
-						return "<:" + emoji.Name + ":" + emoji.ID + ">"
+					if emoji.Name == emjoiSequence {
+						return match[:firstDoubleColon] + "<:" + emoji.Name + ":" + emoji.ID + ">"
 					}
 				}
 
