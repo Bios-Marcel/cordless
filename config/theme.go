@@ -27,20 +27,21 @@ func GetTheme() *Theme {
 }
 
 func createDefaultTheme() *Theme {
-	return &Theme{&tview.Theme{
-		PrimitiveBackgroundColor:    tcell.ColorBlack,
-		ContrastBackgroundColor:     tcell.ColorBlue,
-		MoreContrastBackgroundColor: tcell.ColorGreen,
-		BorderColor:                 tcell.ColorWhite,
-		BorderFocusColor:            tcell.ColorBlue,
-		TitleColor:                  tcell.ColorWhite,
-		GraphicsColor:               tcell.ColorWhite,
-		PrimaryTextColor:            tcell.ColorWhite,
-		SecondaryTextColor:          tcell.ColorYellow,
-		TertiaryTextColor:           tcell.ColorGreen,
-		InverseTextColor:            tcell.ColorBlue,
-		ContrastSecondaryTextColor:  tcell.ColorDarkCyan,
-	}}
+	return &Theme{
+		Theme: &tview.Theme{
+			PrimitiveBackgroundColor:    tcell.ColorBlack,
+			ContrastBackgroundColor:     tcell.ColorBlue,
+			MoreContrastBackgroundColor: tcell.ColorGreen,
+			BorderColor:                 tcell.ColorWhite,
+			BorderFocusColor:            tcell.ColorBlue,
+			TitleColor:                  tcell.ColorWhite,
+			GraphicsColor:               tcell.ColorWhite,
+			PrimaryTextColor:            tcell.ColorWhite,
+			SecondaryTextColor:          tcell.ColorYellow,
+			TertiaryTextColor:           tcell.ColorGreen,
+			InverseTextColor:            tcell.ColorBlue,
+			ContrastSecondaryTextColor:  tcell.ColorDarkCyan,
+		}}
 }
 
 // GetThemeFile returns the path to the theme file.
