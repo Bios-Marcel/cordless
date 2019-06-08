@@ -21,6 +21,11 @@ var (
 	theme = createDefaultTheme()
 )
 
+// GetTheme returns a pointer to the currently loaded Theme.
+func GetTheme() *Theme {
+	return theme
+}
+
 func createDefaultTheme() *Theme {
 	return &Theme{&tview.Theme{
 		PrimitiveBackgroundColor:    tcell.ColorBlack,
@@ -38,6 +43,7 @@ func createDefaultTheme() *Theme {
 	}}
 }
 
+// GetThemeFile returns the path to the theme file.
 func GetThemeFile() (string, error) {
 	configDir, configError := GetConfigDirectory()
 
@@ -48,20 +54,22 @@ func GetThemeFile() (string, error) {
 	return filepath.Join(configDir, "theme.json"), nil
 }
 
-func LoadTheme() (*Theme, error) {
+// LoadTheme reads the theme from the users configuration folder and stored it
+// in the local state. It can be retrieved via GetTheme.
+func LoadTheme() error {
 	themeFilePath, themeError := GetThemeFile()
 	if themeError != nil {
-		return nil, themeError
+		return themeError
 	}
 
 	themeFile, openError := os.Open(themeFilePath)
 
 	if os.IsNotExist(openError) {
-		return theme, nil
+		return nil
 	}
 
 	if openError != nil {
-		return nil, openError
+		return openError
 	}
 
 	defer themeFile.Close()
@@ -70,8 +78,8 @@ func LoadTheme() (*Theme, error) {
 
 	//io.EOF would mean empty, therefore we use defaults.
 	if themeLoadError != nil && themeLoadError != io.EOF {
-		return nil, themeLoadError
+		return themeLoadError
 	}
 
-	return theme, nil
+	return nil
 }

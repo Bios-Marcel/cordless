@@ -40,7 +40,10 @@ func Run() {
 		log.Fatalf("Unable to determine configuration directory (%s)\n", configErr.Error())
 	}
 
-	defineColorTheme()
+	themeLoadingError := config.LoadTheme()
+	if themeLoadingError == nil {
+		tview.Styles = *config.GetTheme().Theme
+	}
 
 	app := tview.NewApplication()
 	splashScreen := tview.NewTextView()
