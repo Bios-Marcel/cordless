@@ -4,3 +4,4 @@ cordless.exe
 stage/
 prime/
 snap/.snapcraft
+.vscode/
