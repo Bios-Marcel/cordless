@@ -83,7 +83,16 @@ In order to install the latest version on Windows, you first need
 After installing scoop, run the following:
 
 ```ps1
-scoop install https://raw.githubusercontent.com/Bios-Marcel/cordless/master/cordless.json
+scoop bucket add biosmarcel https://github.com/Bios-Marcel/scoopbucket.git
+```
+
+This adds the bucket (repository) to your local index, allowing you to
+install any package from that bucket.
+
+Install cordless via
+
+```ps1
+scoop install cordless
 ```
 
 In order to install updates, run:
