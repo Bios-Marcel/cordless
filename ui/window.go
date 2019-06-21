@@ -841,8 +841,8 @@ func (window *Window) prepareMessage(inputText string) string {
 		return strings.Replace(input, ":", "\\:", -1)
 	})
 
-	if window.selectedGuild != nil {
-		guild, discordError := window.session.State.Guild(window.selectedGuild.ID)
+	if window.selectedChannel.GuildID != "" {
+		guild, discordError := window.session.State.Guild(window.selectedChannel.GuildID)
 		if discordError == nil {
 
 			//Those could be optimized by searching the string for patterns.
@@ -870,8 +870,8 @@ func (window *Window) prepareMessage(inputText string) string {
 	output = discordemojimap.Replace(output)
 	output = strings.Replace(output, "\\:", ":", -1)
 
-	if window.selectedGuild != nil {
-		members, discordError := window.session.State.Members(window.selectedGuild.ID)
+	if window.selectedChannel.GuildID != "" {
+		members, discordError := window.session.State.Members(window.selectedChannel.GuildID)
 		if discordError == nil {
 			for _, member := range members {
 				output = strings.Replace(output, "@"+member.User.Username+"#"+member.User.Discriminator, "<@"+member.User.ID+">", -1)
@@ -1199,7 +1199,13 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
 				for _, message := range window.chatView.data {
 					if message.ID == tempMessageEdited.ID {
+
+						//FIXME Workaround for the fact that discordgo doesn't update already filled fields.
 						message.Content = tempMessageEdited.Content
+						message.Mentions = tempMessageEdited.Mentions
+						message.MentionRoles = tempMessageEdited.MentionRoles
+						message.MentionEveryone = tempMessageEdited.MentionEveryone
+						
 						window.app.QueueUpdateDraw(func() {
 							window.chatView.UpdateMessage(message)
 						})
