@@ -130,7 +130,7 @@ in mind.
 First you have to grab the code via:
 
 ```shell
-go get github.com/Bios-Marcel/cordless
+go get -u github.com/Bios-Marcel/cordless
 ```
 
 In order to execute this command
