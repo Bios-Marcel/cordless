@@ -75,6 +75,18 @@ yaourt -S cordless-git
 Depending on your installation, you might not have `yaourt` installed or even
 have a different AUR package manager.
 
+#### Manual Linux installation
+
+If you are installing manually via:
+
+```sh
+go get -u github.com/Bios-Marcel/cordless
+```
+
+then you also need xclip in order to be able to copy and paste properly.
+
+There is currently no wayland support for copy and paste.
+
 ### Installing on Windows
 
 In order to install the latest version on Windows, you first need
@@ -109,6 +121,9 @@ Use [Homebrew](https://brew.sh) to install `cordless` on macOS:
 brew tap Bios-Marcel/cordless
 brew install cordless
 ```
+
+If you don't install via homebrew, then you should get `pngpaste`, since it's
+what allows you to paste images.
 
 ### Using pre-built binaries
 
