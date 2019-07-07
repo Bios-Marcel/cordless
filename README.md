@@ -140,6 +140,9 @@ in mind.
 
 ### Building it from source
 
+In order to execute this command
+[you need to have go 1.12 or a more recent version installed](https://golang.org/doc/install).
+
 **UPDATES HAVE TO BE INSTALLED MANUALLY**
 
 First you have to grab the code via:
@@ -147,9 +150,6 @@ First you have to grab the code via:
 ```shell
 go get -u github.com/Bios-Marcel/cordless
 ```
-
-In order to execute this command
-[you need to have go installed](https://golang.org/doc/install).
 
 In order to execute the application, simply run the executable, which lies at
 `$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
