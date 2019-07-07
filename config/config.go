@@ -60,7 +60,7 @@ type Config struct {
 
 	//Times decides on the time format (none, short and long).
 	Times int
-	//UseRandomUserColors decides wether the users get assigned a random color
+	//UseRandomUserColors decides whether the users get assigned a random color
 	//out of a pool for the current session.
 	UseRandomUserColors bool
 
@@ -71,10 +71,10 @@ type Config struct {
 	//move over to the message input widget after channel selection
 	FocusMessageInputAfterChannelSelection bool
 
-	//ShowChatHeader decides wether the box above the chat will be shown
+	//ShowChatHeader decides whether the box above the chat will be shown
 	//or not.
 	ShowChatHeader bool
-	//ShowUserContainer decides wether the user container is part of the
+	//ShowUserContainer decides whether the user container is part of the
 	//layout or not.
 	ShowUserContainer bool
 	//UseFixedLayout defines whether the FixedSizeLeft and FixedSizeRight
@@ -86,18 +86,18 @@ type Config struct {
 	//FixedSizeRight defines the size of the users container on the right.
 	FixedSizeRight int
 
-	// OnTypeInListBehaviour defines wether the application focus the input
+	// OnTypeInListBehaviour defines whether the application focus the input
 	// input field on typing, searches the list or does nothing.
 	OnTypeInListBehaviour int
 
-	// ShortenLinks decides wether cordless starts a local webserver in order
+	// ShortenLinks decides whether cordless starts a local webserver in order
 	// to be able to shorten links
 	ShortenLinks bool
 	// ShortenerPort defines the port, that the webserver for the linkshortener
 	// will be using.
 	ShortenerPort int
 
-	// DesktopNotifications decides wether a popup will be shown in the users
+	// DesktopNotifications decides whether a popup will be shown in the users
 	// system when a notification needs to be sent.
 	DesktopNotifications bool
 

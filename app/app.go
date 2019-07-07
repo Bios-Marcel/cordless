@@ -27,7 +27,7 @@ const (
 ╚██████╗╚██████╔╝██║  ██║██████╔╝███████╗███████╗███████║███████║              
  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝╚══════╝              `
 
-	defaultLoginMessage = "Please choose wether to login via authentication token (1) or email and password (2)."
+	defaultLoginMessage = "Please choose whether to login via authentication token (1) or email and password (2)."
 	userSession         = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0"
 )
 
