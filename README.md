@@ -249,7 +249,7 @@ keep working on this project, as it shows that people care about it.
 
 Reason to use it:
   * Your PC is not very powerful
-  * Your on a mobile device and value your battery life
+  * You're on a mobile device and value your battery life
   * You just like terminal applications
   * You are scared that the discord client communicates too much with the HQ
 
@@ -267,7 +267,7 @@ Here is a list of similar projects:
 * [Discurses](https://github.com/topisani/Discurses)
 * [Discline](https://github.com/MitchWeaver/Discline)
 * [discord-term](https://github.com/cloudrex/discord-term)
-* [6cord](https://github.com/cloudrex/6cord)
+* [6cord](https://gitlab.com/diamondburned/6cord)
 
 Hit me up if you have a similar project as well :D
 
