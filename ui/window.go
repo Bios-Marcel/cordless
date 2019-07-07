@@ -375,8 +375,17 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		messageToSend := window.messageInput.GetText()
 
 		if event.Modifiers() == tcell.ModAlt {
-			if event.Key() == tcell.KeyUp || event.Key() == tcell.KeyDown {
+			if event.Key() == tcell.KeyUp {
 				window.app.SetFocus(window.chatView.internalTextView)
+				return nil
+			}
+
+			if event.Key() == tcell.KeyDown {
+				if window.commandMode {
+					window.app.SetFocus(window.commandView.commandOutput)
+				} else {
+					window.app.SetFocus(window.chatView.internalTextView)
+				}
 				return nil
 			}
 
@@ -602,13 +611,21 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				if window.userList.internalTreeView.IsVisible() {
 					window.app.SetFocus(window.userList.internalTreeView)
 				} else {
-					window.app.SetFocus(window.messageInput.GetPrimitive())
+					if window.commandMode {
+						window.app.SetFocus(window.commandView.commandOutput)
+					} else {
+						window.app.SetFocus(window.messageInput.GetPrimitive())
+					}
 				}
 				return nil
 			}
 
 			if event.Key() == tcell.KeyRight {
-				window.app.SetFocus(window.messageInput.GetPrimitive())
+				if window.commandMode {
+					window.app.SetFocus(window.commandView.commandOutput)
+				} else {
+					window.app.SetFocus(window.messageInput.GetPrimitive())
+				}
 				return nil
 			}
 		}
@@ -633,8 +650,17 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	oldChatViewHandler := window.chatView.internalTextView.GetInputCapture()
 	newChatViewHandler := func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers() == tcell.ModAlt {
-			if event.Key() == tcell.KeyDown || event.Key() == tcell.KeyUp {
+			if event.Key() == tcell.KeyDown {
 				window.app.SetFocus(window.messageInput.GetPrimitive())
+				return nil
+			}
+
+			if event.Key() == tcell.KeyUp {
+				if window.commandMode {
+					window.app.SetFocus(window.commandView.commandInput.internalTextView)
+				} else {
+					window.app.SetFocus(window.messageInput.GetPrimitive())
+				}
 				return nil
 			}
 
@@ -750,6 +776,54 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			return event
 		})
 	}
+
+	window.commandView.SetInputCaptureForInput(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Modifiers() == tcell.ModAlt {
+			if event.Key() == tcell.KeyUp {
+				window.app.SetFocus(window.commandView.commandOutput)
+			} else if event.Key() == tcell.KeyDown {
+				window.app.SetFocus(window.chatView.GetPrimitive())
+			} else if event.Key() == tcell.KeyRight {
+				if window.userList.internalTreeView.IsVisible() {
+					window.app.SetFocus(window.userList.internalTreeView)
+				} else {
+					window.app.SetFocus(window.channelTree.internalTreeView)
+				}
+			} else if event.Key() == tcell.KeyLeft {
+				window.app.SetFocus(window.channelTree.internalTreeView)
+			} else {
+				return event
+			}
+
+			return nil
+		}
+
+		return event
+	})
+
+	window.commandView.SetInputCaptureForOutput(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Modifiers() == tcell.ModAlt {
+			if event.Key() == tcell.KeyUp {
+				window.app.SetFocus(window.messageInput.GetPrimitive())
+			} else if event.Key() == tcell.KeyDown {
+				window.app.SetFocus(window.commandView.commandInput.GetPrimitive())
+			} else if event.Key() == tcell.KeyRight {
+				if window.userList.internalTreeView.IsVisible() {
+					window.app.SetFocus(window.userList.internalTreeView)
+				} else {
+					window.app.SetFocus(window.channelTree.internalTreeView)
+				}
+			} else if event.Key() == tcell.KeyLeft {
+				window.app.SetFocus(window.channelTree.internalTreeView)
+			} else {
+				return event
+			}
+
+			return nil
+		}
+
+		return event
+	})
 
 	window.middleContainer = tview.NewFlex().
 		SetDirection(tview.FlexColumn)
@@ -1205,7 +1279,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						message.Mentions = tempMessageEdited.Mentions
 						message.MentionRoles = tempMessageEdited.MentionRoles
 						message.MentionEveryone = tempMessageEdited.MentionEveryone
-						
+
 						window.app.QueueUpdateDraw(func() {
 							window.chatView.UpdateMessage(message)
 						})

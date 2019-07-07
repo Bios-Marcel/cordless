@@ -48,6 +48,28 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 	return cmdView
 }
 
+// SetInputCaptureForInput defines the input capture for the input component of
+// the command view while priorizing the predefined handler before passing the
+// event to the externally specified handler.
+func (cmdView *CommandView) SetInputCaptureForInput(handler func(event *tcell.EventKey) *tcell.EventKey) {
+	cmdView.commandInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		passedEvent := cmdView.handleInput(event)
+
+		if passedEvent == nil {
+			return nil
+		}
+
+		return handler(passedEvent)
+	})
+}
+
+// SetInputCaptureForOutput defines the input capture for the output component
+// of the command view while priorizing the predefined handler before passing
+// the event to the externally specified handler.
+func (cmdView *CommandView) SetInputCaptureForOutput(handler func(event *tcell.EventKey) *tcell.EventKey) {
+	cmdView.commandOutput.SetInputCapture(handler)
+}
+
 func (cmdView *CommandView) handleInput(event *tcell.EventKey) *tcell.EventKey {
 	if event.Modifiers() == tcell.ModNone {
 		if event.Key() == tcell.KeyPgUp {
@@ -62,6 +84,48 @@ func (cmdView *CommandView) handleInput(event *tcell.EventKey) *tcell.EventKey {
 			return nil
 		}
 
+		if event.Key() == tcell.KeyEnter {
+			cmdView.commandHistoryIndex = -1
+			command := cmdView.commandInput.GetText()
+			if command == "" {
+				return nil
+			}
+
+			cmdView.onExecuteCommand(strings.TrimSpace(command))
+			cmdView.commandInput.SetText("")
+
+			cmdView.commandHistory = append(cmdView.commandHistory, command)
+
+			return nil
+		}
+
+		if event.Key() == tcell.KeyDown {
+			if cmdView.commandHistoryIndex > len(cmdView.commandHistory)-1 {
+				cmdView.commandHistoryIndex = 0
+			} else {
+				cmdView.commandHistoryIndex++
+			}
+
+			if cmdView.commandHistoryIndex > len(cmdView.commandHistory)-1 {
+				return nil
+			}
+
+			cmdView.commandInput.SetText(cmdView.commandHistory[cmdView.commandHistoryIndex])
+		}
+
+		if event.Key() == tcell.KeyUp {
+			if cmdView.commandHistoryIndex < 0 {
+				cmdView.commandHistoryIndex = len(cmdView.commandHistory) - 1
+			} else {
+				cmdView.commandHistoryIndex--
+			}
+
+			if cmdView.commandHistoryIndex < 0 {
+				return nil
+			}
+
+			cmdView.commandInput.SetText(cmdView.commandHistory[cmdView.commandHistoryIndex])
+		}
 	}
 
 	if event.Modifiers() == tcell.ModCtrl {
@@ -76,49 +140,6 @@ func (cmdView *CommandView) handleInput(event *tcell.EventKey) *tcell.EventKey {
 			handler(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), nil)
 			return nil
 		}
-	}
-
-	if event.Key() == tcell.KeyEnter {
-		cmdView.commandHistoryIndex = -1
-		command := cmdView.commandInput.GetText()
-		if command == "" {
-			return nil
-		}
-
-		cmdView.onExecuteCommand(strings.TrimSpace(command))
-		cmdView.commandInput.SetText("")
-
-		cmdView.commandHistory = append(cmdView.commandHistory, command)
-
-		return nil
-	}
-
-	if event.Key() == tcell.KeyDown {
-		if cmdView.commandHistoryIndex > len(cmdView.commandHistory)-1 {
-			cmdView.commandHistoryIndex = 0
-		} else {
-			cmdView.commandHistoryIndex++
-		}
-
-		if cmdView.commandHistoryIndex > len(cmdView.commandHistory)-1 {
-			return nil
-		}
-
-		cmdView.commandInput.SetText(cmdView.commandHistory[cmdView.commandHistoryIndex])
-	}
-
-	if event.Key() == tcell.KeyUp {
-		if cmdView.commandHistoryIndex < 0 {
-			cmdView.commandHistoryIndex = len(cmdView.commandHistory) - 1
-		} else {
-			cmdView.commandHistoryIndex--
-		}
-
-		if cmdView.commandHistoryIndex < 0 {
-			return nil
-		}
-
-		cmdView.commandInput.SetText(cmdView.commandHistory[cmdView.commandHistoryIndex])
 	}
 
 	return event
