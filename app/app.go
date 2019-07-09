@@ -97,6 +97,7 @@ func Run() {
 			}
 
 			window.RegisterCommand(commandimpls.NewStatusCommand(discord))
+			window.RegisterCommand(commandimpls.NewFileSendCommand(discord, window))
 			window.RegisterCommand(commandimpls.NewAccount(runNext, window))
 			window.RegisterCommand(commandimpls.NewHelpCommand(window))
 			window.RegisterCommand(commandimpls.NewManualCommand())

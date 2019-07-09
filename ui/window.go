@@ -1775,6 +1775,11 @@ func (window *Window) GetSelectedGuild() *discordgo.UserGuild {
 	return window.selectedGuild
 }
 
+// GetSelectedChannel returns a reference to the currently selected Channel.
+func (window *Window) GetSelectedChannel() *discordgo.Channel {
+	return window.selectedChannel
+}
+
 // PromptSecretInput shows an input dialog that masks the user input. The
 // returned value will either be empty or what the user has entered.
 func (window *Window) PromptSecretInput(title, message string) string {
