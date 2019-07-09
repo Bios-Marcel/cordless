@@ -1546,7 +1546,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		conf := config.GetConfig()
 		conf.ShowUserContainer = !conf.ShowUserContainer
 
-		if !conf.ShowUserContainer {
+		if !conf.ShowUserContainer && window.app.GetFocus() == window.userList.internalTreeView {
 			window.app.SetFocus(window.messageInput.GetPrimitive())
 		}
 
