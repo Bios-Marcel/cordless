@@ -1147,7 +1147,8 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				continue
 			}
 
-			if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+			if channel.Type == discordgo.ChannelTypeGuildText || channel.Type == discordgo.ChannelTypeDM ||
+				channel.Type == discordgo.ChannelTypeGroupDM {
 				// TODO,HACK.FIXME Since the cache is inconsistent, I have to
 				// update it myself. This should be moved over into the
 				// discordgo code ASAP.
