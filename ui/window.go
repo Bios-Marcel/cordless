@@ -16,6 +16,7 @@ import (
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/Bios-Marcel/cordless/maths"
+	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/scripting"
 	"github.com/Bios-Marcel/cordless/scripting/js"
 	"github.com/Bios-Marcel/cordless/shortcuts"
@@ -1137,6 +1138,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			window.session.State.MessageAdd(tempMessage)
 
 			if window.selectedChannel != nil && tempMessage.ChannelID == window.selectedChannel.ID {
+				readstate.UpdateRead(tempMessage.ChannelID, tempMessage.ID)
 				window.app.QueueUpdateDraw(func() {
 					window.chatView.AddMessage(tempMessage)
 				})
@@ -1441,6 +1443,9 @@ func (window *Window) SetCommandModeEnabled(enabled bool) {
 
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
 	if event.Key() == tcell.KeyCtrlC {
+		if flushError := readstate.Flush(); flushError != nil {
+			panic(flushError)
+		}
 		window.doRestart <- false
 		return event
 	}
@@ -1729,6 +1734,8 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		window.app.SetFocus(window.messageInput.internalTextView)
 	}
 
+	readstate.UpdateRead(channel.ID, channel.LastMessageID)
+ 
 	return nil
 }
 
