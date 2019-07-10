@@ -5,6 +5,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
+	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
@@ -81,6 +82,10 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 		}
 
 		channelNode := createChannelNode(channel)
+		if !readstate.HasBeenRead(channel) {
+			channelTree.channelStates[channelNode] = channelUnread
+			channelNode.SetColor(tcell.ColorRed)
+		}
 		channelTree.internalTreeView.GetRoot().AddChild(channelNode)
 	}
 
@@ -101,14 +106,17 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 			continue
 		}
 
-		if channel.ParentID != "" {
-			channelNode := createChannelNode(channel)
-			for _, node := range channelTree.internalTreeView.GetRoot().GetChildren() {
-				channelID, ok := node.GetReference().(string)
-				if ok && channelID == channel.ParentID {
-					node.AddChild(channelNode)
-					break
+		channelNode := createChannelNode(channel)
+		for _, node := range channelTree.internalTreeView.GetRoot().GetChildren() {
+			channelID, ok := node.GetReference().(string)
+			if ok && channelID == channel.ParentID {
+				if !readstate.HasBeenRead(channel) {
+					channelTree.channelStates[channelNode] = channelUnread
+					channelNode.SetColor(tcell.ColorRed)
 				}
+
+				node.AddChild(channelNode)
+				break
 			}
 		}
 	}

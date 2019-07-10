@@ -16,6 +16,7 @@ import (
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/Bios-Marcel/cordless/maths"
+	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/scripting"
 	"github.com/Bios-Marcel/cordless/scripting/js"
 	"github.com/Bios-Marcel/cordless/shortcuts"
@@ -65,7 +66,7 @@ type Window struct {
 	session *discordgo.Session
 
 	selectedGuildNode   *tview.TreeNode
-	selectedGuild       *discordgo.UserGuild
+	selectedGuild       *discordgo.Guild
 	selectedChannelNode *tview.TreeNode
 	selectedChannel     *discordgo.Channel
 
@@ -149,6 +150,49 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	guildList.SetRoot(guildRootNode)
 	guildList.SetBorder(true)
 	guildList.SetTopLevel(1)
+	guildList.SetSelectedFunc(func(node *tview.TreeNode) {
+		if window.selectedGuildNode != nil {
+			window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
+		}
+
+		guildID, ok := node.GetReference().(string)
+		if !ok {
+			window.ShowErrorDialog("Guild couldn't be loaded.")
+			return
+		}
+
+		guild, cacheError := window.session.Guild(guildID)
+		if cacheError != nil {
+			window.ShowErrorDialog(cacheError.Error())
+			return
+		}
+
+		window.selectedGuildNode = node
+		window.selectedGuild = guild
+
+		window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, true)
+
+		requestError := session.RequestGuildMembers(guildID, "", 0)
+		if requestError != nil {
+			fmt.Fprintln(window.commandView, "Error retrieving all guild members.")
+		}
+
+		channelLoadError := window.channelTree.LoadGuild(guildID)
+		if channelLoadError != nil {
+			window.ShowErrorDialog(channelLoadError.Error())
+		} else {
+			if config.GetConfig().FocusChannelAfterGuildSelection {
+				app.SetFocus(window.channelTree.internalTreeView)
+			}
+		}
+
+		userLoadError := window.userList.LoadGuild(guildID)
+		if userLoadError != nil {
+			window.ShowErrorDialog(userLoadError.Error())
+		}
+
+		window.RefreshLayout()
+	})
 
 	window.registerGuildMemberHandlers()
 
@@ -157,38 +201,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	for _, tempGuild := range guilds {
 		guild := tempGuild
 		guildNode := tview.NewTreeNode(guild.Name)
+		guildNode.SetReference(guild.ID)
 		guildRootNode.AddChild(guildNode)
+
+		window.updateServerReadStatus(guild.ID, guildNode, false)
+
 		guildNode.SetSelectable(true)
-		guildNode.SetSelectedFunc(func() {
-			if window.selectedGuildNode != nil {
-				window.selectedGuildNode.SetColor(tcell.ColorWhite)
-			}
-
-			window.selectedGuildNode = guildNode
-			window.selectedGuildNode.SetColor(tview.Styles.ContrastBackgroundColor)
-
-			window.selectedGuild = guild
-			requestError := session.RequestGuildMembers(guild.ID, "", 0)
-			if requestError != nil {
-				fmt.Fprintln(window.commandView, "Error retrieving all guild members.")
-			}
-
-			channelLoadError := window.channelTree.LoadGuild(guild.ID)
-			if channelLoadError != nil {
-				window.ShowErrorDialog(channelLoadError.Error())
-			} else {
-				if config.GetConfig().FocusChannelAfterGuildSelection {
-					app.SetFocus(window.channelTree.internalTreeView)
-				}
-			}
-
-			userLoadError := window.userList.LoadGuild(guild.ID)
-			if userLoadError != nil {
-				window.ShowErrorDialog(userLoadError.Error())
-			}
-
-			window.RefreshLayout()
-		})
 	}
 
 	if len(guildRootNode.GetChildren()) > 0 {
@@ -910,6 +928,24 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return &window, nil
 }
 
+func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.TreeNode, isSelected bool) {
+	if isSelected {
+		guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
+	} else {
+		realGuild, cacheError := window.session.State.Guild(guildID)
+		if cacheError == nil {
+			for _, channel := range realGuild.Channels {
+				if !readstate.HasBeenRead(channel) {
+					guildNode.SetColor(tcell.ColorRed)
+					return
+				}
+			}
+		}
+
+		guildNode.SetColor(tview.Styles.PrimaryTextColor)
+	}
+}
+
 func (window *Window) prepareMessage(inputText string) string {
 	output := codeBlockRegex.ReplaceAllStringFunc(inputText, func(input string) string {
 		return strings.Replace(input, ":", "\\:", -1)
@@ -1137,6 +1173,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			window.session.State.MessageAdd(tempMessage)
 
 			if window.selectedChannel != nil && tempMessage.ChannelID == window.selectedChannel.ID {
+				readstate.UpdateRead(tempMessage.ChannelID, tempMessage.ID)
 				window.app.QueueUpdateDraw(func() {
 					window.chatView.AddMessage(tempMessage)
 				})
@@ -1147,7 +1184,17 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				continue
 			}
 
-			if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+			if channel.Type == discordgo.ChannelTypeGuildText {
+				for _, guildNode := range window.guildList.GetRoot().GetChildren() {
+					if guildNode.GetReference() != channel.GuildID {
+						window.updateServerReadStatus(channel.GuildID, guildNode, false)
+						break
+					}
+				}
+			}
+
+			if channel.Type == discordgo.ChannelTypeGuildText || channel.Type == discordgo.ChannelTypeDM ||
+				channel.Type == discordgo.ChannelTypeGroupDM {
 				// TODO,HACK.FIXME Since the cache is inconsistent, I have to
 				// update it myself. This should be moved over into the
 				// discordgo code ASAP.
@@ -1440,6 +1487,9 @@ func (window *Window) SetCommandModeEnabled(enabled bool) {
 
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
 	if event.Key() == tcell.KeyCtrlC {
+		if flushError := readstate.Flush(); flushError != nil {
+			panic(flushError)
+		}
 		window.doRestart <- false
 		return event
 	}
@@ -1728,6 +1778,15 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		window.app.SetFocus(window.messageInput.internalTextView)
 	}
 
+	readstate.UpdateRead(channel.ID, channel.LastMessageID)
+
+	// Here we make the assumption that the channel we are loading must be part
+	// of the currently loaded guild, since we don't allow loading a channel of
+	// a guilder otherwise.
+	if channel.GuildID != "" {
+		window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, true)
+	}
+
 	return nil
 }
 
@@ -1770,8 +1829,8 @@ func (window *Window) GetRegisteredCommands() map[string]commands.Command {
 	return window.commands
 }
 
-// GetSelectedGuild returns a reference to the currently selected UserGuild.
-func (window *Window) GetSelectedGuild() *discordgo.UserGuild {
+// GetSelectedGuild returns a reference to the currently selected Guild.
+func (window *Window) GetSelectedGuild() *discordgo.Guild {
 	return window.selectedGuild
 }
 

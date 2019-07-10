@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/shortcuts"
 
 	"github.com/princebot/getpass"
@@ -51,6 +52,12 @@ func Run() {
 	splashScreen.SetText(tview.Escape(splashText + "\n\nConfig lies at: " + configDir))
 	app.SetRoot(splashScreen, true)
 	runNext := make(chan bool, 1)
+
+	go func() {
+		if loadError := readstate.Load(); loadError != nil {
+			panic(loadError)
+		}
+	}()
 
 	go func() {
 		configuration, configLoadError := config.LoadConfig()

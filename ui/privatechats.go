@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/Bios-Marcel/cordless/discordutil"
+	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/config"
@@ -110,7 +111,12 @@ func (privateList *PrivateChatList) prependChannel(channel *discordgo.Channel) {
 }
 
 func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
-	privateList.chatsNode.AddChild(createPrivateChannelNode(channel))
+	newNode := createPrivateChannelNode(channel)
+	if !readstate.HasBeenRead(channel) {
+		privateList.privateChannelStates[newNode] = unread
+		newNode.SetColor(tcell.ColorRed)
+	}
+	privateList.chatsNode.AddChild(newNode)
 }
 
 func createPrivateChannelNode(channel *discordgo.Channel) *tview.TreeNode {
