@@ -1784,7 +1784,17 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	// of the currently loaded guild, since we don't allow loading a channel of
 	// a guilder otherwise.
 	if channel.GuildID != "" {
-		window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, true)
+		guild, cacheError := window.session.State.Guild(channel.GuildID)
+		if cacheError == nil {
+			window.selectedGuild = guild
+			for _, guildNode := range window.guildList.GetRoot().GetChildren() {
+				if guildNode.GetReference() != channel.GuildID {
+					window.selectedGuildNode = guildNode
+					window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, true)
+					break
+				}
+			}
+		}
 	}
 
 	return nil
