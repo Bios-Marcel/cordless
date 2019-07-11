@@ -75,57 +75,61 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 		return channels[a].Position < channels[b].Position
 	})
 
-	//Top level channel
+	// Top level channel
 	state := channelTree.state
 	for _, channel := range channels {
-		channelTree.state.UserChannelPermissions(channelTree.state.User.ID, channel.ID)
 		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID != "" || !hasReadMessagesPermission(channel, state) {
 			continue
 		}
-
-		channelNode := createChannelNode(channel)
-		if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
-			channelTree.channelStates[channelNode] = channelUnread
-			channelNode.SetColor(tcell.ColorRed)
-		}
-		channelTree.internalTreeView.GetRoot().AddChild(channelNode)
+		createTopLevelChannelNodes(channelTree, channel)
 	}
-
-	//Category
+	// Categories
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildCategory || channel.ParentID != "" {
+		if channel.Type != discordgo.ChannelTypeGuildCategory || channel.ParentID != "" || !hasReadMessagesPermission(channel, state) {
 			continue
 		}
-
-		channelNode := createChannelNode(channel)
-		channelNode.SetSelectable(false)
-		channelTree.internalTreeView.GetRoot().AddChild(channelNode)
+		createChannelCategoryNodes(channelTree, channel)
 	}
-
-	//Second level channel
+	// Second level channel
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID == "" {
+		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID == "" || !hasReadMessagesPermission(channel, state) {
 			continue
 		}
-
-		channelNode := createChannelNode(channel)
-		for _, node := range channelTree.internalTreeView.GetRoot().GetChildren() {
-			channelID, ok := node.GetReference().(string)
-			if ok && channelID == channel.ParentID {
-				if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
-					channelTree.channelStates[channelNode] = channelUnread
-					channelNode.SetColor(tcell.ColorRed)
-				}
-
-				node.AddChild(channelNode)
-				break
-			}
-		}
+		createSecondLevelChannelNodes(channelTree, channel)
 	}
-
 	channelTree.internalTreeView.SetCurrentNode(channelTree.internalTreeView.GetRoot())
-
 	return nil
+}
+
+func createTopLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
+	channelNode := createChannelNode(channel)
+	if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
+		channelTree.channelStates[channelNode] = channelUnread
+		channelNode.SetColor(tcell.ColorRed)
+	}
+	channelTree.internalTreeView.GetRoot().AddChild(channelNode)
+}
+
+func createChannelCategoryNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
+	channelNode := createChannelNode(channel)
+	channelNode.SetSelectable(false)
+	channelTree.internalTreeView.GetRoot().AddChild(channelNode)
+}
+
+func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
+	channelNode := createChannelNode(channel)
+	for _, node := range channelTree.internalTreeView.GetRoot().GetChildren() {
+		channelID, ok := node.GetReference().(string)
+		if ok && channelID == channel.ParentID {
+			if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
+				channelTree.channelStates[channelNode] = channelUnread
+				channelNode.SetColor(tcell.ColorRed)
+			}
+
+			node.AddChild(channelNode)
+			break
+		}
+	}
 }
 
 // Checks if the user has permission to view a specific channel.
