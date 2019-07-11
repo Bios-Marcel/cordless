@@ -25,9 +25,7 @@ require (
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
-	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
 	golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb
-	golang.org/x/tools v0.0.0-20190706070813-72ffa07ba3db // indirect
 	gopkg.in/readline.v1 v1.0.0-20160726135117-62c6fe619375
 	gopkg.in/sourcemap.v1 v1.0.5
 	gopkg.in/toast.v1 v1.0.0-20180812000517-0a84660828b2
