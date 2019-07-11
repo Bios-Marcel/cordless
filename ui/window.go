@@ -85,7 +85,7 @@ type Window struct {
 //NewWindow constructs the whole application window and also registers all
 //necessary handlers and functions. If this function returns an error, we can't
 //start the application.
-func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.Session) (*Window, error) {
+func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.Session, readyEvent *discordgo.Ready) (*Window, error) {
 	window := Window{
 		doRestart:       doRestart,
 		session:         session,
@@ -109,10 +109,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		return nil, err
 	}
 
-	guilds, discordError := discordutil.LoadGuilds(window.session)
-	if discordError != nil {
-		return nil, discordError
-	}
+	guilds := readyEvent.Guilds
 
 	mentionWindowRootNode := tview.NewTreeNode("")
 	mentionWindow := tview.NewTreeView().
@@ -935,7 +932,7 @@ func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.Tr
 		realGuild, cacheError := window.session.State.Guild(guildID)
 		if cacheError == nil {
 			for _, channel := range realGuild.Channels {
-				if !readstate.HasBeenRead(channel) {
+				if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
 					guildNode.SetColor(tcell.ColorRed)
 					return
 				}
@@ -1173,7 +1170,11 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			window.session.State.MessageAdd(tempMessage)
 
 			if window.selectedChannel != nil && tempMessage.ChannelID == window.selectedChannel.ID {
-				readstate.UpdateRead(tempMessage.ChannelID, tempMessage.ID)
+
+				if tempMessage.Author.ID != window.session.State.User.ID {
+					readstate.UpdateReadBuffered(window.session, tempMessage.ChannelID, tempMessage.ID)
+				}
+
 				window.app.QueueUpdateDraw(func() {
 					window.chatView.AddMessage(tempMessage)
 				})
@@ -1487,9 +1488,6 @@ func (window *Window) SetCommandModeEnabled(enabled bool) {
 
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
 	if event.Key() == tcell.KeyCtrlC {
-		if flushError := readstate.Flush(); flushError != nil {
-			panic(flushError)
-		}
 		window.doRestart <- false
 		return event
 	}
@@ -1765,7 +1763,6 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		}
 
 		window.selectedGuild = nil
-		window.selectedGuildNode = nil
 	}
 
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
@@ -1778,24 +1775,28 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		window.app.SetFocus(window.messageInput.internalTextView)
 	}
 
-	readstate.UpdateRead(channel.ID, channel.LastMessageID)
+	go func() {
+		readstate.UpdateRead(window.session, channel.ID, channel.LastMessageID)
 
-	// Here we make the assumption that the channel we are loading must be part
-	// of the currently loaded guild, since we don't allow loading a channel of
-	// a guilder otherwise.
-	if channel.GuildID != "" {
-		guild, cacheError := window.session.State.Guild(channel.GuildID)
-		if cacheError == nil {
-			window.selectedGuild = guild
-			for _, guildNode := range window.guildList.GetRoot().GetChildren() {
-				if guildNode.GetReference() != channel.GuildID {
-					window.selectedGuildNode = guildNode
-					window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, true)
-					break
-				}
+		// Here we make the assumption that the channel we are loading must be part
+		// of the currently loaded guild, since we don't allow loading a channel of
+		// a guilder otherwise.
+		if channel.GuildID != "" {
+			guild, cacheError := window.session.State.Guild(channel.GuildID)
+			if cacheError == nil {
+				window.selectedGuild = guild
+				window.app.QueueUpdateDraw(func() {
+					for _, guildNode := range window.guildList.GetRoot().GetChildren() {
+						if guildNode.GetReference() != channel.GuildID {
+							window.selectedGuildNode = guildNode
+							window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, true)
+							break
+						}
+					}
+				})
 			}
 		}
-	}
+	}()
 
 	return nil
 }

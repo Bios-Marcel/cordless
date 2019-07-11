@@ -54,12 +54,6 @@ func Run() {
 	runNext := make(chan bool, 1)
 
 	go func() {
-		if loadError := readstate.Load(); loadError != nil {
-			panic(loadError)
-		}
-	}()
-
-	go func() {
 		configuration, configLoadError := config.LoadConfig()
 
 		if configLoadError != nil {
@@ -82,9 +76,9 @@ func Run() {
 			log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
 		}
 
-		readyChan := make(chan struct{})
+		readyChan := make(chan *discordgo.Ready)
 		discord.AddHandlerOnce(func(s *discordgo.Session, event *discordgo.Ready) {
-			readyChan <- struct{}{}
+			readyChan <- event
 		})
 
 		discordError := discord.Open()
@@ -93,10 +87,12 @@ func Run() {
 			log.Fatalln("Error establishing web socket connection", discordError)
 		}
 
-		<-readyChan
+		readyEvent := <-readyChan
+
+		readstate.Load(readyEvent.ReadState)
 
 		app.QueueUpdateDraw(func() {
-			window, createError := ui.NewWindow(runNext, app, discord)
+			window, createError := ui.NewWindow(runNext, app, discord, readyEvent)
 
 			if createError != nil {
 				app.Stop()

@@ -1,114 +1,91 @@
 package readstate
 
 import (
-	"encoding/json"
-	"errors"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
+	"time"
 
-	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/discordgo"
 )
 
 var (
-	readMarkers         = &ReadMarker{Data: make(map[string]uint64)}
-	readmarkersFilePath string
-	flushWaitGroup      = &sync.WaitGroup{}
+	data       = make(map[string]uint64)
+	timerMutex = &sync.Mutex{}
+	ackTimers  = make(map[string]*time.Timer)
 )
 
-// ReadMarker contains the data that matches channel ids to their last read
-// message.
-type ReadMarker struct {
-	Data map[string]uint64
-}
-
-func init() {
-	configDir, configDirErr := config.GetConfigDirectory()
-	if configDirErr == nil {
-		readmarkersFilePath = filepath.Join(configDir, "readmarkers.json")
-	}
-
-	go func(waitGroup *sync.WaitGroup) {
-		for {
-			waitGroup.Add(75)
-			waitGroup.Wait()
-			Flush()
-		}
-	}(flushWaitGroup)
-}
-
 // Load loads the locally saved readmarkers returing an error if this failed.
-func Load() error {
-	if readmarkersFilePath == "" {
-		return errors.New("error loading data, filepath empty")
+func Load(readState []*discordgo.ReadState) {
+	for _, channelState := range readState {
+		lastMessageID := channelState.GetLastMessageID()
+		if lastMessageID == "" {
+			continue
+		}
+
+		parsed, parseError := strconv.ParseUint(lastMessageID, 10, 64)
+		if parseError != nil {
+			continue
+		}
+
+		data[channelState.ID] = parsed
 	}
+}
 
-	readmarkersFile, openError := os.Open(readmarkersFilePath)
-
-	if os.IsNotExist(openError) {
+// UpdateRead tells the discord server that a channel has been read. If the
+// channel has already been read and this method was called needlessly, then
+// this will be a No-OP.
+func UpdateRead(session *discordgo.Session, channelID string, lastMessageID string) error {
+	// Avoid unnecessary traffic
+	if HasBeenRead(channelID, lastMessageID) {
 		return nil
 	}
 
-	if openError != nil {
-		return openError
-	}
-
-	defer readmarkersFile.Close()
-	decoder := json.NewDecoder(readmarkersFile)
-	decodeError := decoder.Decode(readMarkers)
-
-	//io.EOF would mean empty, therefore we use defaults.
-	if decodeError != nil && decodeError != io.EOF {
-		return decodeError
-	}
-
-	return nil
-}
-
-// UpdateRead updates the local data for the passed channel using the passed
-// Message ID. It also calls Done on the waitgroup for flushing.
-func UpdateRead(channelID string, lastMessageID string) error {
 	parsed, parseError := strconv.ParseUint(lastMessageID, 10, 64)
 	if parseError != nil {
 		return parseError
 	}
 
-	readMarkers.Data[channelID] = parsed
+	data[channelID] = parsed
 
-	flushWaitGroup.Done()
+	_, ackError := session.ChannelMessageAck(channelID, lastMessageID, "")
+	return ackError
+}
 
-	return nil
+// UpdateReadBuffered triggers an acknowledgement after a certain amount of
+// seconds. If this message is called again during that time, the timer will
+// be reset. This avoid unnecessarily many calls to the Discord servers.
+func UpdateReadBuffered(session *discordgo.Session, channelID string, lastMessageID string) {
+	timerMutex.Lock()
+	ackTimer := ackTimers[channelID]
+	if ackTimer == nil {
+		newTimer := time.NewTimer(4 * time.Second)
+		ackTimers[channelID] = newTimer
+		go func() {
+			<-newTimer.C
+			ackTimers[channelID] = nil
+			UpdateRead(session, channelID, lastMessageID)
+		}()
+	} else {
+		ackTimer.Reset(4 * time.Second)
+	}
+	timerMutex.Unlock()
 }
 
 // HasBeenRead checks whether the passed channel has an unread Message or not.
-func HasBeenRead(channel *discordgo.Channel) bool {
-	if channel.LastMessageID == "" {
+func HasBeenRead(channelID string, lastMessageID string) bool {
+	if lastMessageID == "" {
 		return true
 	}
 
-	data, present := readMarkers.Data[channel.ID]
+	data, present := data[channelID]
 	if !present {
 		return false
 	}
 
-	parsed, parseError := strconv.ParseUint(channel.LastMessageID, 10, 64)
+	parsed, parseError := strconv.ParseUint(lastMessageID, 10, 64)
 	if parseError != nil {
 		return true
 	}
 
 	return data >= parsed
-}
-
-// Flush saves all local data to the harddrive.
-func Flush() error {
-	dataAsJSON, jsonError := json.MarshalIndent(readMarkers, "", "    ")
-	if jsonError != nil {
-		return jsonError
-	}
-
-	return ioutil.WriteFile(readmarkersFilePath, dataAsJSON, 0666)
 }

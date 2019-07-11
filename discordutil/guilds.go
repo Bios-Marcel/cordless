@@ -31,7 +31,7 @@ func LoadGuilds(session *discordgo.Session) ([]*discordgo.UserGuild, error) {
 }
 
 // SortGuilds sorts the guilds according to the users settings.
-func SortGuilds(settings *discordgo.Settings, guilds []*discordgo.UserGuild) {
+func SortGuilds(settings *discordgo.Settings, guilds []*discordgo.Guild) {
 	sort.Slice(guilds, func(a, b int) bool {
 		aFound := false
 		for _, guild := range settings.GuildPositions {

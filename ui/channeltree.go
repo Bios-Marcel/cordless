@@ -82,7 +82,7 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 		}
 
 		channelNode := createChannelNode(channel)
-		if !readstate.HasBeenRead(channel) {
+		if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
 			channelTree.channelStates[channelNode] = channelUnread
 			channelNode.SetColor(tcell.ColorRed)
 		}
@@ -110,7 +110,7 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 		for _, node := range channelTree.internalTreeView.GetRoot().GetChildren() {
 			channelID, ok := node.GetReference().(string)
 			if ok && channelID == channel.ParentID {
-				if !readstate.HasBeenRead(channel) {
+				if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
 					channelTree.channelStates[channelNode] = channelUnread
 					channelNode.SetColor(tcell.ColorRed)
 				}
