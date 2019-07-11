@@ -31,6 +31,14 @@ func Load(readState []*discordgo.ReadState) {
 	}
 }
 
+// ClearReadStateFor clears all entries for the given Channel.
+func ClearReadStateFor(channelID string) {
+	timerMutex.Lock()
+	delete(data, channelID)
+	delete(ackTimers, channelID)
+	timerMutex.Unlock()
+}
+
 // UpdateRead tells the discord server that a channel has been read. If the
 // channel has already been read and this method was called needlessly, then
 // this will be a No-OP.

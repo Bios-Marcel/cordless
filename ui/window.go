@@ -1387,6 +1387,7 @@ func (window *Window) registerPrivateChatsHandler() {
 			window.app.QueueUpdateDraw(func() {
 				window.privateList.RemoveChannel(event.Channel)
 			})
+			readstate.ClearReadStateFor(event.ID)
 		}
 	})
 
