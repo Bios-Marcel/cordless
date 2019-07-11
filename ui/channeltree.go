@@ -76,8 +76,10 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 	})
 
 	//Top level channel
+	state := channelTree.state
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID != "" {
+		channelTree.state.UserChannelPermissions(channelTree.state.User.ID, channel.ID)
+		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID != "" || !hasReadMessagesPermission(channel, state) {
 			continue
 		}
 
@@ -124,6 +126,16 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 	channelTree.internalTreeView.SetCurrentNode(channelTree.internalTreeView.GetRoot())
 
 	return nil
+}
+
+// Checks if the user has permission to view a specific channel.
+func hasReadMessagesPermission(channel *discordgo.Channel, state *discordgo.State) bool {
+	userPermissions, err := state.UserChannelPermissions(state.User.ID, channel.ID)
+	if err != nil {
+		// Unable to access channel permissions.
+		return false
+	}
+	return (userPermissions & discordgo.PermissionReadMessages) > 0
 }
 
 func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
