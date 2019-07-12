@@ -8,6 +8,8 @@ github.com/Bios-Marcel/shortnotforlong v0.0.0-20190220133053-9074a923cf4d h1:E5I
 github.com/Bios-Marcel/shortnotforlong v0.0.0-20190220133053-9074a923cf4d/go.mod h1:baXE5Qfk1rJLPL8LZK6mDNv7x84m1+OVKfJw24Wu4W4=
 github.com/Bios-Marcel/tview v0.0.0-20190707092717-2f13c1111adc h1:TAmBE6k99VaffhTq+6gNRUPhkjTTikwV2a7T5yWCO0E=
 github.com/Bios-Marcel/tview v0.0.0-20190707092717-2f13c1111adc/go.mod h1:1yM6ZD3hxlpiHugsW1MuABv9x42KTvxFUocQ4uEorN0=
+github.com/Bios-Marcel/tview v0.0.0-20190712141809-88224656e575 h1:IOp07vNmBCP+8tVJvQ3vkcGepA3pibUA/MltHYs6G/U=
+github.com/Bios-Marcel/tview v0.0.0-20190712141809-88224656e575/go.mod h1:1yM6ZD3hxlpiHugsW1MuABv9x42KTvxFUocQ4uEorN0=
 github.com/DATA-DOG/go-sqlmock v1.3.3 h1:CWUqKXe0s8A2z6qCgkP4Kru7wC11YoAnoupUKFDnH08=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/DimitarPetrov/stegify v0.0.0-20190515112438-ee237f3bbbdd h1:0TYseHj7yTW7Mi2rTrTHa6PfiOWUG6yCOmMHnjb2J04=
