@@ -55,14 +55,15 @@ func Run() {
 	app.SetRoot(splashScreen, true)
 	runNext := make(chan bool, 1)
 
+	configuration, configLoadError := config.LoadConfig()
+
+	if configLoadError != nil {
+		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
+	}
+
+	app.MouseEnabled = configuration.MouseEnabled
+
 	go func() {
-		configuration, configLoadError := config.LoadConfig()
-
-		if configLoadError != nil {
-			app.Stop()
-			log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
-		}
-
 		shortcutsLoadError := shortcuts.Load()
 		if shortcutsLoadError != nil {
 			panic(shortcutsLoadError)

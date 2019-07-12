@@ -46,6 +46,7 @@ var (
 		FocusChannelAfterGuildSelection:        true,
 		FocusMessageInputAfterChannelSelection: true,
 		OnTypeInListBehaviour:                  SearchOnTypeInList,
+		MouseEnabled:                           true,
 		ShortenLinks:                           false,
 		ShortenerPort:                          63212,
 		DesktopNotifications:                   true,
@@ -89,6 +90,8 @@ type Config struct {
 	// OnTypeInListBehaviour defines whether the application focus the input
 	// input field on typing, searches the list or does nothing.
 	OnTypeInListBehaviour int
+	// MouseEnabled decides whether the mouse is useable or not.
+	MouseEnabled bool
 
 	// ShortenLinks decides whether cordless starts a local webserver in order
 	// to be able to shorten links
