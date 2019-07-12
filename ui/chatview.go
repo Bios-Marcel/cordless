@@ -99,6 +99,8 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 					chatView.selection = len(chatView.data) - 1
 				} else if chatView.selection >= 1 {
 					chatView.selection--
+				} else {
+					return nil
 				}
 
 				chatView.updateHighlights()
@@ -111,6 +113,8 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 					chatView.selection = 0
 				} else if chatView.selection <= len(chatView.data)-2 {
 					chatView.selection++
+				} else {
+					return nil
 				}
 
 				chatView.updateHighlights()
@@ -119,17 +123,21 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 			}
 
 			if event.Key() == tcell.KeyHome {
-				chatView.selection = 0
+				if chatView.selection != 0 {
+					chatView.selection = 0
 
-				chatView.updateHighlights()
+					chatView.updateHighlights()
+				}
 
 				return nil
 			}
 
 			if event.Key() == tcell.KeyEnd {
-				chatView.selection = len(chatView.data) - 1
+				if chatView.selection != len(chatView.data)-1 {
+					chatView.selection = len(chatView.data) - 1
 
-				chatView.updateHighlights()
+					chatView.updateHighlights()
+				}
 
 				return nil
 			}
