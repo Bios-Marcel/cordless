@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -921,6 +922,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	app.SetFocus(guildList)
 
 	window.registerMouseFocusListeners()
+
+	log.SetOutput(window.commandView)
 
 	return &window, nil
 }
