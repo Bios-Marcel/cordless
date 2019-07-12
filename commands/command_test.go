@@ -32,6 +32,14 @@ func TestParseCommand(t *testing.T) {
 			input: "   ",
 			want:  nil,
 		}, {
+			name:  "A command with a string where the quote in the end was forgotten",
+			input: "hello \"sunny world",
+			want:  []string {"hello", "\"sunny", "world"},
+		}, {
+			name:  "A command with a backslash in the end",
+			input: "hello world\\",
+			want:  []string {"hello", "world\\"},
+		}, {
 			name:  "just quoted whitespace",
 			input: "\"   \"",
 			want:  []string{"   "},
