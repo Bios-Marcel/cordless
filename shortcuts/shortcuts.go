@@ -282,7 +282,8 @@ OUTER_LOOP:
 	return nil
 }
 
-// Persist saves the currently held in memory held shortcuts
+// Persist saves the currently shortcuts that are currently being held in
+// memory.
 func Persist() error {
 	filePath, pathError := getShortcutsPath()
 	if pathError != nil {
