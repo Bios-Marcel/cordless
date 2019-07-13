@@ -793,6 +793,19 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		})
 	}
 
+	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.MessageAck) {
+		if readstate.UpdateReadLocal(event.ChannelID, event.MessageID) {
+			channel, stateError := s.State.Channel(event.ChannelID)
+			if stateError == nil && event.MessageID == channel.LastMessageID {
+				if window.selectedGuild != nil && channel.GuildID == window.selectedGuild.ID {
+					window.channelTree.MarkChannelAsRead(channel.ID)
+				} else if channel.GuildID == "" {
+					window.privateList.MarkChannelAsRead(channel.ID)
+				}
+			}
+		}
+	})
+
 	window.commandView.SetInputCaptureForInput(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers() == tcell.ModAlt {
 			if event.Key() == tcell.KeyUp {

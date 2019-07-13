@@ -259,6 +259,23 @@ func (channelTree *ChannelTree) MarkChannelAsUnread(channelID string) {
 	})
 }
 
+// MarkChannelAsRead marks a channel as read if it's not loaded already.
+func (channelTree *ChannelTree) MarkChannelAsRead(channelID string) {
+	channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+		referenceChannelID, ok := node.GetReference().(string)
+		if ok && referenceChannelID == channelID {
+			if channelTree.channelStates[node] != channelLoaded {
+				channelTree.channelStates[node] = channelRead
+				node.SetColor(tcell.ColorWhite)
+			}
+
+			return false
+		}
+
+		return true
+	})
+}
+
 // MarkChannelAsMentioned marks a channel as mentioned.
 func (channelTree *ChannelTree) MarkChannelAsMentioned(channelID string) {
 	channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {

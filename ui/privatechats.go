@@ -213,6 +213,22 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 	}
 }
 
+// MarkChannelAsRead marks a channel as read if it isn't loaded already
+func (privateList *PrivateChatList) MarkChannelAsRead(channelID string) {
+	for _, node := range privateList.chatsNode.GetChildren() {
+		referenceChannelID, ok := node.GetReference().(string)
+		if ok && referenceChannelID == channelID {
+			if privateList.privateChannelStates[node] != loaded {
+				privateList.privateChannelStates[node] = read
+				node.SetColor(tcell.ColorWhite)
+			}
+			break
+		}
+	}
+}
+
+// ReorderChannelList resorts the list of private chats according to their last
+// message times.
 func (privateList *PrivateChatList) ReorderChannelList() {
 	children := privateList.chatsNode.GetChildren()
 	sort.Slice(children, func(a, b int) bool {

@@ -39,6 +39,24 @@ func ClearReadStateFor(channelID string) {
 	timerMutex.Unlock()
 }
 
+// UpdateReadLocal can be used to locally update the data without sending
+// anything to the Discord API. The update will only be applied if the new
+// message ID is greater than the old one.
+func UpdateReadLocal(channelID string, lastMessageID string) bool {
+	parsed, parseError := strconv.ParseUint(lastMessageID, 10, 64)
+	if parseError != nil {
+		return false
+	}
+
+	old, isPresent := data[channelID]
+	if !isPresent || old < parsed {
+		data[channelID] = parsed
+		return true
+	}
+
+	return false
+}
+
 // UpdateRead tells the discord server that a channel has been read. If the
 // channel has already been read and this method was called needlessly, then
 // this will be a No-OP.
