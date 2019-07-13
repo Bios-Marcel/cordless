@@ -44,8 +44,6 @@ The application only uses the official Discord API and doesn't send data to
 any third party. However, this application is not an product official product
 by Discord (Hammer & Chisel).
 
-This application is currently a WIP and will change rather fast.
-
 [Small demo video made by me](https://peertube.social/videos/watch/15ae8076-2de6-4f97-8947-93d8b356ad08)
 
 ## How to install it
@@ -163,40 +161,16 @@ On launch, cordless will offer you two login methods:
 2. Using email and password
 
 I recommend the first way, as the second one won't work anyway in case you have
-two-factor authentication enabled. After logging on using either method, your
+two-factor authentication enabled. After logging in using either method, your
 token is stored locally on your machine. The token will not be encrypted, so be
 careful with your configuration file.
 
 If you are logging in with a bot token, you have to append `Bot ` (yes, with
 the space) in front of the token.
 
-**THIS APPLICATION NEVER SAVES YOUR PASSWORD LOCALLY.**
+**THIS APPLICATION NEVER SAVES YOUR ACTUAL PASSWORD LOCALLY.**
 
-#### Retrieving your token via discord or chrome
-
-* Press `CTRL+SHIFT+I` (or `COMMAND+SHIFT+I` if you are on Mac OS)
-
-![Default window](https://user-images.githubusercontent.com/19377618/53696114-2b3fda00-3dc4-11e9-9111-50a1e77ca838.png)
-
-* Click `Network` section
-
-![Network section](https://user-images.githubusercontent.com/19377618/53696066-ac4aa180-3dc3-11e9-8585-df9f579a44a6.png)
-
-* Click `XHR` Section
-
-![XHR section](https://user-images.githubusercontent.com/19377618/53696115-2d099d80-3dc4-11e9-914f-6bb3769853f9.png)
-
-* Reload it by clicking `F5` and choose `access-token`
-
-![XHR section after reloading it](https://user-images.githubusercontent.com/19377618/53696068-aeacfb80-3dc3-11e9-8af7-8f93fd226eff.png) 
-
-* Get into `Headers` section and scroll down until you find `authorization: token` and copy it
- 
-![Headers section of access token](https://user-images.githubusercontent.com/19377618/53696070-afde2880-3dc3-11e9-8859-d307677f51de.png)
-
-* Paste the token into the terminal and hit enter
-
-![Terminal after pasting the token](https://user-images.githubusercontent.com/19377618/53696072-b1a7ec00-3dc3-11e9-9ce5-d4d2534602de.png)
+If you need to find out how to retrieve your token, [check the wiki at](https://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token-via-the-discord-app-or-a-chromium-based-browser).
 
 ## Quick overview - Navigation (switching between boxes / containers)
 
@@ -225,6 +199,10 @@ configuration folder.
 An example can be found here:
 [Kaomoji](https://github.com/Bios-Marcel/cordless-kaomoji)
 
+**Currently the scripting interface only offers a single event, if people show
+interest in this feature, I might add more, as I am currently not very
+intersted in it.**
+
 ## Contributing
 
 All kinds of contributions are welcome. Whether it's correcting typos, fixing
@@ -241,42 +219,46 @@ official discord client has or not.
 Oh and please try to keep things pragmatic and foul-language free ;)
 
 If none of those ways of contributing are your kind of thing, feel free to
-donate something via https://liberapay.com/biosmarcel/donate. It may not
-directly have an impact on the project, but it will surely motivate me to
-keep working on this project, as it shows that people care about it.
+donate something via [Liberapay](https://liberapay.com/biosmarcel/donate).
+It may not directly have an impact on the project, but it will surely motivate
+me to keep working on this project, as it shows that people care about it.
 
 ## Why should or shouldn't you use this project
 
-Reason to use it:
-  * Your PC is not very powerful
-  * You're on a mobile device and value your battery life
-  * You just like terminal applications
-  * You are scared that the discord client communicates too much with the HQ
+Reasons to use it:
+
+- Your PC is not very powerful
+- You're on a mobile device and value your battery life
+- You just like terminal applications
+- You are scared that the discord client communicates too much with the HQ
 
 Reasons not to use it:
-  * You like fancy GUI
-  * You want to see images, videos and whatnot inside of the application itself
-  * You need the voice/video calling features
-  * You need to administrate a server (no adminsitration features yet)
+
+- You like fancy GUI
+- You want to see images, videos and whatnot inside of the application itself
+- You need the voice/video calling features
+- You need to administrate a server (no adminsitration features yet)
 
 ## Similar projects
 
 Here is a list of similar projects:
 
-* [terminal-discord](https://github.com/xynxynxyn/terminal-discord)
-* [Discurses](https://github.com/topisani/Discurses)
-* [Discline](https://github.com/MitchWeaver/Discline)
-* [discord-term](https://github.com/cloudrex/discord-term)
-* [6cord](https://gitlab.com/diamondburned/6cord)
+- [terminal-discord](https://github.com/xynxynxyn/terminal-discord)
+- [Discurses](https://github.com/topisani/Discurses)
+- [Discline](https://github.com/MitchWeaver/Discline)
+- [discord-term](https://github.com/cloudrex/discord-term)
+- [6cord](https://gitlab.com/diamondburned/6cord)
 
-Hit me up if you have a similar project as well :D
+Hit me up if you have a similar project and I'll gladly add it to the list.
 
 ## Troubleshooting
 
-If you happen to encounter a crash or a bug, please submit a bug request.
+If you happen to encounter a crash or a bug, please submit a bug report via
+the projects issue tracker.
 
 In case that you simply can't use any shortcuts that the application has, this
 might be due to your terminal emulator accepting those instead of letting
 cordless handle them.
 
-Or message me on Discord at `Marcel#7299`.
+If you need help or have questions that you don't want to create an issue for.
+feel free to hit me up on Discord: `Marcel#7299`.
