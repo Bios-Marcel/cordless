@@ -264,6 +264,11 @@ func (channelTree *ChannelTree) MarkChannelAsRead(channelID string) {
 	channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channelID {
+			channel, stateError := channelTree.state.Channel(channelID)
+			if stateError == nil {
+				node.SetText(discordutil.GetChannelNameForTree(channel))
+			}
+
 			if channelTree.channelStates[node] != channelLoaded {
 				channelTree.channelStates[node] = channelRead
 				node.SetColor(tcell.ColorWhite)
