@@ -1,6 +1,11 @@
 package tviewutil
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
+
+var boundaryPattern = regexp.MustCompile(`(([,\.\-:;!\?&#+]|\n)[ \t\f\r]*|([ \t\f\r]+))`)
 
 // CalculateNeccessaryHeight calculates the necessary height in the ui given
 // the text and the width of the component the text will appear in.
@@ -24,7 +29,7 @@ func CountNumberOfWrappedLines(lineWidth int, text string) int {
 }
 
 func RemoveWrappedWords(lineWidth int, text string) string {
-	words := strings.Split(text, " ")
+	words := boundaryPattern.Split(text, -1)
 	numWordsToWrap := 0
 	for len(strings.Join(words[:numWordsToWrap], " ")) < lineWidth {
 		numWordsToWrap++
