@@ -34,6 +34,9 @@
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at power-users.
 
+Feel free to [join the cordless Discord server](https://discord.gg/fxFqszu),
+which is inteded for testing and talking.
+
 **WARNING: Self-bots are discouraged and against Discords TOS.**
 
 This project was mainly inspired by [Southclaws](https://github.com/Southclaws)
