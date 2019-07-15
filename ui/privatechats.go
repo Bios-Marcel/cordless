@@ -112,7 +112,7 @@ func (privateList *PrivateChatList) prependChannel(channel *discordgo.Channel) {
 
 func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
 	newNode := createPrivateChannelNode(channel)
-	if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
+	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 		privateList.privateChannelStates[newNode] = unread
 		newNode.SetColor(tcell.ColorRed)
 	}

@@ -84,3 +84,14 @@ func SortPrivateChannels(channels []*discordgo.Channel) {
 		return CompareChannels(channels[a], channels[b])
 	})
 }
+
+// HasReadMessagesPermission checks if the user has permission to view a
+// specific channel.
+func HasReadMessagesPermission(channelID string, state *discordgo.State) bool {
+	userPermissions, err := state.UserChannelPermissions(state.User.ID, channelID)
+	if err != nil {
+		// Unable to access channel permissions.
+		return false
+	}
+	return (userPermissions & discordgo.PermissionReadMessages) > 0
+}

@@ -797,10 +797,19 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		if readstate.UpdateReadLocal(event.ChannelID, event.MessageID) {
 			channel, stateError := s.State.Channel(event.ChannelID)
 			if stateError == nil && event.MessageID == channel.LastMessageID {
-				if window.selectedGuild != nil && channel.GuildID == window.selectedGuild.ID {
-					window.channelTree.MarkChannelAsRead(channel.ID)
-				} else if channel.GuildID == "" {
+				if channel.GuildID == "" {
 					window.privateList.MarkChannelAsRead(channel.ID)
+				} else {
+					if window.selectedGuild != nil && channel.GuildID == window.selectedGuild.ID {
+						window.channelTree.MarkChannelAsRead(channel.ID)
+					} else {
+						for _, guildNode := range window.guildList.GetRoot().GetChildren() {
+							if guildNode.GetReference() == channel.GuildID {
+								window.updateServerReadStatus(channel.GuildID, guildNode, false)
+								break
+							}
+						}
+					}
 				}
 			}
 		}
@@ -945,17 +954,11 @@ func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.Tr
 	if isSelected {
 		guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
 	} else {
-		realGuild, cacheError := window.session.State.Guild(guildID)
-		if cacheError == nil {
-			for _, channel := range realGuild.Channels {
-				if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
-					guildNode.SetColor(tcell.ColorRed)
-					return
-				}
-			}
+		if !readstate.HasGuildBeenRead(guildID) {
+			guildNode.SetColor(tcell.ColorRed)
+		} else {
+			guildNode.SetColor(tview.Styles.PrimaryTextColor)
 		}
-
-		guildNode.SetColor(tview.Styles.PrimaryTextColor)
 	}
 }
 
@@ -1185,10 +1188,14 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			tempMessage := message
 			window.session.State.MessageAdd(tempMessage)
 
-			if window.selectedChannel != nil && tempMessage.ChannelID == window.selectedChannel.ID {
+			channel, stateError := window.session.State.Channel(tempMessage.ChannelID)
+			if stateError != nil {
+				continue
+			}
 
+			if window.selectedChannel != nil && tempMessage.ChannelID == window.selectedChannel.ID {
 				if tempMessage.Author.ID != window.session.State.User.ID {
-					readstate.UpdateReadBuffered(window.session, tempMessage.ChannelID, tempMessage.ID)
+					readstate.UpdateReadBuffered(window.session, channel, tempMessage.ID)
 				}
 
 				window.app.QueueUpdateDraw(func() {
@@ -1196,15 +1203,13 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				})
 			}
 
-			channel, stateError := window.session.State.Channel(tempMessage.ChannelID)
-			if stateError != nil {
-				continue
-			}
-
 			if channel.Type == discordgo.ChannelTypeGuildText {
 				for _, guildNode := range window.guildList.GetRoot().GetChildren() {
-					if guildNode.GetReference() != channel.GuildID {
-						window.updateServerReadStatus(channel.GuildID, guildNode, false)
+					if guildNode.GetReference() == channel.GuildID &&
+						(window.selectedGuild == nil || window.selectedGuild.ID != channel.GuildID) {
+						window.app.QueueUpdateDraw(func() {
+							window.updateServerReadStatus(channel.GuildID, guildNode, false)
+						})
 						break
 					}
 				}
@@ -1237,7 +1242,6 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 				if config.GetConfig().DesktopNotifications {
 					if !mentionsYou {
-						//TODO Check if channel is muted.
 						if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 							mentionsYou = true
 						}
@@ -1793,7 +1797,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 
 	go func() {
-		readstate.UpdateRead(window.session, channel.ID, channel.LastMessageID)
+		readstate.UpdateRead(window.session, channel, channel.LastMessageID)
 
 		// Here we make the assumption that the channel we are loading must be part
 		// of the currently loaded guild, since we don't allow loading a channel of
@@ -1804,9 +1808,8 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 				window.selectedGuild = guild
 				window.app.QueueUpdateDraw(func() {
 					for _, guildNode := range window.guildList.GetRoot().GetChildren() {
-						if guildNode.GetReference() != channel.GuildID {
+						if guildNode.GetReference() == channel.GuildID {
 							window.selectedGuildNode = guildNode
-							window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, true)
 							break
 						}
 					}

@@ -92,7 +92,7 @@ func Run() {
 
 		readyEvent := <-readyChan
 
-		readstate.Load(readyEvent.ReadState)
+		readstate.Load(discord.State)
 
 		app.QueueUpdateDraw(func() {
 			window, createError := ui.NewWindow(runNext, app, discord, readyEvent)

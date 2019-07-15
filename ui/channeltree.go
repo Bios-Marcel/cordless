@@ -78,21 +78,24 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 	// Top level channel
 	state := channelTree.state
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID != "" || !hasReadMessagesPermission(channel, state) {
+		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID != "" ||
+			!discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
 		createTopLevelChannelNodes(channelTree, channel)
 	}
 	// Categories
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildCategory || channel.ParentID != "" || !hasReadMessagesPermission(channel, state) {
+		if channel.Type != discordgo.ChannelTypeGuildCategory || channel.ParentID != "" ||
+			!discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
 		createChannelCategoryNodes(channelTree, channel)
 	}
 	// Second level channel
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID == "" || !hasReadMessagesPermission(channel, state) {
+		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID == "" ||
+			!discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
 		createSecondLevelChannelNodes(channelTree, channel)
@@ -103,7 +106,7 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 
 func createTopLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
 	channelNode := createChannelNode(channel)
-	if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
+	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 		channelTree.channelStates[channelNode] = channelUnread
 		channelNode.SetColor(tcell.ColorRed)
 	}
@@ -121,7 +124,7 @@ func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.
 	for _, node := range channelTree.internalTreeView.GetRoot().GetChildren() {
 		channelID, ok := node.GetReference().(string)
 		if ok && channelID == channel.ParentID {
-			if !readstate.HasBeenRead(channel.ID, channel.LastMessageID) {
+			if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 				channelTree.channelStates[channelNode] = channelUnread
 				channelNode.SetColor(tcell.ColorRed)
 			}
@@ -130,16 +133,6 @@ func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.
 			break
 		}
 	}
-}
-
-// Checks if the user has permission to view a specific channel.
-func hasReadMessagesPermission(channel *discordgo.Channel, state *discordgo.State) bool {
-	userPermissions, err := state.UserChannelPermissions(state.User.ID, channel.ID)
-	if err != nil {
-		// Unable to access channel permissions.
-		return false
-	}
-	return (userPermissions & discordgo.PermissionReadMessages) > 0
 }
 
 func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
