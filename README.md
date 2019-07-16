@@ -42,7 +42,7 @@ This project was mainly inspired by [Southclaws](https://github.com/Southclaws)
 develop any further.
 
 The application only uses the official Discord API and doesn't send data to
-any third party. However, this application is not an product official product
+any third party. However, this application is not a official product
 by Discord (Hammer & Chisel).
 
 [Small demo video made by me](https://peertube.social/videos/watch/15ae8076-2de6-4f97-8947-93d8b356ad08)
