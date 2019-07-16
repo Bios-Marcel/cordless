@@ -9,6 +9,7 @@
 
 [![Donate using librepay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/biosmarcel/donate)
 [![codecov](https://codecov.io/gh/Bios-Marcel/cordless/branch/master/graph/badge.svg)](https://codecov.io/gh/Bios-Marcel/cordless)
+[![Discord](https://img.shields.io/discord/600329866558308373.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/fxFqszu)
 
 ## Overview
 
@@ -33,9 +34,6 @@
 
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at power-users.
-
-Feel free to [join the cordless Discord server](https://discord.gg/fxFqszu),
-which is inteded for testing and talking.
 
 **WARNING: Self-bots are discouraged and against Discords TOS.**
 
