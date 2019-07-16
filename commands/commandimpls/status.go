@@ -57,12 +57,13 @@ func statusToString(status discordgo.Status) string {
 
 // Execute runs the command piping its output into the supplied writer.
 func (status *Status) Execute(writer io.Writer, parameters []string) {
-	var settingStatusError error
-	var updatedSettings *discordgo.Settings
 
 	if len(parameters) == 0 {
 		fmt.Fprintf(writer, "Current status: %s \n", statusToString(status.session.State.Settings.Status))
 	} else if len(parameters) == 1 {
+		var settingStatusError error
+		var updatedSettings *discordgo.Settings
+
 		switch strings.ToLower(parameters[0]) {
 		case "online", "available":
 			updatedSettings, settingStatusError = status.session.UserUpdateStatus(discordgo.StatusOnline)
@@ -75,16 +76,17 @@ func (status *Status) Execute(writer io.Writer, parameters []string) {
 		default:
 			status.PrintHelp(writer)
 		}
+
+		if settingStatusError != nil {
+			fmt.Fprintf(writer, "Error setting status: '%s'\n", settingStatusError.Error())
+		} else if updatedSettings != nil {
+			fmt.Fprintf(writer, "Setting status to '%s'\n", statusToString(updatedSettings.Status))
+			status.session.State.Settings = updatedSettings
+		}
 	} else {
 		status.PrintHelp(writer)
 	}
 
-	if settingStatusError != nil {
-		fmt.Fprintf(writer, "Error setting status: '%s'\n", settingStatusError.Error())
-	} else if updatedSettings != nil {
-		fmt.Fprintf(writer, "Setting status to '%s'\n", statusToString(updatedSettings.Status))
-		status.session.State.Settings = updatedSettings
-	}
 }
 
 // Name represents this commands indentifier.
