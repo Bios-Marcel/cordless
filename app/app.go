@@ -111,6 +111,7 @@ func Run() {
 			window.RegisterCommand(commandimpls.NewChatHeaderCommand(window))
 			window.RegisterCommand(commandimpls.NewFriendsCommand(discord))
 			window.RegisterCommand(commandimpls.NewUserUpdateCommand(window, discord))
+			window.RegisterCommand(commandimpls.NewServerCommand(discord, window))
 		})
 	}()
 
