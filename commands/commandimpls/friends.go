@@ -149,6 +149,7 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 	case "search", "find":
 		if len(parameters) != 2 {
 			fmt.Fprintln(writer, "Usage: friends find <Username|Username#NNNN|UserID")
+			return
 		}
 
 		input := parameters[1]
@@ -176,6 +177,7 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 	case "befriend", "add", "send", "ask", "invite", "request":
 		if len(parameters) != 2 {
 			fmt.Fprintln(writer, "Usage: friends befriend <Username|Username#NNNN|UserID")
+			return
 		}
 
 		//Iterate over all available users and find one that fits, if we were
