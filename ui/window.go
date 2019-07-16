@@ -1297,7 +1297,9 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						if mentionsYou {
 							window.channelTree.MarkChannelAsMentioned(channel.ID)
 						} else {
-							window.channelTree.MarkChannelAsUnread(channel.ID)
+							if !readstate.IsChannelMuted(channel) {
+								window.channelTree.MarkChannelAsUnread(channel.ID)
+							}
 						}
 					})
 				}

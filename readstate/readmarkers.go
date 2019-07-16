@@ -139,12 +139,9 @@ func HasGuildBeenRead(guildID string) bool {
 	return true
 }
 
-// HasBeenRead checks whether the passed channel has an unread Message or not.
-func HasBeenRead(channel *discordgo.Channel, lastMessageID string) bool {
-	if lastMessageID == "" {
-		return true
-	}
-
+// IsChannelMuted checks whether the channel is muted or not. Currently this
+// only works for guild channels.
+func IsChannelMuted(channel *discordgo.Channel) bool {
 	if channel.GuildID != "" {
 		for _, settings := range state.UserGuildSettings {
 			if settings.GuildID == channel.GuildID {
@@ -159,6 +156,21 @@ func HasBeenRead(channel *discordgo.Channel, lastMessageID string) bool {
 				break
 			}
 		}
+	}
+
+	//FIXME Do this for private channels
+
+	return false
+}
+
+// HasBeenRead checks whether the passed channel has an unread Message or not.
+func HasBeenRead(channel *discordgo.Channel, lastMessageID string) bool {
+	if lastMessageID == "" {
+		return true
+	}
+
+	if IsChannelMuted(channel) {
+		return true
 	}
 
 	data, present := data[channel.ID]
