@@ -1227,6 +1227,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			}
 
 			if tempMessage.Author.ID == window.session.State.User.ID {
+				readstate.UpdateReadLocal(tempMessage.ChannelID, tempMessage.ID)
 				continue
 			}
 
