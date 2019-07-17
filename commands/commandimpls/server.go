@@ -15,7 +15,8 @@ The server command allows you to manage the servers you are in. This command
 doesn't allow administrating a server though.
 
 Available subcommands
-  * join - takes an invite and accepts it
+  * join  - takes an invite and accepts it
+  * leave - leaves the server
 `
 
 // Server is the command that allows managing the UserGuilds.
@@ -46,6 +47,12 @@ func (s *Server) Execute(writer io.Writer, parameters []string) {
 		} else {
 			s.joinServer(writer, parameters[1])
 		}
+	case "leave", "exit", "quit":
+		if len(parameters) != 2 {
+			s.printServerLeaveHelp(writer)
+		} else {
+			s.leaveServer(writer, parameters[1])
+		}
 	default:
 		s.PrintHelp(writer)
 	}
@@ -69,6 +76,36 @@ func (s *Server) joinServer(writer io.Writer, input string) {
 		fmt.Fprintf(writer, "[red]Error accepting invite with ID '%s':\n\t[red]%s\n", inviteID, err)
 	} else {
 		fmt.Fprintf(writer, "Joined server '%s'\n", invite.Guild.Name)
+	}
+}
+
+func (s *Server) printServerLeaveHelp(writer io.Writer) {
+	fmt.Fprintln(writer, "Usage: server leave <ID|Name>")
+}
+
+func (s *Server) leaveServer(writer io.Writer, input string) {
+	matches := make([]*discordgo.Guild, 0)
+	for _, guild := range s.session.State.Guilds {
+		if guild.ID == input || guild.Name == input {
+			matches = append(matches, guild)
+		}
+	}
+
+	if len(matches) == 1 {
+		err := s.session.GuildLeave(matches[0].ID)
+		if err != nil {
+			fmt.Fprintf(writer, "[red]Error leaving server '%s':\n\t[red]%s\n", matches[0].Name, err)
+		} else {
+			fmt.Fprintf(writer, "Left server '%s'.\n", matches[0].Name)
+		}
+	} else if len(matches) == 0 {
+		fmt.Fprintf(writer, "[red]No server with the ID or Name '%s' was found.\n", input)
+	} else {
+		fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", input)
+		fmt.Fprintln(writer, "The following matches were found:")
+		for _, match := range matches {
+			fmt.Fprintf(writer, "ID: %s\tName: %s\n", match.ID, match.Name)
+		}
 	}
 }
 
