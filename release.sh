@@ -84,7 +84,7 @@ git push --tags
 # the version of the built snap package will end up being `DATE_dirty`.
 #
 
-snapcraft clean cordless -s pull
+snapcraft clean cordless
 snapcraft
 snapcraft push "cordless_${RELEASE_DATE}_amd64.snap"
 
