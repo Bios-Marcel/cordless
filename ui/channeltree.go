@@ -58,6 +58,13 @@ func NewChannelTree(state *discordgo.State) *ChannelTree {
 	return channelTree
 }
 
+// Clear resets all current state.
+func (channelTree *ChannelTree) Clear() {
+	channelTree.channelStates = make(map[*tview.TreeNode]channelState)
+	channelTree.channelPosition = make(map[string]int)
+	channelTree.internalTreeView.GetRoot().ClearChildren()
+}
+
 // LoadGuild accesses the state in order to load all locally present channels
 // for the passed guild.
 func (channelTree *ChannelTree) LoadGuild(guildID string) error {
@@ -66,9 +73,7 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 		return cacheError
 	}
 
-	channelTree.channelStates = make(map[*tview.TreeNode]channelState)
-	channelTree.channelPosition = make(map[string]int)
-	channelTree.internalTreeView.GetRoot().ClearChildren()
+	channelTree.Clear()
 
 	channels := guild.Channels
 	sort.Slice(channels, func(a, b int) bool {
@@ -222,13 +227,7 @@ func (channelTree *ChannelTree) removeNode(node, parent *tview.TreeNode, channel
 			}
 		}
 
-		if childIndex == 0 {
-			parent.SetChildren(children[1:])
-		} else if childIndex == len(children)-1 {
-			parent.SetChildren(children[:len(children)-1])
-		} else {
-			parent.SetChildren(append(children[:childIndex], children[childIndex+1:]...))
-		}
+		parent.SetChildren(append(children[:childIndex], children[childIndex+1:]...))
 	}
 }
 

@@ -251,6 +251,17 @@ OUTER_LOOP:
 	chatView.Rerender()
 }
 
+// ClearViewAndCache clears the TextView buffer and removes all data for
+// all messages.
+func (chatView *ChatView) ClearViewAndCache() {
+	chatView.data = make([]*discordgo.Message, 0)
+	chatView.showSpoilerContent = make(map[string]bool)
+	chatView.formattedMessages = make(map[string]string)
+	chatView.selection = -1
+	chatView.internalTextView.SetText("")
+	chatView.SetTitle("")
+}
+
 func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 	isBlocked := discordutil.IsBlocked(chatView.session.State, message.Author)
 

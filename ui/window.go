@@ -51,7 +51,7 @@ type Window struct {
 	currentContainer  tview.Primitive
 
 	leftArea    *tview.Pages
-	guildList   *tview.TreeView
+	guildList   *GuildList
 	channelTree *ChannelTree
 	privateList *PrivateChatList
 
@@ -87,7 +87,7 @@ type Window struct {
 //necessary handlers and functions. If this function returns an error, we can't
 //start the application.
 func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.Session, readyEvent *discordgo.Ready) (*Window, error) {
-	window := Window{
+	window := &Window{
 		doRestart:       doRestart,
 		session:         session,
 		app:             app,
@@ -139,24 +139,11 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	})
 	window.registerGuildChannelHandler()
 
-	guildList := tview.NewTreeView().
-		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
-		SetCycleSelection(true)
-	window.guildList = guildList
-
-	guildRootNode := tview.NewTreeNode("")
-	guildList.SetRoot(guildRootNode)
-	guildList.SetBorder(true)
-	guildList.SetTopLevel(1)
-	guildList.SetSelectedFunc(func(node *tview.TreeNode) {
+	discordutil.SortGuilds(window.session.State.Settings, guilds)
+	guildList := NewGuildList(guilds, window)
+	guildList.SetOnGuildSelect(func(node *tview.TreeNode, guildID string) {
 		if window.selectedGuildNode != nil {
 			window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
-		}
-
-		guildID, ok := node.GetReference().(string)
-		if !ok {
-			window.ShowErrorDialog("Guild couldn't be loaded.")
-			return
 		}
 
 		guild, cacheError := window.session.Guild(guildID)
@@ -191,25 +178,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		window.RefreshLayout()
 	})
+	window.guildList = guildList
 
+	window.registerGuildHandlers()
 	window.registerGuildMemberHandlers()
-
-	discordutil.SortGuilds(window.session.State.Settings, guilds)
-
-	for _, tempGuild := range guilds {
-		guild := tempGuild
-		guildNode := tview.NewTreeNode(guild.Name)
-		guildNode.SetReference(guild.ID)
-		guildRootNode.AddChild(guildNode)
-
-		window.updateServerReadStatus(guild.ID, guildNode, false)
-
-		guildNode.SetSelectable(true)
-	}
-
-	if len(guildRootNode.GetChildren()) > 0 {
-		guildList.SetCurrentNode(guildRootNode)
-	}
 
 	guildPage.AddItem(guildList, 0, 1, true)
 	guildPage.AddItem(channelTree.internalTreeView, 0, 2, true)
@@ -947,7 +919,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	log.SetOutput(window.commandView)
 
-	return &window, nil
+	return window, nil
 }
 
 func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.TreeNode, isSelected bool) {
@@ -1358,6 +1330,55 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 					}
 				}
 			}
+		}
+	}()
+}
+
+func (window *Window) registerGuildHandlers() {
+	//Using buffered channels with a size of three, since this shouldn't really happen often
+
+	guildCreateChannel := make(chan *discordgo.GuildCreate, 3)
+	window.session.AddHandler(func(s *discordgo.Session, guildCreate *discordgo.GuildCreate) {
+		guildCreateChannel <- guildCreate
+	})
+
+	guildRemoveChannel := make(chan *discordgo.GuildDelete, 3)
+	window.session.AddHandler(func(s *discordgo.Session, guildRemove *discordgo.GuildDelete) {
+		guildRemoveChannel <- guildRemove
+	})
+
+	go func() {
+		for guildCreate := range guildCreateChannel {
+			window.app.QueueUpdateDraw(func() {
+				window.guildList.AddGuild(guildCreate.ID, guildCreate.Name)
+			})
+		}
+	}()
+
+	go func() {
+		for guildRemove := range guildRemoveChannel {
+			clearChannelTree := window.selectedGuildNode.GetReference() == guildRemove.ID
+			var isInGuildChannel bool
+
+			if window.selectedChannel != nil && window.selectedChannel.GuildID == guildRemove.ID {
+				isInGuildChannel = true
+			}
+
+			window.selectedGuildNode = nil
+			window.selectedGuild = nil
+
+			window.app.QueueUpdateDraw(func() {
+				if clearChannelTree {
+					window.channelTree.Clear()
+				}
+
+				if isInGuildChannel {
+					window.userList.Clear()
+					window.chatView.ClearViewAndCache()
+				}
+
+				window.guildList.RemoveGuild(guildRemove.ID)
+			})
 		}
 	}()
 }
