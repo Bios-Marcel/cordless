@@ -79,3 +79,13 @@ func (g *GuildList) AddGuild(guildID, name string) {
 	node.SetReference(guildID)
 	g.GetRoot().AddChild(node)
 }
+
+// UpdateName updates the name of the guild with the given ID.
+func (g *GuildList) UpdateName(guildID, newName string) {
+	for _, node := range g.GetRoot().GetChildren() {
+		if node.GetReference() == guildID {
+			node.SetText(newName)
+			break
+		}
+	}
+}

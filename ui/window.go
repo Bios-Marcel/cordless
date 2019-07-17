@@ -1347,10 +1347,23 @@ func (window *Window) registerGuildHandlers() {
 		guildRemoveChannel <- guildRemove
 	})
 
+	guildUpdateChannel := make(chan *discordgo.GuildUpdate, 3)
+	window.session.AddHandler(func(s *discordgo.Session, guildUpdate *discordgo.GuildUpdate) {
+		guildUpdateChannel <- guildUpdate
+	})
+
 	go func() {
 		for guildCreate := range guildCreateChannel {
 			window.app.QueueUpdateDraw(func() {
 				window.guildList.AddGuild(guildCreate.ID, guildCreate.Name)
+			})
+		}
+	}()
+
+	go func() {
+		for guildUpdate := range guildUpdateChannel {
+			window.app.QueueUpdateDraw(func() {
+				window.guildList.UpdateName(guildUpdate.ID, guildUpdate.Name)
 			})
 		}
 	}()
