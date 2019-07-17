@@ -1251,7 +1251,10 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 							}
 						}
 
-						beeep.Notify("Cordless - "+notificationLocation, tempMessage.ContentWithMentionsReplaced(), "assets/information.png")
+						notifyError := beeep.Notify("Cordless - "+notificationLocation, tempMessage.ContentWithMentionsReplaced(), "assets/information.png")
+						if notifyError != nil {
+							log.Printf("[red]Error sending notification:\n\t[red]%s\n", notifyError)
+						}
 					}
 				}
 
