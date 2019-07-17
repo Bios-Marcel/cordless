@@ -12,12 +12,15 @@ base: core18
 parts:
   cordless:
     plugin: go
+    go-channel: 1.12/stable
     go-importpath: github.com/Bios-Marcel/cordless
     source: .
     source-type: git
     stage-packages:
       - xclip
-
+    build-packages:
+      - gcc
+    
 apps:
   cordless:
     command: bin/cordless
