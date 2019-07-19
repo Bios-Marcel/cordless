@@ -18,12 +18,13 @@ parts:
     source-type: git
     stage-packages:
       - xclip
+      - libnotify-bin
     build-packages:
       - gcc
     
 apps:
   cordless:
     command: bin/cordless
-    plugs: [x11, network-bind]
+    plugs: [x11, network-bind, desktop]
     environment:
       XDG_CONFIG_DIR: $SNAP_USER_DATA/
