@@ -1,6 +1,10 @@
+cordless.rb
+cordless_darwin
+cordless_linux_64
 cordless
 cordless.exe
 *.snap
+*.xdelta*
 stage/
 prime/
 snap/.snapcraft
