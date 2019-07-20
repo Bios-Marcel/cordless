@@ -7,7 +7,6 @@
 | windows | [![Build status](https://ci.appveyor.com/api/projects/status/svv866htsr33hdoh/branch/master?svg=true)](https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master) |
 | freebsd | [![builds.sr.ht status](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml.svg)](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml?) |
 
-[![Donate using librepay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/biosmarcel/donate)
 [![codecov](https://codecov.io/gh/Bios-Marcel/cordless/branch/master/graph/badge.svg)](https://codecov.io/gh/Bios-Marcel/cordless)
 [![Discord](https://img.shields.io/discord/600329866558308373.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/fxFqszu)
 
