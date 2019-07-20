@@ -1690,6 +1690,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 //command can't be found, that info will be printed onto the command output.
 func (window *Window) ExecuteCommand(command string) {
 	parts := commands.ParseCommand(command)
+	fmt.Fprintf(window.commandView, "[gray]$ %s:\n", command)
 	commandLogic, exists := window.commands[parts[0]]
 	if exists {
 		commandLogic.Execute(window.commandView, parts[1:])
