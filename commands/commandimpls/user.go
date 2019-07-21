@@ -120,8 +120,14 @@ func NewUserGetCommand(window *ui.Window, session *discordgo.Session) *UserGetCm
 }
 
 func (cmd *UserCmd) Execute(writer io.Writer, parameters []string) {
-	if len(parameters) >= 1 && (parameters[0] == "set" || parameters[0] == "update") {
-		cmd.userSetCmd.Execute(writer, parameters[1:])
+	if len(parameters) >= 1 {
+		if parameters[0] == "set" || parameters[0] == "update" {
+			cmd.userSetCmd.Execute(writer, parameters[1:])
+		} else if parameters[0] == "get" {
+			cmd.userGetCmd.Execute(writer, parameters[1:])
+		} else {
+			cmd.userGetCmd.Execute(writer, parameters)
+		}
 	} else {
 		cmd.userGetCmd.Execute(writer, parameters)
 	}
