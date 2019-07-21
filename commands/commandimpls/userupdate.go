@@ -1,47 +1,164 @@
 package commandimpls
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net/http"
+	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/discordgo"
 )
 
-const userUpdateDocumentation = `[orange]# user-update[white]
+const (
+	userHelpPage = `[::b]NAME
+	user - manipulate and retrieve your user information
 
-This command allows updating your account-information.
+[::b]SYNPOSIS
+	[::b]user <command>
 
-All changeable values can be passed via additional parameters. The following parameters are available:
+[::b]DESCRPTION
+	This command allows you to manipulate and retrieve your user information.
 
--n, --name <new name>            - Sets the given value as your new name
--e, --email <new e-mail address> - Sets the given value as your accounts new e-mail address
--np, --new-password              - Will cause the application to ask you for a new password 
+	This command is split into multiple subcommands. The default subcommand
+	is [::b]user-get[::-] and will be used if no other command was supplied.
 
-At least one of the parameters has to be passed, otherwise running this command will fail.
+[::]SUBCOMMANDS
+	[::b]user-get (default)
+		prints the current user information
+	[::b]user-set
+		updates the current user information`
 
-Examples:
-  user-update --name Hello
-  user-update --name "Hello World"
-  user-update --name "Marcel" -e mynewemail@coolprovider.com
-  user-update -np
-`
+	userSetHelpPage = `[::b]NAME
+	user-set - updates your accounts user information
 
-// UserUpdate allows changing the users account-information.
-type UserUpdate struct {
+[::b]SYNPOSIS
+	[::b]user-set[::-] [OPTION[]...
+
+[::b]DESCRPTION
+	This command allows you to set all or single values of your user
+	information. Every value has a specific parameter and you'l always
+	be asked for your password when trying to change any data.
+
+[::b]OPTIONS
+	TODO
+	[::b]-n, --name
+		change your nickname
+	[::b]-e, --email
+		change the e-mail address asociated with your account
+	[::b]-a, --avatar
+		change your avatar to a new local file of yours
+	[::b]-p, --np
+		changes the password you use to log in to your account
+
+[::b]EXAMPLES
+	[gray]$ user-set -n "My new nickname"
+	[gray]$ user-set -n NewName
+	[gray]$ user-set -n NewName -a /home/pics/avatar.png`
+
+	userGetHelpPage = `[::b]NAME
+	user-get - prints your accounts user information
+
+[::b]SYNPOSIS
+	[::b]user-get[::-] [OPTION[]...
+
+[::b]DESCRPTION
+	This command prints your accounts user information to the
+	commandline ina human readable format. If no options were
+	supplied, then "-n", "-e" and "-a" are chosen as the default
+	options.
+
+[::b]OPTIONS
+	[::b]-n, --name
+		Prints nickname and discriminator
+	[::b]-e, --email
+		Prints your e-mail address
+	[::b]-a, --avatar
+		Prints the URL of your avatar
+	[::b]-t, --tfa
+		Prints whether you have two-factor authentication enabled
+
+[::b]EXAMPLES
+	[gray]$ user
+	Nick: Example#1234
+	E-Mail: example@provider.com
+	Avatar: https://discordapp.com/XXX/YYY.png
+
+	[gray]$ user -a
+	Avatar: https://discordapp.com/XXX/YYY.png`
+)
+
+type UserCmd struct {
+	userSetCmd *UserSetCmd
+	userGetCmd *UserGetCmd
+}
+
+type UserSetCmd struct {
 	window  *ui.Window
 	session *discordgo.Session
 }
 
-// NewUserUpdateCommand creates a new ready to use UserUpdate command.
-func NewUserUpdateCommand(window *ui.Window, session *discordgo.Session) *UserUpdate {
-	return &UserUpdate{window, session}
+type UserGetCmd struct {
+	window  *ui.Window
+	session *discordgo.Session
 }
 
-// Execute runs the UserUpdate command.
-func (nick *UserUpdate) Execute(writer io.Writer, parameters []string) {
+func NewUserCommand(userSetCmd *UserSetCmd, userGetCmd *UserGetCmd) *UserCmd {
+	return &UserCmd{userSetCmd, userGetCmd}
+}
+
+func NewUserSetCommand(window *ui.Window, session *discordgo.Session) *UserSetCmd {
+	return &UserSetCmd{window, session}
+}
+
+func NewUserGetCommand(window *ui.Window, session *discordgo.Session) *UserGetCmd {
+	return &UserGetCmd{window, session}
+}
+
+func (cmd *UserCmd) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) >= 1 && (parameters[0] == "set" || parameters[0] == "update") {
+		cmd.userSetCmd.Execute(writer, parameters[1:])
+	} else {
+		cmd.userGetCmd.Execute(writer, parameters)
+	}
+}
+
+func (cmd *UserGetCmd) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) == 0 {
+		//Calling get with defaults
+		cmd.Execute(writer, []string{"-n", "-e", "-a"})
+	} else {
+		userInformation := ""
+		for _, param := range parameters {
+			switch param {
+			case "-n", "--name", "--nick", "-u", "--username":
+				userInformation += fmt.Sprintf("Nick: %s#%s\n", cmd.session.State.User.Username, cmd.session.State.User.Discriminator)
+			case "-e", "--email", "--e-mail", "--mail":
+				userInformation += fmt.Sprintf("E-Mail: %s\n", cmd.session.State.User.Email)
+			case "-a", "--avatar", "--profile-picture":
+				// FIXME Potential bug if jpeg is uploaded?
+				userInformation += fmt.Sprintf("Avatar: https://cdn.discordapp.com/avatars/%s/%s.png\n", cmd.session.State.User.ID, cmd.session.State.User.Avatar)
+			case "-m", "--mfa", "--tfa", "--2fa":
+				userInformation += fmt.Sprintf("Two-Factor Authentication : %v\n", cmd.session.State.User.MFAEnabled)
+			default:
+				fmt.Fprintf(writer, "[red]Invalid parameter '%s'\n", param)
+				cmd.PrintHelp(writer)
+				return
+			}
+		}
+
+		fmt.Fprint(writer, userInformation)
+
+	}
+}
+
+func (cmd *UserSetCmd) Execute(writer io.Writer, parameters []string) {
 	var newName, newEmail string
+	newAvatar := cmd.session.State.User.Avatar
 	var askForNewPassword bool
 	for index, param := range parameters {
 		switch param {
@@ -57,13 +174,20 @@ func (nick *UserUpdate) Execute(writer io.Writer, parameters []string) {
 			} else {
 				fmt.Fprintln(writer, "[red]Error, you didn't supply a new e-mail address.")
 			}
+		case "-a", "--avatar", "--profile-picture":
+			if index != len(parameters)-1 && !strings.HasPrefix(parameters[index+1], "-") {
+				newAvatar = parameters[index+1]
+			} else {
+				newAvatar = ""
+			}
 		case "--new-password", "-np":
 			askForNewPassword = true
 		}
 	}
 
-	if newName == "" && !askForNewPassword && newEmail == "" {
-		fmt.Fprintln(writer, "[red]No valid parameters were supplied. See `help user-update` for more information.")
+	if newName == "" && !askForNewPassword && newEmail == "" && newAvatar == cmd.session.State.User.Avatar {
+		fmt.Fprintln(writer, "[red]No valid parameters were supplied.")
+		cmd.PrintHelp(writer)
 		return
 	}
 
@@ -75,42 +199,86 @@ func (nick *UserUpdate) Execute(writer io.Writer, parameters []string) {
 		newEmail = strings.TrimSpace(newEmail)
 	}
 
+	if newAvatar != "" && newAvatar != cmd.session.State.User.Avatar {
+		newAvatar = strings.TrimSpace(newAvatar)
+		var resolvedPath string
+		if strings.HasPrefix(newAvatar, "~") {
+			currentUser, userResolveError := user.Current()
+			if userResolveError != nil {
+				fmt.Fprintf(writer, "[red]Error resolving path:\n\t[red]%s\n", userResolveError.Error())
+				return
+			}
+
+			resolvedPath = filepath.Join(currentUser.HomeDir, strings.TrimPrefix(newAvatar, "~"))
+		} else {
+			resolvedPath = newAvatar
+		}
+
+		resolvedPath, resolveError := filepath.EvalSymlinks(resolvedPath)
+		if resolveError != nil {
+			fmt.Fprintf(writer, "[red]Error resolving path:\n\t[red]%s\n", resolveError.Error())
+			return
+		}
+
+		isAbs := filepath.IsAbs(resolvedPath)
+		if !isAbs {
+			fmt.Fprintln(writer, "[red]Error reading file:\n\t[red]the path is not absolute")
+			return
+		}
+
+		data, readError := ioutil.ReadFile(resolvedPath)
+		if readError != nil {
+			fmt.Fprintf(writer, "[red]Error reading file:\n\t[red]%s\n", readError.Error())
+			return
+		}
+
+		contentType := http.DetectContentType(data)
+		newAvatar = base64.StdEncoding.EncodeToString(data)
+		if contentType != "image/png" && contentType != "image/jpeg" && contentType != "image/gif" {
+			fmt.Fprintf(writer, "[red]Error updating avatar:\n\r[red]content type '%s' not supported", contentType)
+			return
+		}
+		newAvatar = fmt.Sprintf("data:%s;base64,%s", contentType, newAvatar)
+	}
+
 	var newPassword string
 
 	go func() {
 		if askForNewPassword {
-			newPassword = nick.window.PromptSecretInput("Updating your user information", "Please enter your new password.")
-			newPasswordConfirmation := nick.window.PromptSecretInput("Updating your user information", "Please enter your new password again, to make sure it is correct.")
+			newPassword = cmd.window.PromptSecretInput("Updating your user information", "Please enter your new password.")
+			newPasswordConfirmation := cmd.window.PromptSecretInput("Updating your user information", "Please enter your new password again, to make sure it is correct.")
 
 			if newPassword != newPasswordConfirmation {
 				fmt.Fprintln(writer, "[red]Error, new passwords differ from each other, please try again.")
-				nick.window.ForceRedraw()
+				cmd.window.ForceRedraw()
 				return
 			}
 		}
 
-		currentPassword := nick.window.PromptSecretInput("Updating your user information", "Please enter your current password.")
+		currentPassword := cmd.window.PromptSecretInput("Updating your user information", "Please enter your current password.")
 		if currentPassword == "" {
 			fmt.Fprintln(writer, "[red]Empty password, aborting.")
 		} else {
-			_, err := nick.session.UserUpdate(newEmail, currentPassword, newName, nick.session.State.User.Avatar, newPassword)
-			if err != nil {
-				fmt.Fprintln(writer, err)
-			} else {
+			_, err := cmd.session.UserUpdate(newEmail, currentPassword, newName, newAvatar, newPassword)
+			if err == nil {
 				fmt.Fprintln(writer, "Your user has been updated.")
+			} else {
+				fmt.Fprintln(writer, err)
 			}
 		}
 
-		nick.window.ForceRedraw()
+		cmd.window.ForceRedraw()
 	}()
 }
 
-// Name returns the string that this command can be called by.
-func (nick *UserUpdate) Name() string {
-	return "user-update"
+func (cmd *UserCmd) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, userHelpPage)
 }
 
-// PrintHelp prints the general help page for this command
-func (nick *UserUpdate) PrintHelp(writer io.Writer) {
-	fmt.Fprintln(writer, userUpdateDocumentation)
+func (cmd *UserSetCmd) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, userSetHelpPage)
+}
+
+func (cmd *UserGetCmd) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, userGetHelpPage)
 }

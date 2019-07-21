@@ -1892,8 +1892,10 @@ func (window *Window) UpdateChatHeader(channel *discordgo.Channel) {
 // RegisterCommand register a command. That makes the command available for
 // being called from the message input field, in case the user-defined prefix
 // is in front of the input.
-func (window *Window) RegisterCommand(command commands.Command) {
-	window.commands[command.Name()] = command
+func (window *Window) RegisterCommand(command commands.Command, names... string) {
+	for _, name := range names {
+		window.commands[name] = command
+	}
 }
 
 // GetRegisteredCommands returns the map of all registered commands.

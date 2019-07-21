@@ -76,7 +76,7 @@ func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 
 		isAbs := filepath.IsAbs(resolvedPath)
 		if !isAbs {
-			fmt.Fprintln(writer, "[red]Error reading file:\n\tthe path is not absolute")
+			fmt.Fprintln(writer, "[red]Error reading file:\n\t[red]the path is not absolute")
 			continue
 		}
 
