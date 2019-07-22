@@ -19,6 +19,14 @@ var (
 		Name:       "Application wide",
 	}
 
+	ExitApplication = &Shortcut{
+		Name:         "Exit application",
+		Identifier:   "exit_application",
+		scope:        globalScope,
+		Event:        tcell.NewEventKey(tcell.KeyCtrlC, rune(tcell.KeyCtrlC), tcell.ModCtrl),
+		defaultEvent: tcell.NewEventKey(tcell.KeyCtrlC, rune(tcell.KeyCtrlC), tcell.ModCtrl),
+	}
+
 	FocusChannelContainer = &Shortcut{
 		Name:         "Focus channel container",
 		Identifier:   "focus_channel_container",
@@ -127,6 +135,7 @@ var (
 	}
 
 	Shortcuts = []*Shortcut{
+		ExitApplication,
 		FocusChannelContainer,
 		FocusUserContainer,
 		ToggleUserContainer,

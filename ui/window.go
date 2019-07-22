@@ -1548,9 +1548,16 @@ func (window *Window) SetCommandModeEnabled(enabled bool) {
 }
 
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
-	if event.Key() == tcell.KeyCtrlC {
+	if shortcuts.EventsEqual(shortcuts.ExitApplication.Event, event) {
 		window.doRestart <- false
-		return event
+		window.app.Stop()
+		return nil
+	}
+
+	// If `ExitApplication` isn't the default (CtrlC) anymore, then we ignore
+	// CtrlC, as it is hardcoded in tview.
+	if event.Key() == tcell.KeyCtrlC {
+		return nil
 	}
 
 	// Maybe compare directly to table?
