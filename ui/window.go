@@ -1548,7 +1548,7 @@ func (window *Window) SetCommandModeEnabled(enabled bool) {
 }
 
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
-	if shortcuts.EventsEqual(shortcuts.ExitApplication.Event, event) {
+	if shortcuts.ExitApplication.Equals(event) {
 		window.doRestart <- false
 		window.app.Stop()
 		return nil
@@ -1638,7 +1638,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		window.app.SetRoot(shortcutsView, true)
 		window.app.SetFocus(table.GetPrimitive())
 		window.currentContainer = shortcutsView
-	} else if shortcuts.EventsEqual(event, shortcuts.ToggleCommandView.Event) {
+	} else if shortcuts.ToggleCommandView.Equals(event) {
 		window.SetCommandModeEnabled(!window.commandMode)
 
 		if window.commandMode {
@@ -1646,19 +1646,19 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		} else {
 			window.app.SetFocus(window.messageInput.GetPrimitive())
 		}
-	} else if shortcuts.EventsEqual(event, shortcuts.FocusCommandOutput.Event) {
+	} else if shortcuts.FocusCommandOutput.Equals(event) {
 		if !window.commandMode {
 			window.SetCommandModeEnabled(true)
 		}
 
 		window.app.SetFocus(window.commandView.commandOutput)
-	} else if shortcuts.EventsEqual(event, shortcuts.FocusCommandInput.Event) {
+	} else if shortcuts.FocusCommandInput.Equals(event) {
 		if !window.commandMode {
 			window.SetCommandModeEnabled(true)
 		}
 
 		window.app.SetFocus(window.commandView.commandInput.internalTextView)
-	} else if shortcuts.EventsEqual(event, shortcuts.ToggleUserContainer.Event) {
+	} else if shortcuts.ToggleUserContainer.Equals(event) {
 		conf := config.GetConfig()
 		conf.ShowUserContainer = !conf.ShowUserContainer
 
@@ -1668,22 +1668,22 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 		config.PersistConfig()
 		window.RefreshLayout()
-	} else if shortcuts.EventsEqual(event, shortcuts.FocusChannelContainer.Event) {
+	} else if shortcuts.FocusChannelContainer.Equals(event) {
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.channelTree.internalTreeView)
-	} else if shortcuts.EventsEqual(event, shortcuts.FocusPrivateChatPage.Event) {
+	} else if shortcuts.FocusPrivateChatPage.Equals(event) {
 		window.SwitchToFriendsPage()
 		window.app.SetFocus(window.privateList.GetComponent())
-	} else if shortcuts.EventsEqual(event, shortcuts.FocusGuildContainer.Event) {
+	} else if shortcuts.FocusGuildContainer.Equals(event) {
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.guildList)
-	} else if shortcuts.EventsEqual(event, shortcuts.FocusMessageContainer.Event) {
+	} else if shortcuts.FocusMessageContainer.Equals(event) {
 		window.app.SetFocus(window.chatView.internalTextView)
-	} else if shortcuts.EventsEqual(event, shortcuts.FocusUserContainer.Event) {
+	} else if shortcuts.FocusUserContainer.Equals(event) {
 		if window.leftArea.GetCurrentPage() == guildPageName && window.userList.internalTreeView.IsVisible() {
 			window.app.SetFocus(window.userList.internalTreeView)
 		}
-	} else if shortcuts.EventsEqual(event, shortcuts.FocusMessageInput.Event) {
+	} else if shortcuts.FocusMessageInput.Equals(event) {
 		window.app.SetFocus(window.messageInput.GetPrimitive())
 	} else {
 		return event

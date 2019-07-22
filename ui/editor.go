@@ -42,6 +42,238 @@ type Editor struct {
 	currentMentionEndIdx   int
 }
 
+func (e *Editor) ExpandSelectionToLeft(left, right, selection []rune) {
+	if len(left) > 0 {
+		newText := leftRegion + string(left[:len(left)-1]) + selRegion
+
+		currentSelection := string(selection)
+		if currentSelection == selectionChar {
+			currentSelection = ""
+		}
+
+		newText = newText + string(left[len(left)-1]) + currentSelection + rightRegion + string(right) + endRegion
+		e.internalTextView.SetText(newText)
+	}
+}
+
+func (e *Editor) ExpandSelectionToRight(left, right, selection []rune) {
+	newText := leftRegion + string(left)
+	if len(right) > 0 {
+		newText = newText + selRegion + string(selection) + string(right[0]) + rightRegion + string(right[1:])
+	} else {
+		endsWithSelectionChar := strings.HasSuffix(string(selection), selectionChar)
+		newText = newText + selRegion + string(selection)
+		if !endsWithSelectionChar {
+			newText = newText + selectionChar
+		}
+	}
+
+	newText = newText + endRegion
+	e.setAndFixText(newText)
+}
+
+func (e *Editor) MoveCursorLeft(left, right, selection []rune) {
+	var newText string
+	if len(left) > 0 {
+		newText = leftRegion + string(left[:len(left)-1]) + selRegion
+
+		currentSelection := string(selection)
+		if currentSelection == selectionChar {
+			currentSelection = ""
+		}
+
+		newText = newText + string(left[len(left)-1]) + rightRegion + currentSelection + string(right) + endRegion
+
+		e.internalTextView.SetText(newText)
+	} else if len(selection) > 0 {
+		if len(right) > 0 {
+			newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + string(right) + endRegion
+		} else {
+			newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + endRegion
+		}
+		e.setAndFixText(newText)
+	}
+}
+
+func (e *Editor) MoveCursorRight(left, right, selection []rune) {
+	newText := leftRegion + string(left)
+	if len(right) > 0 {
+		newText = newText + string(selection) + selRegion + string(right[0]) + rightRegion + string(right[1:])
+	} else {
+		endsWithSelectionChar := strings.HasSuffix(string(selection), selectionChar)
+		if !endsWithSelectionChar {
+			newText = newText + string(selection) + selRegion + selectionChar
+		} else {
+			newText = newText + string(selection[:len(selection)-1]) + selRegion + selectionChar
+		}
+	}
+
+	newText = newText + endRegion
+	e.setAndFixText(newText)
+}
+
+func (e *Editor) SelectWordLeft(left, right, selection []rune) {
+	if len(left) > 0 {
+		selectionFrom := 0
+		for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
+			if left[i] == ' ' || left[i] == '\n' {
+				selectionFrom = i
+				break
+			}
+		}
+
+		var newText string
+		if selectionFrom != 0 {
+			newText = leftRegion + string(left[:selectionFrom+1]) + selRegion + string(left[selectionFrom+1:]) + string(string(selection)) + rightRegion + string(right) + endRegion
+		} else {
+			newText = selRegion + string(left) + string(string(selection)) + rightRegion + string(right) + endRegion
+		}
+		e.setAndFixText(newText)
+	}
+}
+
+func (e *Editor) SelectWordRight(left, right, selection []rune) {
+	if len(right) > 0 {
+		selectionFrom := len(right) - 1
+		for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
+			if right[i] == ' ' || right[i] == '\n' {
+				selectionFrom = i
+				break
+			}
+		}
+
+		var newText string
+		if selectionFrom != len(right)-1 {
+			newText = leftRegion + string(left) + selRegion + string(string(selection)) + string(right[:selectionFrom]) + rightRegion + string(right[selectionFrom:]) + endRegion
+		} else {
+			newText = leftRegion + string(left) + selRegion + string(string(selection)) + string(right) + endRegion
+		}
+		e.setAndFixText(newText)
+	}
+}
+
+func (e *Editor) MoveCursorWordLeft(left, right, selection []rune) {
+	if len(left) > 0 {
+		selectionAt := 0
+		for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
+			if left[i] == ' ' || left[i] == '\n' {
+				selectionAt = i
+				break
+			}
+		}
+
+		var newText string
+		if selectionAt != 0 {
+			newText = leftRegion + string(left[:selectionAt]) + selRegion + string(left[selectionAt]) + rightRegion + string(left[selectionAt+1:]) + string(string(selection)) + string(right) + endRegion
+		} else {
+			if len(left) > 1 {
+				newText = selRegion + string(left[0]) + rightRegion + string(left[1:]) + string(selection) + string(right) + endRegion
+			} else {
+				newText = selRegion + string(left[0]) + rightRegion + string(selection) + string(right) + endRegion
+			}
+		}
+		e.setAndFixText(newText)
+	}
+}
+
+func (e *Editor) MoveCursorWordRight(left, right, selection []rune) {
+	if len(right) > 0 {
+		selectionAt := len(right) - 1
+		for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
+			if right[i] == ' ' || right[i] == '\n' {
+				selectionAt = i
+				break
+			}
+		}
+
+		var newText string
+		if selectionAt != len(right)-1 {
+			newText = leftRegion + string(left) + string(string(selection)) + string(right[:selectionAt]) + selRegion + string(right[selectionAt]) + rightRegion + string(right[selectionAt+1:]) + endRegion
+		} else {
+			newText = leftRegion + string(left) + string(selection) + string(right) + selRegion + selectionChar + endRegion
+		}
+		e.setAndFixText(newText)
+	}
+}
+
+func (e *Editor) SelectAll(left, right, selection []rune) {
+	if len(left) > 0 || len(right) > 0 {
+		e.setAndFixText(selRegion + string(left) + string(selection) + string(right) + endRegion)
+	}
+}
+
+func (e *Editor) DeleteRight(left, right, selection []rune) {
+	if len(selection) >= 1 && strings.HasSuffix(string(selection), selectionChar) {
+		e.setAndFixText(leftRegion + string(left) + selRegion + selectionChar + endRegion)
+	} else if string(selection) != selectionChar {
+		var newText string
+		newText = leftRegion + string(left) + selRegion
+		if len(right) == 0 {
+			newText = newText + selectionChar
+		} else {
+			newText = newText + string(right[0])
+		}
+
+		if len(right) > 1 {
+			newText = newText + rightRegion + string(right[1:])
+		}
+
+		newText = newText + endRegion
+		e.setAndFixText(newText)
+	}
+}
+
+func (e *Editor) Paste(left, right, selection []rune, event *tcell.EventKey) {
+	if e.inputCapture != nil {
+		result := e.inputCapture(event)
+		if result == nil {
+			//Early exit, as even has been handled.
+			return
+		}
+	}
+
+	clipBoardContent, clipError := clipboard.ReadAll()
+	if clipError == nil {
+		var newText string
+		if string(selection) == selectionChar {
+			newText = leftRegion + string(left) + clipBoardContent + selRegion + string(selection)
+		} else {
+			newText = leftRegion + string(left) + clipBoardContent
+			if len(selection) == 1 {
+				newText = newText + selRegion + string(selection) + rightRegion + string(right)
+			} else {
+				newText = newText + selRegion
+				if len(right) == 0 {
+					newText = newText + selectionChar
+				} else if len(right) == 0 {
+					newText = newText + string(right[0])
+				} else {
+					newText = newText + string(right[0]) + rightRegion + string(right[1:])
+				}
+			}
+		}
+		e.setAndFixText(newText + endRegion)
+		e.triggerHeightRequestIfNeccessary()
+	}
+}
+
+func (e *Editor) InsertCharacter(left, right, selection []rune, character rune) {
+	if len(right) == 0 {
+		if len(selection) == 1 {
+			if string(selection) == selectionChar {
+				e.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selectionChar)))
+			} else {
+				e.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selection)))
+			}
+		} else {
+			e.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selectionChar)))
+		}
+	} else {
+		e.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
+			string(left), string(character), string(selection), string(right)))
+	}
+}
+
 // NewEditor Instanciates a ready to use text editor.
 func NewEditor() *Editor {
 	editor := Editor{
@@ -58,152 +290,37 @@ func NewEditor() *Editor {
 	editor.internalTextView.Highlight("selection")
 
 	editor.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// Since characters can have different widths, we can't directly
+		// access the string, as it is basically handled like a byte array.
 		left := []rune(editor.internalTextView.GetRegionText("left"))
 		right := []rune(editor.internalTextView.GetRegionText("right"))
 		selection := []rune(editor.internalTextView.GetRegionText("selection"))
 
-		var newText string
-		if event.Key() == tcell.KeyLeft &&
-			(event.Modifiers() == tcell.ModShift || event.Modifiers() == tcell.ModNone) {
-			expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
-			if len(left) > 0 {
-				newText = leftRegion + string(left[:len(left)-1]) + selRegion
-
-				currentSelection := string(selection)
-				if currentSelection == selectionChar {
-					currentSelection = ""
-				}
-
-				if expandSelection {
-					newText = newText + string(left[len(left)-1]) + currentSelection + rightRegion + string(right)
-				} else {
-					newText = newText + string(left[len(left)-1]) + rightRegion + currentSelection + string(right)
-				}
-
-				newText = newText + endRegion
-				editor.internalTextView.SetText(newText)
-			} else if len(selection) > 0 && !expandSelection {
-				if len(right) > 0 {
-					newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + string(right) + endRegion
-				} else {
-					newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + endRegion
-				}
-				editor.setAndFixText(newText)
-			}
-		} else if event.Key() == tcell.KeyRight &&
-			(event.Modifiers() == tcell.ModShift || event.Modifiers() == tcell.ModNone) {
-			newText = leftRegion + string(left)
-			expandSelection := (event.Modifiers() & tcell.ModShift) == tcell.ModShift
-			if len(right) > 0 {
-				if expandSelection {
-					newText = newText + selRegion + string(selection) + string(right[0]) + rightRegion + string(right[1:])
-				} else {
-					newText = newText + string(selection) + selRegion + string(right[0]) + rightRegion + string(right[1:])
-				}
-			} else {
-				endsWithSelectionChar := strings.HasSuffix(string(selection), selectionChar)
-				if !endsWithSelectionChar {
-					if expandSelection {
-						newText = newText + selRegion + string(selection)
-					} else if !expandSelection {
-						newText = newText + string(selection) + selRegion
-					}
-
-					newText = newText + selectionChar
-				} else {
-					if expandSelection {
-						newText = newText + selRegion + string(selection)
-					} else {
-						newText = newText + string(selection[:len(selection)-1]) + selRegion + selectionChar
-					}
-				}
-			}
-
-			newText = newText + endRegion
-			editor.setAndFixText(newText)
-		} else if event.Key() == tcell.KeyLeft &&
-			(event.Modifiers()&(tcell.ModShift|tcell.ModCtrl)) == (tcell.ModShift|tcell.ModCtrl) {
-			if len(left) > 0 {
-				selectionFrom := 0
-				for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
-					if left[i] == ' ' || left[i] == '\n' {
-						selectionFrom = i
-						break
-					}
-				}
-
-				if selectionFrom != 0 {
-					newText = leftRegion + string(left[:selectionFrom+1]) + selRegion + string(left[selectionFrom+1:]) + string(string(selection)) + rightRegion + string(right) + endRegion
-				} else {
-					newText = selRegion + string(left) + string(string(selection)) + rightRegion + string(right) + endRegion
-				}
-				editor.setAndFixText(newText)
-			}
-		} else if event.Key() == tcell.KeyRight &&
-			(event.Modifiers()&(tcell.ModShift|tcell.ModCtrl)) == (tcell.ModShift|tcell.ModCtrl) {
-			if len(right) > 0 {
-				selectionFrom := len(right) - 1
-				for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
-					if right[i] == ' ' || right[i] == '\n' {
-						selectionFrom = i
-						break
-					}
-				}
-
-				if selectionFrom != len(right)-1 {
-					newText = leftRegion + string(left) + selRegion + string(string(selection)) + string(right[:selectionFrom]) + rightRegion + string(right[selectionFrom:]) + endRegion
-				} else {
-					newText = leftRegion + string(left) + selRegion + string(string(selection)) + string(right) + endRegion
-				}
-				editor.setAndFixText(newText)
-			}
-		} else if event.Key() == tcell.KeyRight &&
-			event.Modifiers() == tcell.ModCtrl {
-			if len(right) > 0 {
-				selectionAt := len(right) - 1
-				for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
-					if right[i] == ' ' || right[i] == '\n' {
-						selectionAt = i
-						break
-					}
-				}
-
-				if selectionAt != len(right)-1 {
-					newText = leftRegion + string(left) + string(string(selection)) + string(right[:selectionAt]) + selRegion + string(right[selectionAt]) + rightRegion + string(right[selectionAt+1:]) + endRegion
-				} else {
-					newText = leftRegion + string(left) + string(selection) + string(right) + selRegion + selectionChar + endRegion
-				}
-				editor.setAndFixText(newText)
-			}
-		} else if event.Key() == tcell.KeyLeft &&
-			event.Modifiers() == tcell.ModCtrl {
-			if len(left) > 0 {
-				selectionAt := 0
-				for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
-					if left[i] == ' ' || left[i] == '\n' {
-						selectionAt = i
-						break
-					}
-				}
-
-				if selectionAt != 0 {
-					newText = leftRegion + string(left[:selectionAt]) + selRegion + string(left[selectionAt]) + rightRegion + string(left[selectionAt+1:]) + string(string(selection)) + string(right) + endRegion
-				} else {
-					if len(left) > 1 {
-						newText = selRegion + string(left[0]) + rightRegion + string(left[1:]) + string(selection) + string(right) + endRegion
-					} else {
-						newText = selRegion + string(left[0]) + rightRegion + string(selection) + string(right) + endRegion
-					}
-				}
-				editor.setAndFixText(newText)
-			}
-		} else if event.Key() == tcell.KeyCtrlA {
-			if len(left) > 0 || len(right) > 0 {
-				newText = selRegion + string(left) + string(selection) + string(right) + endRegion
-				editor.setAndFixText(newText)
-			}
+		if shortcuts.MoveCursorLeft.Equals(event) {
+			editor.MoveCursorLeft(left, right, selection)
+		} else if shortcuts.ExpandSelectionToLeft.Equals(event) {
+			editor.ExpandSelectionToLeft(left, right, selection)
+		} else if shortcuts.MoveCursorRight.Equals(event) {
+			editor.MoveCursorRight(left, right, selection)
+		} else if shortcuts.ExpandSelectionToRight.Equals(event) {
+			editor.ExpandSelectionToRight(left, right, selection)
+		} else if shortcuts.SelectWordLeft.Equals(event) {
+			editor.SelectWordLeft(left, right, selection)
+		} else if shortcuts.SelectWordRight.Equals(event) {
+			editor.SelectWordRight(left, right, selection)
+		} else if shortcuts.MoveCursorWordLeft.Equals(event) {
+			editor.MoveCursorWordLeft(left, right, selection)
+		} else if shortcuts.MoveCursorWordRight.Equals(event) {
+			editor.MoveCursorWordRight(left, right, selection)
+		} else if shortcuts.SelectAll.Equals(event) {
+			editor.SelectAll(left, right, selection)
+		} else if shortcuts.DeleteRight.Equals(event) {
+			editor.DeleteRight(left, right, selection)
 		} else if event.Key() == tcell.KeyBackspace2 ||
 			event.Key() == tcell.KeyBackspace {
+			//FIXME Legacy, has to be replaced when there is N-1 Keybind-Mapping.
+			var newText string
+
 			if len(selection) == 1 && len(left) >= 1 {
 				newText = leftRegion + string(left[:len(left)-1]) + selRegion + string(selection) + rightRegion + string(right) + endRegion
 				editor.internalTextView.SetText(newText)
@@ -217,85 +334,17 @@ func NewEditor() *Editor {
 				newText = newText + endRegion
 				editor.setAndFixText(newText)
 			}
-		} else if event.Key() == tcell.KeyDelete {
-			if len(selection) >= 1 && strings.HasSuffix(string(selection), selectionChar) {
-				newText = leftRegion + string(left) + selRegion + selectionChar + endRegion
-				editor.setAndFixText(newText)
-			} else if string(selection) != selectionChar {
-				newText = leftRegion + string(left) + selRegion
-				if len(right) == 0 {
-					newText = newText + selectionChar
-				} else {
-					newText = newText + string(right[0])
-				}
-
-				if len(right) > 1 {
-					newText = newText + rightRegion + string(right[1:])
-				}
-
-				newText = newText + endRegion
-				editor.setAndFixText(newText)
+		} else if event.Key() == tcell.KeyCtrlV {
+			editor.Paste(left, right, selection, event)
+			return nil
+		} else if shortcuts.InputNewLine.Equals(event) {
+			editor.InsertCharacter(left, right, selection, '\n')
+		} else if shortcuts.SendMessage.Equals(event) || event.Rune() == 0 {
+			if editor.inputCapture != nil {
+				return editor.inputCapture(event)
 			}
 		} else {
-			var character rune
-			if shortcuts.EventsEqual(event, shortcuts.InputNewLine.Event) {
-				character = '\n'
-			} else if !shortcuts.EventsEqual(event, shortcuts.SendMessage.Event) {
-				character = event.Rune()
-			}
-
-			if event.Key() == tcell.KeyCtrlV {
-				if editor.inputCapture != nil {
-					result := editor.inputCapture(event)
-					if result == nil {
-						return nil
-					}
-				}
-
-				clipBoardContent, clipError := clipboard.ReadAll()
-				if clipError == nil {
-					if string(selection) == selectionChar {
-						newText = leftRegion + string(left) + clipBoardContent + selRegion + string(selection)
-					} else {
-						newText = leftRegion + string(left) + clipBoardContent
-						if len(selection) == 1 {
-							newText = newText + selRegion + string(selection) + rightRegion + string(right)
-						} else {
-							newText = newText + selRegion
-							if len(right) == 0 {
-								newText = newText + selectionChar
-							} else if len(right) == 0 {
-								newText = newText + string(right[0])
-							} else {
-								newText = newText + string(right[0]) + rightRegion + string(right[1:])
-							}
-						}
-					}
-					editor.setAndFixText(newText + endRegion)
-					editor.triggerHeightRequestIfNeccessary()
-				}
-				return nil
-			}
-
-			if character == 0 && editor.inputCapture != nil {
-				editor.inputCapture(event)
-				return nil
-			}
-
-			if len(right) == 0 {
-				if len(selection) == 1 {
-					if string(selection) == selectionChar {
-						editor.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selectionChar)))
-					} else {
-						editor.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selection)))
-					}
-				} else {
-					editor.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selectionChar)))
-				}
-			} else {
-				editor.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
-					string(left), string(character), string(selection), string(right)))
-			}
+			editor.InsertCharacter(left, right, selection, event.Rune())
 		}
 
 		atIndex := -1

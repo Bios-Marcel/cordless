@@ -19,6 +19,103 @@ var (
 		Name:       "Application wide",
 	}
 
+	multilineTextInput = &Scope{
+		Parent:     globalScope,
+		Identifier: "multiline_text_input",
+		Name:       "Multiline text input",
+	}
+
+	ExpandSelectionToLeft = &Shortcut{
+		Name:         "Expand selection word to left",
+		Identifier:   "expand_selection_word_to_left",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModShift),
+		defaultEvent: tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModShift),
+	}
+	ExpandSelectionToRight = &Shortcut{
+		Name:         "Expand selection word to right",
+		Identifier:   "expand_selection_word_to_right",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModShift),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModShift),
+	}
+	SelectAll = &Shortcut{
+		Name:         "Select all",
+		Identifier:   "select_all",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyCtrlA, rune(tcell.KeyCtrlA), tcell.ModCtrl),
+		defaultEvent: tcell.NewEventKey(tcell.KeyCtrlA, rune(tcell.KeyCtrlA), tcell.ModCtrl),
+	}
+	SelectWordLeft = &Shortcut{
+		Name:         "Select word to left",
+		Identifier:   "select_word_to_left",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModCtrl|tcell.ModShift),
+		defaultEvent: tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModCtrl|tcell.ModShift),
+	}
+
+	SelectWordRight = &Shortcut{
+		Name:         "Select word to right",
+		Identifier:   "select_word_to_right",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModCtrl|tcell.ModShift),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModCtrl|tcell.ModShift),
+	}
+
+	MoveCursorLeft = &Shortcut{
+		Name:         "Move cursor to left",
+		Identifier:   "move_cursor_to_left",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone),
+		defaultEvent: tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone),
+	}
+	MoveCursorRight = &Shortcut{
+		Name:         "Move cursor to right",
+		Identifier:   "move_cursor_to_right",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone),
+	}
+	MoveCursorWordLeft = &Shortcut{
+		Name:         "Move cursor to word left",
+		Identifier:   "move_cursor_to_word_left",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModCtrl),
+		defaultEvent: tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModCtrl),
+	}
+	MoveCursorWordRight = &Shortcut{
+		Name:         "Move cursor to word right",
+		Identifier:   "move_cursor_to_word_right",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModCtrl),
+		defaultEvent: tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModCtrl),
+	}
+
+	// FIXME Gotta add this later, as there is Backspace and Backspace and those differ on linux.
+	/*DeleteLeft = &Shortcut{
+		Name:         "Delete left",
+		Identifier:   "delete_left",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyBackspace2, rune(tcell.KeyBackspace2), tcell.ModNone),
+		defaultEvent: tcell.NewEventKey(tcell.KeyBackspace2, rune(tcell.KeyBackspace2), tcell.ModNone),
+	}*/
+
+	DeleteRight = &Shortcut{
+		Name:         "Delete right",
+		Identifier:   "delete_right",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone),
+		defaultEvent: tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone),
+	}
+
+	InputNewLine = &Shortcut{
+		Name:         "Add new line character",
+		Identifier:   "add_new_line_character",
+		scope:        multilineTextInput,
+		Event:        tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModAlt),
+		defaultEvent: tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModAlt),
+	}
+
 	ExitApplication = &Shortcut{
 		Name:         "Exit application",
 		Identifier:   "exit_application",
@@ -107,26 +204,12 @@ var (
 		defaultEvent: tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt),
 	}
 
-	multilineTextInput = &Scope{
-		Parent:     globalScope,
-		Identifier: "multiline_text_input",
-		Name:       "Multiline text input",
-	}
-
-	InputNewLine = &Shortcut{
-		Name:         "Add new line character",
-		Identifier:   "add_new_line_character",
-		scope:        multilineTextInput,
-		Event:        tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModAlt),
-		defaultEvent: tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModAlt),
-	}
-
 	SendMessage = &Shortcut{
 		Name:         "Sends the typed message",
 		Identifier:   "send_message",
 		scope:        multilineTextInput,
-		Event:        tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModNone),
-		defaultEvent: tcell.NewEventKey(tcell.KeyEnter, 13, tcell.ModNone),
+		Event:        tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone),
+		defaultEvent: tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone),
 	}
 
 	scopes = []*Scope{
@@ -168,6 +251,11 @@ type Shortcut struct {
 
 	//This shortcuts default, in order to be able to reset it.
 	defaultEvent *tcell.EventKey
+}
+
+// Equals compares the given EventKey with the Shortcuts Event.
+func (s *Shortcut) Equals(event *tcell.EventKey) bool {
+	return eventsEqual(s.Event, event)
 }
 
 // Scope is what describes a shortcuts scope within the application. Usually
