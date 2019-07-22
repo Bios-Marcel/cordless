@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/goclipimg"
+	"github.com/gordonklaus/portaudio"
+	"layeh.com/gopus"
 
 	"github.com/atotto/clipboard"
 
@@ -1807,82 +1810,185 @@ func (window *Window) RefreshLayout() {
 
 //LoadChannel eagerly loads the channels messages.
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
-	var messages []*discordgo.Message
-
-	if channel.LastMessageID != "" && len(channel.Messages) == 0 {
-		cache, cacheError := window.session.State.Channel(channel.ID)
-		if cacheError == nil || cache != nil && len(cache.Messages) == 0 {
-			var discordError error
-			messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", "", "")
-			if discordError == nil {
-				if channel.GuildID != "" {
-					for _, message := range messages {
-						message.GuildID = channel.GuildID
-					}
+	if channel.Type == discordgo.ChannelTypeGuildVoice {
+		connection, voiceError := window.session.ChannelVoiceJoin(window.selectedGuild.ID, channel.ID, false, false)
+		fmt.Fprintln(os.Stderr, "Hello world")
+		go func() {
+			if voiceError == nil {
+				defer connection.Disconnect()
+				audioInitError := portaudio.Initialize()
+				if audioInitError != nil {
+					fmt.Fprintln(window.commandView, "Error initializing audio: "+audioInitError.Error())
+					return
 				}
-				cache.Messages = append(cache.Messages, messages...)
-			}
-		} else {
-			messages = make([]*discordgo.Message, 0)
-		}
-	} else {
-		messages = channel.Messages
-	}
+				defer portaudio.Terminate()
 
-	discordutil.SortMessagesByTimestamp(messages)
+				//Output
+				out := make([]int16, 960*2)
+				outputStream, outputStreamError := portaudio.OpenDefaultStream(0, 2, 48000, len(out), &out)
+				if outputStreamError != nil {
+					panic("Error opening audio output: " + outputStreamError.Error())
+				}
+				defer outputStream.Close()
+				if outputStreamStartError := outputStream.Start(); outputStreamStartError != nil {
+					panic("Error starting outputStream: " + outputStreamStartError.Error())
+				}
+				defer outputStream.Stop()
 
-	window.chatView.SetMessages(messages)
-	window.chatView.ClearSelection()
-	window.chatView.internalTextView.ScrollToEnd()
+				//Input
+				in := make([]int16, 960)
+				inputStream, inputStreamError := portaudio.OpenDefaultStream(1, 0, 48000, len(in), &in)
+				if inputStreamError != nil {
+					panic("Error opening audio input: " + inputStreamError.Error())
+				}
+				defer inputStream.Close()
+				if inputStreamStartError := inputStream.Start(); inputStreamStartError != nil {
+					panic("Error starting inputStream: " + inputStreamStartError.Error())
+				}
+				defer inputStream.Stop()
 
-	window.UpdateChatHeader(channel)
+				//Silent byte that discord requires for arbitrary reason that no human being can undertstand.
+				connection.OpusSend <- []byte{0xf8, 0xff, 0xfe}
 
-	window.selectedChannel = channel
-	if channel.GuildID == "" {
-		if window.selectedChannelNode != nil {
-			window.selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
-			window.selectedChannelNode = nil
-		}
-
-		if window.selectedGuildNode != nil {
-			window.selectedGuildNode.SetColor(tview.Styles.PrimaryTextColor)
-			window.selectedGuildNode = nil
-		}
-
-		window.selectedGuild = nil
-	}
-
-	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
-		window.privateList.MarkChannelAsLoaded(channel)
-	}
-
-	window.exitMessageEditModeAndKeepText()
-
-	if config.GetConfig().FocusMessageInputAfterChannelSelection {
-		window.app.SetFocus(window.messageInput.internalTextView)
-	}
-
-	go func() {
-		readstate.UpdateRead(window.session, channel, channel.LastMessageID)
-
-		// Here we make the assumption that the channel we are loading must be part
-		// of the currently loaded guild, since we don't allow loading a channel of
-		// a guilder otherwise.
-		if channel.GuildID != "" {
-			guild, cacheError := window.session.State.Guild(channel.GuildID)
-			if cacheError == nil {
-				window.selectedGuild = guild
 				window.app.QueueUpdateDraw(func() {
-					for _, guildNode := range window.guildList.GetRoot().GetChildren() {
-						if guildNode.GetReference() == channel.GuildID {
-							window.selectedGuildNode = guildNode
-							break
+					window.app.ForceDraw()
+				})
+
+				decoder, decoderError := gopus.NewDecoder(48000, 2)
+				if decoderError != nil {
+					log.Println("Error establishing voice connection: " + decoderError.Error())
+					return
+				}
+
+				log.Printf("Listening for packets: %v\n", connection.Ready)
+				var decodeError error
+				go func() {
+					var packet *discordgo.Packet
+					for {
+						packet = <-connection.OpusRecv
+
+						log.Println(len(packet.Opus))
+						out, decodeError = decoder.Decode(packet.Opus, len(out), false)
+						if decodeError != nil {
+							log.Println("Error decoding: " + decodeError.Error())
+						}
+
+						if writeError := outputStream.Write(); writeError != nil {
+							log.Println("Error writing to output sink:" + writeError.Error())
 						}
 					}
-				})
+				}()
+
+				speakingError := connection.Speaking(true)
+				if speakingError != nil {
+					panic(speakingError)
+				}
+
+				encoder, encoderCreationError := gopus.NewEncoder(48000, 1, gopus.Audio)
+				if encoderCreationError != nil {
+					panic(encoderCreationError)
+				}
+
+				var readError, encodingError error
+				var encodedData []byte
+				bufferLength := len(in)
+				maxBytes := bufferLength * 2
+
+				for {
+					readError = inputStream.Read()
+					if readError == nil {
+						encodedData, encodingError = encoder.Encode(in, bufferLength, maxBytes)
+						if encodingError != nil {
+							log.Println("Encodingerror:", encodingError)
+						} else {
+							connection.OpusSend <- encodedData
+						}
+					} else {
+						log.Println(readError)
+					}
+				}
+			} else {
+				fmt.Fprintln(window.commandView, "Error establishing voice connection: "+voiceError.Error())
 			}
+		}()
+	} else {
+		var messages []*discordgo.Message
+
+		if channel.LastMessageID != "" && len(channel.Messages) == 0 {
+			cache, cacheError := window.session.State.Channel(channel.ID)
+			if cacheError == nil || cache != nil && len(cache.Messages) == 0 {
+				var discordError error
+				messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", "", "")
+				if discordError == nil {
+					if channel.GuildID != "" {
+						for _, message := range messages {
+							message.GuildID = channel.GuildID
+						}
+					}
+					cache.Messages = append(cache.Messages, messages...)
+				}
+			} else {
+				messages = make([]*discordgo.Message, 0)
+			}
+		} else {
+			messages = channel.Messages
 		}
-	}()
+
+		discordutil.SortMessagesByTimestamp(messages)
+
+		window.chatView.SetMessages(messages)
+		window.chatView.ClearSelection()
+		window.chatView.internalTextView.ScrollToEnd()
+
+		window.UpdateChatHeader(channel)
+
+		window.selectedChannel = channel
+		if channel.GuildID == "" {
+			if window.selectedChannelNode != nil {
+				window.selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
+				window.selectedChannelNode = nil
+			}
+
+			if window.selectedGuildNode != nil {
+				window.selectedGuildNode.SetColor(tview.Styles.PrimaryTextColor)
+				window.selectedGuildNode = nil
+			}
+
+			window.selectedGuild = nil
+		}
+
+		if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+			window.privateList.MarkChannelAsLoaded(channel)
+		}
+
+		window.exitMessageEditModeAndKeepText()
+
+		if config.GetConfig().FocusMessageInputAfterChannelSelection {
+			window.app.SetFocus(window.messageInput.internalTextView)
+		}
+
+		go func() {
+			readstate.UpdateRead(window.session, channel, channel.LastMessageID)
+
+			// Here we make the assumption that the channel we are loading must be part
+			// of the currently loaded guild, since we don't allow loading a channel of
+			// a guilder otherwise.
+			if channel.GuildID != "" {
+				guild, cacheError := window.session.State.Guild(channel.GuildID)
+				if cacheError == nil {
+					window.selectedGuild = guild
+					window.app.QueueUpdateDraw(func() {
+						for _, guildNode := range window.guildList.GetRoot().GetChildren() {
+							if guildNode.GetReference() == channel.GuildID {
+								window.selectedGuildNode = guildNode
+								break
+							}
+						}
+					})
+				}
+			}
+		}()
+	}
 
 	return nil
 }

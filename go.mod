@@ -18,6 +18,7 @@ require (
 	github.com/gen2brain/beeep v0.0.0-20190317152856-aa3d7c1499fd
 	github.com/godbus/dbus v4.1.0+incompatible
 	github.com/gopherjs/gopherwasm v1.1.0
+	github.com/gordonklaus/portaudio v0.0.0-20180817120803-00e7307ccd93
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/princebot/getpass v0.0.0-20170602015525-cdc1f6b9a9e8
@@ -28,4 +29,5 @@ require (
 	gopkg.in/readline.v1 v1.0.0-20160726135117-62c6fe619375
 	gopkg.in/sourcemap.v1 v1.0.5
 	gopkg.in/toast.v1 v1.0.0-20180812000517-0a84660828b2
+	layeh.com/gopus v0.0.0-20161224163843-0ebf989153aa
 )
