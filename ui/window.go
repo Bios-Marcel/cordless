@@ -167,7 +167,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			window.ShowErrorDialog(channelLoadError.Error())
 		} else {
 			if config.GetConfig().FocusChannelAfterGuildSelection {
-				app.SetFocus(window.channelTree.internalTreeView)
+				app.SetFocus(window.channelTree)
 			}
 		}
 
@@ -184,7 +184,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerGuildMemberHandlers()
 
 	guildPage.AddItem(guildList, 0, 1, true)
-	guildPage.AddItem(channelTree.internalTreeView, 0, 2, true)
+	guildPage.AddItem(channelTree, 0, 2, true)
 
 	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
@@ -382,7 +382,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					window.app.SetFocus(window.userList.internalTreeView)
 				} else {
 					if window.leftArea.GetCurrentPage() == guildPageName {
-						window.app.SetFocus(window.channelTree.internalTreeView)
+						window.app.SetFocus(window.channelTree)
 						return nil
 					} else if window.leftArea.GetCurrentPage() == privatePageName {
 						window.app.SetFocus(window.privateList.internalTreeView)
@@ -394,7 +394,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 			if event.Key() == tcell.KeyLeft {
 				if window.leftArea.GetCurrentPage() == guildPageName {
-					window.app.SetFocus(window.channelTree.internalTreeView)
+					window.app.SetFocus(window.channelTree)
 					return nil
 				} else if window.leftArea.GetCurrentPage() == privatePageName {
 					window.app.SetFocus(window.privateList.internalTreeView)
@@ -530,13 +530,13 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	if config.GetConfig().OnTypeInListBehaviour == config.SearchOnTypeInList {
 		guildList.SetSearchOnTypeEnabled(true)
-		channelTree.internalTreeView.SetSearchOnTypeEnabled(true)
+		channelTree.SetSearchOnTypeEnabled(true)
 		window.userList.internalTreeView.SetSearchOnTypeEnabled(true)
 		window.privateList.internalTreeView.SetSearchOnTypeEnabled(true)
 	} else if config.GetConfig().OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
 		guildList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			window.app, window.messageInput.internalTextView))
-		channelTree.internalTreeView.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
+		channelTree.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			window.app, window.messageInput.internalTextView))
 		window.userList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			window.app, window.messageInput.internalTextView))
@@ -551,7 +551,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	newGuildHandler := func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers() == tcell.ModAlt {
 			if event.Key() == tcell.KeyDown || event.Key() == tcell.KeyUp {
-				window.app.SetFocus(window.channelTree.internalTreeView)
+				window.app.SetFocus(window.channelTree)
 				return nil
 			}
 
@@ -587,7 +587,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	}
 
 	//Channel Container arrow key navigation. Please end my life.
-	oldChannelListHandler := channelTree.internalTreeView.GetInputCapture()
+	oldChannelListHandler := channelTree.GetInputCapture()
 	newChannelListHandler := func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers() == tcell.ModAlt {
 			if event.Key() == tcell.KeyDown || event.Key() == tcell.KeyUp {
@@ -622,9 +622,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	}
 
 	if oldChannelListHandler == nil {
-		channelTree.internalTreeView.SetInputCapture(newChannelListHandler)
+		channelTree.SetInputCapture(newChannelListHandler)
 	} else {
-		channelTree.internalTreeView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		channelTree.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 			handledEvent := newChannelListHandler(event)
 			if handledEvent != nil {
 				return oldChannelListHandler(event)
@@ -797,10 +797,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				if window.userList.internalTreeView.IsVisible() {
 					window.app.SetFocus(window.userList.internalTreeView)
 				} else {
-					window.app.SetFocus(window.channelTree.internalTreeView)
+					window.app.SetFocus(window.channelTree)
 				}
 			} else if event.Key() == tcell.KeyLeft {
-				window.app.SetFocus(window.channelTree.internalTreeView)
+				window.app.SetFocus(window.channelTree)
 			} else {
 				return event
 			}
@@ -821,10 +821,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				if window.userList.internalTreeView.IsVisible() {
 					window.app.SetFocus(window.userList.internalTreeView)
 				} else {
-					window.app.SetFocus(window.channelTree.internalTreeView)
+					window.app.SetFocus(window.channelTree)
 				}
 			} else if event.Key() == tcell.KeyLeft {
-				window.app.SetFocus(window.channelTree.internalTreeView)
+				window.app.SetFocus(window.channelTree)
 			} else {
 				return event
 			}
@@ -1067,9 +1067,9 @@ func (window *Window) registerMouseFocusListeners() {
 
 		return false
 	})
-	window.channelTree.internalTreeView.SetMouseHandler(func(event *tcell.EventMouse) bool {
+	window.channelTree.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
-			window.app.SetFocus(window.channelTree.internalTreeView)
+			window.app.SetFocus(window.channelTree)
 
 			return true
 		}
@@ -1670,7 +1670,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		window.RefreshLayout()
 	} else if shortcuts.FocusChannelContainer.Equals(event) {
 		window.SwitchToGuildsPage()
-		window.app.SetFocus(window.channelTree.internalTreeView)
+		window.app.SetFocus(window.channelTree)
 	} else if shortcuts.FocusPrivateChatPage.Equals(event) {
 		window.SwitchToFriendsPage()
 		window.app.SetFocus(window.privateList.GetComponent())
