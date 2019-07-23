@@ -68,26 +68,23 @@ func getRandomColorString() string {
 // either the username or the nickname. In case the member is a bot, the bot
 // prefix will be prepended.
 func GetMemberName(member *discordgo.Member) string {
-	var discordName string
 	if member.Nick != "" {
-		discordName = tview.Escape(member.Nick)
-	} else {
-		discordName = tview.Escape(member.User.Username)
+		return getUserName(member.Nick, member.User.Bot)
 	}
 
-	if member.User.Bot {
-		return botPrefix + discordName
-	}
-
-	return discordName
+	return GetUserName(member.User)
 }
 
 // GetUserName returns the users username, prepending the bot prefix in case he
 // is a bot.
 func GetUserName(user *discordgo.User) string {
-	discordName := tview.Escape(user.Username)
+	return getUserName(user.Username, user.Bot)
+}
 
-	if user.Bot {
+func getUserName(name string, bot bool) string {
+	discordName := tview.Escape(name)
+
+	if bot {
 		return botPrefix + discordName
 	}
 
