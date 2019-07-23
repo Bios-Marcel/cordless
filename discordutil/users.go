@@ -1,8 +1,7 @@
 package discordutil
 
 import (
-	"crypto/rand"
-	"math/big"
+	"math/rand"
 	"sort"
 
 	"github.com/Bios-Marcel/discordgo"
@@ -11,6 +10,7 @@ import (
 
 var (
 	botPrefix = tview.Escape("[BOT]")
+	botColor  = "#9496fc"
 
 	colors = []string{
 		"#d8504e",
@@ -33,14 +33,14 @@ var (
 	//global state that persist during a session.
 	userColorCache = make(map[string]string)
 
-	lastRandomNumber int64 = -1
+	lastRandomNumber = -1
 )
 
 // GetUserColor gets the users color for this session. If no color can be found
 // a new color will be a generated and cached.
 func GetUserColor(user *discordgo.User) string {
 	if user.Bot {
-		return "#9496fc"
+		return botColor
 	}
 
 	color, ok := userColorCache[user.ID]
@@ -54,19 +54,14 @@ func GetUserColor(user *discordgo.User) string {
 }
 
 func getRandomColorString() string {
-	number, err := rand.Int(rand.Reader, big.NewInt(int64(len(colors))))
-	if err != nil {
-		return colors[0]
-	}
-
-	numberInt64 := number.Int64()
-	if numberInt64 == lastRandomNumber {
+	randIndex := rand.Intn(len(colors))
+	if randIndex == lastRandomNumber {
 		return getRandomColorString()
 	}
 
-	lastRandomNumber = numberInt64
+	lastRandomNumber = randIndex
 
-	return colors[numberInt64]
+	return colors[randIndex]
 }
 
 // GetMemberName returns the name to use for representing this user. This is
