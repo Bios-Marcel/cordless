@@ -297,6 +297,16 @@ type ShortcutDataRepresentation struct {
 // happens in order to prevent saving the scopes multiple times, therefore
 // the scopes will be hardcoded.
 func (shortcut *Shortcut) MarshalJSON() ([]byte, error) {
+	if shortcut.Event == nil {
+		return json.MarshalIndent(&ShortcutDataRepresentation{
+			Identifier:      shortcut.Identifier,
+			ScopeIdentifier: shortcut.scope.Identifier,
+			EventKey:        -1,
+			EventRune:       -1,
+			EventMod:        -1,
+		}, "", "    ")
+	}
+
 	return json.MarshalIndent(&ShortcutDataRepresentation{
 		Identifier:      shortcut.Identifier,
 		ScopeIdentifier: shortcut.scope.Identifier,
@@ -316,7 +326,11 @@ func (shortcut *Shortcut) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	shortcut.Event = tcell.NewEventKey(temp.EventKey, temp.EventRune, temp.EventMod)
+	if temp.EventKey == -1 && temp.EventMod == -1 && temp.EventRune == -1 {
+		shortcut.Event = nil
+	} else {
+		shortcut.Event = tcell.NewEventKey(temp.EventKey, temp.EventRune, temp.EventMod)
+	}
 	shortcut.Identifier = temp.Identifier
 
 	for _, scope := range scopes {

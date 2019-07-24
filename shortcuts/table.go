@@ -147,6 +147,11 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 		} else if event.Key() == tcell.KeyBackspace || event.Key() == tcell.KeyBackspace2 {
 			shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("")
 			shortcutTable.shortcuts[dataIndex].Event = nil
+
+			persistError := Persist()
+			if persistError != nil {
+				panic(persistError)
+			}
 		}
 	} else if selectedRow >= firstNonFixedRow && shortcutTable.selection != -1 {
 		shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText(EventToString(event))
@@ -187,6 +192,10 @@ func eventsEqual(eventOne, eventTwo *tcell.EventKey) bool {
 
 // EventToString renders a tcell.EventKey as a human readable string
 func EventToString(event *tcell.EventKey) string {
+	if event == nil {
+		return ""
+	}
+
 	m := []string{}
 	if event.Modifiers()&tcell.ModCtrl != 0 {
 		m = append(m, "Ctrl")
