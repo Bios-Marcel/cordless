@@ -12,7 +12,6 @@ func TestChannelTree(t *testing.T) {
 
 	simScreen.Init()
 	simScreen.SetSize(10, 10)
-	simScreen.Show()
 
 	state := discordgo.NewState()
 
@@ -94,33 +93,19 @@ func TestChannelTree(t *testing.T) {
 
 	tree.Draw(simScreen)
 
-	cellOne, _, _, _ := simScreen.GetContent(0, 0)
-	cellTwo, _, _, _ := simScreen.GetContent(1, 0)
+	expectCell('C', 0, 0, simScreen, t)
+	expectCell('2', 1, 0, simScreen, t)
 
-	if cellOne != 'C' {
-		t.Errorf("Cell missmatch. Was '%c' instead of '%c'.", cellOne, 'C')
-	}
-	if cellTwo != '2' {
-		t.Errorf("Cell missmatch. Was '%c' instead of '%c'.", cellTwo, '2')
-	}
+	expectCell('C', 0, 1, simScreen, t)
+	expectCell('1', 1, 1, simScreen, t)
 
-	cellOne, _, _, _ = simScreen.GetContent(0, 1)
-	cellTwo, _, _, _ = simScreen.GetContent(1, 1)
+	expectCell(' ', 0, 2, simScreen, t)
+	expectCell(' ', 1, 2, simScreen, t)
+}
 
-	if cellOne != 'C' {
-		t.Errorf("Cell missmatch. Was '%c' instead of '%c'.", cellOne, 'C')
-	}
-	if cellTwo != '1' {
-		t.Errorf("Cell missmatch. Was '%c' instead of '%c'.", cellTwo, '1')
-	}
-
-	cellOne, _, _, _ = simScreen.GetContent(0, 2)
-	cellTwo, _, _, _ = simScreen.GetContent(1, 2)
-
-	if cellOne != ' ' {
-		t.Errorf("Cell missmatch. Was '%c' instead of '%c'.", cellOne, ' ')
-	}
-	if cellTwo != ' ' {
-		t.Errorf("Cell missmatch. Was '%c' instead of '%c'.", cellTwo, ' ')
+func expectCell(expected rune, column, row int, screen tcell.SimulationScreen, t *testing.T) {
+	cell, _, _, _ := screen.GetContent(column, row)
+	if cell != expected {
+		t.Errorf("Cell missmatch. Was '%c' instead of '%c'.", cell, expected)
 	}
 }
