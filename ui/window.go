@@ -248,8 +248,19 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if event.Rune() == 'q' {
 				time, parseError := message.Timestamp.Parse()
 				if parseError == nil {
-					//TODO Username doesn't take Nicknames into consideration.
-					window.messageInput.SetText(fmt.Sprintf(">%s %s: %s\n\n", times.TimeToString(&time), message.Author.Username, message.ContentWithMentionsReplaced()))
+					username := message.Author.Username
+					if message.GuildID != "" {
+						guild, stateError := window.session.State.Guild(message.GuildID)
+						if stateError == nil {
+							member, stateError := window.session.State.Member(guild.ID, message.Author.ID)
+							if stateError == nil && member.Nick != "" {
+								username = member.Nick
+							}
+						}
+					}
+
+					quotedMessage := strings.ReplaceAll(message.ContentWithMentionsReplaced(), "\n", "\n> ")
+					window.messageInput.SetText(fmt.Sprintf("> **%s** %s:\n> %s\n", username, times.TimeToString(&time), quotedMessage))
 					app.SetFocus(window.messageInput.GetPrimitive())
 				}
 				return nil
