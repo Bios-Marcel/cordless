@@ -354,6 +354,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			mentionWindow.SetVisible(true)
 			window.app.SetFocus(mentionWindow)
 		} else {
+			mentionWindow.SetVisible(false)
 			window.app.SetFocus(window.messageInput.internalTextView)
 		}
 	})
