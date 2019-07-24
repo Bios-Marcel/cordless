@@ -230,6 +230,16 @@ var (
 		FocusCommandOutput,
 		ToggleCommandView,
 		InputNewLine,
+		MoveCursorLeft,
+		MoveCursorRight,
+		MoveCursorWordLeft,
+		MoveCursorWordRight,
+		ExpandSelectionToLeft,
+		ExpandSelectionToRight,
+		SelectAll,
+		SelectWordLeft,
+		SelectWordRight,
+		DeleteRight,
 		SendMessage,
 	}
 )
