@@ -296,6 +296,8 @@ func NewEditor() *Editor {
 		right := []rune(editor.internalTextView.GetRegionText("right"))
 		selection := []rune(editor.internalTextView.GetRegionText("selection"))
 
+		// TODO: This entire chunk could be cleaned up by assigning handlers to each event type,
+		// e.g. event.trigger()
 		if shortcuts.MoveCursorLeft.Equals(event) {
 			editor.MoveCursorLeft(left, right, selection)
 		} else if shortcuts.ExpandSelectionToLeft.Equals(event) {
@@ -318,76 +320,87 @@ func NewEditor() *Editor {
 			editor.DeleteRight(left, right, selection)
 		} else if event.Key() == tcell.KeyBackspace2 ||
 			event.Key() == tcell.KeyBackspace {
-			//FIXME Legacy, has to be replaced when there is N-1 Keybind-Mapping.
-			var newText string
-
-			if len(selection) == 1 && len(left) >= 1 {
-				newText = leftRegion + string(left[:len(left)-1]) + selRegion + string(selection) + rightRegion + string(right) + endRegion
-				editor.internalTextView.SetText(newText)
-			} else if len(selection) > 1 {
-				newText = leftRegion + string(left) + selRegion
-				if len(right) > 0 {
-					newText = newText + string(right[0]) + rightRegion + string(right[1:])
-				} else {
-					newText = newText + selectionChar
-				}
-				newText = newText + endRegion
-				editor.setAndFixText(newText)
-			}
+			// FIXME Legacy, has to be replaced when there is N-1 Keybind-Mapping.
+			editor.Backspace(left, right, selection)
 		} else if event.Key() == tcell.KeyCtrlV {
 			editor.Paste(left, right, selection, event)
 			return nil
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter(left, right, selection, '\n')
-		} else if shortcuts.SendMessage.Equals(event) || event.Rune() == 0 {
-			if editor.inputCapture != nil {
-				return editor.inputCapture(event)
-			}
+		} else if shortcuts.SendMessage.Equals(event) || event.Rune() == 0 && editor.inputCapture != nil {
+			return editor.inputCapture(event)
 		} else {
 			editor.InsertCharacter(left, right, selection, event.Rune())
 		}
 
-		atIndex := -1
-		newLeft := editor.internalTextView.GetRegionText("left")
-		for i := len(newLeft) - 1; i >= 0; i-- {
-			if newLeft[i] == ' ' {
-				break
-			}
-
-			if newLeft[i] == '@' {
-				atIndex = i
-				break
-			}
-		}
-
-		if atIndex != -1 {
-			lookup := editor.GetText()[atIndex+1:]
-			endIndex := strings.Index(lookup, " ")
-
-			if endIndex == -1 {
-				endIndex = len(lookup)
-			}
-
-			editor.currentMentionBeginIdx = atIndex + 1
-			editor.currentMentionEndIdx = endIndex + atIndex
-			if editor.mentionShowHandler != nil {
-				editor.mentionShowHandler(lookup[:endIndex])
-			}
-		} else {
-			editor.currentMentionBeginIdx = 0
-			editor.currentMentionEndIdx = 0
-			if editor.mentionHideHandler != nil {
-				editor.mentionHideHandler()
-			}
-		}
-
+		editor.UpdateMentionHandler()
 		editor.triggerHeightRequestIfNeccessary()
 		editor.internalTextView.ScrollToHighlight()
-
 		return nil
 	})
-
 	return &editor
+}
+
+func (editor *Editor) UpdateMentionHandler() {
+	atSymbolIndex := editor.FindAtSymbolIndexInCurrentWord()
+	if atSymbolIndex == -1 {
+		editor.HideAndResetMentionHandler()
+	} else {
+		editor.ShowMentionHandler(atSymbolIndex)
+	}
+}
+
+func (editor *Editor) ShowMentionHandler(atSymbolIndex int) {
+	lookupKeyword := editor.GetText()[atSymbolIndex+1:]
+	endIndex := strings.Index(lookupKeyword, " ")
+	if endIndex == -1 {
+		endIndex = len(lookupKeyword)
+	}
+	editor.currentMentionBeginIdx = atSymbolIndex + 1
+	editor.currentMentionEndIdx = endIndex + atSymbolIndex
+	if editor.mentionShowHandler != nil {
+		editor.mentionShowHandler(lookupKeyword[:endIndex])
+	}
+}
+
+func (editor *Editor) HideAndResetMentionHandler() {
+	editor.currentMentionBeginIdx = 0
+	editor.currentMentionEndIdx = 0
+	if editor.mentionHideHandler != nil {
+		editor.mentionHideHandler()
+	}
+}
+
+func (editor *Editor) FindAtSymbolIndexInCurrentWord() int {
+	newLeft := editor.internalTextView.GetRegionText("left")
+	for i := len(newLeft) - 1; i >= 0; i-- {
+		if newLeft[i] == ' ' {
+			break
+		}
+
+		if newLeft[i] == '@' && (i == 0 || newLeft[i-1] == ' ') {
+			return i
+		}
+	}
+	return -1
+}
+
+func (editor *Editor) Backspace(left, right, selection []rune) {
+	var newText string
+
+	if len(selection) == 1 && len(left) >= 1 {
+		newText = leftRegion + string(left[:len(left)-1]) + selRegion + string(selection) + rightRegion + string(right) + endRegion
+		editor.internalTextView.SetText(newText)
+	} else if len(selection) > 1 {
+		newText = leftRegion + string(left) + selRegion
+		if len(right) > 0 {
+			newText = newText + string(right[0]) + rightRegion + string(right[1:])
+		} else {
+			newText = newText + selectionChar
+		}
+		newText = newText + endRegion
+		editor.setAndFixText(newText)
+	}
 }
 
 func (editor *Editor) setAndFixText(text string) {
