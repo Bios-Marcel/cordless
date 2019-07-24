@@ -1570,6 +1570,8 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
+	// FIXME: This is incorrect as it will prevent people from using Ctrl-C in the global scope at all.
+
 	// If `ExitApplication` isn't the default (CtrlC) anymore, then we ignore
 	// CtrlC, as it is hardcoded in tview.
 	if event.Key() == tcell.KeyCtrlC {
