@@ -2,23 +2,28 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
+inherit git-r3 golang-build
 
 DESCRIPTION="The Discord terminal client you never knew you wanted."
 HOMEPAGE="https://github.com/Bios-Marcel/cordless"
 
 LICENSE="BSD 3-Clause License"
 SLOT="0"
-KEYWORDS="*"
+KEYWORDS="~amd64 ~x86"
 IUSE=""
 
-DEPEND="=dev-lang/go-*"
+DEPEND="dev-lang/go"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
 GITHUB_REPO="cordless"
 GITHUB_USER="Bios-Maricel"
-GITHUB_TAG="f728fc4d741f9219f6523a47c7f42ae23eec4813"
-SRC_URI="https://github.com/${GITHUB_USER}/$GITHUB_REPO}/tarball/${GITHUB_TAG} -> ${PN}-${GITHUB_TAG}.tar.gz"
+#GITHUB_TAG="f728fc4d741f9219f6523a47c7f42ae23eec4813"
+EGIT_REPO_URI="https://github.com/Bios-Marcel/cordless"
+EGIT_COMMIT=f728fc4d741f9219f6523a47c7f42ae23eec4813
+
+#SRC_URI="https://github.com/${GITHUB_USER}/$GITHUB_REPO}/tarball/${GITHUB_TAG} -> ${PN}-${GITHUB_TAG}.tar.gz"
+SRC_URI="https://codeload.github.com/Bios-Marcel/cordless/tar.gz/2019-07-17 -> ${P}.tar.gz"
 
 src_unpack() {
 	unpack ${A}
