@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -1812,7 +1811,6 @@ func (window *Window) RefreshLayout() {
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	if channel.Type == discordgo.ChannelTypeGuildVoice {
 		connection, voiceError := window.session.ChannelVoiceJoin(window.selectedGuild.ID, channel.ID, false, false)
-		fmt.Fprintln(os.Stderr, "Hello world")
 		go func() {
 			if voiceError == nil {
 				defer connection.Disconnect()
