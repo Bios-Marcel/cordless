@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	linkshortener "github.com/Bios-Marcel/shortnotforlong"
 
@@ -56,6 +57,8 @@ type ChatView struct {
 	formattedMessages  map[string]string
 
 	onMessageAction func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey
+
+	mutex *sync.Mutex
 }
 
 // NewChatView constructs a new ready to use ChatView.
@@ -70,6 +73,7 @@ func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
 		showSpoilerContent: make(map[string]bool),
 		shortenLinks:       config.GetConfig().ShortenLinks,
 		formattedMessages:  make(map[string]string),
+		mutex:              &sync.Mutex{},
 	}
 
 	if chatView.shortenLinks {
@@ -748,4 +752,15 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 	chatView.internalTextView.SetText("")
 
 	chatView.AddMessages(messages)
+}
+
+// Lock will lock the ChatView, allowing other callers to prevent race
+// conditions.
+func (chatView *ChatView) Lock() {
+	chatView.mutex.Lock()
+}
+
+// Unlock unlocks the previously locked ChatView.
+func (chatView *ChatView) Unlock() {
+	chatView.mutex.Unlock()
 }

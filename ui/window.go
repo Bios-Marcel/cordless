@@ -162,6 +162,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			fmt.Fprintln(window.commandView, "Error retrieving all guild members.")
 		}
 
+		window.channelTree.Lock()
 		channelLoadError := window.channelTree.LoadGuild(guildID)
 		if channelLoadError != nil {
 			window.ShowErrorDialog(channelLoadError.Error())
@@ -170,6 +171,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				app.SetFocus(window.channelTree)
 			}
 		}
+		window.channelTree.Unlock()
 
 		userLoadError := window.userList.LoadGuild(guildID)
 		if userLoadError != nil {
@@ -1188,6 +1190,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				continue
 			}
 
+			window.chatView.Lock()
 			if window.selectedChannel != nil && tempMessage.ChannelID == window.selectedChannel.ID {
 				if tempMessage.Author.ID != window.session.State.User.ID {
 					readstate.UpdateReadBuffered(window.session, channel, tempMessage.ID)
@@ -1197,6 +1200,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 					window.chatView.AddMessage(tempMessage)
 				})
 			}
+			window.chatView.Unlock()
 
 			if channel.Type == discordgo.ChannelTypeGuildText {
 				for _, guildNode := range window.guildList.GetRoot().GetChildren() {
@@ -1309,11 +1313,13 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 		for messageDeleted := range delete {
 			tempMessageDeleted := messageDeleted
 			window.session.State.MessageRemove(tempMessageDeleted)
+			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageDeleted.ChannelID {
 				window.app.QueueUpdateDraw(func() {
 					window.chatView.DeleteMessage(tempMessageDeleted)
 				})
 			}
+			window.chatView.Unlock()
 		}
 	}()
 
@@ -1327,11 +1333,13 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				}
 			}
 
+			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessagesDeleted.ChannelID {
 				window.app.QueueUpdateDraw(func() {
 					window.chatView.DeleteMessages(tempMessagesDeleted.Messages)
 				})
 			}
+			window.chatView.Unlock()
 		}
 	}()
 
@@ -1339,10 +1347,10 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 		for messageEdited := range edit {
 			tempMessageEdited := messageEdited
 			window.session.State.MessageAdd(tempMessageEdited)
+			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
 				for _, message := range window.chatView.data {
 					if message.ID == tempMessageEdited.ID {
-
 						//FIXME Workaround for the fact that discordgo doesn't update already filled fields.
 						message.Content = tempMessageEdited.Content
 						message.Mentions = tempMessageEdited.Mentions
@@ -1356,6 +1364,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 					}
 				}
 			}
+			window.chatView.Unlock()
 		}
 	}()
 }
@@ -1523,25 +1532,31 @@ func (window *Window) isChannelEventRelevant(channelEvent *discordgo.Channel) bo
 func (window *Window) registerGuildChannelHandler() {
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelCreate) {
 		if window.isChannelEventRelevant(event.Channel) {
+			window.channelTree.Lock()
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.AddOrUpdateChannel(event.Channel)
 			})
+			window.channelTree.Unlock()
 		}
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelUpdate) {
 		if window.isChannelEventRelevant(event.Channel) {
+			window.channelTree.Lock()
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.AddOrUpdateChannel(event.Channel)
 			})
+			window.channelTree.Unlock()
 		}
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelDelete) {
 		if window.isChannelEventRelevant(event.Channel) {
+			window.channelTree.Lock()
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.RemoveChannel(event.Channel)
 			})
+			window.channelTree.Unlock()
 		}
 	})
 }
@@ -1838,13 +1853,16 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	discordutil.SortMessagesByTimestamp(messages)
 
+	window.chatView.Lock()
 	window.chatView.SetMessages(messages)
 	window.chatView.ClearSelection()
 	window.chatView.internalTextView.ScrollToEnd()
+	window.chatView.Unlock()
 
 	window.UpdateChatHeader(channel)
 
 	window.selectedChannel = channel
+	window.channelTree.Lock()
 	if channel.GuildID == "" {
 		if window.selectedChannelNode != nil {
 			window.selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
@@ -1862,6 +1880,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 		window.privateList.MarkChannelAsLoaded(channel)
 	}
+	window.channelTree.Unlock()
 
 	window.exitMessageEditModeAndKeepText()
 

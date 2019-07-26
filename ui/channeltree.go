@@ -2,6 +2,7 @@ package ui
 
 import (
 	"sort"
+	"sync"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
@@ -30,6 +31,8 @@ type ChannelTree struct {
 	onChannelSelect func(channelID string)
 	channelStates   map[*tview.TreeNode]channelState
 	channelPosition map[string]int
+
+	mutex *sync.Mutex
 }
 
 // NewChannelTree creates a new ready-to-be-used ChannelTree
@@ -39,6 +42,7 @@ func NewChannelTree(state *discordgo.State) *ChannelTree {
 		TreeView:        tview.NewTreeView(),
 		channelStates:   make(map[*tview.TreeNode]channelState),
 		channelPosition: make(map[string]int),
+		mutex:           &sync.Mutex{},
 	}
 
 	channelTree.
@@ -317,4 +321,15 @@ func (channelTree *ChannelTree) MarkChannelAsLoaded(channelID string) {
 // SetOnChannelSelect sets the handler that reacts to channel selection events.
 func (channelTree *ChannelTree) SetOnChannelSelect(handler func(channelID string)) {
 	channelTree.onChannelSelect = handler
+}
+
+// Lock will lock the ChannelTree, allowing other callers to prevent race
+// conditions.
+func (channelTree *ChannelTree) Lock() {
+	channelTree.mutex.Lock()
+}
+
+// Unlock unlocks the previously locked ChannelTree.
+func (channelTree *ChannelTree) Unlock() {
+	channelTree.mutex.Unlock()
 }
