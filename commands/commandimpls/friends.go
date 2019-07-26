@@ -57,7 +57,7 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 		}
 	case "delete", "unfriend", "remove", "decline":
 		if len(parameters) != 2 {
-			fmt.Fprintln(writer, "Usage: friends remove <Username|Username#NNNN|UserID")
+			fmt.Fprintln(writer, "Usage: friends remove <Username|Username#NNNN|UserID>")
 			return
 		}
 
