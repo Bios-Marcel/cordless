@@ -70,7 +70,7 @@ When in selection mode, those shortcuts are active:
 | Selection up                | ArrowUp    |
 | Selection down              | ArrowDown  |
 | Selection to top            | Home       |
-| Selectino to bottom         | End        |
+| Selection to bottom         | End        |
 --------------------------------------------
 `
 const commandsDocumentation = `[orange][::u]# Commands[white]
