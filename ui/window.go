@@ -849,9 +849,7 @@ func (window *Window) TrySendMessage(message string) {
 		return
 	}
 
-	message = window.prepareMessage(message)
-	messageLength := len(message)
-	if messageLength == 0 {
+	if len(message) == 0 {
 		if window.editingMessageID != nil {
 			msgIDCopy := *window.editingMessageID
 			window.askForMessageDeletion(msgIDCopy, true)
@@ -859,33 +857,39 @@ func (window *Window) TrySendMessage(message string) {
 		return
 	}
 
-	if messageLength > 2000 {
-		window.ShowErrorDialog("Messages must be under 2000 characters to send")
-	} else if window.editingMessageID != nil {
-		go window.editMessage(window.selectedChannel.ID, *window.editingMessageID, message)
-		window.exitMessageEditMode()
-		window.OnMessageSent()
-	} else {
-		go func() {
-			messageText := window.jsEngine.OnMessageSend(message)
-			_, sendError := window.session.ChannelMessageSend(window.selectedChannel.ID, messageText)
+	message = strings.TrimSpace(message)
+	if len(message) == 0 {
+		window.app.QueueUpdateDraw(func() {
+			window.messageInput.SetText("")
+		})
+		return
+	}
+
+	message = window.prepareMessage(message)
+	if len(message) > 2000 {
+		window.app.QueueUpdateDraw(func() {
+			window.ShowErrorDialog("Messages must be 2000 characters or less to send")
+		})
+		return
+	}
+
+	if window.editingMessageID != nil {
+		window.editMessage(window.selectedChannel.ID, *window.editingMessageID, message)
+		return
+	}
+
+	go func() {
+		messageText := window.jsEngine.OnMessageSend(message)
+		_, sendError := window.session.ChannelMessageSend(window.selectedChannel.ID, messageText)
+		window.app.QueueUpdateDraw(func() {
 			if sendError == nil {
-				window.OnMessageSent()
+				window.messageInput.SetText("")
 			} else {
 				window.ShowErrorDialog("Error sending message: " + sendError.Error())
-				window.app.QueueUpdateDraw(func() {
-					window.chatView.internalTextView.ScrollToEnd()
-				})
+				window.chatView.internalTextView.ScrollToEnd()
 			}
-		}()
-	}
-}
-
-// Invoked when a message has been succesfully sent or edited.
-func (window *Window) OnMessageSent() {
-	window.app.QueueUpdateDraw(func() {
-		window.messageInput.SetText("")
-	})
+		})
+	}()
 }
 
 func (window *Window) HideMentionWindow(mentionWindow *tview.TreeView) {
@@ -1779,14 +1783,15 @@ func (window *Window) ShowErrorDialog(text string) {
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 	go func() {
 		_, discordError := window.session.ChannelMessageEdit(channelID, messageID, messageEdited)
-		if discordError != nil {
-			window.app.QueueUpdateDraw(func() {
+		window.app.QueueUpdateDraw(func() {
+			if discordError != nil {
 				window.ShowErrorDialog("Error editing message.")
-			})
-		}
+			} else {
+				window.exitMessageEditMode()
+				window.messageInput.SetText("")
+			}
+		})
 	}()
-
-	window.exitMessageEditMode()
 }
 
 //SwitchToGuildsPage the left side of the layout over to the view where you can
