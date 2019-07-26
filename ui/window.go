@@ -434,50 +434,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if event.Key() == tcell.KeyEnter {
-			if window.selectedChannel != nil {
-				// TODO: Shouldn't clear till message is sent
-				window.messageInput.SetText("")
-
-				if len(messageToSend) != 0 {
-					messageToSend = window.prepareMessage(messageToSend)
-
-					if window.editingMessageID != nil {
-						overLength := len(messageToSend) - 2000
-						if overLength > 0 {
-							window.app.QueueUpdateDraw(func() {
-								window.ShowErrorDialog(fmt.Sprintf("The message you are trying to send is %d characters too long.", overLength))
-							})
-						} else {
-							go window.editMessage(window.selectedChannel.ID, *window.editingMessageID, messageToSend)
-							window.exitMessageEditMode()
-						}
-					} else {
-						go func() {
-							messageText := window.jsEngine.OnMessageSend(messageToSend)
-							overLength := len(messageText) - 2000
-							if overLength > 0 {
-								window.app.QueueUpdateDraw(func() {
-									window.ShowErrorDialog(fmt.Sprintf("The message you are trying to send is %d characters too long.", overLength))
-								})
-								return
-							}
-
-							_, sendError := session.ChannelMessageSend(window.selectedChannel.ID, messageText)
-							window.chatView.internalTextView.ScrollToEnd()
-							if sendError != nil {
-								window.app.QueueUpdateDraw(func() {
-									window.ShowErrorDialog("Error sending message: " + sendError.Error())
-								})
-							}
-						}()
-					}
-				} else if window.editingMessageID != nil {
-					msgIDCopy := *window.editingMessageID
-					window.askForMessageDeletion(msgIDCopy, true)
-				}
-
-				return nil
-			}
+			window.TrySendMessage(messageToSend)
 		}
 
 		return event
@@ -885,6 +842,50 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	log.SetOutput(window.commandView)
 
 	return window, nil
+}
+
+func (window *Window) TrySendMessage(message string) {
+	if window.selectedChannel == nil {
+		return
+	}
+
+	if len(message) == 0 {
+		if window.editingMessageID != nil {
+			msgIDCopy := *window.editingMessageID
+			window.askForMessageDeletion(msgIDCopy, true)
+		}
+		return
+	}
+
+	message = window.prepareMessage(message)
+	if len(message) > 2000 {
+		window.app.QueueUpdateDraw(func() {
+			window.ShowErrorDialog("Messages must be under 2000 characters to send")
+		})
+	} else if window.editingMessageID != nil {
+		go window.editMessage(window.selectedChannel.ID, *window.editingMessageID, message)
+		window.exitMessageEditMode()
+		window.OnMessageSent()
+	} else {
+		go func() {
+			messageText := window.jsEngine.OnMessageSend(message)
+			_, sendError := window.session.ChannelMessageSend(window.selectedChannel.ID, messageText)
+			window.chatView.internalTextView.ScrollToEnd()
+			if sendError == nil {
+				window.OnMessageSent()
+			} else {
+				window.app.QueueUpdateDraw(func() {
+					window.ShowErrorDialog("Error sending message: " + sendError.Error())
+				})
+			}
+		}()
+	}
+}
+
+// Invoked when a message has been succesfully sent or edited.
+func (window *Window) OnMessageSent() {
+	window.messageInput.SetText("")
+	go window.ForceRedraw()
 }
 
 func (window *Window) HideMentionWindow(mentionWindow *tview.TreeView) {
