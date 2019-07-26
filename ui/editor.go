@@ -33,13 +33,13 @@ const (
 type Editor struct {
 	internalTextView *tview.TextView
 
-	inputCapture           func(event *tcell.EventKey) *tcell.EventKey
-	mentionShowHandler     func(namePart string)
-	mentionHideHandler     func()
-	heightRequestHandler   func(requestHeight int)
-	requestedHeight        int
-	currentMentionBeginIdx int
-	currentMentionEndIdx   int
+	inputCapture             func(event *tcell.EventKey) *tcell.EventKey
+	mentionShowHandler       func(namePart string)
+	mentionHideHandler       func()
+	heightRequestHandler     func(requestHeight int)
+	requestedHeight          int
+	currentMentionBeginIndex int
+	currentMentionEndIndex   int
 }
 
 func (e *Editor) ExpandSelectionToLeft(left, right, selection []rune) {
@@ -352,16 +352,16 @@ func (editor *Editor) UpdateMentionHandler() {
 
 func (editor *Editor) ShowMentionHandler(atSymbolIndex int) {
 	lookupKeyword := editor.GetText()[atSymbolIndex+1:]
-	editor.currentMentionBeginIdx = atSymbolIndex + 1
-	editor.currentMentionEndIdx = len(lookupKeyword) + atSymbolIndex
+	editor.currentMentionBeginIndex = atSymbolIndex + 1
+	editor.currentMentionEndIndex = len(lookupKeyword) + atSymbolIndex
 	if editor.mentionShowHandler != nil {
 		editor.mentionShowHandler(lookupKeyword)
 	}
 }
 
 func (editor *Editor) HideAndResetMentionHandler() {
-	editor.currentMentionBeginIdx = 0
-	editor.currentMentionEndIdx = 0
+	editor.currentMentionBeginIndex = 0
+	editor.currentMentionEndIndex = 0
 	if editor.mentionHideHandler != nil {
 		editor.mentionHideHandler()
 	}
@@ -478,7 +478,7 @@ func (editor *Editor) SetMentionHideHandler(handlerFunc func()) {
 // GetCurrentMentionIndices gets the starting and ending indices of the input box text
 // which are to be replaced
 func (editor *Editor) GetCurrentMentionIndices() (int, int) {
-	return editor.currentMentionBeginIdx, editor.currentMentionEndIdx
+	return editor.currentMentionBeginIndex, editor.currentMentionEndIndex
 }
 
 // GetText returns the text without color tags, region tags and so on.
