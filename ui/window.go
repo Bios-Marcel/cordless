@@ -302,66 +302,14 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		mentionWindow.GetRoot().ClearChildren()
 		window.commandView.commandOutput.Clear()
 
-		if window.selectedChannel != nil {
-			if window.selectedChannel.GuildID != "" {
-				guild, discordError := window.session.State.Guild(window.selectedChannel.GuildID)
-				if discordError == nil {
-					for _, user := range guild.Members {
-						if strings.Contains(strings.ToUpper(user.Nick), strings.ToUpper(namePart)) || strings.Contains(strings.ToUpper(user.User.Username)+"#"+user.User.Discriminator, strings.ToUpper(namePart)) {
-							userName := user.User.Username + "#" + user.User.Discriminator
-							userNodeText := "\t" + userName
-							if len(user.Nick) > 0 {
-								userNodeText += " | " + user.Nick
-							}
-							userNode := tview.NewTreeNode(userNodeText)
-							userNode.SetReference(userName)
-							mentionWindow.GetRoot().AddChild(userNode)
-						}
-					}
-
-					for _, role := range guild.Roles {
-						if strings.Contains(strings.ToUpper(role.Name), strings.ToUpper(namePart)) {
-							roleNode := tview.NewTreeNode(role.Name)
-							roleNode.SetReference(role)
-							mentionWindow.GetRoot().AddChild(roleNode)
-						}
-					}
-				}
-			} else {
-				for _, user := range window.selectedChannel.Recipients {
-					if strings.Contains(strings.ToUpper(user.Username)+"#"+user.Discriminator, strings.ToUpper(namePart)) {
-						userName := user.Username + "#" + user.Discriminator
-						userNodeText := "\t" + userName
-						userNode := tview.NewTreeNode(userNodeText)
-						userNode.SetReference(userName)
-						mentionWindow.GetRoot().AddChild(userNode)
-					}
-				}
-			}
-		}
-
-		if mentionWindow.GetRoot().GetChildren() != nil {
-			numChildren := len(mentionWindow.GetRoot().GetChildren())
-			if numChildren > 10 {
-				numChildren = 10
-			}
-			window.chatArea.ResizeItem(mentionWindow, numChildren, 0)
-			if numChildren > 0 {
-				mentionWindow.SetCurrentNode(mentionWindow.GetRoot().GetChildren()[0])
-			}
-		}
-		if mentionWindow.GetRoot().GetChildren() != nil {
-			mentionWindow.SetVisible(true)
-			window.app.SetFocus(mentionWindow)
-		} else {
-			mentionWindow.SetVisible(false)
-			window.app.SetFocus(window.messageInput.internalTextView)
-		}
+        window.PopulateMentionWindow(mentionWindow, namePart)
+        if !window.ShowMentionWindowChildren(mentionWindow, 10) {
+            window.HideMentionWindow(mentionWindow)
+        }
 	})
 
 	window.messageInput.SetMentionHideHandler(func() {
-		mentionWindow.SetVisible(false)
-		window.app.SetFocus(window.messageInput.GetPrimitive())
+        window.HideMentionWindow(mentionWindow)
 	})
 
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -474,6 +422,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		if event.Key() == tcell.KeyEnter {
 			if window.selectedChannel != nil {
+                // TODO: Shouldn't clear till message is sent
 				window.messageInput.SetText("")
 
 				if len(messageToSend) != 0 {
@@ -509,11 +458,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 							}
 						}()
 					}
-				} else {
-					if window.editingMessageID != nil {
-						msgIDCopy := *window.editingMessageID
-						window.askForMessageDeletion(msgIDCopy, true)
-					}
+				} else if window.editingMessageID != nil {
+                    msgIDCopy := *window.editingMessageID
+                    window.askForMessageDeletion(msgIDCopy, true)
 				}
 
 				return nil
@@ -925,6 +872,66 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	log.SetOutput(window.commandView)
 
 	return window, nil
+}
+
+func (window *Window) HideMentionWindow(mentionWindow *tview.TreeView) {
+    mentionWindow.SetVisible(false)
+    window.app.SetFocus(window.messageInput.internalTextView)
+}
+
+func (window *Window) ShowMentionWindowChildren(mentionWindow *tview.TreeView, maxChildren int) bool {
+    children := mentionWindow.GetRoot().GetChildren()
+    if children == nil {
+        return false
+    }
+    numChildren := maths.Min(len(children), 10)
+    window.chatArea.ResizeItem(mentionWindow, numChildren, 0)
+    if numChildren > 0 {
+        mentionWindow.SetCurrentNode(children[0])
+    }
+    mentionWindow.SetVisible(true)
+    window.app.SetFocus(mentionWindow)
+    return true
+}
+
+func (window *Window) PopulateMentionWindow(mentionWindow *tview.TreeView, namePart string) {
+    if window.selectedChannel != nil {
+			if window.selectedChannel.GuildID != "" {
+				guild, discordError := window.session.State.Guild(window.selectedChannel.GuildID)
+				if discordError == nil {
+					for _, user := range guild.Members {
+						if strings.Contains(strings.ToUpper(user.Nick), strings.ToUpper(namePart)) || strings.Contains(strings.ToUpper(user.User.Username)+"#"+user.User.Discriminator, strings.ToUpper(namePart)) {
+							userName := user.User.Username + "#" + user.User.Discriminator
+							userNodeText := "\t" + userName
+							if len(user.Nick) > 0 {
+								userNodeText += " | " + user.Nick
+							}
+							userNode := tview.NewTreeNode(userNodeText)
+							userNode.SetReference(userName)
+							mentionWindow.GetRoot().AddChild(userNode)
+						}
+					}
+
+					for _, role := range guild.Roles {
+						if strings.Contains(strings.ToUpper(role.Name), strings.ToUpper(namePart)) {
+							roleNode := tview.NewTreeNode(role.Name)
+							roleNode.SetReference(role)
+							mentionWindow.GetRoot().AddChild(roleNode)
+						}
+					}
+				}
+			} else {
+				for _, user := range window.selectedChannel.Recipients {
+					if strings.Contains(strings.ToUpper(user.Username)+"#"+user.Discriminator, strings.ToUpper(namePart)) {
+						userName := user.Username + "#" + user.Discriminator
+						userNodeText := "\t" + userName
+						userNode := tview.NewTreeNode(userNodeText)
+						userNode.SetReference(userName)
+						mentionWindow.GetRoot().AddChild(userNode)
+					}
+				}
+			}
+		}
 }
 
 func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.TreeNode, isSelected bool) {
