@@ -847,7 +847,9 @@ func (window *Window) TrySendMessage(message string) {
 		return
 	}
 
-	if len(message) == 0 {
+	message = window.prepareMessage(message)
+	messageLength := len(message)
+	if messageLength == 0 {
 		if window.editingMessageID != nil {
 			msgIDCopy := *window.editingMessageID
 			window.askForMessageDeletion(msgIDCopy, true)
@@ -855,11 +857,8 @@ func (window *Window) TrySendMessage(message string) {
 		return
 	}
 
-	message = window.prepareMessage(message)
-	if len(message) > 2000 {
-		window.app.QueueUpdateDraw(func() {
-			window.ShowErrorDialog("Messages must be under 2000 characters to send")
-		})
+	if messageLength > 2000 {
+		window.ShowErrorDialog("Messages must be under 2000 characters to send")
 	} else if window.editingMessageID != nil {
 		go window.editMessage(window.selectedChannel.ID, *window.editingMessageID, message)
 		window.exitMessageEditMode()
@@ -868,12 +867,12 @@ func (window *Window) TrySendMessage(message string) {
 		go func() {
 			messageText := window.jsEngine.OnMessageSend(message)
 			_, sendError := window.session.ChannelMessageSend(window.selectedChannel.ID, messageText)
-			window.chatView.internalTextView.ScrollToEnd()
 			if sendError == nil {
 				window.OnMessageSent()
 			} else {
+				window.ShowErrorDialog("Error sending message: " + sendError.Error())
 				window.app.QueueUpdateDraw(func() {
-					window.ShowErrorDialog("Error sending message: " + sendError.Error())
+					window.chatView.internalTextView.ScrollToEnd()
 				})
 			}
 		}()
@@ -882,8 +881,9 @@ func (window *Window) TrySendMessage(message string) {
 
 // Invoked when a message has been succesfully sent or edited.
 func (window *Window) OnMessageSent() {
-	window.messageInput.SetText("")
-	go window.ForceRedraw()
+	window.app.QueueUpdateDraw(func() {
+		window.messageInput.SetText("")
+	})
 }
 
 func (window *Window) HideMentionWindow(mentionWindow *tview.TreeView) {
@@ -959,7 +959,9 @@ func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.Tr
 }
 
 func (window *Window) prepareMessage(inputText string) string {
+	inputText = strings.TrimSpace(inputText)
 	output := codeBlockRegex.ReplaceAllStringFunc(inputText, func(input string) string {
+		input = strings.TrimSpace(input)
 		return strings.Replace(input, ":", "\\:", -1)
 	})
 
