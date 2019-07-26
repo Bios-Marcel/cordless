@@ -23,7 +23,7 @@ const (
 // ChannelTree is the component that displays the channel hierarchy of the
 // currently loaded guild and allows interactions with those channels.
 type ChannelTree struct {
-	internalTreeView *tview.TreeView
+	*tview.TreeView
 
 	state *discordgo.State
 
@@ -35,20 +35,20 @@ type ChannelTree struct {
 // NewChannelTree creates a new ready-to-be-used ChannelTree
 func NewChannelTree(state *discordgo.State) *ChannelTree {
 	channelTree := &ChannelTree{
-		state:            state,
-		internalTreeView: tview.NewTreeView(),
-		channelStates:    make(map[*tview.TreeNode]channelState),
-		channelPosition:  make(map[string]int),
+		state:           state,
+		TreeView:        tview.NewTreeView(),
+		channelStates:   make(map[*tview.TreeNode]channelState),
+		channelPosition: make(map[string]int),
 	}
 
-	channelTree.internalTreeView.
+	channelTree.
 		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetCycleSelection(true).
 		SetTopLevel(1).
 		SetBorder(true)
 
-	channelTree.internalTreeView.SetRoot(tview.NewTreeNode(""))
-	channelTree.internalTreeView.SetSelectedFunc(func(node *tview.TreeNode) {
+	channelTree.SetRoot(tview.NewTreeNode(""))
+	channelTree.SetSelectedFunc(func(node *tview.TreeNode) {
 		channelID, ok := node.GetReference().(string)
 		if ok && channelTree.onChannelSelect != nil {
 			channelTree.onChannelSelect(channelID)
@@ -62,7 +62,7 @@ func NewChannelTree(state *discordgo.State) *ChannelTree {
 func (channelTree *ChannelTree) Clear() {
 	channelTree.channelStates = make(map[*tview.TreeNode]channelState)
 	channelTree.channelPosition = make(map[string]int)
-	channelTree.internalTreeView.GetRoot().ClearChildren()
+	channelTree.GetRoot().ClearChildren()
 }
 
 // LoadGuild accesses the state in order to load all locally present channels
@@ -105,7 +105,7 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 		}
 		createSecondLevelChannelNodes(channelTree, channel)
 	}
-	channelTree.internalTreeView.SetCurrentNode(channelTree.internalTreeView.GetRoot())
+	channelTree.SetCurrentNode(channelTree.GetRoot())
 	return nil
 }
 
@@ -115,18 +115,18 @@ func createTopLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Cha
 		channelTree.channelStates[channelNode] = channelUnread
 		channelNode.SetColor(tcell.ColorRed)
 	}
-	channelTree.internalTreeView.GetRoot().AddChild(channelNode)
+	channelTree.GetRoot().AddChild(channelNode)
 }
 
 func createChannelCategoryNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
 	channelNode := createChannelNode(channel)
 	channelNode.SetSelectable(false)
-	channelTree.internalTreeView.GetRoot().AddChild(channelNode)
+	channelTree.GetRoot().AddChild(channelNode)
 }
 
 func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
 	channelNode := createChannelNode(channel)
-	for _, node := range channelTree.internalTreeView.GetRoot().GetChildren() {
+	for _, node := range channelTree.GetRoot().GetChildren() {
 		channelID, ok := node.GetReference().(string)
 		if ok && channelID == channel.ParentID {
 			if !readstate.HasBeenRead(channel, channel.LastMessageID) {
@@ -190,7 +190,7 @@ func (channelTree *ChannelTree) RemoveChannel(channel *discordgo.Channel) {
 	channelID := channel.ID
 
 	if channel.Type == discordgo.ChannelTypeGuildText {
-		channelTree.internalTreeView.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+		channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 			nodeChannelID, ok := node.GetReference().(string)
 			if ok && nodeChannelID == channelID {
 				channelTree.removeNode(node, parent, channelID)
@@ -229,11 +229,6 @@ func (channelTree *ChannelTree) removeNode(node, parent *tview.TreeNode, channel
 
 		parent.SetChildren(append(children[:childIndex], children[childIndex+1:]...))
 	}
-}
-
-// GetRoot returns the root node of the treeview.
-func (channelTree *ChannelTree) GetRoot() *tview.TreeNode {
-	return channelTree.internalTreeView.GetRoot()
 }
 
 // MarkChannelAsUnread marks a channel as unread.

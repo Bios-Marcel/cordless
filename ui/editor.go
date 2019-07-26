@@ -370,10 +370,6 @@ func (editor *Editor) HideAndResetMentionHandler() {
 func (editor *Editor) FindAtSymbolIndexInCurrentWord() int {
 	newLeft := editor.internalTextView.GetRegionText("left")
 	for i := len(newLeft) - 1; i >= 0; i-- {
-		/*if newLeft[i] == ' ' {
-			break
-		}*/
-
 		if newLeft[i] == '@' && (i == 0 || newLeft[i-1] == ' ') {
 			return i
 		}
