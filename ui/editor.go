@@ -352,14 +352,10 @@ func (editor *Editor) UpdateMentionHandler() {
 
 func (editor *Editor) ShowMentionHandler(atSymbolIndex int) {
 	lookupKeyword := editor.GetText()[atSymbolIndex+1:]
-	endIndex := strings.Index(lookupKeyword, " ")
-	if endIndex == -1 {
-		endIndex = len(lookupKeyword)
-	}
 	editor.currentMentionBeginIdx = atSymbolIndex + 1
-	editor.currentMentionEndIdx = endIndex + atSymbolIndex
+	editor.currentMentionEndIdx = len(lookupKeyword) + atSymbolIndex
 	if editor.mentionShowHandler != nil {
-		editor.mentionShowHandler(lookupKeyword[:endIndex])
+		editor.mentionShowHandler(lookupKeyword)
 	}
 }
 
@@ -374,9 +370,9 @@ func (editor *Editor) HideAndResetMentionHandler() {
 func (editor *Editor) FindAtSymbolIndexInCurrentWord() int {
 	newLeft := editor.internalTextView.GetRegionText("left")
 	for i := len(newLeft) - 1; i >= 0; i-- {
-		if newLeft[i] == ' ' {
+		/*if newLeft[i] == ' ' {
 			break
-		}
+		}*/
 
 		if newLeft[i] == '@' && (i == 0 || newLeft[i-1] == ' ') {
 			return i
