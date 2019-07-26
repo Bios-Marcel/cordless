@@ -102,7 +102,11 @@ func Run() {
 				log.Fatalf("Error constructing window (%s).\n", createError.Error())
 			}
 
-			window.RegisterCommand(commandimpls.NewStatusCommand(discord), "status")
+			statusGetCmd := commandimpls.NewStatusGetCommand(discord)
+			statusSetCmd := commandimpls.NewStatusSetCommand(discord)
+			window.RegisterCommand(statusSetCmd, "status-set", "status-update")
+			window.RegisterCommand(statusGetCmd, "status-get")
+			window.RegisterCommand(commandimpls.NewStatusCommand(statusGetCmd, statusSetCmd), "status")
 			window.RegisterCommand(commandimpls.NewFileSendCommand(discord, window), "file-send")
 			window.RegisterCommand(commandimpls.NewAccount(runNext, window), "account", "profile")
 			window.RegisterCommand(commandimpls.NewHelpCommand(window), "help")
