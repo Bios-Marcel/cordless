@@ -418,11 +418,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 			if clipError == nil {
 				dataChannel := bytes.NewReader(data)
-				currentText := window.prepareMessage(window.messageInput.GetText())
+				targetChannel := window.selectedChannel
+				currentText := window.prepareMessage(targetChannel, strings.TrimSpace(window.messageInput.GetText()))
 				if currentText == "" {
-					go window.session.ChannelFileSend(window.selectedChannel.ID, "img.png", dataChannel)
+					go window.session.ChannelFileSend(targetChannel.ID, "img.png", dataChannel)
 				} else {
-					go window.session.ChannelFileSendWithMessage(window.selectedChannel.ID, currentText, "img.png", dataChannel)
+					go window.session.ChannelFileSendWithMessage(targetChannel.ID, currentText, "img.png", dataChannel)
 					window.messageInput.SetText("")
 				}
 			} else {
@@ -433,7 +434,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if event.Key() == tcell.KeyEnter {
-			window.TrySendMessage(messageToSend)
+			if window.selectedChannel != nil {
+				window.TrySendMessage(window.selectedChannel, messageToSend)
+			}
 		}
 
 		return event
@@ -843,8 +846,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return window, nil
 }
 
-func (window *Window) TrySendMessage(message string) {
-	if window.selectedChannel == nil {
+func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message string) {
+	if targetChannel == nil {
 		return
 	}
 
@@ -864,7 +867,7 @@ func (window *Window) TrySendMessage(message string) {
 		return
 	}
 
-	message = window.prepareMessage(message)
+	message = window.prepareMessage(targetChannel, message)
 	if len(message) > 2000 {
 		window.app.QueueUpdateDraw(func() {
 			window.ShowErrorDialog("Messages must be 2000 characters or less to send")
@@ -873,13 +876,13 @@ func (window *Window) TrySendMessage(message string) {
 	}
 
 	if window.editingMessageID != nil {
-		window.editMessage(window.selectedChannel.ID, *window.editingMessageID, message)
+		window.editMessage(targetChannel.ID, *window.editingMessageID, message)
 		return
 	}
 
 	go func() {
 		messageText := window.jsEngine.OnMessageSend(message)
-		_, sendError := window.session.ChannelMessageSend(window.selectedChannel.ID, messageText)
+		_, sendError := window.session.ChannelMessageSend(targetChannel.ID, messageText)
 		window.app.QueueUpdateDraw(func() {
 			if sendError == nil {
 				window.messageInput.SetText("")
@@ -963,35 +966,40 @@ func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.Tr
 	}
 }
 
-func (window *Window) prepareMessage(inputText string) string {
-	inputText = strings.TrimSpace(inputText)
+// prepareMessage prepares a message for being sent to the discord API.
+// This will do all necessary escaping and resolving of channel-mentions,
+// user-mentions, emojis and the likes.
+//
+// The input is expected to be a string without sorrounding whitespace.
+func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText string) string {
 	output := codeBlockRegex.ReplaceAllStringFunc(inputText, func(input string) string {
-		input = strings.TrimSpace(input)
-		return strings.Replace(input, ":", "\\:", -1)
+		return strings.ReplaceAll(strings.TrimSpace(input), ":", "\\:")
 	})
 
-	if window.selectedChannel.GuildID != "" {
-		guild, discordError := window.session.State.Guild(window.selectedChannel.GuildID)
+	if targetChannel.GuildID != "" {
+		guild, discordError := window.session.State.Guild(targetChannel.GuildID)
 		if discordError == nil {
-
 			//Those could be optimized by searching the string for patterns.
 			for _, channel := range guild.Channels {
 				if channel.Type == discordgo.ChannelTypeGuildText {
-					output = strings.Replace(output, "#"+channel.Name, "<#"+channel.ID+">", -1)
+					output = strings.ReplaceAll(output, "#"+channel.Name, "<#"+channel.ID+">")
 				}
 			}
 
-			output = emojiRegex.ReplaceAllStringFunc(output, func(match string) string {
-				firstDoubleColon := strings.IndexRune(match, ':')
-				emjoiSequence := match[firstDoubleColon+1 : len(match)-1]
-				for _, emoji := range guild.Emojis {
-					if emoji.Name == emjoiSequence {
-						return match[:firstDoubleColon] + "<:" + emoji.Name + ":" + emoji.ID + ">"
+			//Customemojis
+			if len(guild.Emojis) > 0 {
+				output = emojiRegex.ReplaceAllStringFunc(output, func(match string) string {
+					firstDoubleColon := strings.IndexRune(match, ':')
+					emjoiSequence := match[firstDoubleColon+1 : len(match)-1]
+					for _, emoji := range guild.Emojis {
+						if emoji.Name == emjoiSequence {
+							return match[:firstDoubleColon] + "<:" + emoji.Name + ":" + emoji.ID + ">"
+						}
 					}
-				}
 
-				return match
-			})
+					return match
+				})
+			}
 		}
 	}
 
@@ -999,16 +1007,16 @@ func (window *Window) prepareMessage(inputText string) string {
 	output = discordemojimap.Replace(output)
 	output = strings.Replace(output, "\\:", ":", -1)
 
-	if window.selectedChannel.GuildID != "" {
-		members, discordError := window.session.State.Members(window.selectedChannel.GuildID)
+	if targetChannel.GuildID == "" {
+		for _, user := range targetChannel.Recipients {
+			output = strings.ReplaceAll(output, "@"+user.Username+"#"+user.Discriminator, "<@"+user.ID+">")
+		}
+	} else {
+		members, discordError := window.session.State.Members(targetChannel.GuildID)
 		if discordError == nil {
 			for _, member := range members {
-				output = strings.Replace(output, "@"+member.User.Username+"#"+member.User.Discriminator, "<@"+member.User.ID+">", -1)
+				output = strings.ReplaceAll(output, "@"+member.User.Username+"#"+member.User.Discriminator, "<@"+member.User.ID+">")
 			}
-		}
-	} else if window.selectedChannel != nil {
-		for _, user := range window.selectedChannel.Recipients {
-			output = strings.Replace(output, "@"+user.Username+"#"+user.Discriminator, "<@"+user.ID+">", -1)
 		}
 	}
 
