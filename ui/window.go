@@ -1646,7 +1646,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 			return event
 		})
 
-		resetButton = tview.NewButton("Restore defaults")
+		resetButton = tview.NewButton("Restore all defaults")
 		resetButton.SetSelectedFunc(func() {
 			for _, shortcut := range shortcuts.Shortcuts {
 				shortcut.Reset()
