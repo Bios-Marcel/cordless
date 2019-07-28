@@ -220,10 +220,15 @@ isolating new changes and make merging those into `master` easier.
 
 I also encourage you to report anything you deem a bug, because that means
 that there might problems with the UX that could still be worked on. Obviously
-feature requests are welcome as well, no matter if those are features that the
-official discord client has or not.
+feature requests are welcome as well, no matter if those are features which are
+already part of the official discord client or not.
 
 Oh and please try to keep things pragmatic and foul-language free ;)
+
+If there are specific issues you want to be solved quickly, you can set a
+bounty on those via [IssueHunt](https://issuehunt.io/r/Bios-Marcel/cordless).
+The full 100% of the bounty goes to whoever solves the issue, no matter
+whether that's me or someone else.
 
 If none of those ways of contributing are your kind of thing, feel free to
 donate something via [Liberapay](https://liberapay.com/biosmarcel/donate).
@@ -243,7 +248,7 @@ Reasons not to use it:
 
 - You like fancy GUI
 - You want to see images, videos and whatnot inside of the application itself
-- You need the voice/video calling features
+- You need the voice/video calling features (This might soon change!)
 - You need to administrate a server (no adminsitration features yet)
 
 ## Similar projects
@@ -268,4 +273,5 @@ might be due to your terminal emulator accepting those instead of letting
 cordless handle them.
 
 If you need help or have questions that you don't want to create an issue for.
-feel free to hit me up on Discord: `Marcel#7299`.
+feel free to hit me up on Discord: `Marcel#7299`. Alternatively, just join the
+public Cordless server linked at the top of the Readme.
