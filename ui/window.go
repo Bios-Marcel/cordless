@@ -75,7 +75,7 @@ type Window struct {
 
 	commandMode bool
 	commandView *CommandView
-	commands    map[string]commands.Command
+	commands    []commands.Command
 
 	userActive      bool
 	userActiveTimer *time.Timer
@@ -91,7 +91,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		doRestart:       doRestart,
 		session:         session,
 		app:             app,
-		commands:        make(map[string]commands.Command),
 		jsEngine:        js.New(),
 		userActiveTimer: time.NewTimer(userInactiveTime),
 	}
@@ -1739,15 +1738,32 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	return nil
 }
 
+func (window *Window) FindCommand(name string) commands.Command {
+	for _, cmd := range window.commands {
+		if cmd.Name() == name {
+			return cmd
+		}
+
+		for _, alias := range cmd.Aliases() {
+			if alias == name {
+				return cmd
+			}
+		}
+	}
+
+	return nil
+}
+
 //ExecuteCommand tries to execute the given input as a command. The first word
 //will be passed as the commands name and the rest will be parameters. If a
 //command can't be found, that info will be printed onto the command output.
-func (window *Window) ExecuteCommand(command string) {
-	parts := commands.ParseCommand(command)
-	fmt.Fprintf(window.commandView, "[gray]$ %s\n", command)
-	commandLogic, exists := window.commands[parts[0]]
-	if exists {
-		commandLogic.Execute(window.commandView, parts[1:])
+func (window *Window) ExecuteCommand(input string) {
+	parts := commands.ParseCommand(input)
+	fmt.Fprintf(window.commandView, "[gray]$ %s\n", input)
+
+	command := window.FindCommand(parts[0])
+	if command != nil {
+		command.Execute(window.commandView, parts[1:])
 	} else {
 		fmt.Fprintf(window.commandView, "[red]The command '%s' doesn't exist[white]\n", parts[0])
 	}
@@ -1951,14 +1967,13 @@ func (window *Window) UpdateChatHeader(channel *discordgo.Channel) {
 // RegisterCommand register a command. That makes the command available for
 // being called from the message input field, in case the user-defined prefix
 // is in front of the input.
-func (window *Window) RegisterCommand(command commands.Command, names ...string) {
-	for _, name := range names {
-		window.commands[name] = command
-	}
+func (window *Window) RegisterCommand(command commands.Command) {
+	window.commands = append(window.commands, command)
 }
 
 // GetRegisteredCommands returns the map of all registered commands.
-func (window *Window) GetRegisteredCommands() map[string]commands.Command {
+func (window *Window) GetRegisteredCommands() []commands.Command {
+	//FIXME eh, should this be a copy?
 	return window.commands
 }
 

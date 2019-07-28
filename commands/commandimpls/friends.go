@@ -238,6 +238,10 @@ func (f *Friends) Name() string {
 	return "friends"
 }
 
+func (f *Friends) Aliases() []string {
+	return nil
+}
+
 // PrintHelp prints the general help page for the friends commands.
 func (f *Friends) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, friendsDocumentation)

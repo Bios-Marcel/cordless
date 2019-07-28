@@ -153,9 +153,12 @@ between components can be changed by using a mouse as well.
 Some shortcuts can be changed via the shortcut dialog. The dialog can be opened via Alt+Shift+S.
 `
 
-// Name represents this commands indentifier.
 func (manual *Manual) Name() string {
 	return "manual"
+}
+
+func (manual *Manual) Aliases() []string {
+	return nil
 }
 
 // PrintHelp prints a static help page for this command

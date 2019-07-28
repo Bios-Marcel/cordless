@@ -100,9 +100,12 @@ func (fixLayout *FixLayout) Execute(writer io.Writer, parameters []string) {
 	}
 }
 
-// Name represents this commands indentifier.
 func (fixLayout *FixLayout) Name() string {
 	return "fixlayout"
+}
+
+func (fixLayout *FixLayout) Aliases() []string {
+	return []string{"fix-layout"}
 }
 
 // PrintHelp prints a static help page for this command

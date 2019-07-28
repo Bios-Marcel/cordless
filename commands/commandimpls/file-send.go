@@ -94,9 +94,12 @@ func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 	}
 }
 
-// Name is the string that can be used to call this command.
 func (cmd *FileSend) Name() string {
 	return "file-send"
+}
+
+func (cmd *FileSend) Aliases() []string {
+	return []string{"filesend"}
 }
 
 // PrintHelp prints the help for the FileSend command.

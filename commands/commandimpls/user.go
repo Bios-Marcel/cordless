@@ -288,3 +288,27 @@ func (cmd *UserSetCmd) PrintHelp(writer io.Writer) {
 func (cmd *UserGetCmd) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, userGetHelpPage)
 }
+
+func (cmd *UserCmd) Name() string {
+	return "user"
+}
+
+func (cmd *UserSetCmd) Name() string {
+	return "user-set"
+}
+
+func (cmd *UserGetCmd) Name() string {
+	return "user-get"
+}
+
+func (cmd *UserCmd) Aliases() []string {
+	return nil
+}
+
+func (cmd *UserSetCmd) Aliases() []string {
+	return []string{"user-update"}
+}
+
+func (cmd *UserGetCmd) Aliases() []string {
+	return nil
+}

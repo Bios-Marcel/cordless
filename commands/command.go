@@ -12,6 +12,13 @@ type Command interface {
 
 	// PrintHelp prints a static help page for this command
 	PrintHelp(writer io.Writer)
+
+	// Name returns the primary name for this command. This name will also be
+	// used for listing the command in the commandlist.
+	Name() string
+
+	// Aliases are a list of aliases for this command. There might be none.
+	Aliases() []string
 }
 
 // ParseCommand takes an arbitrary input string and splits it into parameters.

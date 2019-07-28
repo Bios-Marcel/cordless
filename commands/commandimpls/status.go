@@ -194,3 +194,27 @@ func (cmd *StatusSetCmd) PrintHelp(writer io.Writer) {
 func (cmd *StatusGetCmd) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, statusGetHelpPage)
 }
+
+func (cmd *StatusSetCmd) Name() string {
+	return "status-set"
+}
+
+func (cmd *StatusGetCmd) Name() string {
+	return "status-get"
+}
+
+func (cmd *StatusCmd) Name() string {
+	return "status"
+}
+
+func (cmd *StatusSetCmd) Aliases() []string {
+	return []string{"status-update"}
+}
+
+func (cmd *StatusGetCmd) Aliases() []string {
+	return nil
+}
+
+func (cmd *StatusCmd) Aliases() []string {
+	return nil
+}

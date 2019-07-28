@@ -59,9 +59,12 @@ func (chatHeader *ChatHeader) Execute(writer io.Writer, parameters []string) {
 	}
 }
 
-// Name represents this commands indentifier.
 func (chatHeader *ChatHeader) Name() string {
 	return "chatheader"
+}
+
+func (chatHeader *ChatHeader) Aliases() []string {
+	return []string{"chat-header", "chat-title"}
 }
 
 // PrintHelp prints a static help page for this command

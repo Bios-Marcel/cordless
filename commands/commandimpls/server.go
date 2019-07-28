@@ -33,7 +33,6 @@ func NewServerCommand(session *discordgo.Session, window *ui.Window) *Server {
 	}
 }
 
-// Execute runs the command logic.
 func (s *Server) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 0 {
 		s.PrintHelp(writer)
@@ -109,10 +108,12 @@ func (s *Server) leaveServer(writer io.Writer, input string) {
 	}
 }
 
-// Name identifies this command, allowing you to call it by using the returned
-// value.
 func (s *Server) Name() string {
 	return "server"
+}
+
+func (s *Server) Aliases() []string {
+	return []string{"guild"}
 }
 
 // PrintHelp prints the general help text for the Server command.

@@ -227,9 +227,12 @@ func (account *Account) addCurrentAccount(writer io.Writer, name string) {
 	account.addAcount(writer, []string{name, config.GetConfig().Token})
 }
 
-// Name represents this commands indentifier.
 func (account *Account) Name() string {
 	return "account"
+}
+
+func (account *Account) Aliases() []string {
+	return []string{"profile"}
 }
 
 // PrintHelp prints a static help page for this command
