@@ -144,6 +144,15 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 				shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("[blue][::ub]Hit the desired keycombination")
 				shortcutTable.selection = selectedRow
 			}
+		} else if event.Key() == tcell.KeyRune && event.Rune() == 'r' && event.Modifiers() == tcell.ModNone {
+			shortcut := shortcutTable.shortcuts[dataIndex]
+			shortcut.Reset()
+			shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText(EventToString(shortcut.Event))
+
+			persistError := Persist()
+			if persistError != nil {
+				panic(persistError)
+			}
 		} else if event.Key() == tcell.KeyBackspace || event.Key() == tcell.KeyBackspace2 {
 			shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("")
 			shortcutTable.shortcuts[dataIndex].Event = nil
