@@ -889,18 +889,31 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 		return
 	}
 
-	go func() {
-		messageText := window.jsEngine.OnMessageSend(message)
-		_, sendError := window.session.ChannelMessageSend(targetChannel.ID, messageText)
+	go window.sendMessage(targetChannel.ID, message)
+}
+
+func (window *Window) sendMessage(targetChannelID, message string) {
+	messageText := window.jsEngine.OnMessageSend(message)
+	window.messageInput.SetText("")
+	window.chatView.internalTextView.ScrollToEnd()
+	_, sendError := window.session.ChannelMessageSend(targetChannelID, messageText)
+	if sendError != nil {
 		window.app.QueueUpdateDraw(func() {
-			if sendError == nil {
-				window.messageInput.SetText("")
-			} else {
-				window.ShowErrorDialog("Error sending message: " + sendError.Error())
-				window.chatView.internalTextView.ScrollToEnd()
-			}
+			retry := "Retry sending"
+			edit := "Edit"
+			cancel := "Cancel"
+			window.ShowDialog(tcell.ColorRed,
+				fmt.Sprintf("Error sending message: %s.\n\nWhat do you want to do?", sendError),
+				func(button string) {
+					switch button {
+					case retry:
+						go window.sendMessage(targetChannelID, message)
+					case edit:
+						window.messageInput.SetText(messageText)
+					}
+				}, retry, edit, cancel)
 		})
-	}()
+	}
 }
 
 func (window *Window) HideMentionWindow(mentionWindow *tview.TreeView) {
@@ -1815,13 +1828,24 @@ func (window *Window) ShowErrorDialog(text string) {
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 	go func() {
+		window.exitMessageEditMode()
+		window.messageInput.SetText("")
 		_, discordError := window.session.ChannelMessageEdit(channelID, messageID, messageEdited)
 		window.app.QueueUpdateDraw(func() {
 			if discordError != nil {
-				window.ShowErrorDialog("Error editing message.")
-			} else {
-				window.exitMessageEditMode()
-				window.messageInput.SetText("")
+				retry := "Retry sending"
+				edit := "Edit"
+				cancel := "Cancel"
+				window.ShowDialog(tcell.ColorRed,
+					fmt.Sprintf("Error editing message: %s.\n\nWhat do you want to do?", discordError),
+					func(button string) {
+						switch button {
+						case retry:
+							window.editMessage(channelID, messageID, messageEdited)
+						case edit:
+							window.messageInput.SetText(messageEdited)
+						}
+					}, retry, edit, cancel)
 			}
 		})
 	}()
