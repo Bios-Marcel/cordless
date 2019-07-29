@@ -67,9 +67,13 @@ type Window struct {
 	session *discordgo.Session
 
 	selectedGuildNode   *tview.TreeNode
+	previousGuildNode   *tview.TreeNode
 	selectedGuild       *discordgo.Guild
+	previousGuild       *discordgo.Guild
 	selectedChannelNode *tview.TreeNode
+	previousChannelNode *tview.TreeNode
 	selectedChannel     *discordgo.Channel
+	previousChannel     *discordgo.Channel
 
 	jsEngine scripting.Engine
 
@@ -150,6 +154,14 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		if cacheError != nil {
 			window.ShowErrorDialog(cacheError.Error())
 			return
+		}
+
+		if window.selectedGuildNode == nil {
+			window.previousGuildNode = node
+			window.previousGuild = guild
+		} else {
+			window.previousGuildNode = window.selectedGuildNode
+			window.previousGuild = window.selectedGuild
 		}
 
 		window.selectedGuildNode = node
@@ -1742,6 +1754,8 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	} else if shortcuts.FocusPrivateChatPage.Equals(event) {
 		window.SwitchToFriendsPage()
 		window.app.SetFocus(window.privateList.GetComponent())
+	} else if shortcuts.FocusPreviousChannel.Equals(event) {
+		window.SwitchToPreviousChannel()
 	} else if shortcuts.FocusGuildContainer.Equals(event) {
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.guildList)
@@ -1865,6 +1879,40 @@ func (window *Window) SwitchToFriendsPage() {
 	}
 }
 
+// Switches to the previous channel and layout.
+func (window *Window) SwitchToPreviousChannel() {
+	if window.previousChannel == nil || window.previousChannel == window.selectedChannel {
+		return
+	}
+
+	// Select Channel
+	window.channelTree.SetCurrentNode(window.previousChannelNode)
+	if window.previousChannelNode != nil {
+		previousChannelSubnode := window.previousChannelNode.Walk(func(node, parent *tview.TreeNode) bool {
+			referenceChannelID, ok := node.GetReference().(string)
+			return ok && referenceChannelID == window.previousChannel.ID
+		})
+		window.channelTree.SetCurrentNode(previousChannelSubnode)
+	}
+
+	// Switch to appropriate layout.
+	switch window.previousChannel.Type {
+	case discordgo.ChannelTypeDM, discordgo.ChannelTypeGroupDM:
+		window.SwitchToFriendsPage()
+	default:
+		// Select guild.
+		if window.leftArea.GetCurrentPage() != guildPageName {
+			window.leftArea.SwitchToPage(guildPageName)
+		}
+		window.guildList.SetCurrentNode(window.previousGuildNode)
+		window.guildList.onGuildSelect(window.previousGuildNode, window.previousGuild.ID)
+	}
+
+	// Switch to previous channel after window.previous* fields have finished being used above.
+	window.channelTree.onChannelSelect(window.previousChannel.ID)
+	window.app.SetFocus(window.messageInput.internalTextView)
+}
+
 //RefreshLayout removes and adds the main parts of the layout
 //so that the ones that are disabled by settings do not show up.
 func (window *Window) RefreshLayout() {
@@ -1920,7 +1968,16 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	window.UpdateChatHeader(channel)
 
+	if window.selectedChannel == nil {
+		window.previousChannel = channel
+		window.previousChannelNode = window.channelTree.GetCurrentNode()
+	} else {
+		window.previousChannel = window.selectedChannel
+		window.previousChannelNode = window.selectedChannelNode
+	}
+
 	window.selectedChannel = channel
+	window.selectedChannelNode = window.channelTree.GetCurrentNode()
 	window.channelTree.Lock()
 	if channel.GuildID == "" {
 		if window.selectedChannelNode != nil {
