@@ -894,8 +894,10 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 
 func (window *Window) sendMessage(targetChannelID, message string) {
 	messageText := window.jsEngine.OnMessageSend(message)
-	window.messageInput.SetText("")
-	window.chatView.internalTextView.ScrollToEnd()
+	window.app.QueueUpdateDraw(func() {
+		window.messageInput.SetText("")
+		window.chatView.internalTextView.ScrollToEnd()
+	})
 	_, sendError := window.session.ChannelMessageSend(targetChannelID, messageText)
 	if sendError != nil {
 		window.app.QueueUpdateDraw(func() {
@@ -1828,8 +1830,10 @@ func (window *Window) ShowErrorDialog(text string) {
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 	go func() {
-		window.exitMessageEditMode()
-		window.messageInput.SetText("")
+		window.app.QueueUpdateDraw(func() {
+			window.exitMessageEditMode()
+			window.messageInput.SetText("")
+		})
 		_, discordError := window.session.ChannelMessageEdit(channelID, messageID, messageEdited)
 		window.app.QueueUpdateDraw(func() {
 			if discordError != nil {
