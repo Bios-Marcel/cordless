@@ -195,7 +195,9 @@ func intToString(value int) string {
 
 func (chatView *ChatView) updateHighlights() {
 	chatView.internalTextView.Highlight(intToString(chatView.selection))
-	chatView.internalTextView.ScrollToHighlight()
+	if chatView.selection != -1 {
+		chatView.internalTextView.ScrollToHighlight()
+	}
 }
 
 // GetPrimitive returns the component that can be added to a layout, since
@@ -280,6 +282,10 @@ func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 		delete(chatView.formattedMessages, idToDrop)
 		chatView.data = append(chatView.data[1:], message)
 		rerender = true
+		if chatView.selection > -1 {
+			chatView.selection--
+		}
+		chatView.updateHighlights()
 	} else {
 		chatView.data = append(chatView.data, message)
 	}
