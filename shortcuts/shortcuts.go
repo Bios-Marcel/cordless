@@ -15,6 +15,22 @@ import (
 var (
 	globalScope        = addScope("Application wide", "global", nil)
 	multilineTextInput = addScope("Multiline text input", "multiline_text_input", globalScope)
+	chatview           = addScope("Chatview", "chatview", globalScope)
+
+	QuoteSelectedMessage = addShortcut("quote_selected_message", "Quote selected message",
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'q', tcell.ModNone))
+	EditSelectedMessage = addShortcut("edit_selected_message", "Edit selected message",
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'e', tcell.ModNone))
+	ReplySelectedMessage = addShortcut("reply_selected_message", "Reply to author selected message",
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'r', tcell.ModNone))
+	CopySelectedMessageLink = addShortcut("copy_selected_message_link", "Copy link to selected message",
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'l', tcell.ModNone))
+	CopySelectedMessage = addShortcut("copy_selected_message", "Copy content of selected message",
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'c', tcell.ModNone))
+	ToggleSelectedMessageSpoilers = addShortcut("toggle_selected_message_spoilers", "Toggle spoilers in selected message",
+		chatview, tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModNone))
+	DeleteSelectedMessage = addShortcut("toggle_selected_message_spoilers", "Toggle spoilers in selected message",
+		chatview, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone))
 
 	ExpandSelectionToLeft = addShortcut("expand_selection_word_to_left", "Expand selection word to left",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModShift))

@@ -245,44 +245,42 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.chatView = NewChatView(window.session, window.session.State.User.ID)
 	window.chatView.SetOnMessageAction(func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey {
-		if event.Modifiers() == tcell.ModNone {
-			if event.Rune() == 'q' {
-				window.insertQuoteOfMessage(message)
-				return nil
-			}
+		if shortcuts.QuoteSelectedMessage.Equals(event) {
+			window.insertQuoteOfMessage(message)
+			return nil
+		}
 
-			if event.Rune() == 'r' {
-				window.messageInput.SetText("@" + message.Author.Username + "#" + message.Author.Discriminator + " " + window.messageInput.GetText())
-				app.SetFocus(window.messageInput.GetPrimitive())
-				return nil
-			}
+		if shortcuts.ReplySelectedMessage.Equals(event) {
+			window.messageInput.SetText("@" + message.Author.Username + "#" + message.Author.Discriminator + " " + window.messageInput.GetText())
+			app.SetFocus(window.messageInput.GetPrimitive())
+			return nil
+		}
 
-			if event.Rune() == 'l' {
-				copyError := clipboard.WriteAll(fmt.Sprintf("<https://discordapp.com/channels/@me/%s/%s>", message.ChannelID, message.ID))
-				if copyError != nil {
-					window.ShowErrorDialog(fmt.Sprintf("Error copying message link: %s", copyError.Error()))
-				}
+		if shortcuts.CopySelectedMessageLink.Equals(event) {
+			copyError := clipboard.WriteAll(fmt.Sprintf("<https://discordapp.com/channels/@me/%s/%s>", message.ChannelID, message.ID))
+			if copyError != nil {
+				window.ShowErrorDialog(fmt.Sprintf("Error copying message link: %s", copyError.Error()))
 			}
+		}
 
-			if event.Key() == tcell.KeyDelete {
-				if message.Author.ID == window.session.State.User.ID {
-					window.askForMessageDeletion(message.ID, true)
-				}
-				return nil
+		if shortcuts.DeleteSelectedMessage.Equals(event) {
+			if message.Author.ID == window.session.State.User.ID {
+				window.askForMessageDeletion(message.ID, true)
 			}
+			return nil
+		}
 
-			if event.Rune() == 'e' {
-				window.startEditingMessage(message)
-				return nil
-			}
+		if shortcuts.EditSelectedMessage.Equals(event) {
+			window.startEditingMessage(message)
+			return nil
+		}
 
-			if event.Rune() == 'c' {
-				copyError := clipboard.WriteAll(message.ContentWithMentionsReplaced())
-				if copyError != nil {
-					window.ShowErrorDialog(fmt.Sprintf("Error copying message: %s", copyError.Error()))
-				}
-				return nil
+		if shortcuts.CopySelectedMessage.Equals(event) {
+			copyError := clipboard.WriteAll(message.ContentWithMentionsReplaced())
+			if copyError != nil {
+				window.ShowErrorDialog(fmt.Sprintf("Error copying message: %s", copyError.Error()))
 			}
+			return nil
 		}
 
 		return event
