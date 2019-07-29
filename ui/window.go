@@ -249,6 +249,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if event.Rune() == 'q' {
 				time, parseError := message.Timestamp.Parse()
 				if parseError == nil {
+					currentContent := strings.TrimSpace(window.messageInput.GetText())
 					username := message.Author.Username
 					if message.GuildID != "" {
 						guild, stateError := window.session.State.Guild(message.GuildID)
@@ -261,7 +262,11 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					}
 
 					quotedMessage := strings.ReplaceAll(message.ContentWithMentionsReplaced(), "\n", "\n> ")
-					window.messageInput.SetText(fmt.Sprintf("> **%s** %s:\n> %s\n", username, times.TimeToString(&time), quotedMessage))
+					quotedMessage = fmt.Sprintf("> **%s** %s:\n> %s\n", username, times.TimeToString(&time), quotedMessage)
+					if currentContent != "" {
+						quotedMessage = quotedMessage + currentContent
+					}
+					window.messageInput.SetText(quotedMessage)
 					app.SetFocus(window.messageInput.GetPrimitive())
 				}
 				return nil
