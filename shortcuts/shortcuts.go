@@ -60,6 +60,9 @@ var (
 	InputNewLine = addShortcut("add_new_line_character", "Add new line character",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModAlt))
 
+	SendMessage = addShortcut("send_message", "Sends the typed message",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone))
+
 	ExitApplication = addShortcut("exit_application", "Exit application",
 		globalScope, tcell.NewEventKey(tcell.KeyCtrlC, rune(tcell.KeyCtrlC), tcell.ModCtrl))
 
@@ -84,9 +87,6 @@ var (
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'U', tcell.ModAlt))
 	ToggleCommandView = addShortcut("toggle_command_view", "Toggle command view",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt))
-
-	SendMessage = addShortcut("send_message", "Sends the typed message",
-		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone))
 
 	scopes    []*Scope
 	Shortcuts []*Shortcut
