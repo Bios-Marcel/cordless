@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Bios-Marcel/discordemojimap"
@@ -85,6 +86,8 @@ type Window struct {
 	userActiveTimer *time.Timer
 
 	doRestart chan bool
+
+	mutex *sync.Mutex
 }
 
 //NewWindow constructs the whole application window and also registers all
@@ -97,6 +100,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		app:             app,
 		jsEngine:        js.New(),
 		userActiveTimer: time.NewTimer(userInactiveTime),
+		mutex:           &sync.Mutex{},
 	}
 
 	go func() {
@@ -146,6 +150,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	discordutil.SortGuilds(window.session.State.Settings, guilds)
 	guildList := NewGuildList(guilds, window)
 	guildList.SetOnGuildSelect(func(node *tview.TreeNode, guildID string) {
+		if node == window.selectedGuildNode {
+			return
+		}
+
 		if window.selectedGuildNode != nil {
 			window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
 		}
@@ -156,10 +164,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			return
 		}
 
+		// previousGuild and previousGuildNode should be set initially.
+		// If going from first guild -> private chat, SwitchToPreviousChannel would crash.
 		if window.selectedGuildNode == nil {
 			window.previousGuildNode = node
 			window.previousGuild = guild
-		} else {
+		} else if window.previousGuildNode != window.selectedGuildNode {
 			window.previousGuildNode = window.selectedGuildNode
 			window.previousGuild = window.selectedGuild
 		}
@@ -174,7 +184,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			fmt.Fprintln(window.commandView, "Error retrieving all guild members.")
 		}
 
-		window.channelTree.Lock()
 		channelLoadError := window.channelTree.LoadGuild(guildID)
 		if channelLoadError != nil {
 			window.ShowErrorDialog(channelLoadError.Error())
@@ -183,7 +192,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				app.SetFocus(window.channelTree)
 			}
 		}
-		window.channelTree.Unlock()
 
 		userLoadError := window.userList.LoadGuild(guildID)
 		if userLoadError != nil {
@@ -192,6 +200,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		window.RefreshLayout()
 	})
+
 	window.guildList = guildList
 
 	window.registerGuildHandlers()
@@ -1885,31 +1894,42 @@ func (window *Window) SwitchToPreviousChannel() {
 		return
 	}
 
-	// Select Channel
-	window.channelTree.SetCurrentNode(window.previousChannelNode)
-	if window.previousChannelNode != nil {
-		previousChannelSubnode := window.previousChannelNode.Walk(func(node, parent *tview.TreeNode) bool {
-			referenceChannelID, ok := node.GetReference().(string)
-			return ok && referenceChannelID == window.previousChannel.ID
-		})
-		window.channelTree.SetCurrentNode(previousChannelSubnode)
+	_, err := window.session.State.Guild(window.previousGuild.ID)
+	if err != nil {
+		window.previousGuild = nil
+		window.previousGuildNode = nil
+		return
+	}
+
+	_, err = window.session.State.Channel(window.previousChannel.ID)
+	if err != nil {
+		window.previousChannel = nil
+		window.previousChannelNode = nil
+		return
 	}
 
 	// Switch to appropriate layout.
 	switch window.previousChannel.Type {
 	case discordgo.ChannelTypeDM, discordgo.ChannelTypeGroupDM:
 		window.SwitchToFriendsPage()
+		window.privateList.onChannelSelect(window.previousChannelNode, window.previousChannel.ID)
 	default:
+		if !discordutil.HasReadMessagesPermission(window.previousChannel.ID, window.session.State) {
+			return
+		}
 		// Select guild.
 		if window.leftArea.GetCurrentPage() != guildPageName {
 			window.leftArea.SwitchToPage(guildPageName)
 		}
-		window.guildList.SetCurrentNode(window.previousGuildNode)
-		window.guildList.onGuildSelect(window.previousGuildNode, window.previousGuild.ID)
+		if window.guildList != nil {
+			window.guildList.SetCurrentNode(window.previousGuildNode)
+			window.guildList.onGuildSelect(window.previousGuildNode, window.previousGuild.ID)
+		}
+		if window.channelTree != nil {
+			window.channelTree.SetCurrentNode(window.previousChannelNode)
+			window.channelTree.onChannelSelect(window.previousChannel.ID)
+		}
 	}
-
-	// Switch to previous channel after window.previous* fields have finished being used above.
-	window.channelTree.onChannelSelect(window.previousChannel.ID)
 	window.app.SetFocus(window.messageInput.internalTextView)
 }
 
