@@ -247,28 +247,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.chatView.SetOnMessageAction(func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers() == tcell.ModNone {
 			if event.Rune() == 'q' {
-				time, parseError := message.Timestamp.Parse()
-				if parseError == nil {
-					currentContent := strings.TrimSpace(window.messageInput.GetText())
-					username := message.Author.Username
-					if message.GuildID != "" {
-						guild, stateError := window.session.State.Guild(message.GuildID)
-						if stateError == nil {
-							member, stateError := window.session.State.Member(guild.ID, message.Author.ID)
-							if stateError == nil && member.Nick != "" {
-								username = member.Nick
-							}
-						}
-					}
-
-					quotedMessage := strings.ReplaceAll(message.ContentWithMentionsReplaced(), "\n", "\n> ")
-					quotedMessage = fmt.Sprintf("> **%s** %s:\n> %s\n", username, times.TimeToString(&time), quotedMessage)
-					if currentContent != "" {
-						quotedMessage = quotedMessage + currentContent
-					}
-					window.messageInput.SetText(quotedMessage)
-					app.SetFocus(window.messageInput.GetPrimitive())
-				}
+				window.insertQuoteOfMessage(message)
 				return nil
 			}
 
@@ -849,6 +828,31 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	log.SetOutput(window.commandView)
 
 	return window, nil
+}
+
+func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
+	time, parseError := message.Timestamp.Parse()
+	if parseError == nil {
+		currentContent := strings.TrimSpace(window.messageInput.GetText())
+		username := message.Author.Username
+		if message.GuildID != "" {
+			guild, stateError := window.session.State.Guild(message.GuildID)
+			if stateError == nil {
+				member, stateError := window.session.State.Member(guild.ID, message.Author.ID)
+				if stateError == nil && member.Nick != "" {
+					username = member.Nick
+				}
+			}
+		}
+
+		quotedMessage := strings.ReplaceAll(message.ContentWithMentionsReplaced(), "\n", "\n> ")
+		quotedMessage = fmt.Sprintf("> **%s** %s:\n> %s\n", username, times.TimeToString(&time), quotedMessage)
+		if currentContent != "" {
+			quotedMessage = quotedMessage + currentContent
+		}
+		window.messageInput.SetText(quotedMessage)
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+	}
 }
 
 func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message string) {
