@@ -261,6 +261,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if copyError != nil {
 				window.ShowErrorDialog(fmt.Sprintf("Error copying message link: %s", copyError.Error()))
 			}
+			return nil
 		}
 
 		if shortcuts.DeleteSelectedMessage.Equals(event) {
