@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/Bios-Marcel/cordless/ui"
 )
 
 const manualDocumentation = `[orange][::u]# manual[white]
@@ -12,29 +14,36 @@ Please supply a topic that you want to know more about.
 	[-]manual <topic>[white]
 
 Available topics:
-	* chat-view
 	* commands
+	* chat-view
 	* configuration
 	* message-editor
 	* navigation
-`
+
+Alternatively you can enter the name of any command as the topic.`
 
 // Manual is the command that displays the application manual.
-type Manual struct{}
+type Manual struct {
+	window *ui.Window
+}
 
 // NewManualCommand constructs a new usable manual command for the user.
-func NewManualCommand() *Manual {
-	return &Manual{}
+func NewManualCommand(window *ui.Window) *Manual {
+	return &Manual{window}
 }
 
 // Execute runs the command piping its output into the supplied writer.
 func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 1 {
-		switch strings.ToLower(parameters[0]) {
+		input := strings.ToLower(parameters[0])
+		switch input {
 		case "chat-view", "chatview":
 			fmt.Fprintln(writer, chatViewDocumentation)
 		case "commands":
 			fmt.Fprintln(writer, commandsDocumentation)
+			for _, cmd := range manual.window.GetRegisteredCommands() {
+				fmt.Fprintf(writer, "\t* %s\n", cmd.Name())
+			}
 		case "configuration":
 			fmt.Fprintln(writer, configurationDocumentation)
 		case "message-editor", "messageeditor":
@@ -42,7 +51,21 @@ func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 		case "navigation":
 			fmt.Fprintln(writer, navigationDocumentation)
 		default:
-			manual.PrintHelp(writer)
+			for _, cmd := range manual.window.GetRegisteredCommands() {
+				if cmd.Name() == input {
+					cmd.PrintHelp(writer)
+					return
+				}
+
+				for _, alias := range cmd.Aliases() {
+					if alias == input {
+						cmd.PrintHelp(writer)
+						return
+					}
+				}
+			}
+
+			fmt.Fprintf(writer, "[red]No manual entry for '%s' found.\n", input)
 		}
 	} else {
 		manual.PrintHelp(writer)
@@ -77,7 +100,7 @@ const commandsDocumentation = `[orange][::u]# Commands[white]
 
 All commands can only be entered via the command-input component. Commands can't be called from outside the application or on startup.
 
-All commands follow a certain symantics pattern:
+All commands follow a certain semantics pattern:
 	COMMAND SUBCOMMAND --SETTING "Some setting value" MAIN_VALUE
 	
 Not every command makes use of all of the possible combinations. Each command may have zero or more subcommands and zero or more settings. There may also be settings that do not require you passing a value. If a value contains spaces it needs to be quoted beforehand, otherwise the input will be seperated at each given space. Some commands require some main value, which is basically the non-optional input for that command. That value doesn't require a setting-name to be prepended in front of it.
@@ -85,7 +108,9 @@ Not every command makes use of all of the possible combinations. Each command ma
 After typing a command, it will be added to your history. The history doesn't persist between cordless sessions, it will be forgotten every time you close the application. The history can be travelled through by using the arrow up and down keys. An exception for historization are secret inputs like passwords, those aren't directly typed into the command-input. Instead cordless shows an extra dialog that as soon as you are required to input sensitive information like passwords.
 
 Since the command-input component uses the same underlying component as the message-input, you can use the same shortcuts for editing your input.
-`
+
+Available commands:`
+
 const configurationDocumentation = `[orange][::u]# Configuration[white]
 
 Currently all almost configuration is done via manually editing the configuration file. There are however some settings like the fix-layout setting and the chatheader setting that can be set via the commands feature.
@@ -158,7 +183,7 @@ func (manual *Manual) Name() string {
 }
 
 func (manual *Manual) Aliases() []string {
-	return nil
+	return []string{"man", "help"}
 }
 
 // PrintHelp prints a static help page for this command
