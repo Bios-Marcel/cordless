@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/Bios-Marcel/discordgo"
+	"github.com/Bios-Marcel/tview"
 )
 
 // GetChannelNameForTree returns the string representation of a channel in
@@ -59,7 +60,7 @@ func GetPrivateChannelName(channel *discordgo.Channel) string {
 		channelName = "Unnamed"
 	}
 
-	return channelName
+	return tview.Escape(channelName)
 }
 
 // CompareChannels checks which channel is smaller. Smaller meaning it is the
