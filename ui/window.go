@@ -2,11 +2,11 @@ package ui
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/Bios-Marcel/discordemojimap"
@@ -86,8 +86,6 @@ type Window struct {
 	userActiveTimer *time.Timer
 
 	doRestart chan bool
-
-	mutex *sync.Mutex
 }
 
 //NewWindow constructs the whole application window and also registers all
@@ -100,7 +98,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		app:             app,
 		jsEngine:        js.New(),
 		userActiveTimer: time.NewTimer(userInactiveTime),
-		mutex:           &sync.Mutex{},
 	}
 
 	go func() {
@@ -1759,7 +1756,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	} else if shortcuts.FocusPrivateChatPage.Equals(event) {
 		window.SwitchToFriendsPage()
 		window.app.SetFocus(window.privateList.GetComponent())
-	} else if shortcuts.FocusPreviousChannel.Equals(event) {
+	} else if shortcuts.SwitchToPreviousChannel.Equals(event) {
 		window.SwitchToPreviousChannel()
 	} else if shortcuts.FocusGuildContainer.Equals(event) {
 		window.SwitchToGuildsPage()
@@ -1885,23 +1882,16 @@ func (window *Window) SwitchToFriendsPage() {
 }
 
 // Switches to the previous channel and layout.
-func (window *Window) SwitchToPreviousChannel() {
+func (window *Window) SwitchToPreviousChannel() error {
 	if window.previousChannel == nil || window.previousChannel == window.selectedChannel {
-		return
+		return nil
 	}
 
-	_, err := window.session.State.Guild(window.previousGuild.ID)
-	if err != nil {
-		window.previousGuild = nil
-		window.previousGuildNode = nil
-		return
-	}
-
-	_, err = window.session.State.Channel(window.previousChannel.ID)
+	_, err := window.session.State.Channel(window.previousChannel.ID)
 	if err != nil {
 		window.previousChannel = nil
 		window.previousChannelNode = nil
-		return
+		return nil
 	}
 
 	// Switch to appropriate layout.
@@ -1909,11 +1899,17 @@ func (window *Window) SwitchToPreviousChannel() {
 	case discordgo.ChannelTypeDM, discordgo.ChannelTypeGroupDM:
 		if window.leftArea.GetCurrentPage() != privatePageName {
 			window.leftArea.SwitchToPage(privatePageName)
-			window.privateList.onChannelSelect(window.previousChannelNode, window.previousChannel.ID)
 		}
-	default:
+		window.privateList.onChannelSelect(window.previousChannelNode, window.previousChannel.ID)
+	case discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildVoice, discordgo.ChannelTypeGuildCategory:
+		_, err := window.session.State.Guild(window.previousGuild.ID)
+		if err != nil {
+			window.previousGuild = nil
+			window.previousGuildNode = nil
+			return nil
+		}
 		if !discordutil.HasReadMessagesPermission(window.previousChannel.ID, window.session.State) {
-			return
+			return nil
 		}
 		// Select guild.
 		if window.leftArea.GetCurrentPage() != guildPageName {
@@ -1923,8 +1919,11 @@ func (window *Window) SwitchToPreviousChannel() {
 		window.guildList.onGuildSelect(window.previousGuildNode, window.previousGuild.ID)
 		window.channelTree.SetCurrentNode(window.previousChannelNode)
 		window.channelTree.onChannelSelect(window.previousChannel.ID)
+	default:
+		return errors.New("Invalid channel type")
 	}
 	window.app.SetFocus(window.messageInput.internalTextView)
+	return nil
 }
 
 //RefreshLayout removes and adds the main parts of the layout
