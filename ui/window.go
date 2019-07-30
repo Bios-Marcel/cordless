@@ -150,11 +150,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	discordutil.SortGuilds(window.session.State.Settings, guilds)
 	guildList := NewGuildList(guilds, window)
 	guildList.SetOnGuildSelect(func(node *tview.TreeNode, guildID string) {
-		if node == window.selectedGuildNode {
-			return
-		}
-
-		if window.selectedGuildNode != nil {
+		if window.selectedGuild != nil && window.selectedGuildNode != nil {
 			window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
 		}
 
@@ -1911,8 +1907,10 @@ func (window *Window) SwitchToPreviousChannel() {
 	// Switch to appropriate layout.
 	switch window.previousChannel.Type {
 	case discordgo.ChannelTypeDM, discordgo.ChannelTypeGroupDM:
-		window.SwitchToFriendsPage()
-		window.privateList.onChannelSelect(window.previousChannelNode, window.previousChannel.ID)
+		if window.leftArea.GetCurrentPage() != privatePageName {
+			window.leftArea.SwitchToPage(privatePageName)
+			window.privateList.onChannelSelect(window.previousChannelNode, window.previousChannel.ID)
+		}
 	default:
 		if !discordutil.HasReadMessagesPermission(window.previousChannel.ID, window.session.State) {
 			return
@@ -1921,14 +1919,10 @@ func (window *Window) SwitchToPreviousChannel() {
 		if window.leftArea.GetCurrentPage() != guildPageName {
 			window.leftArea.SwitchToPage(guildPageName)
 		}
-		if window.guildList != nil {
-			window.guildList.SetCurrentNode(window.previousGuildNode)
-			window.guildList.onGuildSelect(window.previousGuildNode, window.previousGuild.ID)
-		}
-		if window.channelTree != nil {
-			window.channelTree.SetCurrentNode(window.previousChannelNode)
-			window.channelTree.onChannelSelect(window.previousChannel.ID)
-		}
+		window.guildList.SetCurrentNode(window.previousGuildNode)
+		window.guildList.onGuildSelect(window.previousGuildNode, window.previousGuild.ID)
+		window.channelTree.SetCurrentNode(window.previousChannelNode)
+		window.channelTree.onChannelSelect(window.previousChannel.ID)
 	}
 	window.app.SetFocus(window.messageInput.internalTextView)
 }
