@@ -55,7 +55,7 @@ var (
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModAlt))
 	FocusPrivateChatPage = addShortcut("focus_private_chat_page", "Focus private chat page",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModAlt))
-	FocusPreviousChannel = addShortcut("focus_previous_channel", "Focus previous channel",
+	SwitchToPreviousChannel = addShortcut("switch_to_previous_channel", "Switch to previous channel",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'l', tcell.ModAlt))
 	FocusMessageInput = addShortcut("focus_message_input", "Focus message input",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModAlt))
