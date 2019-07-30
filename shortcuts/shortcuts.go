@@ -60,6 +60,11 @@ var (
 	InputNewLine = addShortcut("add_new_line_character", "Add new line character",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModAlt))
 
+	CopySelection = addShortcut("copy_selection", "Copy selected text",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyRune, 'C', tcell.ModAlt))
+	PasteAtSelection = addShortcut("paste_at_selectiom", "Paste clipboard content",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyCtrlV, rune(tcell.KeyCtrlV), tcell.ModCtrl))
+
 	SendMessage = addShortcut("send_message", "Sends the typed message",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone))
 

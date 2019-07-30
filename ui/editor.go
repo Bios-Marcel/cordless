@@ -322,7 +322,12 @@ func NewEditor() *Editor {
 			event.Key() == tcell.KeyBackspace {
 			// FIXME Legacy, has to be replaced when there is N-1 Keybind-Mapping.
 			editor.Backspace(left, right, selection)
-		} else if event.Key() == tcell.KeyCtrlV {
+		} else if shortcuts.CopySelection.Equals(event) {
+			clipboard.WriteAll(string(selection))
+			//Returning nil, as copying won't do anything than filling the
+			//clipboard buffer.
+			return nil
+		} else if shortcuts.PasteAtSelection.Equals(event) {
 			editor.Paste(left, right, selection, event)
 			return nil
 		} else if shortcuts.InputNewLine.Equals(event) {

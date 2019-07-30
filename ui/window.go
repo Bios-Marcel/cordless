@@ -1629,14 +1629,6 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
-	// FIXME: This is incorrect as it will prevent people from using Ctrl-C in the global scope at all.
-
-	// If `ExitApplication` isn't the default (CtrlC) anymore, then we ignore
-	// CtrlC, as it is hardcoded in tview.
-	if event.Key() == tcell.KeyCtrlC {
-		return nil
-	}
-
 	// Maybe compare directly to table?
 	if window.currentContainer != window.rootContainer {
 		return event
@@ -2050,6 +2042,7 @@ func (window *Window) PromptSecretInput(title, message string) string {
 			}
 		})
 		inputField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+			//FIXME Use shortcut and make it proper PasteAtCursor/Selection
 			if event.Key() == tcell.KeyCtrlV {
 				content, clipError := clipboard.ReadAll()
 				if clipError == nil {
