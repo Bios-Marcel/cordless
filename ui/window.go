@@ -103,6 +103,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	}()
 
 	window.commandView = NewCommandView(window.ExecuteCommand)
+	log.SetOutput(window.commandView)
 
 	window.jsEngine.SetErrorOutput(window.commandView.commandOutput)
 	if err := window.jsEngine.LoadScripts(config.GetScriptDirectory()); err != nil {
@@ -823,8 +824,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	app.SetFocus(guildList)
 
 	window.registerMouseFocusListeners()
-
-	log.SetOutput(window.commandView)
 
 	return window, nil
 }
