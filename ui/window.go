@@ -1904,7 +1904,7 @@ func (window *Window) SwitchToPreviousChannel() error {
 			window.leftArea.SwitchToPage(privatePageName)
 		}
 		window.privateList.onChannelSelect(window.previousChannelNode, window.previousChannel.ID)
-	case discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildVoice, discordgo.ChannelTypeGuildCategory:
+	case discordgo.ChannelTypeGuildText:
 		_, err := window.session.State.Guild(window.previousGuild.ID)
 		if err != nil {
 			window.previousGuild = nil
