@@ -2,7 +2,6 @@ package ui
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -1765,7 +1764,10 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		window.SwitchToFriendsPage()
 		window.app.SetFocus(window.privateList.GetComponent())
 	} else if shortcuts.SwitchToPreviousChannel.Equals(event) {
-		window.SwitchToPreviousChannel()
+		err := window.SwitchToPreviousChannel()
+		if err != nil {
+			window.ShowErrorDialog(err.Error())
+		}
 	} else if shortcuts.FocusGuildContainer.Equals(event) {
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.guildList)
@@ -1890,6 +1892,7 @@ func (window *Window) SwitchToFriendsPage() {
 // Switches to the previous channel and layout.
 func (window *Window) SwitchToPreviousChannel() error {
 	if window.previousChannel == nil || window.previousChannel == window.selectedChannel {
+		// No previous channel.
 		return nil
 	}
 
@@ -1897,7 +1900,7 @@ func (window *Window) SwitchToPreviousChannel() error {
 	if err != nil {
 		window.previousChannel = nil
 		window.previousChannelNode = nil
-		return nil
+		return fmt.Errorf("Channel %s not found", window.previousChannel.Name)
 	}
 
 	// Switch to appropriate layout.
@@ -1912,10 +1915,10 @@ func (window *Window) SwitchToPreviousChannel() error {
 		if err != nil {
 			window.previousGuild = nil
 			window.previousGuildNode = nil
-			return nil
+			return fmt.Errorf("Unable to load guild: %s", window.previousGuild.Name)
 		}
 		if !discordutil.HasReadMessagesPermission(window.previousChannel.ID, window.session.State) {
-			return nil
+			return fmt.Errorf("No read permissions for channel: %s", window.previousChannel.Name)
 		}
 		// Select guild.
 		if window.leftArea.GetCurrentPage() != guildPageName {
@@ -1926,7 +1929,7 @@ func (window *Window) SwitchToPreviousChannel() error {
 		window.channelTree.SetCurrentNode(window.previousChannelNode)
 		window.channelTree.onChannelSelect(window.previousChannel.ID)
 	default:
-		return errors.New("Invalid channel type")
+		return fmt.Errorf("Invalid channel type: %v", window.previousChannel.Type)
 	}
 	window.app.SetFocus(window.messageInput.internalTextView)
 	return nil
