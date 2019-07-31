@@ -13,7 +13,7 @@ import (
 // the channel tree on the left.
 func GetChannelNameForTree(channel *discordgo.Channel) string {
 	if channel.NSFW {
-		return channel.Name + " NSFW"
+		return "🔞" + channel.Name
 	}
 
 	return channel.Name
