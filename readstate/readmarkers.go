@@ -173,7 +173,7 @@ func HasBeenRead(channel *discordgo.Channel, lastMessageID string) bool {
 		return true
 	}
 
-	if len(channel.Messages) > 0 && channel.Messages[0].Author.ID == state.User.ID {
+	if len(channel.Messages) == 0 || channel.Messages[len(channel.Messages)-1].Author.ID == state.User.ID {
 		return true
 	}
 
