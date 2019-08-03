@@ -68,12 +68,6 @@ func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 			resolvedPath = parameter
 		}
 
-		resolvedPath, resolveError := filepath.EvalSymlinks(resolvedPath)
-		if resolveError != nil {
-			fmt.Fprintf(writer, "[red]Error resolving path:\n\t[red]%s\n", resolveError.Error())
-			continue
-		}
-
 		isAbs := filepath.IsAbs(resolvedPath)
 		if !isAbs {
 			fmt.Fprintln(writer, "[red]Error reading file:\n\t[red]the path is not absolute")
