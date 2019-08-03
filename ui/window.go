@@ -432,7 +432,15 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		if event.Key() == tcell.KeyEnter {
 			if window.selectedChannel != nil {
-				window.TrySendMessage(window.selectedChannel, messageToSend)
+				left := []rune(window.messageInput.internalTextView.GetRegionText("left"))
+				right := []rune(window.messageInput.internalTextView.GetRegionText("right"))
+				if window.IsCursorInsideCodeBlock(left, right) {
+					// Insert new line char
+					selection := []rune(window.messageInput.internalTextView.GetRegionText("selection"))
+					window.messageInput.InsertCharacter(left, right, selection, '\n')
+				} else {
+					window.TrySendMessage(window.selectedChannel, messageToSend)
+				}
 			}
 		}
 
@@ -839,6 +847,11 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerMouseFocusListeners()
 
 	return window, nil
+}
+
+func (window *Window) IsCursorInsideCodeBlock(left, right []rune) bool {
+	// TODO: Implement based on existing client's functionality.
+	return false
 }
 
 func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
