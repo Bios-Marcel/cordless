@@ -68,6 +68,9 @@ var (
 	SendMessage = addShortcut("send_message", "Sends the typed message",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone))
 
+	AddNewLineInCodeBlock = addShortcut("add_new_line_in_code_block", "Adds a new line inside a code block",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone))
+
 	ExitApplication = addShortcut("exit_application", "Exit application",
 		globalScope, tcell.NewEventKey(tcell.KeyCtrlC, rune(tcell.KeyCtrlC), tcell.ModCtrl))
 

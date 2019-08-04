@@ -429,8 +429,13 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 			return nil
 		}
-		if event.Key() == tcell.KeyEnter {
-			window.onEnterPressed(messageToSend)
+
+		if window.selectedChannel != nil {
+			if shortcuts.AddNewLineInCodeBlock.Equals(event) && window.IsCursorInsideCodeBlock() {
+				window.insertNewLineAtCursor(messageToSend)
+			} else if shortcuts.SendMessage.Equals(event) {
+				window.TrySendMessage(window.selectedChannel, messageToSend)
+			}
 		}
 		return event
 	})
@@ -837,28 +842,21 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return window, nil
 }
 
-func (window *Window) onEnterPressed(messageToSend string) {
-	if window.selectedChannel == nil {
-		return
-	}
+func (window *Window) insertNewLineAtCursor(messageToSend string) {
+	// Insert new line char
 	left := []rune(window.messageInput.internalTextView.GetRegionText("left"))
-	if window.IsCursorInsideCodeBlock(left) {
-		// Insert new line char
-		right := []rune(window.messageInput.internalTextView.GetRegionText("right"))
-		selection := []rune(window.messageInput.internalTextView.GetRegionText("selection"))
-		window.messageInput.InsertCharacter(left, right, selection, '\n')
-		window.app.QueueUpdateDraw(func() {
-			window.messageInput.triggerHeightRequestIfNeccessary()
-			window.messageInput.internalTextView.ScrollToHighlight()
-		})
-	} else {
-		window.TrySendMessage(window.selectedChannel, messageToSend)
-	}
+	right := []rune(window.messageInput.internalTextView.GetRegionText("right"))
+	selection := []rune(window.messageInput.internalTextView.GetRegionText("selection"))
+	window.messageInput.InsertCharacter([]rune(left), right, selection, '\n')
+	window.app.QueueUpdateDraw(func() {
+		window.messageInput.triggerHeightRequestIfNeccessary()
+		window.messageInput.internalTextView.ScrollToHighlight()
+	})
 }
 
-func (window *Window) IsCursorInsideCodeBlock(left []rune) bool {
-	leftStr := string(left)
-	leftSplit := strings.Split(leftStr, "```")
+func (window *Window) IsCursorInsideCodeBlock() bool {
+	left := window.messageInput.internalTextView.GetRegionText("left")
+	leftSplit := strings.Split(left, "```")
 	return len(leftSplit)%2 == 0
 }
 
