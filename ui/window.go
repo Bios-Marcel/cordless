@@ -429,21 +429,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 			return nil
 		}
-
 		if event.Key() == tcell.KeyEnter {
-			if window.selectedChannel != nil {
-				left := []rune(window.messageInput.internalTextView.GetRegionText("left"))
-				right := []rune(window.messageInput.internalTextView.GetRegionText("right"))
-				if window.IsCursorInsideCodeBlock(left, right) {
-					// Insert new line char
-					selection := []rune(window.messageInput.internalTextView.GetRegionText("selection"))
-					window.messageInput.InsertCharacter(left, right, selection, '\n')
-				} else {
-					window.TrySendMessage(window.selectedChannel, messageToSend)
-				}
-			}
+			window.onEnterPressed(messageToSend)
 		}
-
 		return event
 	})
 
@@ -849,9 +837,29 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return window, nil
 }
 
-func (window *Window) IsCursorInsideCodeBlock(left, right []rune) bool {
-	// TODO: Implement based on existing client's functionality.
-	return false
+func (window *Window) onEnterPressed(messageToSend string) {
+	if window.selectedChannel == nil {
+		return
+	}
+	left := []rune(window.messageInput.internalTextView.GetRegionText("left"))
+	if window.IsCursorInsideCodeBlock(left) {
+		// Insert new line char
+		right := []rune(window.messageInput.internalTextView.GetRegionText("right"))
+		selection := []rune(window.messageInput.internalTextView.GetRegionText("selection"))
+		window.messageInput.InsertCharacter(left, right, selection, '\n')
+		window.app.QueueUpdateDraw(func() {
+			window.messageInput.triggerHeightRequestIfNeccessary()
+			window.messageInput.internalTextView.ScrollToHighlight()
+		})
+	} else {
+		window.TrySendMessage(window.selectedChannel, messageToSend)
+	}
+}
+
+func (window *Window) IsCursorInsideCodeBlock(left []rune) bool {
+	leftStr := string(left)
+	leftSplit := strings.Split(leftStr, "```")
+	return len(leftSplit)%2 == 0
 }
 
 func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
