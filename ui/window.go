@@ -430,13 +430,16 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			return nil
 		}
 
-		if window.selectedChannel != nil {
-			if shortcuts.AddNewLineInCodeBlock.Equals(event) && window.IsCursorInsideCodeBlock() {
-				window.insertNewLineAtCursor(messageToSend)
-			} else if shortcuts.SendMessage.Equals(event) {
+		if shortcuts.AddNewLineInCodeBlock.Equals(event) && window.IsCursorInsideCodeBlock() {
+			window.insertNewLineAtCursor(messageToSend)
+			return nil
+		} else if shortcuts.SendMessage.Equals(event) {
+			if window.selectedChannel != nil {
 				window.TrySendMessage(window.selectedChannel, messageToSend)
 			}
+			return nil
 		}
+
 		return event
 	})
 
