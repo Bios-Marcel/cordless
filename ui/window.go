@@ -844,10 +844,14 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 func (window *Window) insertNewLineAtCursor(messageToSend string) {
 	// Insert new line char
-	left := []rune(window.messageInput.internalTextView.GetRegionText("left"))
-	right := []rune(window.messageInput.internalTextView.GetRegionText("right"))
-	selection := []rune(window.messageInput.internalTextView.GetRegionText("selection"))
-	window.messageInput.InsertCharacter([]rune(left), right, selection, '\n')
+	left := window.messageInput.internalTextView.GetRegionText("left")
+	right := window.messageInput.internalTextView.GetRegionText("right")
+	selection := window.messageInput.internalTextView.GetRegionText("selection")
+	if len(selection) == 1 {
+		window.messageInput.InsertCharacter([]rune(left), []rune(right), []rune(selection), '\n')
+	} else {
+		window.messageInput.SetText(left + "\n" + right)
+	}
 	window.app.QueueUpdateDraw(func() {
 		window.messageInput.triggerHeightRequestIfNeccessary()
 		window.messageInput.internalTextView.ScrollToHighlight()
