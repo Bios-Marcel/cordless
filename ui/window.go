@@ -2011,6 +2011,12 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	} else {
 		window.previousChannel = window.selectedChannel
 		window.previousChannelNode = window.selectedChannelNode
+
+		// When switching to a channel in the same guild, the previousGuild must be set.
+		if window.previousChannel.GuildID == channel.GuildID {
+			window.previousGuild = window.selectedGuild
+			window.previousGuildNode = window.selectedGuildNode
+		}
 	}
 
 	window.selectedChannel = channel
