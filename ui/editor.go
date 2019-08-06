@@ -337,9 +337,9 @@ func NewEditor() *Editor {
 			return nil
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter(left, right, selection, '\n')
-		} else if shortcuts.SendMessage.Equals(event) || event.Rune() == 0 && editor.inputCapture != nil {
+		} else if shortcuts.SendMessage.Equals(event) {
 			return editor.inputCapture(event)
-		} else {
+		} else if (editor.inputCapture == nil || editor.inputCapture(event) != nil) && event.Rune() != 0 {
 			editor.InsertCharacter(left, right, selection, event.Rune())
 		}
 
