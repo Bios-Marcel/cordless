@@ -341,6 +341,8 @@ func NewEditor() *Editor {
 			return editor.inputCapture(event)
 		} else if (editor.inputCapture == nil || editor.inputCapture(event) != nil) && event.Rune() != 0 {
 			editor.InsertCharacter(left, right, selection, event.Rune())
+		} else {
+			return event
 		}
 
 		editor.UpdateMentionHandler()
