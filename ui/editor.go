@@ -261,16 +261,21 @@ func (e *Editor) InsertCharacter(left, right, selection []rune, character rune) 
 	if len(right) == 0 {
 		if len(selection) == 1 {
 			if string(selection) == selectionChar {
-				e.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selectionChar)))
+				e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"]", string(left), character, string(selectionChar)))
 			} else {
-				e.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selection)))
+				e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"]", string(left), character, string(selection)))
 			}
 		} else {
-			e.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"]", string(left), (string)(character), string(selectionChar)))
+			e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"]", string(left), character, string(selectionChar)))
 		}
 	} else {
-		e.setAndFixText(fmt.Sprintf("[\"left\"]%s%s[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
-			string(left), string(character), string(selection), string(right)))
+		if len(selection) == 1 {
+			e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
+				string(left), character, string(selection), string(right)))
+		} else {
+			e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
+				string(left), character, string(right[0]), string(right[1:])))
+		}
 	}
 }
 
