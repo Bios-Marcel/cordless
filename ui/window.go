@@ -864,27 +864,32 @@ func (window *Window) IsCursorInsideCodeBlock() bool {
 
 func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
 	time, parseError := message.Timestamp.Parse()
-	if parseError == nil {
-		currentContent := strings.TrimSpace(window.messageInput.GetText())
-		username := message.Author.Username
-		if message.GuildID != "" {
-			guild, stateError := window.session.State.Guild(message.GuildID)
-			if stateError == nil {
-				member, stateError := window.session.State.Member(guild.ID, message.Author.ID)
-				if stateError == nil && member.Nick != "" {
-					username = member.Nick
-				}
+	if parseError != nil {
+		return
+	}
+
+	// All quotes should be UTC.
+	time = time.UTC()
+
+	currentContent := strings.TrimSpace(window.messageInput.GetText())
+	username := message.Author.Username
+	if message.GuildID != "" {
+		guild, stateError := window.session.State.Guild(message.GuildID)
+		if stateError == nil {
+			member, stateError := window.session.State.Member(guild.ID, message.Author.ID)
+			if stateError == nil && member.Nick != "" {
+				username = member.Nick
 			}
 		}
-
-		quotedMessage := strings.ReplaceAll(message.ContentWithMentionsReplaced(), "\n", "\n> ")
-		quotedMessage = fmt.Sprintf("> **%s** %s:\n> %s\n", username, times.TimeToString(&time), quotedMessage)
-		if currentContent != "" {
-			quotedMessage = quotedMessage + currentContent
-		}
-		window.messageInput.SetText(quotedMessage)
-		window.app.SetFocus(window.messageInput.GetPrimitive())
 	}
+
+	quotedMessage := strings.ReplaceAll(message.ContentWithMentionsReplaced(), "\n", "\n> ")
+	quotedMessage = fmt.Sprintf("> **%s** %s UTC:\n> %s\n", username, times.TimeToString(&time), quotedMessage)
+	if currentContent != "" {
+		quotedMessage = quotedMessage + currentContent
+	}
+	window.messageInput.SetText(quotedMessage)
+	window.app.SetFocus(window.messageInput.GetPrimitive())
 }
 
 func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message string) {

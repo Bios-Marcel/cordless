@@ -622,7 +622,7 @@ func messagePartsToColouredString(timestamp discordgo.Timestamp, author, message
 	time, parseError := timestamp.Parse()
 	var timeCellText string
 	if parseError == nil {
-		timeCellText = times.TimeToString(&time)
+		timeCellText = times.TimeToLocalString(&time)
 	}
 
 	return fmt.Sprintf("[gray]%s %s [white]%s[\"\"][\"\"]", timeCellText, author, message)
