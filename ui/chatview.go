@@ -29,6 +29,7 @@ import (
 var (
 	linkColor           = "[#efec1c]"
 	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60(?:$|\n)")
+	colorRegex          = regexp.MustCompile("\\[#.{6}\\]")
 	channelMentionRegex = regexp.MustCompile(`<#\d*>`)
 	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
 	spoilerRegex        = regexp.MustCompile(`(?s)\|\|(.+?)\|\|`)
@@ -481,7 +482,8 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 			code = values[2]
 		}
 
-		//Remove trailing newline
+		//Remove last \n on the last line of code, also taking windows
+		//line endings into account.
 		code = strings.TrimSuffix(strings.TrimSuffix(code, "\n"), "\r")
 		code = removeLeadingWhitespaceInCode(code)
 
@@ -520,8 +522,36 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 		}
 
 		escapedCode := strings.NewReplacer("*", "\\*", "_", "\\_", "|", "\\|").Replace(writer.String())
-		escapedCode = regexp.MustCompile("^|\n").ReplaceAllString(escapedCode, "$0[#c9dddc]▐ ")
-		messageText = strings.Replace(messageText, wholeMatch, "\n"+escapedCode+"\n", 1)
+		var formattedCode string
+		lines := strings.Split(escapedCode, "\n")
+		var lastColor string
+		for index, line := range lines {
+			if index != 0 {
+				colorCodes := colorRegex.FindAllString(lines[index-1], -1)
+				if len(colorCodes) > 0 {
+					lastColor = colorCodes[len(colorCodes)-1]
+				}
+
+				if lastColor != "" {
+					formattedCode += fmt.Sprintf("[#c9dddc]▐ %s%s", lastColor, line)
+					if index != len(lines)-1 {
+						formattedCode += "\n"
+					}
+					continue
+				}
+			}
+
+			formattedCode += "[#c9dddc]▐ " + line
+			if index != len(lines)-1 {
+				formattedCode += "\n"
+			}
+		}
+
+		if strings.HasPrefix(messageText, wholeMatch) {
+			messageText = strings.Replace(messageText, wholeMatch, "\n"+formattedCode, 1)
+		} else {
+			messageText = strings.Replace(messageText, wholeMatch, formattedCode, 1)
+		}
 	}
 
 	messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
