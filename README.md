@@ -44,7 +44,7 @@ The application only uses the official Discord API and doesn't send data to
 any third party. However, this application is not a official product
 by Discord (Hammer & Chisel).
 
-[Small demo video made by me](https://peertube.social/videos/watch/15ae8076-2de6-4f97-8947-93d8b356ad08)
+![Demo Screenshot](.github/images/chat-demo.png)
 
 ## How to install it
 
