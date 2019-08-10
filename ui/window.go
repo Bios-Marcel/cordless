@@ -2024,21 +2024,27 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		}
 	}
 
-	window.selectedChannel = channel
-	window.selectedChannelNode = window.channelTree.GetCurrentNode()
 	window.channelTree.Lock()
+
+	//If there is a  currently loaded guild channel and it isn't the same as
+	//the new one we assume it must be read and mark it white.
+	if window.selectedChannelNode != nil && channel.ID != window.selectedChannel.ID {
+		window.selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
+	}
+
+	window.selectedChannel = channel
+	//FIXME this is a bit bad, since it could be wrong
+	window.selectedChannelNode = window.channelTree.GetCurrentNode()
+
+	//Unlike with the channel, where we can assume it is read, we gotta check
+	//whether there is still an unread channel and mark the server accordingly.
+	if window.selectedGuild != nil && window.selectedGuild.ID != channel.GuildID {
+		window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
+	}
+
 	if channel.GuildID == "" {
-		if window.selectedChannelNode != nil {
-			window.selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
-			window.selectedChannelNode = nil
-		}
-
-		if window.selectedGuildNode != nil {
-			window.selectedGuildNode.SetColor(tview.Styles.PrimaryTextColor)
-			window.selectedGuildNode = nil
-		}
-
 		window.selectedGuild = nil
+		window.selectedGuildNode = nil
 	}
 
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
@@ -2065,6 +2071,8 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 				window.app.QueueUpdateDraw(func() {
 					for _, guildNode := range window.guildList.GetRoot().GetChildren() {
 						if guildNode.GetReference() == channel.GuildID {
+							window.guildList.SetCurrentNode(guildNode)
+							guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
 							window.selectedGuildNode = guildNode
 							break
 						}
