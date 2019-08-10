@@ -1,0 +1,28 @@
+name: Build
+on: push
+jobs:
+  linux:
+    name: Linux build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Go 1.12 build ubuntu
+        uses: actions/setup-go@v1
+        with:
+          version: 1.12
+        id: go
+
+      - name: Checkout master
+        uses: actions/checkout@master
+        path: ${{ go.module-path }}
+
+      - name: Run tests and build
+        working-directory: ${{ go.module-path }}
+        env:
+          GO111MODULE: on
+        run: go test ./... && go build .
+#  windows:
+#    name: Windows build
+#    runs-on: windows-latest
+#  macos:
+#    name: MacOS build
+#    runs-on: macOS-latest
