@@ -2196,7 +2196,9 @@ func (window *Window) Run() error {
 
 // Shutdown disconnects from the discord API and stops the tview application.
 func (window *Window) Shutdown() {
-	window.chatView.shortener.Close()
+	if config.GetConfig().ShortenLinks {
+		window.chatView.shortener.Close()
+	}
 	window.session.Close()
 	window.app.Stop()
 }
