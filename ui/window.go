@@ -1827,11 +1827,13 @@ func (window *Window) ExecuteCommand(input string) {
 	parts := commands.ParseCommand(input)
 	fmt.Fprintf(window.commandView, "[gray]$ %s\n", input)
 
-	command := window.FindCommand(parts[0])
-	if command != nil {
-		command.Execute(window.commandView, parts[1:])
-	} else {
-		fmt.Fprintf(window.commandView, "[red]The command '%s' doesn't exist[white]\n", parts[0])
+	if len(parts) > 0 {
+		command := window.FindCommand(parts[0])
+		if command != nil {
+			command.Execute(window.commandView, parts[1:])
+		} else {
+			fmt.Fprintf(window.commandView, "[red]The command '%s' doesn't exist[white]\n", parts[0])
+		}
 	}
 }
 
