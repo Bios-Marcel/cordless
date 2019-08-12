@@ -208,7 +208,7 @@ An example can be found here:
 
 **Currently the scripting interface only offers a single event, if people show
 interest in this feature, I might add more, as I am currently not very
-intersted in it.**
+interested in it.**
 
 ## Contributing
 
@@ -249,7 +249,7 @@ Reasons not to use it:
 - You like fancy GUI
 - You want to see images, videos and whatnot inside of the application itself
 - You need the voice/video calling features (This might soon change!)
-- You need to administrate a server (no adminsitration features yet)
+- You need to administrate a server (no administration features yet)
 
 ## Similar projects
 
