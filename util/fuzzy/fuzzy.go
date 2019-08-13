@@ -22,14 +22,14 @@ func ScoreSearch(searchTerm string, searchItems []string) map[string]float64 {
 func SortSearchResults(results map[string]float64) []SearchResult {
 	var arr []SearchResult
 	for key, value := range results {
-		if value > 0.0 {
+		if value >= 0.0 {
 			arr = append(arr, SearchResult{key, value})
 		}
 	}
 
 	sort.Slice(arr, func(i, j int) bool {
 		if arr[i].Value == arr[j].Value {
-			return strings.Compare(arr[i].Key, arr[j].Key) > 0
+			return strings.Compare(arr[i].Key, arr[j].Key) < 0
 		}
 		return arr[i].Value > arr[j].Value
 	})
@@ -37,10 +37,21 @@ func SortSearchResults(results map[string]float64) []SearchResult {
 	return arr
 }
 
+// Returns:
+// -1 if the needle contains letters the haystack does not contain,
+// or if the needle length exceeds the haystack length.
+//
+// 0 if no similarities were found
+//
+// > 0 based on similarities between the needle and haystack (increasing)
 func Score(needle, haystack string) float64 {
 	needleLength := len(needle)
 	haystackLength := len(haystack)
-	if needleLength > haystackLength || needleLength == 0 {
+	if needleLength > haystackLength {
+		return -1
+	}
+
+	if needleLength == 0 {
 		return 0
 	}
 
@@ -49,8 +60,8 @@ func Score(needle, haystack string) float64 {
 	for haystackIndex := 0; haystackIndex < haystackLength && needleIndex < needleLength; haystackIndex++ {
 
 		letterScore, foundAtIndex := scoreLetter(needle[needleIndex], haystack, haystackIndex)
-		if letterScore == 0.0 {
-			return 0.0
+		if letterScore < 0 {
+			return letterScore
 		}
 
 		if foundAtIndex == haystackIndex {
@@ -69,7 +80,7 @@ func Score(needle, haystack string) float64 {
 
 // Scores a letter from inside a string based on its distance from the start of the string.
 // The index at which the letter was found will be returned.
-// The score will be 0 and the index -1 if the character is not found.
+// The score and index will be -1 if the character is not found.
 func scoreLetter(c byte, haystack string, startIndex int) (float64, int) {
 	haystackLength := len(haystack)
 	for i := startIndex; i < len(haystack); i++ {
@@ -80,5 +91,5 @@ func scoreLetter(c byte, haystack string, startIndex int) (float64, int) {
 		}
 	}
 	// Letter not found.
-	return 0, -1
+	return -1, -1
 }
