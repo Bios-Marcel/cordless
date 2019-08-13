@@ -4,18 +4,17 @@ about: Tell us what went wrong
 
 ---
 
-## Is your source up to date
+## How have you installed cordless
 
-- [ ] Yes
-- [ ] No
+- [ ] Arch User Repository
+- [ ] Snap
+- [ ] scoop
+- [ ] brew
+- [ ] go get
 
 ## What happened
 
 <!-- Explain what happened (the problem)-->
-
-## What did you expect to happen
-
-<!-- Explain what you think should have happened instead? -->
 
 ## How do you reproduce this bug
 
