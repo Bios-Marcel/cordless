@@ -29,7 +29,7 @@ func SortSearchResults(results map[string]float64) []SearchResult {
 
 	sort.Slice(arr, func(i, j int) bool {
 		if arr[i].Value == arr[j].Value {
-			return strings.Compare(arr[i].Key, arr[j].Key) < 0
+			return strings.Compare(strings.ToLower(arr[i].Key), strings.ToLower(arr[j].Key)) < 0
 		}
 		return arr[i].Value > arr[j].Value
 	})
@@ -68,7 +68,7 @@ func Score(needle, haystack string) float64 {
 			// Letter was consecutive
 			score += 8
 		} else {
-			score++
+			score += 1 - (0.1 * float64(letterIndex))
 			// Move haystackIndex up to the next found letter.
 			haystackIndex = letterIndex
 		}
