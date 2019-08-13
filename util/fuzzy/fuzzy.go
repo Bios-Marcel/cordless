@@ -59,18 +59,18 @@ func Score(needle, haystack string) float64 {
 	needleIndex := 0
 	for haystackIndex := 0; haystackIndex < haystackLength && needleIndex < needleLength; haystackIndex++ {
 
-		letterScore, foundAtIndex := scoreLetter(needle[needleIndex], haystack, haystackIndex)
-		if letterScore < 0 {
-			return letterScore
+		letterIndex := findLetterIndex(needle[needleIndex], haystack, haystackIndex)
+		if letterIndex < 0 {
+			return -1
 		}
 
-		if foundAtIndex == haystackIndex {
+		if letterIndex == haystackIndex {
 			// Letter was consecutive
-			score += letterScore * 2
+			score += 8
 		} else {
-			score += letterScore
+			score++
 			// Move haystackIndex up to the next found letter.
-			haystackIndex = foundAtIndex
+			haystackIndex = letterIndex
 		}
 
 		needleIndex++
@@ -81,15 +81,12 @@ func Score(needle, haystack string) float64 {
 // Scores a letter from inside a string based on its distance from the start of the string.
 // The index at which the letter was found will be returned.
 // The score and index will be -1 if the character is not found.
-func scoreLetter(c byte, haystack string, startIndex int) (float64, int) {
-	haystackLength := len(haystack)
+func findLetterIndex(c byte, haystack string, startIndex int) int {
 	for i := startIndex; i < len(haystack); i++ {
 		if c == haystack[i] {
-			var displacement float64 = float64(haystackLength - i)
-			score := displacement / float64(haystackLength) * (1.0 / float64(haystackLength))
-			return score, i
+			return i
 		}
 	}
 	// Letter not found.
-	return -1, -1
+	return -1
 }
