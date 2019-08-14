@@ -17,9 +17,37 @@ jobs:
         env:
           GO111MODULE: on
         run: go test ./... && go build .
-#  windows:
-#    name: Windows build
-#    runs-on: windows-latest
-#  macos:
-#    name: MacOS build
-#    runs-on: macOS-latest
+  windows:
+    name: Windows build
+    runs-on: windows-latest
+    steps:
+      - name: Go 1.12 build Windows
+        uses: actions/setup-go@v1
+        with:
+          version: 1.12
+
+      - name: Checkout master
+        uses: actions/checkout@master
+
+      - name: Run tests and build
+        env:
+          GO111MODULE: on
+        run: go test ./...; go build .
+        shell: powershell
+
+  macos:
+    name: Mac OS build
+    runs-on: macos-latest
+    steps:
+      - name: Go 1.12 build Mac OS
+        uses: actions/setup-go@v1
+        with:
+          version: 1.12
+
+      - name: Checkout master
+        uses: actions/checkout@master
+
+      - name: Run tests and build
+        env:
+          GO111MODULE: on
+        run: go test ./... && go build .
