@@ -27,6 +27,8 @@ import (
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
 	"github.com/gen2brain/beeep"
+
+	"github.com/Bios-Marcel/cordless/util/fuzzy"
 )
 
 const (
@@ -976,43 +978,90 @@ func (window *Window) ShowMentionWindowChildren(mentionWindow *tview.TreeView, m
 }
 
 func (window *Window) PopulateMentionWindow(mentionWindow *tview.TreeView, namePart string) {
-	if window.selectedChannel != nil {
-		if window.selectedChannel.GuildID != "" {
-			guild, discordError := window.session.State.Guild(window.selectedChannel.GuildID)
-			if discordError == nil {
-				for _, user := range guild.Members {
-					if strings.Contains(strings.ToUpper(user.Nick), strings.ToUpper(namePart)) || strings.Contains(strings.ToUpper(user.User.Username)+"#"+user.User.Discriminator, strings.ToUpper(namePart)) {
-						userName := user.User.Username + "#" + user.User.Discriminator
-						userNodeText := "\t" + userName
-						if len(user.Nick) > 0 {
-							userNodeText += " | " + user.Nick
-						}
-						userNode := tview.NewTreeNode(userNodeText)
-						userNode.SetReference(userName)
-						mentionWindow.GetRoot().AddChild(userNode)
-					}
-				}
+	if window.selectedChannel == nil {
+		return
+	}
 
-				for _, role := range guild.Roles {
-					if strings.Contains(strings.ToUpper(role.Name), strings.ToUpper(namePart)) {
-						roleNode := tview.NewTreeNode(role.Name)
-						roleNode.SetReference(role)
-						mentionWindow.GetRoot().AddChild(roleNode)
-					}
-				}
-			}
+	if window.selectedChannel.GuildID != "" {
+		window.PopulateMentionWindowFromCurrentGuild(mentionWindow, namePart)
+	} else {
+		window.PopulateMentionWindowFromCurrentChannel(mentionWindow, namePart)
+	}
+}
+
+func (window *Window) PopulateMentionWindowFromCurrentGuild(mentionWindow *tview.TreeView, namePart string) {
+	guild, discordError := window.session.State.Guild(window.selectedChannel.GuildID)
+	if discordError != nil {
+		return
+	}
+
+	nameMap := make(map[string]string)
+	var memberNames []string
+	for _, user := range guild.Members {
+		userName := user.User.Username + "#" + user.User.Discriminator
+		if len(user.Nick) > 0 {
+			combined := "\t" + userName + " | " + user.Nick
+			nameMap[userName] = combined
+			nameMap[user.Nick] = combined
+			nameMap[combined] = userName
+			memberNames = append(memberNames, userName, user.Nick)
 		} else {
-			for _, user := range window.selectedChannel.Recipients {
-				if strings.Contains(strings.ToUpper(user.Username)+"#"+user.Discriminator, strings.ToUpper(namePart)) {
-					userName := user.Username + "#" + user.Discriminator
-					userNodeText := "\t" + userName
-					userNode := tview.NewTreeNode(userNodeText)
-					userNode.SetReference(userName)
-					mentionWindow.GetRoot().AddChild(userNode)
-				}
-			}
+			memberNames = append(memberNames, userName)
 		}
 	}
+
+	for _, role := range guild.Roles {
+		role := role.Name
+		memberNames = append(memberNames, role)
+	}
+
+	searchResults := fuzzy.ScoreSearch(namePart, memberNames)
+	sortedResults := fuzzy.SortSearchResults(searchResults)
+
+	userWithNickSet := make(map[string]struct{})
+	for _, result := range sortedResults {
+		userOrNickName := result.Key
+		userAndNickName := nameMap[userOrNickName]
+		var userNodeText string
+		var userName string
+		if len(userAndNickName) > 0 {
+			_, containsStr := userWithNickSet[userAndNickName]
+			// If the combined string has been added, skip this entry.
+			if containsStr {
+				continue
+			}
+			userWithNickSet[userAndNickName] = struct{}{}
+			userNodeText = userAndNickName
+			userName = nameMap[userAndNickName]
+		} else {
+			userNodeText = userOrNickName
+			userName = userOrNickName
+		}
+		userNode := tview.NewTreeNode(userNodeText)
+		userNode.SetReference(userName)
+		mentionWindow.GetRoot().AddChild(userNode)
+	}
+
+}
+
+func (window *Window) PopulateMentionWindowFromCurrentChannel(mentionWindow *tview.TreeView, namePart string) {
+	var memberNames []string
+	for _, user := range window.selectedChannel.Recipients {
+		userName := user.Username + "#" + user.Discriminator
+		memberNames = append(memberNames, userName)
+	}
+
+	searchResults := fuzzy.ScoreSearch(namePart, memberNames)
+	sortedResults := fuzzy.SortSearchResults(searchResults)
+
+	for _, result := range sortedResults {
+		userName := result.Key
+		userNodeText := "\t" + userName
+		userNode := tview.NewTreeNode(userNodeText)
+		userNode.SetReference(userName)
+		mentionWindow.GetRoot().AddChild(userNode)
+	}
+
 }
 
 func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.TreeNode, isSelected bool) {
