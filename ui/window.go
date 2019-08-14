@@ -1029,6 +1029,7 @@ func (window *Window) PopulateMentionWindowFromCurrentGuild(mentionWindow *tview
 			combined := "\t" + userName + " | " + user.Nick
 			nameMap[userName] = combined
 			nameMap[user.Nick] = combined
+			nameMap[combined] = userName
 			memberNames = append(memberNames, userName, user.Nick)
 		} else {
 			memberNames = append(memberNames, userName)
@@ -1045,19 +1046,22 @@ func (window *Window) PopulateMentionWindowFromCurrentGuild(mentionWindow *tview
 
 	userWithNickSet := make(map[string]struct{})
 	for _, result := range sortedResults {
-		userName := result.Key
-		combinedStr := nameMap[userName]
+		userOrNickName := result.Key
+		userAndNickName := nameMap[userOrNickName]
 		var userNodeText string
-		if len(combinedStr) > 0 {
-			_, containsStr := userWithNickSet[combinedStr]
+		var userName string
+		if len(userAndNickName) > 0 {
+			_, containsStr := userWithNickSet[userAndNickName]
 			// If the combined string has been added, skip this entry.
 			if containsStr {
 				continue
 			}
-			userWithNickSet[combinedStr] = struct{}{}
-			userNodeText = combinedStr
+			userWithNickSet[userAndNickName] = struct{}{}
+			userNodeText = userAndNickName
+			userName = nameMap[userAndNickName]
 		} else {
-			userNodeText = userName
+			userNodeText = userOrNickName
+			userName = userOrNickName
 		}
 		userNode := tview.NewTreeNode(userNodeText)
 		userNode.SetReference(userName)
