@@ -12,28 +12,36 @@ type SearchResult struct {
 
 func ScoreSearch(searchTerm string, searchItems []string) map[string]float64 {
 	mymap := make(map[string]float64)
-	searchTerm = strings.ToLower(searchTerm)
+	// Ignore case if there are no capital letters in the search term.
+	caseInsensitive := searchTerm == strings.ToLower(searchTerm)
+	if caseInsensitive {
+		searchTerm = strings.ToLower(searchTerm)
+	}
 	for _, str := range searchItems {
-		mymap[str] = Score(searchTerm, strings.ToLower(str))
+		if caseInsensitive {
+			mymap[str] = Score(searchTerm, strings.ToLower(str))
+		} else {
+			mymap[str] = Score(searchTerm, str)
+		}
 	}
 	return mymap
 }
 
 func SortSearchResults(results map[string]float64) []SearchResult {
+	// Convert the results into an array.
 	var arr []SearchResult
 	for key, value := range results {
 		if value >= 0.0 {
 			arr = append(arr, SearchResult{key, value})
 		}
 	}
-
+	// Sort results based on score. Equal scores are sorted alphbetically.
 	sort.Slice(arr, func(i, j int) bool {
 		if arr[i].Value == arr[j].Value {
 			return strings.Compare(strings.ToLower(arr[i].Key), strings.ToLower(arr[j].Key)) < 0
 		}
 		return arr[i].Value > arr[j].Value
 	})
-
 	return arr
 }
 
