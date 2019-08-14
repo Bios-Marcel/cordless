@@ -65,7 +65,7 @@ func Score(needle, haystack string) float64 {
 
 	score := 0.0
 	needleIndex := 0
-	for haystackIndex := 0; haystackIndex < haystackLength && needleIndex < needleLength; haystackIndex++ {
+	for haystackIndex := 0; needleIndex < needleLength; haystackIndex++ {
 
 		letterIndex := findLetterIndex(needle[needleIndex], haystack, haystackIndex)
 		if letterIndex < 0 {
