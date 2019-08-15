@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -357,6 +358,35 @@ func (chatView *ChatView) Rerender() {
 }
 
 func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
+	return messagePartsToColouredString(
+		message.Timestamp,
+		chatView.formatMessageAuthor(message),
+		chatView.formatMessageText(message))
+}
+
+func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string {
+	var messageAuthor string
+	if message.GuildID != "" {
+		member, cacheError := chatView.state.Member(message.GuildID, message.Author.ID)
+		if cacheError == nil {
+			messageAuthor = discordutil.GetMemberName(member)
+		}
+	}
+
+	if messageAuthor == "" {
+		messageAuthor = discordutil.GetUserName(message.Author)
+	}
+
+	if config.GetConfig().UseRandomUserColors {
+		messageAuthor = "[" + discordutil.GetUserColor(message.Author) + "]" + messageAuthor
+	} else {
+		messageAuthor = "[#44e544]" + messageAuthor
+	}
+
+	return messageAuthor
+}
+
+func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 	var messageText string
 
 	if message.Type == discordgo.MessageTypeDefault {
@@ -562,31 +592,12 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 	}
 	messageText = strings.Replace(messageText, "\\|", "|", -1)
 
-	var messageAuthor string
-	if message.GuildID != "" {
-		member, cacheError := chatView.state.Member(message.GuildID, message.Author.ID)
-		if cacheError == nil {
-			messageAuthor = discordutil.GetMemberName(member)
-		}
-	}
-
-	if messageAuthor == "" {
-		messageAuthor = discordutil.GetUserName(message.Author)
-	}
-
-	if config.GetConfig().UseRandomUserColors {
-		messageAuthor = "[" + discordutil.GetUserColor(message.Author) + "]" + messageAuthor
-	} else {
-		messageAuthor = "[#44e544]" + messageAuthor
-	}
-
-	return messagePartsToColouredString(message.Timestamp, messageAuthor, messageText)
+	return messageText
 }
 
-func removeLeadingWhitespaceInCode(code string) string {
-	// Try removing leading whitespace to save space.
-	lines := strings.Split(code, "\n")
-	minAmountOfWhiteSpaceCharacters := 1000
+func trimMinAmountOfCharacterAsPrefix(charToTrim rune, text string) (string, int) {
+	lines := strings.Split(text, "\n")
+	minAmountOfCharacter := math.MaxInt32
 	for _, line := range lines {
 		if len(line) == 0 {
 			continue
@@ -594,15 +605,15 @@ func removeLeadingWhitespaceInCode(code string) string {
 
 		amountOfCharacters := 0
 		for _, character := range []rune(line) {
-			if character != ' ' {
+			if character != charToTrim {
 				break
 			}
 
 			amountOfCharacters++
 		}
 
-		if amountOfCharacters < minAmountOfWhiteSpaceCharacters {
-			minAmountOfWhiteSpaceCharacters = amountOfCharacters
+		if amountOfCharacters < minAmountOfCharacter {
+			minAmountOfCharacter = amountOfCharacters
 		}
 
 		if amountOfCharacters == 0 {
@@ -610,42 +621,26 @@ func removeLeadingWhitespaceInCode(code string) string {
 		}
 	}
 
-	if minAmountOfWhiteSpaceCharacters > 0 {
-		toTrim := strings.Repeat(" ", minAmountOfWhiteSpaceCharacters)
+	if minAmountOfCharacter > 0 {
+		toTrim := strings.Repeat(string(charToTrim), minAmountOfCharacter)
 		for index, line := range lines {
 			lines[index] = strings.TrimPrefix(line, toTrim)
 		}
-	} else {
-		minAmountOfWhiteSpaceCharacters = 1000
-		// If no spaces were used, try tabs instead
-		for _, line := range lines {
-			if len(line) == 0 {
-				continue
-			}
 
-			amountOfCharacters := 0
-			for _, character := range []rune(line) {
-				if character != '	' {
-					break
-				}
-
-				amountOfCharacters++
-			}
-
-			if amountOfCharacters > minAmountOfWhiteSpaceCharacters {
-				minAmountOfWhiteSpaceCharacters = amountOfCharacters
-			}
-		}
-
-		if minAmountOfWhiteSpaceCharacters > 0 {
-			toTrim := strings.Repeat("\t", minAmountOfWhiteSpaceCharacters)
-			for index, line := range lines {
-				lines[index] = strings.TrimPrefix(line, toTrim)
-			}
-		}
+		return strings.Join(lines, "\n"), minAmountOfCharacter
 	}
 
-	return strings.Join(lines, "\n")
+	return text, 0
+}
+
+func removeLeadingWhitespaceInCode(code string) string {
+	spacesTrimmed, amountTrimmed := trimMinAmountOfCharacterAsPrefix(' ', code)
+	if amountTrimmed > 0 {
+		return spacesTrimmed
+	}
+
+	tabsTrimmed, _ := trimMinAmountOfCharacterAsPrefix('	', code)
+	return tabsTrimmed
 }
 
 func messagePartsToColouredString(timestamp discordgo.Timestamp, author, message string) string {
