@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	_ "github.com/Bios-Marcel/cordless/syntax"
+	"github.com/Bios-Marcel/discordgo"
 )
 
 func TestParseBoldAndUnderline(t *testing.T) {
@@ -92,6 +93,150 @@ func TestParseBoldAndUnderline(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := parseBoldAndUnderline(tt.input); got != tt.want {
 				t.Errorf("ParseBoldAndUnderline() = '%v', want '%v'", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestChatView_formatMessageText(t *testing.T) {
+	defaultChatView := &ChatView{
+		showSpoilerContent: make(map[string]bool),
+		state:              &discordgo.State{},
+		shortenLinks:       false,
+	}
+	tests := []struct {
+		name     string
+		input    *discordgo.Message
+		want     string
+		chatView *ChatView
+	}{
+		{
+			name: "empty message",
+			input: &discordgo.Message{
+				Content: "",
+			},
+			want:     "",
+			chatView: defaultChatView,
+		}, {
+			name: "super simple message",
+			input: &discordgo.Message{
+				Content: "simple",
+			},
+			want:     "simple",
+			chatView: defaultChatView,
+		}, {
+			name: "super simple multiline message",
+			input: &discordgo.Message{
+				Content: "simple\nsimple",
+			},
+			want:     "simple\nsimple",
+			chatView: defaultChatView,
+		}, {
+			name: "simple bold message",
+			input: &discordgo.Message{
+				Content: "**simple**",
+			},
+			want:     "[::b]simple[::-]",
+			chatView: defaultChatView,
+		}, {
+			name: "simple underlined message",
+			input: &discordgo.Message{
+				Content: "__simple__",
+			},
+			want:     "[::u]simple[::-]",
+			chatView: defaultChatView,
+		}, {
+			name: "simple message with bold part",
+			input: &discordgo.Message{
+				Content: "a **simple** b",
+			},
+			want:     "a [::b]simple[::-] b",
+			chatView: defaultChatView,
+		}, {
+			name: "simple message with underlined part",
+			input: &discordgo.Message{
+				Content: "a __simple__ b",
+			},
+			want:     "a [::u]simple[::-] b",
+			chatView: defaultChatView,
+		}, {
+			name: "simple message with bold and underlined part",
+			input: &discordgo.Message{
+				Content: "a **__simple__** b",
+			},
+			want:     "a [::b][::bu]simple[::b][::-] b",
+			chatView: defaultChatView,
+		}, {
+			name: "simple message with bold and partially underlined part",
+			input: &discordgo.Message{
+				Content: "a **fat__simple__fat** b",
+			},
+			want:     "a [::b]fat[::bu]simple[::b]fat[::-] b",
+			chatView: defaultChatView,
+		}, {
+			name: "simple message with underlined and partially bold part",
+			input: &discordgo.Message{
+				Content: "a __underline**fat**underline__ b",
+			},
+			want:     "a [::u]underline[::ub]fat[::u]underline[::-] b",
+			chatView: defaultChatView,
+		}, {
+			name: "simple message with underlined and unclosed bold part",
+			input: &discordgo.Message{
+				Content: "a __underline**fatunderline__ b",
+			},
+			want:     "a [::u]underline**fatunderline[::-] b",
+			chatView: defaultChatView,
+		}, {
+			name: "simple spoiler",
+			input: &discordgo.Message{
+				Content: "||simple||",
+			},
+			want:     "[red]!SPOILER![white]",
+			chatView: defaultChatView,
+		}, {
+			name: "simple spoiler inbetween",
+			input: &discordgo.Message{
+				Content: "gimme ||simple|| pls",
+			},
+			want:     "gimme [red]!SPOILER![white] pls",
+			chatView: defaultChatView,
+		}, {
+			name: "formatted spoiler inbetween",
+			input: &discordgo.Message{
+				Content: "gimme ||**simple**|| pls",
+			},
+			want:     "gimme [red]!SPOILER![white] pls",
+			chatView: defaultChatView,
+		}, {
+			name: "formatted spoiler inbetween",
+			input: &discordgo.Message{
+				Content: "gimme ||**simple**|| pls",
+			},
+			want:     "gimme [red]!SPOILER![white] pls",
+			chatView: defaultChatView,
+		}, {
+			name: "unclosed spoiler",
+			input: &discordgo.Message{
+				Content: "owo ||spoiler",
+			},
+			want:     "owo ||spoiler",
+			chatView: defaultChatView,
+		}, {
+			name: "spoiler with formatting around",
+			input: &discordgo.Message{
+				Content: "gimme **||simple||** pls",
+			},
+			//FIXME Not sure whether this is correct, but it's the
+			//current state, so i'll be specifying it for now.
+			want:     "gimme [::b][red]!SPOILER![white][::-] pls",
+			chatView: defaultChatView,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.chatView.formatMessageText(tt.input); got != tt.want {
+				t.Errorf("ChatView.formatMessageText() = %v, want %v", got, tt.want)
 			}
 		})
 	}
