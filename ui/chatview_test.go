@@ -96,3 +96,72 @@ func TestParseBoldAndUnderline(t *testing.T) {
 		})
 	}
 }
+
+func Test_removeLeadingWhitespaceInCode(t *testing.T) {
+	tests := []struct {
+		name string
+		code string
+		want string
+	}{
+		{
+			name: "no whitespace; single line",
+			code: "1",
+			want: "1",
+		}, {
+			name: "no whitespace; two lines",
+			code: "1\n2",
+			want: "1\n2",
+		}, {
+			name: "single space on single line",
+			code: " 1",
+			want: "1",
+		}, {
+			name: "two spaces on single line",
+			code: "  1",
+			want: "1",
+		}, {
+			name: "multiple spaces on single line",
+			code: "    1",
+			want: "1",
+		}, {
+			name: "multiple spaces on multiple lines with different amounts",
+			code: "    1\n  2\n 3",
+			want: "   1\n 2\n3",
+		}, {
+			name: "single tab on single line",
+			code: "	1",
+			want: "1",
+		}, {
+			name: "single tab on multiple lines",
+			code: "	1\n	2",
+			want: "1\n2",
+		}, {
+			name: "multiple tabs on multiple lines",
+			code: "		1\n		2",
+			want: "1\n2",
+		}, {
+			name: "multiple tabs on multiple lines; each line different tab amount",
+			code: "				1\n		2",
+			want: "		1\n2",
+		}, {
+			name: "only one line with a tab",
+			code: "	1\n2",
+			want: "	1\n2",
+		}, {
+			name: "multiple tabs on single line",
+			code: "			1",
+			want: "1",
+		}, {
+			name: "mixed tabs and spaces of multiple lines",
+			code: " 	1\n  	2\n 	3",
+			want: "	1\n 	2\n	3",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := removeLeadingWhitespaceInCode(tt.code); got != tt.want {
+				t.Errorf("removeLeadingWhitespaceInCode() = '%v', want '%v'", got, tt.want)
+			}
+		})
+	}
+}
