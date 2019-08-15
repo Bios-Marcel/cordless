@@ -259,7 +259,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.chatArea = tview.NewFlex().
 		SetDirection(tview.FlexRow)
 
-	window.chatView = NewChatView(window.session, window.session.State.User.ID)
+	window.chatView = NewChatView(window.session.State, window.session.State.User.ID)
 	window.chatView.SetOnMessageAction(func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey {
 		if shortcuts.QuoteSelectedMessage.Equals(event) {
 			window.insertQuoteOfMessage(message)

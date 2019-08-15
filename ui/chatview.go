@@ -44,7 +44,7 @@ type ChatView struct {
 
 	shortener *linkshortener.Shortener
 
-	session    *discordgo.Session
+	state      *discordgo.State
 	data       []*discordgo.Message
 	bufferSize int
 	ownUserID  string
@@ -63,10 +63,10 @@ type ChatView struct {
 }
 
 // NewChatView constructs a new ready to use ChatView.
-func NewChatView(session *discordgo.Session, ownUserID string) *ChatView {
+func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 	chatView := ChatView{
 		internalTextView:   tview.NewTextView(),
-		session:            session,
+		state:              state,
 		ownUserID:          ownUserID,
 		selection:          -1,
 		bufferSize:         100,
@@ -270,7 +270,7 @@ func (chatView *ChatView) ClearViewAndCache() {
 }
 
 func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
-	isBlocked := discordutil.IsBlocked(chatView.session.State, message.Author)
+	isBlocked := discordutil.IsBlocked(chatView.state, message.Author)
 
 	if !config.GetConfig().ShowPlaceholderForBlockedMessages && isBlocked {
 		return
@@ -367,7 +367,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 		messageText = roleMentionRegex.
 			ReplaceAllStringFunc(messageText, func(data string) string {
 				roleID := strings.TrimSuffix(strings.TrimPrefix(data, "<@&"), ">")
-				role, cacheError := chatView.session.State.Role(message.GuildID, roleID)
+				role, cacheError := chatView.state.Role(message.GuildID, roleID)
 				if cacheError != nil {
 					return data
 				}
@@ -383,7 +383,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 		for _, user := range message.Mentions {
 			var userName string
 			if message.GuildID != "" {
-				member, cacheError := chatView.session.State.Member(message.GuildID, user.ID)
+				member, cacheError := chatView.state.Member(message.GuildID, user.ID)
 				if cacheError == nil {
 					userName = discordutil.GetMemberName(member)
 				}
@@ -394,7 +394,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 			}
 
 			var color string
-			if chatView.session.State.User.ID == user.ID {
+			if chatView.state.User.ID == user.ID {
 				color = "[#ef9826]"
 			} else {
 				color = linkColor
@@ -425,7 +425,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 	messageText = channelMentionRegex.
 		ReplaceAllStringFunc(messageText, func(data string) string {
 			channelID := strings.TrimSuffix(strings.TrimPrefix(data, "<#"), ">")
-			channel, cacheError := chatView.session.State.Channel(channelID)
+			channel, cacheError := chatView.state.Channel(channelID)
 			if cacheError != nil {
 				return data
 			}
@@ -564,7 +564,7 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 
 	var messageAuthor string
 	if message.GuildID != "" {
-		member, cacheError := chatView.session.State.Member(message.GuildID, message.Author.ID)
+		member, cacheError := chatView.state.Member(message.GuildID, message.Author.ID)
 		if cacheError == nil {
 			messageAuthor = discordutil.GetMemberName(member)
 		}
