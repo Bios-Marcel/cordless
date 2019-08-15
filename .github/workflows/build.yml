@@ -8,7 +8,7 @@ jobs:
         platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
-      - name: Go 1.12 build Mac OS
+      - name: Go 1.12 build
         uses: actions/setup-go@v1
         with:
           version: 1.12
