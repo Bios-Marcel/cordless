@@ -29,7 +29,7 @@ import (
 
 var (
 	linkColor           = "[#efec1c]"
-	codeBlockRegex      = regexp.MustCompile("(?s)\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60(?:$|\n)")
+	codeBlockRegex      = regexp.MustCompile("(?s)(^|.)(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
 	colorRegex          = regexp.MustCompile("\\[#.{6}\\]")
 	channelMentionRegex = regexp.MustCompile(`<#\d*>`)
 	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
@@ -387,69 +387,74 @@ func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string
 }
 
 func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
-	var messageText string
-
 	if message.Type == discordgo.MessageTypeDefault {
-		messageText = tview.Escape(message.Content)
-
-		//Message.MentionRoles only contains the mentions for mentionable.
-		//Therefore we do it like this, in order to render every mention.
-		messageText = roleMentionRegex.
-			ReplaceAllStringFunc(messageText, func(data string) string {
-				roleID := strings.TrimSuffix(strings.TrimPrefix(data, "<@&"), ">")
-				role, cacheError := chatView.state.Role(message.GuildID, roleID)
-				if cacheError != nil {
-					return data
-				}
-
-				return linkColor + "@" + role.Name + "[white]"
-			})
-
-		messageText = strings.NewReplacer(
-			"@everyone", linkColor+"@everyone[white]",
-			"@here", linkColor+"@here[white]",
-		).Replace(messageText)
-
-		for _, user := range message.Mentions {
-			var userName string
-			if message.GuildID != "" {
-				member, cacheError := chatView.state.Member(message.GuildID, user.ID)
-				if cacheError == nil {
-					userName = discordutil.GetMemberName(member)
-				}
-			}
-
-			if userName == "" {
-				userName = discordutil.GetUserName(user)
-			}
-
-			var color string
-			if chatView.state.User.ID == user.ID {
-				color = "[#ef9826]"
-			} else {
-				color = linkColor
-			}
-
-			replacement := color + "@" + userName + "[white]"
-			messageText = strings.NewReplacer(
-				"<@"+user.ID+">", replacement,
-				"<@!"+user.ID+">", replacement,
-			).Replace(messageText)
-		}
+		return chatView.formatDefaultMessageText(message)
 	} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
-		messageText = "[gray]joined the server."
+		return "[gray]joined the server."
 	} else if message.Type == discordgo.MessageTypeCall {
-		messageText = "[gray]has started a call."
+		return "[gray]has started a call."
 	} else if message.Type == discordgo.MessageTypeChannelIconChange {
-		messageText = "[gray]changed the channel icon."
+		return "[gray]changed the channel icon."
 	} else if message.Type == discordgo.MessageTypeChannelNameChange {
-		messageText = "[gray]changed the channel name to " + message.Content + "."
+		return "[gray]changed the channel name to " + message.Content + "."
 	} else if message.Type == discordgo.MessageTypeChannelPinnedMessage {
-		messageText = "[gray]pinned a message."
+		return "[gray]pinned a message."
 	} else if message.Type == discordgo.MessageTypeRecipientAdd {
-		messageText = "[gray]added " + message.Mentions[0].Username + " to the group."
+		return "[gray]added " + message.Mentions[0].Username + " to the group."
 	} else if message.Type == discordgo.MessageTypeRecipientRemove {
-		messageText = "[gray]removed " + message.Mentions[0].Username + " from the group."
+		return "[gray]removed " + message.Mentions[0].Username + " from the group."
+	}
+
+	//Might happen when there are unsupported types.
+	return "[gray]message couldn't be a rendered."
+}
+
+func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) string {
+	messageText := tview.Escape(message.Content)
+
+	//Message.MentionRoles only contains the mentions for mentionable.
+	//Therefore we do it like this, in order to render every mention.
+	messageText = roleMentionRegex.
+		ReplaceAllStringFunc(messageText, func(data string) string {
+			roleID := strings.TrimSuffix(strings.TrimPrefix(data, "<@&"), ">")
+			role, cacheError := chatView.state.Role(message.GuildID, roleID)
+			if cacheError != nil {
+				return data
+			}
+
+			return linkColor + "@" + role.Name + "[white]"
+		})
+
+	messageText = strings.NewReplacer(
+		"@everyone", linkColor+"@everyone[white]",
+		"@here", linkColor+"@here[white]",
+	).Replace(messageText)
+
+	for _, user := range message.Mentions {
+		var userName string
+		if message.GuildID != "" {
+			member, cacheError := chatView.state.Member(message.GuildID, user.ID)
+			if cacheError == nil {
+				userName = discordutil.GetMemberName(member)
+			}
+		}
+
+		if userName == "" {
+			userName = discordutil.GetUserName(user)
+		}
+
+		var color string
+		if chatView.state.User.ID == user.ID {
+			color = "[#ef9826]"
+		} else {
+			color = linkColor
+		}
+
+		replacement := color + "@" + userName + "[white]"
+		messageText = strings.NewReplacer(
+			"<@"+user.ID+">", replacement,
+			"<@!"+user.ID+">", replacement,
+		).Replace(messageText)
 	}
 
 	messageText = channelMentionRegex.
@@ -502,15 +507,8 @@ func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 		FindAllStringSubmatch(messageText, 1000)
 
 	for _, values := range codeBlocks {
-		wholeMatch := values[0]
-		var language, code string
-		if len(values) == 2 {
-			language = "unknown"
-			code = values[2]
-		} else if len(values) == 3 {
-			language = values[1]
-			code = values[2]
-		}
+		language := values[3]
+		code := values[4]
 
 		//Remove last \n on the last line of code, also taking windows
 		//line endings into account.
@@ -577,11 +575,16 @@ func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 			}
 		}
 
-		if strings.HasPrefix(messageText, wholeMatch) {
-			messageText = strings.Replace(messageText, wholeMatch, "\n"+formattedCode, 1)
-		} else {
-			messageText = strings.Replace(messageText, wholeMatch, formattedCode, 1)
+		beforeCodeBlock := values[1]
+		if beforeCodeBlock != "\n" {
+			formattedCode = "\n" + formattedCode
 		}
+		afterCodeBlock := values[5]
+		if len(afterCodeBlock) != 0 && afterCodeBlock != "\n" {
+			formattedCode = formattedCode + "\n"
+		}
+
+		messageText = strings.Replace(messageText, values[2], formattedCode, 1)
 	}
 
 	messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)

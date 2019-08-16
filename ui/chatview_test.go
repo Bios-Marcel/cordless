@@ -231,12 +231,40 @@ func TestChatView_formatMessageText(t *testing.T) {
 			//current state, so i'll be specifying it for now.
 			want:     "gimme [::b][red]!SPOILER![white][::-] pls",
 			chatView: defaultChatView,
+		}, {
+			name: "codeblock without specified langauge",
+			input: &discordgo.Message{
+				Content: "```\none\ntwo\nthree\n```",
+			},
+			want:     "\n[#c9dddc]▐ [#ffffff]one\n[#c9dddc]▐ [#ffffff]two\n[#c9dddc]▐ [#ffffff]three",
+			chatView: defaultChatView,
+		}, {
+			name: "one line codeblock with text around",
+			input: &discordgo.Message{
+				Content: "test\n```\none\n```\ntest",
+			},
+			want:     "test\n[#c9dddc]▐ [#ffffff]one\ntest",
+			chatView: defaultChatView,
+		}, {
+			name: "one line codeblock with text around, but without newlines inbetween",
+			input: &discordgo.Message{
+				Content: "test```\none\n```test",
+			},
+			want:     "test\n[#c9dddc]▐ [#ffffff]one\ntest",
+			chatView: defaultChatView,
+		}, {
+			name: "codeblock at start of message",
+			input: &discordgo.Message{
+				Content: "```\none\n```test",
+			},
+			want:     "\n[#c9dddc]▐ [#ffffff]one\ntest",
+			chatView: defaultChatView,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.chatView.formatMessageText(tt.input); got != tt.want {
-				t.Errorf("ChatView.formatMessageText() = %v, want %v", got, tt.want)
+				t.Errorf("ChatView.formatMessageText() = '%v', want: '%v'", got, tt.want)
 			}
 		})
 	}
@@ -300,6 +328,10 @@ func Test_removeLeadingWhitespaceInCode(t *testing.T) {
 			name: "mixed tabs and spaces of multiple lines",
 			code: " 	1\n  	2\n 	3",
 			want: "	1\n 	2\n	3",
+		}, {
+			name: "multiple lines with an empty line inbetween",
+			code: "	1\n\n	2\n	3",
+			want: "1\n\n2\n3",
 		},
 	}
 	for _, tt := range tests {
