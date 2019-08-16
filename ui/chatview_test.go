@@ -259,6 +259,27 @@ func TestChatView_formatMessageText(t *testing.T) {
 			},
 			want:     "\n[#c9dddc]▐ [#ffffff]one\ntest",
 			chatView: defaultChatView,
+		}, {
+			name: "simple oneline codeblock with language",
+			input: &discordgo.Message{
+				Content: "```go\none\n```",
+			},
+			want:     "\n[#c9dddc]▐ [#efef8b]one",
+			chatView: defaultChatView,
+		}, {
+			name: "simple oneline codeblock without language",
+			input: &discordgo.Message{
+				Content: "```\none\n```",
+			},
+			want:     "\n[#c9dddc]▐ [#ffffff]one",
+			chatView: defaultChatView,
+		}, {
+			name: "simple oneline codeblock with nonexistent language",
+			input: &discordgo.Message{
+				Content: "```owowhatsthis\none\n```",
+			},
+			want:     "\n[#c9dddc]▐ [#ffffff]one",
+			chatView: defaultChatView,
 		},
 	}
 	for _, tt := range tests {
