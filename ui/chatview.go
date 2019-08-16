@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"math"
 	"regexp"
 	"strconv"
@@ -510,9 +511,10 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 		language := values[3]
 		code := values[4]
 
-		//Remove last \n on the last line of code, also taking windows
-		//line endings into account.
-		code = strings.TrimSuffix(strings.TrimSuffix(code, "\n"), "\r")
+		//Remove all carriage returns to prevent bugs with windows newlines.
+		code = strings.ReplaceAll(code, "\r", "")
+		//Remove last newline, as it's usually just the newline that seperates code from markdown notation.
+		code = strings.TrimSuffix(code, "\n")
 		code = removeLeadingWhitespaceInCode(code)
 
 		// Determine lexer.
@@ -549,12 +551,20 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 			continue
 		}
 
+		//Remove the last newline, as some formatters behave differently and don't drop it.
 		escapedCode := strings.NewReplacer("*", "\\*", "_", "\\_", "|", "\\|").Replace(writer.String())
-		var formattedCode string
+		newLineDifference := strings.Count(escapedCode, "\n") - strings.Count(code, "\n")
+		if newLineDifference > 0 {
+			for ; newLineDifference != 0; newLineDifference-- {
+				log.Println("Cut")
+				escapedCode = escapedCode[:(strings.LastIndex(escapedCode, "\n"))]
+			}
+		}
+		var formattedCode, lastColor string
 		lines := strings.Split(escapedCode, "\n")
-		var lastColor string
 		for index, line := range lines {
 			if index != 0 {
+				formattedCode += "\n"
 				colorCodes := colorRegex.FindAllString(lines[index-1], -1)
 				if len(colorCodes) > 0 {
 					lastColor = colorCodes[len(colorCodes)-1]
@@ -562,17 +572,11 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 
 				if lastColor != "" {
 					formattedCode += fmt.Sprintf("[#c9dddc]▐ %s%s", lastColor, line)
-					if index != len(lines)-1 {
-						formattedCode += "\n"
-					}
 					continue
 				}
 			}
 
 			formattedCode += "[#c9dddc]▐ " + line
-			if index != len(lines)-1 {
-				formattedCode += "\n"
-			}
 		}
 
 		beforeCodeBlock := values[1]
