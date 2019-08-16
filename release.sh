@@ -147,3 +147,11 @@ envsubst < cordless.rb_template > cordless.rb
 unset RELEASE_DATE
 unset EXE_HASH
 unset TAR_HASH
+
+#
+# Cleanup snap stuff so I can still run unit tests for cordless only.
+#
+
+rm -rf stage/
+rm -rf parts/
+rm -rf prime/
