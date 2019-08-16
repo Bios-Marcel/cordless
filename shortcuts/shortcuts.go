@@ -173,8 +173,8 @@ type ShortcutDataRepresentation struct {
 	Identifier      string
 	ScopeIdentifier string
 	EventKey        tcell.Key
-	EventRune       rune
 	EventMod        tcell.ModMask
+	EventRune       rune
 }
 
 // MarshalJSON marshals a Shortcut into a ShortcutDataRepresentation. This
