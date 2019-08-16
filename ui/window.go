@@ -1087,7 +1087,7 @@ func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.Tr
 // The input is expected to be a string without sorrounding whitespace.
 func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText string) string {
 	output := codeBlockRegex.ReplaceAllStringFunc(inputText, func(input string) string {
-		return strings.ReplaceAll(strings.TrimSpace(input), ":", "\\:")
+		return strings.ReplaceAll(input, ":", "\\:")
 	})
 
 	if targetChannel.GuildID != "" {
