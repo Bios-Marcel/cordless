@@ -294,6 +294,13 @@ func TestChatView_formatMessageText(t *testing.T) {
 			},
 			want:     "\n[#c9dddc]▐ [#ffffff]one[#ffffff]\n[#c9dddc]▐ [#ffffff]\n[#c9dddc]▐ [#ffffff]",
 			chatView: defaultChatView,
+		}, {
+			name: "two simple oneline codeblocks without language after another",
+			input: &discordgo.Message{
+				Content: "```\none\n```\n```\none\n```",
+			},
+			want:     "\n[#c9dddc]▐ [#ffffff]one\n[#c9dddc]▐ [#ffffff]one",
+			chatView: defaultChatView,
 		},
 	}
 	for _, tt := range tests {

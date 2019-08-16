@@ -3,7 +3,6 @@ package ui
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"math"
 	"regexp"
 	"strconv"
@@ -30,7 +29,7 @@ import (
 
 var (
 	linkColor           = "[#efec1c]"
-	codeBlockRegex      = regexp.MustCompile("(?s)(^|.)(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
+	codeBlockRegex      = regexp.MustCompile("(?sm)(^|.)(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
 	colorRegex          = regexp.MustCompile("\\[#.{6}\\]")
 	channelMentionRegex = regexp.MustCompile(`<#\d*>`)
 	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
@@ -553,7 +552,6 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 		newLineDifference := strings.Count(escapedCode, "\n") - strings.Count(code, "\n")
 		if newLineDifference > 0 {
 			for ; newLineDifference != 0; newLineDifference-- {
-				log.Println("Cut")
 				escapedCode = escapedCode[:(strings.LastIndex(escapedCode, "\n"))]
 			}
 		}
