@@ -520,9 +520,6 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 		// Determine lexer.
 		l := lexers.Get(language)
 		if l == nil {
-			l = lexers.Analyse(code)
-		}
-		if l == nil {
 			l = lexers.Fallback
 		}
 		l = chroma.Coalesce(l)
