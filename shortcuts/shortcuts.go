@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	globalScope        = addScope("Application wide", "global", nil)
-	multilineTextInput = addScope("Multiline text input", "multiline_text_input", globalScope)
-	chatview           = addScope("Chatview", "chatview", globalScope)
+	globalScope        = addScope("global", "Application wide", nil)
+	multilineTextInput = addScope("multiline_text_input", "Multiline text input", globalScope)
+	chatview           = addScope("chatview", "Chatview", globalScope)
 
 	QuoteSelectedMessage = addShortcut("quote_selected_message", "Quote selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'q', tcell.ModNone))
@@ -102,7 +102,7 @@ var (
 	Shortcuts []*Shortcut
 )
 
-func addScope(name, identifier string, parent *Scope) *Scope {
+func addScope(identifier, name string, parent *Scope) *Scope {
 	scope := &Scope{
 		Parent:     parent,
 		Identifier: identifier,
@@ -114,7 +114,7 @@ func addScope(name, identifier string, parent *Scope) *Scope {
 	return scope
 }
 
-func addShortcut(name, identifier string, scope *Scope, event *tcell.EventKey) *Shortcut {
+func addShortcut(identifier, name string, scope *Scope, event *tcell.EventKey) *Shortcut {
 	shortcut := &Shortcut{
 		Identifier:   identifier,
 		Name:         name,
