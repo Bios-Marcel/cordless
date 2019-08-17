@@ -343,6 +343,14 @@ func TestChatView_formatMessageText(t *testing.T) {
 				state:        &discordgo.State{},
 				shortenLinks: false,
 			},
+		}, {
+			name: "two codeblocks without newlines but character inbeteween",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "```\nowo\n```f```\nowo\n```",
+			},
+			want:     "\n[#c9dddc]▐ [#ffffff]owo\nf\n[#c9dddc]▐ [#ffffff]owo",
+			chatView: defaultChatView,
 		},
 	}
 	for _, tt := range tests {

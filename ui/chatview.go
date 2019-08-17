@@ -29,7 +29,7 @@ import (
 
 var (
 	linkColor           = "[#efec1c]"
-	codeBlockRegex      = regexp.MustCompile("(?sm)(^|.)(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
+	codeBlockRegex      = regexp.MustCompile("(?sm)(^|.)?(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
 	colorRegex          = regexp.MustCompile("\\[#.{6}\\]")
 	channelMentionRegex = regexp.MustCompile(`<#\d*>`)
 	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
