@@ -301,6 +301,48 @@ func TestChatView_formatMessageText(t *testing.T) {
 			},
 			want:     "\n[#c9dddc]▐ [#ffffff]one\n[#c9dddc]▐ [#ffffff]one",
 			chatView: defaultChatView,
+		}, {
+			name: "codeblock with spoiler inside",
+			input: &discordgo.Message{
+				Content: "```\nowo ||Spoiler|| owo\n```",
+			},
+			want:     "\n[#c9dddc]▐ [#ffffff]owo ||Spoiler|| owo",
+			chatView: defaultChatView,
+		}, {
+			name: "codeblock with bold text inside",
+			input: &discordgo.Message{
+				Content: "```\nowo **bold** owo\n```",
+			},
+			want:     "\n[#c9dddc]▐ [#ffffff]owo **bold** owo",
+			chatView: defaultChatView,
+		}, {
+			name: "codeblock with underlined text inside",
+			input: &discordgo.Message{
+				Content: "```\nowo __underline__ owo\n```",
+			},
+			want:     "\n[#c9dddc]▐ [#ffffff]owo __underline__ owo",
+			chatView: defaultChatView,
+		}, {
+			name: "codeblock with spoiler around",
+			input: &discordgo.Message{
+				Content: "||```\nowo\n```||",
+			},
+			want:     "[red]!SPOILER![white]",
+			chatView: defaultChatView,
+		}, {
+			name: "codeblock with revelaed spoiler around",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "||```\nowo\n```||",
+			},
+			want: "||\n[#c9dddc]▐ [#ffffff]owo\n||",
+			chatView: &ChatView{
+				showSpoilerContent: map[string]bool{
+					"OwO": true,
+				},
+				state:        &discordgo.State{},
+				shortenLinks: false,
+			},
 		},
 	}
 	for _, tt := range tests {
