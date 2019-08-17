@@ -378,12 +378,10 @@ func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string
 	}
 
 	if config.GetConfig().UseRandomUserColors {
-		messageAuthor = "[" + discordutil.GetUserColor(message.Author) + "]" + messageAuthor
-	} else {
-		messageAuthor = "[#44e544]" + messageAuthor
+		return "[" + discordutil.GetUserColor(message.Author) + "]" + messageAuthor
 	}
 
-	return messageAuthor
+	return "[#44e544]" + messageAuthor
 }
 
 func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
