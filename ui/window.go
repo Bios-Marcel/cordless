@@ -433,7 +433,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if shortcuts.AddNewLineInCodeBlock.Equals(event) && window.IsCursorInsideCodeBlock() {
-			window.insertNewLineAtCursor(messageToSend)
+			window.insertNewLineAtCursor()
 			return nil
 		} else if shortcuts.SendMessage.Equals(event) {
 			if window.selectedChannel != nil {
@@ -847,7 +847,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return window, nil
 }
 
-func (window *Window) insertNewLineAtCursor(messageToSend string) {
+func (window *Window) insertNewLineAtCursor() {
 	left := window.messageInput.internalTextView.GetRegionText("left")
 	right := window.messageInput.internalTextView.GetRegionText("right")
 	selection := window.messageInput.internalTextView.GetRegionText("selection")
