@@ -8,19 +8,28 @@ import (
 	"github.com/Bios-Marcel/cordless/ui"
 )
 
-const manualDocumentation = `[orange][::u]# manual[white]
+const manualDocumentation = `[::b]NAME
+	manual - view the documentation for a topic or command
 
-Please supply a topic that you want to know more about.
-	[-]manual <topic>[white]
+[::b]SYNOPSIS
+	[::b]manual <topic|command>
 
-Available topics:
-	* commands
-	* chat-view
-	* configuration
-	* message-editor
-	* navigation
+[::b]DESCRIPTION
+	This command will show the manual of the supplied topic / command.
 
-Alternatively you can enter the name of any command as the topic.`
+[::b]TOPICS
+	Besides commands like [::b]friends[::-] or [::b]status[::-], you can also supply one of the following topics:
+		- commands
+		- chat-view
+		- configuration
+		- message-editor
+		- navigation
+
+[::b]EXAMPLES
+	[gray]$ man user
+	[white][::b]NAME
+		user - manipulate and retrieve your ...
+`
 
 // Manual is the command that displays the application manual.
 type Manual struct {
