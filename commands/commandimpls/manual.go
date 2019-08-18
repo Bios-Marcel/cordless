@@ -55,10 +55,11 @@ func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 		case "chat-view", "chatview":
 			fmt.Fprintln(writer, chatViewDocumentation)
 		case "commands":
-			fmt.Fprintln(writer, commandsDocumentation)
+			var commandList string
 			for _, cmd := range manual.window.GetRegisteredCommands() {
-				fmt.Fprintf(writer, "\t* %s\n", cmd.Name())
+				commandList += fmt.Sprintf("\t\t- %s\n", cmd.Name())
 			}
+			fmt.Fprintf(writer, commandsDocumentation, commandList)
 		case "configuration", "config", "conf":
 			fmt.Fprintln(writer, configurationDocumentation)
 		case "message-editor", "messageeditor":
@@ -85,111 +86,316 @@ func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 	}
 }
 
-const chatViewDocumentation = `[orange][::u]# Chatview[white]
+const chatViewDocumentation = `[::b]TOPIC
+	chatview - component that displays the messages in a channel
 
-The Chatview is the component that displays the messages of the channel that you are currently looking at.
+[::b]DESCRIPTION
+	The chatview is the component that displays the messages of the channel
+	that you are currently looking at.
 
-The Chatview has two modes, the navigation mode is activate when the chatview does not have focus. While in navigation mode you can't select any message, you can only scroll through the view. If you focus the chatview, the it enters the selection mode and you can select single messages and interact with them.
+	The chatview has two modes. The navigation mode is active when the
+	chatview does not have focus. While in navigation mode you can't select
+	any message, but you can scroll through the messages using Ctrl+ArrowUp/ArrowDown
+	or your mousewheel. If you focus the chatview, it enters the selection
+	mode, allowing you to select single messages and interact with those.
 
-When in selection mode, those shortcuts are active:
+	When in selection mode, those shortcuts are active:
 
---------------------------------------------
-|            Action           |  Shortcut  |
-| --------------------------- | ---------- |
-| Edit message                | e          |
-| Delete message              | Delete     |
-| Copy content                | c          |
-| Copy link to message        | l          |
-| Reply with mention          | r          |
-| Quote message               | q          |
-| Hide / show spoiler content | s          |
-| Selection up                | ArrowUp    |
-| Selection down              | ArrowDown  |
-| Selection to top            | Home       |
-| Selection to bottom         | End        |
---------------------------------------------
-`
-const commandsDocumentation = `[orange][::u]# Commands[white]
+	--------------------------------------------
+	|            Action           |  Shortcut  |
+	| --------------------------- | ---------- |
+	| Edit message                | e          |
+	| Delete message              | Delete     |
+	| Copy content                | c          |
+	| Copy link to message        | l          |
+	| Reply with mention          | r          |
+	| Quote message               | q          |
+	| Hide / show spoiler content | s          |
+	| Selection up                | ArrowUp    |
+	| Selection down              | ArrowDown  |
+	| Selection to top            | Home       |
+	| Selection to bottom         | End        |
+	--------------------------------------------
 
-All commands can only be entered via the command-input component. Commands can't be called from outside the application or on startup.
+	Keep in mind, that those shortcuts might differ from your settings, as
+	those are just the defaults.`
 
-All commands follow a certain semantics pattern:
-	COMMAND SUBCOMMAND --SETTING "Some setting value" MAIN_VALUE
+const commandsDocumentation = `[::b]TOPIC
+	commands - commands allow you to execute certain actions within cordless
+
+[::b]DESCRIPTION
+	Commands can only be entered via the command-input component.
+	Commands can't be called from outside the application or on startup.
+
+	All commands follow a certain semantics pattern:
+		COMMAND SUBCOMMAND --SETTING "Some setting value" MAIN_VALUE
+
+	Not every command makes use of all of the possible combinations. Each
+	command may have zero or more subcommands and zero or more settings.
+	There may also be settings that do not require you passing a value.
+	If a value contains spaces it needs to be quoted beforehand, otherwise
+	the input will be seperated at each given space. Some commands require
+	some main value, which is basically the non-optional input for that
+	command. That value doesn't require a setting-name to be prepended in
+	front of it.
+
+	After typing a command, it will be added to your history. The history
+	doesn't persist between cordless sessions, it will be forgotten every
+	time you close the application. The history can be travelled through
+	by using the arrow up and down keys. An exception for historization
+	are secret inputs like passwords, those aren't directly typed into the
+	command-input. Instead cordless shows an extra dialog as soon as it
+	requires you to input sensitive information like passwords.
+
+	Since the command-input component uses the same underlying component
+	as the message-input, you can use the same shortcuts for editing
+	your input.
+
+	Available commands:
+%s
+[::b]EXAMPLES
+	[gray]$ user-set -n "Marcel Schramm" -a /home/pics/avatar.png
+	[gray]$ user-set --name "Marcel Schramm" --avatar /home/pics/avatar.png
 	
-Not every command makes use of all of the possible combinations. Each command may have zero or more subcommands and zero or more settings. There may also be settings that do not require you passing a value. If a value contains spaces it needs to be quoted beforehand, otherwise the input will be seperated at each given space. Some commands require some main value, which is basically the non-optional input for that command. That value doesn't require a setting-name to be prepended in front of it.
+	[gray]$ status set online
+	[gray]$ status get`
 
-After typing a command, it will be added to your history. The history doesn't persist between cordless sessions, it will be forgotten every time you close the application. The history can be travelled through by using the arrow up and down keys. An exception for historization are secret inputs like passwords, those aren't directly typed into the command-input. Instead cordless shows an extra dialog that as soon as you are required to input sensitive information like passwords.
+const configurationDocumentation = `[::b]TOPIC
+	configuration - allows you to change settings and persist them between
+	sessions
 
-Since the command-input component uses the same underlying component as the message-input, you can use the same shortcuts for editing your input.
+[::b]DESCRIPTION
+	Currently all almost configuration is done via manually editing the
+	configuration file. There are however some settings like the fix-layout
+	setting and the chatheader setting that can be set via the commands
+	feature.
 
-Available commands:`
+	At some point there will be a user-interface for changing settings and
+	commands will be removed.
 
-const configurationDocumentation = `[orange][::u]# Configuration[white]
+	The configuration file can be found somewhere in the user directory.
+	The precise location differs from platform to platform. Whenever you
+	start cordless, it will display the location of your configuration file
+	in the splashscreen.
 
-Currently all almost configuration is done via manually editing the configuration file. There are however some settings like the fix-layout setting and the chatheader setting that can be set via the commands feature.
+	Typical location on Linux:   [::b]~/.config/cordless/config.json[::-].
+	Typical location on Windows: [::b]~/AppData/Roaming/cordless/config.json[::-].
+	Typical location on MacOS:   [::b]~/.cordless/config.json[::-].
 
-At some point there will be a user-interface for changing settings and commands will be removed.
-`
-const messageEditorDocumentation = `[orange][::u]# Message editor[white]
+[::b]SETTINGS
+	The following settings are available in the configuration file:
 
-The editor is a custom written widget and builds on top of the tview.TextView.
-It utilizes regions and highlighting in order to implement the complete selection behaviour
-Currently it is not a finished widget. 
+	[::b]Token
+		The token is used in order to authenticate you in the discord backend.
+		This value is usually set through the user interface on startup.
+		
+		Type:    string
+		Default: EMPTY
 
-## Shortcuts
+	[::b]Times
+		Determines how message timestamps are rendered in the chatview.
 
-----------------------------------------------------
-|           Action           |       Shortcut      |
-| -------------------------- | ------------------- |
-| Delete left                | Backspace           |
-| Delete Right               | Delete              |
-| Delete Selection           | Backspace or Delete |
-| Jump to beginning          | Ctrl+A -> Left      |
-| Jump to end                | Ctrl+A -> Right     |
-| Jump one word to the left  | Ctrl+Left           |
-| Jump one word to the right | Ctrl+Right          |
-| Select all                 | Ctrl+A              |
-| Select word to left        | Ctrl+Shift+Left     |
-| Select word to right       | Ctrl+Shift+Right    |
-| Scroll chatview up         | Ctrl+Up             |
-| Scroll chatview down       | Ctrl+Down           |
-| Paste Image / text         | Ctrl+V              |
-| Insert new line            | Alt+Enter           |
-| Send message               | Enter               |
-----------------------------------------------------
+		This setting has three different possible values:
 
-## Other features
+		-------------------------------------------
+		|         Name         |  Format  | Value |
+		| -------------------- | -------- | ----- |
+		| HourMinuteAndSeconds | HH:MM:SS | 0     |
+		| HourAndMinute        | HH:MM    | 1     |
+		| NoTime               | None     | 2     |
+		-------------------------------------------
 
-* Send emojis using ":emoji_code:"
-* Mention people using autocomplete by typing an "@" followed by part of their name
-`
+		Type:    int
+		Default: NoTime (2)
+		
+	[::b]UseRandomUserColors
+		Determines whether all usernames will have the same color or a color
+		randomly chosen from a pool of predefined colors.
+		
+		Type:    boolean
+		Default: false
+		
+	[::b]FocusChannelAfterGuildSelection
+		Determines whether the focus automatically jumps to the channeltree
+		after selecting a guild from the guildlist.
+		
+		Type:    boolean
+		Default: true
+	
+	[::b]FocusMessageInputAfterChannelSelection
+		Determines whether the focus automatically jumps to the message-input
+		after selecting a channel from the channeltree.
+		
+		Type:    boolean
+		Default: true
+		
+	[::b]ShowChatHeader
+		Determines whether the name and topic of the currently loaded channel
+		are shown at the top of the chatview.
+		
+		Type:    boolean
+		Default: true
+		
+	[::b]ShowUserContainer
+		Determines whether the user list is displayed to the right of the
+		chatview while a guild channel or a group dm channel is loaded.
+		This setting is usually not changed manually, but via the keyboard
+		shortcut [::b]Alt+Shift+U[::-]. Note that this might differ from your
+		configured shortcut for this action.
+		
+		Type:    boolean
+		Default: true
+		
+	[::b]UseFixedLayout
+		Determines whether the guild list and the channel tree use a fixed
+		width or take horizontal space relative to the window size.
+		
+		Type:    boolean
+		Default: false
+		
+	[::b]FixedSizeLeft
+		Determines the width of the guild list and the channel tree.
+		This setting only takes effect if [::b]UseFixedLayout[::-] is set to [::b]true[::-].
+		
+		Type:    int
+		Default: 12
+	
+	[::b]FixedSizeRight
+		Determines the width of the user list next to the chatview.
+		This setting only takes effect if [::b]UseFixedLayout[::-] is set to [::b]true[::-].
+		
+		Type:    int
+		Default: 12
+		
+	[::b]OnTypeInListBehaviour
+		Determines whether typing in a list or tree-list will trigger a text
+		search, do nothing or focus the message-input.
+		
+		This settings has three different possible values:
+		
+		-----------------------------------------
+		|             Name              | Value |
+		| ----------------------------- | ----- |
+		| DoNothingOnTypeInList         | 0     |
+		| SearchOnTypeInList            | 1     |
+		| FocusMessageInputOnTypeInList | 2     |
+		-----------------------------------------
 
-const navigationDocumentation = `[orange][::u]# Navigation[white]
+		Type:    int
+		Default: SearchOnTypeInList (1)
+		
+	[::b]MouseEnabled
+		Determines whether the mouse is properly usable. If this settings is
+		enabled, you can click buttons, scroll and change focus via clicking.
+		Note that some stuff might still work with this setting disabled, but
+		behave in a weird way.
 
-Most of the controlling is currently done via the keyboard. However, the focus
-between components can be changed by using a mouse as well.
+		[::b]This setting will break terminal selection mode.
+		
+		Type:    boolean
+		Default: true
+		
+	[::b]ShortenLinks
+		Determines whether cordless runs it's own link-shortener in order to
+		allow showing long links in tight spaces while keeping them clickable.
+		Note that this setting will start a small internal in-memory http
+		server.
+		
+		Type:    boolean
+		Default: false
+		
+	[::b]ShortenerPort
+		Determines which port the link-shortener uses in your system. This
+		setting only matters if [::b]ShortenLinks[::-] is set to [::b]true[::-]
+		
+	[::b]DesktopNotifications
+		Determines whether cordless will try to notify the host systems using
+		the systems notification system. This setting might not work on all
+		systems.
+		
+		Type:    boolean
+		Default: true
+		
+	[::b]ShowPlaceholderForBlockedMessages
+		Determines whether blocked messages are hidden or a placeholder is
+		shown instead, so that you know that someone sent a message. This
+		might help in avoiding confusion during conversations of blocked
+		users with users that aren't blocked.
+		
+		Type:    boolean
+		Default: true
 
-[::u]## Shortcuts
+	[::b]Accounts
+		This settings holds an array of so called accounts, also referred to
+		as profiles. Those allow you to let cordless know of multiple discord
+		identities, allowing you to easily switch between them. This setting
+		shouldn't be changed manually, but only via the [::b]account[::-]
+		command.`
 
---------------------------------------------------------------------
-|          Action         | Shortcut |            Scope            |
-| ----------------------- | -------- | ----------------------------|
-| Close application       | Ctrl-C   | Everywhere                  |
-| Focus user container    | Alt+U    | Guild channel / group chat  |
-| Focus private chat page | Alt+P    | Everywhere                  |
-| Focus guild container   | Alt+S    | Everywhere                  |
-| Focus channel container | Alt+C    | Everywhere                  |
-| Focus message input     | Alt+M    | Everywhere                  |
-| Focus message container | Alt+T    | Everywhere                  |
-| Toggle command view     | Alt+Dot  | Everywhere                  |
-| Focus command output    | Ctrl+O   | Everywhere                  |
-| Focus command input     | Ctrl+I   | Everywhere                  |
-| Edit last message       | ArrowUp  | In empty message input      |
-| Leave message edit mode | Esc      | When editing message        |
---------------------------------------------------------------------
+const messageEditorDocumentation = `[::b]TOPIC
+	message-editor - the component that allows you to input text for a message.
 
-Some shortcuts can be changed via the shortcut dialog. The dialog can be opened via Alt+Shift+S.
-`
+[::b]DESCRIPTION
+	The editor is a custom written widget and builds on top of the
+	tview.TextView. It utilizes regions and highlighting in order to implement
+	the complete selection behaviour. This widget isn't fully implemented yet
+	and still has some flaws.
+
+	By default, it offers the following shortcuts:
+
+	----------------------------------------------------
+	|           Action           |       Shortcut      |
+	| -------------------------- | ------------------- |
+	| Delete left                | Backspace           |
+	| Delete Right               | Delete              |
+	| Delete Selection           | Backspace or Delete |
+	| Jump to beginning          | Ctrl+A -> Left      |
+	| Jump to end                | Ctrl+A -> Right     |
+	| Jump one word to the left  | Ctrl+Left           |
+	| Jump one word to the right | Ctrl+Right          |
+	| Select all                 | Ctrl+A              |
+	| Select word to left        | Ctrl+Shift+Left     |
+	| Select word to right       | Ctrl+Shift+Right    |
+	| Scroll chatview up         | Ctrl+Up             |
+	| Scroll chatview down       | Ctrl+Down           |
+	| Paste Image / text         | Ctrl+V              |
+	| Insert new line            | Alt+Enter           |
+	| Send message               | Enter               |
+	----------------------------------------------------
+
+	It also offers the following functionalities:
+		- Send emojis using ":emoji_code:"
+		- Mention people using autocomplete by typing an "@" followed by part
+		  of their name`
+
+const navigationDocumentation = `[::b]TOPIC
+	navigation - how to navigate around the application
+
+[::b]DESCRIPTION
+	Most of the controlling is currently done via the keyboard. However, the
+	focus between components can be changed by using a mouse as well.
+
+	By default the navigation is done via the following shortcuts:
+
+	--------------------------------------------------------------------
+	|          Action         | Shortcut |            Scope            |
+	| ----------------------- | -------- | ----------------------------|
+	| Close application       | Ctrl-C   | Everywhere                  |
+	| Focus user container    | Alt+U    | Guild channel / group chat  |
+	| Focus private chat page | Alt+P    | Everywhere                  |
+	| Focus guild container   | Alt+S    | Everywhere                  |
+	| Focus channel container | Alt+C    | Everywhere                  |
+	| Focus message input     | Alt+M    | Everywhere                  |
+	| Focus message container | Alt+T    | Everywhere                  |
+	| Toggle command view     | Alt+Dot  | Everywhere                  |
+	| Focus command output    | Ctrl+O   | Everywhere                  |
+	| Focus command input     | Ctrl+I   | Everywhere                  |
+	| Edit last message       | ArrowUp  | In empty message input      |
+	| Leave message edit mode | Esc      | When editing message        |
+	--------------------------------------------------------------------
+
+	Some shortcuts can be changed via the shortcut dialog. The dialog can be
+	opened via Alt+Shift+S.`
 
 func (manual *Manual) Name() string {
 	return "manual"
