@@ -996,8 +996,7 @@ func (window *Window) PopulateMentionWindowFromCurrentGuild(mentionWindow *tview
 	}
 
 	nameMap := make(map[string]string)
-	//Preallocating the minimum size for a tiny performance boost.
-	memberNames := make([]string, 0, len(guild.Members))
+	var memberNames []string
 	for _, user := range guild.Members {
 		userName := user.User.Username + "#" + user.User.Discriminator
 		if len(user.Nick) > 0 {
@@ -1050,7 +1049,7 @@ func (window *Window) addNodeToMentionWindow(mentionWindow *tview.TreeView, name
 }
 
 func (window *Window) PopulateMentionWindowFromCurrentChannel(mentionWindow *tview.TreeView, namePart string) {
-	memberNames := make([]string, 0, len(window.selectedChannel.Recipients))
+	var memberNames []string
 	for _, user := range window.selectedChannel.Recipients {
 		userName := user.Username + "#" + user.Discriminator
 		memberNames = append(memberNames, userName)
