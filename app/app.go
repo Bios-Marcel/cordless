@@ -99,6 +99,8 @@ func Run() {
 
 			if createError != nil {
 				app.Stop()
+				//Otherwise the logger output can't be seen, since we are stopping the TUI either way.
+				log.SetOutput(os.Stdout)
 				log.Fatalf("Error constructing window (%s).\n", createError.Error())
 			}
 
