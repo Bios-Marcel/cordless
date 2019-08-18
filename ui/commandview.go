@@ -23,10 +23,11 @@ type CommandView struct {
 // for a command view. It also contains the state for those components.
 func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 	commandOutput := tview.NewTextView()
-	commandOutput.SetBorder(true)
-	commandOutput.SetDynamicColors(true)
-	commandOutput.SetWordWrap(true)
-	commandOutput.SetWrap(true)
+	commandOutput.SetDynamicColors(true).
+		SetWordWrap(true).
+		SetWrap(true).
+		SetText("[::b]### Welcome back. ###\n	If you need to know more, run the [::b]man[::-] command.\n").
+		SetBorder(true)
 
 	commandInput := NewEditor()
 	commandInput.internalTextView.
