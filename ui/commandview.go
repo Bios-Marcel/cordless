@@ -7,14 +7,20 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+const noHistoryIndexSelected = -1
+
 // CommandView contains a simple textview for output and an input field for
 // input. All commands are added to the history when confirmed via enter.
 type CommandView struct {
 	commandOutput *tview.TextView
 	commandInput  *Editor
 
+	// commandHistoryIndex is the current index cycling thorugh the history.
+	// -1 means that no index is selected.
 	commandHistoryIndex int
-	commandHistory      []string
+	// commandHistory is just a flat array of text that the user has sent.
+	// The more recent ones are on the right side of the array.
+	commandHistory []string
 
 	onExecuteCommand func(command string)
 }
@@ -38,7 +44,7 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 		commandOutput: commandOutput,
 		commandInput:  commandInput,
 
-		commandHistoryIndex: -1,
+		commandHistoryIndex: noHistoryIndexSelected,
 		commandHistory:      make([]string, 0),
 
 		onExecuteCommand: onExecuteCommand,
@@ -86,7 +92,12 @@ func (cmdView *CommandView) handleInput(event *tcell.EventKey) *tcell.EventKey {
 		}
 
 		if event.Key() == tcell.KeyEnter {
-			cmdView.commandHistoryIndex = -1
+			//We are resetting the index whenever hitting enter, no matter
+			//whether the command itself was run sucessfully or not.
+			//So that when you cycle up again, you'll be at the most recent command,
+			//meaning the one that you just entered.
+			cmdView.commandHistoryIndex = noHistoryIndexSelected
+
 			command := cmdView.commandInput.GetText()
 			if command == "" {
 				return nil
@@ -94,7 +105,6 @@ func (cmdView *CommandView) handleInput(event *tcell.EventKey) *tcell.EventKey {
 
 			cmdView.onExecuteCommand(strings.TrimSpace(command))
 			cmdView.commandInput.SetText("")
-
 			cmdView.commandHistory = append(cmdView.commandHistory, command)
 
 			return nil
