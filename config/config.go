@@ -39,7 +39,6 @@ var (
 		Times:                                  HourMinuteAndSeconds,
 		UseRandomUserColors:                    false,
 		ShowUserContainer:                      true,
-		ShowChatHeader:                         true,
 		UseFixedLayout:                         false,
 		FixedSizeLeft:                          12,
 		FixedSizeRight:                         12,
@@ -72,9 +71,6 @@ type Config struct {
 	//move over to the message input widget after channel selection
 	FocusMessageInputAfterChannelSelection bool
 
-	//ShowChatHeader decides whether the box above the chat will be shown
-	//or not.
-	ShowChatHeader bool
 	//ShowUserContainer decides whether the user container is part of the
 	//layout or not.
 	ShowUserContainer bool

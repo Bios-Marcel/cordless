@@ -111,7 +111,6 @@ func Run() {
 			window.RegisterCommand(commandimpls.NewAccount(runNext, window))
 			window.RegisterCommand(commandimpls.NewManualCommand(window))
 			window.RegisterCommand(commandimpls.NewFixLayoutCommand(window))
-			window.RegisterCommand(commandimpls.NewChatHeaderCommand(window))
 			window.RegisterCommand(commandimpls.NewFriendsCommand(discord))
 			userSetCmd := commandimpls.NewUserSetCommand(window, discord)
 			userGetCmd := commandimpls.NewUserGetCommand(window, discord)

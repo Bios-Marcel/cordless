@@ -217,7 +217,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		window.LoadChannel(channel)
-		window.UpdateChatHeader(channel)
 		if channel.Type == discordgo.ChannelTypeGroupDM {
 			loadError := window.userList.LoadGroup(channel.ID)
 			if loadError != nil {
@@ -234,7 +233,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if userChannel.Type == discordgo.ChannelTypeDM &&
 				(userChannel.Recipients[0].ID == userID) {
 				window.LoadChannel(userChannel)
-				window.UpdateChatHeader(userChannel)
 				window.RefreshLayout()
 				return
 			}
@@ -249,7 +247,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				}
 			}
 			window.LoadChannel(newChannel)
-			window.UpdateChatHeader(newChannel)
 			window.RefreshLayout()
 		}
 	})
@@ -2087,30 +2084,25 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	return nil
 }
 
-// RefreshChannelTitle calls UpdateChannelTitle using the current channel.
-func (window *Window) RefreshChannelTitle() {
-	window.UpdateChatHeader(window.selectedChannel)
-}
-
 // UpdateChatHeader updates the bordertitle of the chatviews container.o
 // The title consist of the channel name and its topic for guild channels.
 // For private channels it's either the recipient in a dm, or all recipients
 // in a group dm channel. If the channel has a nickname, that is chosen.
 func (window *Window) UpdateChatHeader(channel *discordgo.Channel) {
-	if !config.GetConfig().ShowChatHeader || channel == nil {
-		window.chatView.SetTitle("")
-	} else {
-		if channel.Type == discordgo.ChannelTypeGuildText {
-			if channel.Topic != "" {
-				window.chatView.SetTitle(channel.Name + " - " + channel.Topic)
-			} else {
-				window.chatView.SetTitle(channel.Name)
-			}
-		} else if channel.Type == discordgo.ChannelTypeDM {
-			window.chatView.SetTitle(channel.Recipients[0].Username)
+	if channel == nil {
+		return
+	}
+
+	if channel.Type == discordgo.ChannelTypeGuildText {
+		if channel.Topic != "" {
+			window.chatView.SetTitle(channel.Name + " - " + channel.Topic)
 		} else {
-			window.chatView.SetTitle(discordutil.GetPrivateChannelName(channel))
+			window.chatView.SetTitle(channel.Name)
 		}
+	} else if channel.Type == discordgo.ChannelTypeDM {
+		window.chatView.SetTitle(channel.Recipients[0].Username)
+	} else {
+		window.chatView.SetTitle(discordutil.GetPrivateChannelName(channel))
 	}
 }
 
