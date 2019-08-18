@@ -50,7 +50,7 @@ var (
 		ShortenLinks:                           false,
 		ShortenerPort:                          63212,
 		DesktopNotifications:                   true,
-		ShowPlaceholderForBlockedMessages:      false,
+		ShowPlaceholderForBlockedMessages:      true,
 	}
 )
 
