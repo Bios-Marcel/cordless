@@ -1010,10 +1010,9 @@ func (window *Window) PopulateMentionWindowFromCurrentGuild(mentionWindow *tview
 		}
 	}
 
-	roleMap := make(map[string]*discordgo.Role)
 	for _, role := range guild.Roles {
-		roleMap[role.Name] = role
-		memberNames = append(memberNames, role.Name)
+		role := role.Name
+		memberNames = append(memberNames, role)
 	}
 
 	searchResults := fuzzy.ScoreSearch(namePart, memberNames)
@@ -1021,31 +1020,28 @@ func (window *Window) PopulateMentionWindowFromCurrentGuild(mentionWindow *tview
 
 	userWithNickSet := make(map[string]struct{})
 	for _, result := range sortedResults {
-		// Check if result was a role.
-		if role, ok := roleMap[result.Key]; ok {
-			window.addNodeToMentionWindow(mentionWindow, role.Name, role)
-			continue
-		}
-
-		var displayName string = result.Key
-		var userMentionReference string = result.Key
-		if combinedUserAndNickName, ok := nameMap[result.Key]; ok {
+		userOrNickName := result.Key
+		userAndNickName := nameMap[userOrNickName]
+		var userNodeText string
+		var userName string
+		if len(userAndNickName) > 0 {
+			_, containsStr := userWithNickSet[userAndNickName]
 			// If the combined string has been added, skip this entry.
-			if _, containsStr := userWithNickSet[combinedUserAndNickName]; containsStr {
+			if containsStr {
 				continue
 			}
-			userWithNickSet[combinedUserAndNickName] = struct{}{}
-			displayName = combinedUserAndNickName
-			userMentionReference = nameMap[combinedUserAndNickName]
+			userWithNickSet[userAndNickName] = struct{}{}
+			userNodeText = userAndNickName
+			userName = nameMap[userAndNickName]
+		} else {
+			userNodeText = userOrNickName
+			userName = userOrNickName
 		}
-		window.addNodeToMentionWindow(mentionWindow, displayName, userMentionReference)
+		userNode := tview.NewTreeNode(userNodeText)
+		userNode.SetReference(userName)
+		mentionWindow.GetRoot().AddChild(userNode)
 	}
-}
 
-func (window *Window) addNodeToMentionWindow(mentionWindow *tview.TreeView, name string, reference interface{}) {
-	userNode := tview.NewTreeNode(name)
-	userNode.SetReference(reference)
-	mentionWindow.GetRoot().AddChild(userNode)
 }
 
 func (window *Window) PopulateMentionWindowFromCurrentChannel(mentionWindow *tview.TreeView, namePart string) {
