@@ -9,59 +9,110 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 )
 
-const serverDocumentation = `[orange][::u]# server[white]
+const serverHelpPage = `[::b]NAME
+	server - allows you to join or leave a server
 
-The server command allows you to manage the servers you are in. This command
-doesn't allow administrating a server though.
+[::b]SYNPOSIS
+	[::b]server[::-] <subcommand <args>>
 
-Available subcommands
-  * join  - takes an invite and accepts it
-  * leave - leaves the server
-`
+[::b]DESCRIPTION
+	The server command allows you to join a new server or leave one that you
+	are already a part of. What this command can't do is administrating a
+	server in any way.
 
-// Server is the command that allows managing the UserGuilds.
-type Server struct {
-	session *discordgo.Session
+[::]SUBCOMMANDS
+	[::b]server-join
+		joins the server using the given invitation
+	[::b]server-leave
+		leaves the given server`
+
+const serverJoinHelpPage = `[::b]NAME
+	server-join - allows you to join a server
+
+[::b]SYNPOSIS
+	[::b]server-join[::-] <InviteCode|InviteURL>
+
+[::b]DESCRIPTION
+	This command will take a invite code or an invite URl and attempt joining
+	the server behind it.
+
+[::b]EXAMPLES
+	[gray]$ server-join https://discord.gg/JDScUK
+	[gray]$ server-join discord.gg/JDScUK
+	[gray]$ server-join JDScUK`
+
+const serverLeaveHelpPage = `[::b]NAME
+	server-leaves - allows you to leave a server
+
+[::b]SYNPOSIS
+	[::b]server-leave[::-] <ID|Name>
+
+[::b]DESCRIPTION
+	This command will take a server ID or it's name and leave that server.
+
+[::b]EXAMPLES
+	[gray]$ server-leave 118456055842734083
+	[gray]$ server-leave "Discord Gophers"
+	[gray]$ server-leave Nirvana`
+
+type ServerCmd struct {
+	serverJoinCmd  *ServerJoinCmd
+	serverLeaveCmd *ServerLeaveCmd
+}
+
+type ServerJoinCmd struct {
 	window  *ui.Window
+	session *discordgo.Session
 }
 
-// NewServerCommand makes a new ready to use Server instance.
-func NewServerCommand(session *discordgo.Session, window *ui.Window) *Server {
-	return &Server{
-		session: session,
-		window:  window,
-	}
+type ServerLeaveCmd struct {
+	window  *ui.Window
+	session *discordgo.Session
 }
 
-func (s *Server) Execute(writer io.Writer, parameters []string) {
+func NewServerCommand(serverJoinCmd *ServerJoinCmd, serverLeaveCmd *ServerLeaveCmd) *ServerCmd {
+	return &ServerCmd{serverJoinCmd, serverLeaveCmd}
+}
+
+func NewServerJoinCommand(window *ui.Window, session *discordgo.Session) *ServerJoinCmd {
+	return &ServerJoinCmd{window, session}
+}
+
+func NewServerLeaveCommand(window *ui.Window, session *discordgo.Session) *ServerLeaveCmd {
+	return &ServerLeaveCmd{window, session}
+}
+
+func (cmd *ServerCmd) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, serverHelpPage)
+}
+
+func (cmd *ServerCmd) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 0 {
-		s.PrintHelp(writer)
+		cmd.PrintHelp(writer)
 		return
 	}
 
 	switch parameters[0] {
 	case "join", "accept", "enter":
-		if len(parameters) != 2 {
-			s.printServerJoinHelp(writer)
-		} else {
-			s.joinServer(writer, parameters[1])
-		}
+		cmd.serverJoinCmd.Execute(writer, parameters[1:])
 	case "leave", "exit", "quit":
-		if len(parameters) != 2 {
-			s.printServerLeaveHelp(writer)
-		} else {
-			s.leaveServer(writer, parameters[1])
-		}
+		cmd.serverLeaveCmd.Execute(writer, parameters[1:])
 	default:
-		s.PrintHelp(writer)
+		cmd.PrintHelp(writer)
 	}
 }
 
-func (s *Server) printServerJoinHelp(writer io.Writer) {
-	fmt.Fprintln(writer, "Usage: server join <InviteCode|InviteURL>")
+func (cmd *ServerJoinCmd) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, serverJoinHelpPage)
 }
 
-func (s *Server) joinServer(writer io.Writer, input string) {
+func (cmd *ServerJoinCmd) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 1 {
+		cmd.PrintHelp(writer)
+		return
+	}
+
+	input := parameters[0]
 	lastSlash := strings.LastIndex(input, "/")
 	var inviteID string
 	if lastSlash == -1 {
@@ -70,7 +121,7 @@ func (s *Server) joinServer(writer io.Writer, input string) {
 		inviteID = input[lastSlash+1:]
 	}
 
-	invite, err := s.session.InviteAccept(inviteID)
+	invite, err := cmd.session.InviteAccept(inviteID)
 	if err != nil {
 		fmt.Fprintf(writer, "[red]Error accepting invite with ID '%s':\n\t[red]%s\n", inviteID, err)
 	} else {
@@ -78,20 +129,26 @@ func (s *Server) joinServer(writer io.Writer, input string) {
 	}
 }
 
-func (s *Server) printServerLeaveHelp(writer io.Writer) {
-	fmt.Fprintln(writer, "Usage: server leave <ID|Name>")
+func (cmd *ServerLeaveCmd) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, serverLeaveHelpPage)
 }
 
-func (s *Server) leaveServer(writer io.Writer, input string) {
+func (cmd *ServerLeaveCmd) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 1 {
+		cmd.PrintHelp(writer)
+		return
+	}
+
+	input := parameters[0]
 	matches := make([]*discordgo.Guild, 0)
-	for _, guild := range s.session.State.Guilds {
+	for _, guild := range cmd.session.State.Guilds {
 		if guild.ID == input || guild.Name == input {
 			matches = append(matches, guild)
 		}
 	}
 
 	if len(matches) == 1 {
-		err := s.session.GuildLeave(matches[0].ID)
+		err := cmd.session.GuildLeave(matches[0].ID)
 		if err != nil {
 			fmt.Fprintf(writer, "[red]Error leaving server '%s':\n\t[red]%s\n", matches[0].Name, err)
 		} else {
@@ -108,15 +165,26 @@ func (s *Server) leaveServer(writer io.Writer, input string) {
 	}
 }
 
-func (s *Server) Name() string {
+func (cmd *ServerCmd) Name() string {
 	return "server"
 }
 
-func (s *Server) Aliases() []string {
+func (cmd *ServerJoinCmd) Name() string {
+	return "server-join"
+}
+
+func (cmd *ServerLeaveCmd) Name() string {
+	return "server-leave"
+}
+
+func (cmd *ServerCmd) Aliases() []string {
 	return []string{"guild"}
 }
 
-// PrintHelp prints the general help text for the Server command.
-func (s *Server) PrintHelp(writer io.Writer) {
-	fmt.Fprintln(writer, serverDocumentation)
+func (cmd *ServerJoinCmd) Aliases() []string {
+	return []string{"guild-join", "guild-accept", "guild-enter", "server-accept", "server-enter"}
+}
+
+func (cmd *ServerLeaveCmd) Aliases() []string {
+	return []string{"guild-leave", "guild-exit", "guild-quit", "server-exit", "server-quit"}
 }

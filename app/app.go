@@ -118,7 +118,11 @@ func Run() {
 			window.RegisterCommand(userSetCmd)
 			window.RegisterCommand(userGetCmd)
 			window.RegisterCommand(commandimpls.NewUserCommand(userSetCmd, userGetCmd))
-			window.RegisterCommand(commandimpls.NewServerCommand(discord, window))
+			serverJoinCmd := commandimpls.NewServerJoinCommand(window, discord)
+			serverLeaveCmd := commandimpls.NewServerLeaveCommand(window, discord)
+			window.RegisterCommand(serverJoinCmd)
+			window.RegisterCommand(serverLeaveCmd)
+			window.RegisterCommand(commandimpls.NewServerCommand(serverJoinCmd, serverLeaveCmd))
 		})
 	}()
 
