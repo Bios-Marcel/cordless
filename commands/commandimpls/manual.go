@@ -43,8 +43,14 @@ func NewManualCommand(window *ui.Window) *Manual {
 
 // Execute runs the command piping its output into the supplied writer.
 func (manual *Manual) Execute(writer io.Writer, parameters []string) {
-	if len(parameters) == 1 {
-		input := strings.ToLower(parameters[0])
+	if len(parameters) == 0 {
+		manual.PrintHelp(writer)
+	} else {
+		// This catches the case where users type something like:
+		//     man user set
+		// In which case it will be converted to user-set, showing
+		// the respective manpage for user-set.
+		input := strings.ToLower(strings.Join(parameters, "-"))
 		switch input {
 		case "chat-view", "chatview":
 			fmt.Fprintln(writer, chatViewDocumentation)
@@ -53,7 +59,7 @@ func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 			for _, cmd := range manual.window.GetRegisteredCommands() {
 				fmt.Fprintf(writer, "\t* %s\n", cmd.Name())
 			}
-		case "configuration":
+		case "configuration", "config", "conf":
 			fmt.Fprintln(writer, configurationDocumentation)
 		case "message-editor", "messageeditor":
 			fmt.Fprintln(writer, messageEditorDocumentation)
@@ -76,8 +82,6 @@ func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 
 			fmt.Fprintf(writer, "[red]No manual entry for '%s' found.\n", input)
 		}
-	} else {
-		manual.PrintHelp(writer)
 	}
 }
 
