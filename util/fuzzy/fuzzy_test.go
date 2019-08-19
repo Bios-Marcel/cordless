@@ -49,4 +49,11 @@ func TestFuzzyScore(t *testing.T) {
 		t.Errorf("Expected score to be > 0\n")
 	}
 
+	scoreA = Score("sout", "lexjusto#4214")
+	scoreB = Score("sout", "Southclaws#4153")
+
+	if scoreA >= scoreB {
+		t.Errorf("Unexpected score difference.\n")
+	}
+
 }
