@@ -58,11 +58,11 @@ func Score(needle, haystack string) float64 {
 	lowerNeedle := strings.ToLower(needle)
 	lowerHaystack := strings.ToLower(haystack)
 	score := 0.0
-	for i, j := 0, 0; i < needleLength; i, j = i+1, j+1 {
+	for i, j := 0, 0; i < needleLength && j < haystackLength; i, j = i+1, j+1 {
 
 		letter := lowerNeedle[i]
-		letterIndex := strings.IndexByte(lowerHaystack[j:], letter)
-		if letterIndex < 0 {
+		letterIndex := strings.IndexByte(lowerHaystack[j:], letter) + j
+		if (letterIndex - j) < 0 {
 			return -1
 		}
 
