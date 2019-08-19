@@ -2012,7 +2012,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	if window.selectedChannel == nil {
 		window.previousChannel = channel
 		window.previousChannelNode = window.channelTree.GetCurrentNode()
-	} else {
+	} else if channel != window.selectedChannel {
 		window.previousChannel = window.selectedChannel
 		window.previousChannelNode = window.selectedChannelNode
 
