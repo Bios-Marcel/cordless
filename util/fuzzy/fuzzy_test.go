@@ -16,9 +16,9 @@ func TestFuzzyScore(t *testing.T) {
 		t.Errorf("Incorrect score rating")
 	}
 
-	arr := []string{"tests", "test", "testosterone", "atesta", "bob"}
-	sorted := SortSearchResults(ScoreSearch("te", arr))
-	expected := [4]string{"test", "testosterone", "tests", "atesta"}
+	arr := []string{"tests", "test", "Testosterone", "atesta", "bob"}
+	sorted := SortSearchResults(ScoreSearch("Te", arr))
+	expected := [4]string{"Testosterone", "test", "tests", "atesta"}
 
 	if len(sorted) != len(expected) {
 		t.Errorf("Expected length of %d, but received %d.\n", len(expected), len(sorted))
@@ -37,16 +37,16 @@ func TestFuzzyScore(t *testing.T) {
 		t.Errorf("Expected score to be < 0\n")
 	}
 
-	if Score("S", "scheme god#2313") >= 0 {
-		t.Errorf("Expected score to be < 0\n")
+	if Score("S", "scheme god#2313") <= 0 {
+		t.Errorf("Expected score to be > 0\n")
 	}
 
 	if Score("K", "KC") <= 0 {
-		t.Errorf("Expected score to be < 0\n")
+		t.Errorf("Expected score to be > 0\n")
 	}
 
 	if Score("s", "space") <= 0 {
-		t.Errorf("Expected score to be < 0\n")
+		t.Errorf("Expected score to be > 0\n")
 	}
 
 }
