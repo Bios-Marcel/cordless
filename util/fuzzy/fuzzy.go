@@ -3,6 +3,7 @@ package fuzzy
 import (
 	"sort"
 	"strings"
+	"unicode"
 )
 
 type SearchResult struct {
@@ -12,17 +13,8 @@ type SearchResult struct {
 
 func ScoreSearch(searchTerm string, searchItems []string) map[string]float64 {
 	mymap := make(map[string]float64)
-	// Ignore case if there are no capital letters in the search term.
-	caseInsensitive := searchTerm == strings.ToLower(searchTerm)
-	if caseInsensitive {
-		searchTerm = strings.ToLower(searchTerm)
-	}
 	for _, str := range searchItems {
-		if caseInsensitive {
-			mymap[str] = Score(searchTerm, strings.ToLower(str))
-		} else {
-			mymap[str] = Score(searchTerm, str)
-		}
+		mymap[str] = Score(searchTerm, str)
 	}
 	return mymap
 }
@@ -63,38 +55,35 @@ func Score(needle, haystack string) float64 {
 		return 0
 	}
 
+	lowerNeedle := strings.ToLower(needle)
+	lowerHaystack := strings.ToLower(haystack)
 	score := 0.0
-	needleIndex := 0
-	for haystackIndex := 0; needleIndex < needleLength; haystackIndex++ {
+	for i, j := 0, 0; i < needleLength; i, j = i+1, j+1 {
 
-		letterIndex := findLetterIndex(needle[needleIndex], haystack, haystackIndex)
+		letter := lowerNeedle[i]
+		letterIndex := strings.IndexByte(lowerHaystack[j:], letter)
 		if letterIndex < 0 {
 			return -1
 		}
 
-		if letterIndex == haystackIndex {
+		if areLettersSameCase(needle[i], haystack[j]) {
+			score += 0.5
+		}
+
+		if letterIndex == j {
 			// Letter was consecutive
 			score += 8
 		} else {
 			score += 1 - (0.1 * float64(letterIndex))
-			// Move haystackIndex up to the next found letter.
-			haystackIndex = letterIndex
+			// Move j up to the next found letter.
+			j = letterIndex
 		}
 
-		needleIndex++
 	}
 	return score
 }
 
-// Scores a letter from inside a string based on its distance from the start of the string.
-// The index at which the letter was found will be returned.
-// The score and index will be -1 if the character is not found.
-func findLetterIndex(c byte, haystack string, startIndex int) int {
-	for i := startIndex; i < len(haystack); i++ {
-		if c == haystack[i] {
-			return i
-		}
-	}
-	// Letter not found.
-	return -1
+func areLettersSameCase(letterA, letterB byte) bool {
+	return unicode.IsUpper(rune(letterA)) && unicode.IsUpper(rune(letterB)) ||
+		unicode.IsLower(rune(letterA)) && unicode.IsLower(rune(letterB))
 }
