@@ -73,6 +73,15 @@ yaourt -S cordless-git
 Depending on your installation, you might not have `yaourt` installed or even
 have a different AUR package manager.
 
+#### Gentoo based Linux Distributions
+
+If you are using gentoo or funtoo machine, you can add picarica-overlay using layman including cordless ebuild
+
+```shell
+layman -a picarica-overlay
+```
+
+
 #### Manual Linux installation
 
 If you are installing manually via:
