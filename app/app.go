@@ -15,6 +15,7 @@ import (
 	"github.com/Bios-Marcel/cordless/commands/commandimpls"
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
+	"github.com/Bios-Marcel/cordless/ui/tcellutil"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 )
@@ -49,6 +50,11 @@ func Run() {
 	}
 
 	app := tview.NewApplication()
+	screen, err := tcellutil.NewScreen()
+	if err != nil {
+		log.Fatalf("Unable to create TUI screen (%s)\n", err.Error())
+	}
+	app.SetScreen(screen)
 	splashScreen := tview.NewTextView()
 	splashScreen.SetTextAlign(tview.AlignCenter)
 	splashScreen.SetText(tview.Escape(splashText + "\n\nConfig lies at: " + configDir))

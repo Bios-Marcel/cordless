@@ -10,6 +10,8 @@ github.com/Bios-Marcel/tview v0.0.0-20190712142836-ea9b4a50a84f h1:BAqDSUAdafJsX
 github.com/Bios-Marcel/tview v0.0.0-20190712142836-ea9b4a50a84f/go.mod h1:1yM6ZD3hxlpiHugsW1MuABv9x42KTvxFUocQ4uEorN0=
 github.com/DATA-DOG/go-sqlmock v1.3.3 h1:CWUqKXe0s8A2z6qCgkP4Kru7wC11YoAnoupUKFDnH08=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
+github.com/MOZGIII/fdswap-go v0.1.0 h1:GuxinRn0VL4kFpPpMzm3fSOBrlVgkpjhFqJ05rfxISA=
+github.com/MOZGIII/fdswap-go v0.1.0/go.mod h1:xIkiiZzOjzDXCWQ2/Q5ZIaI13Z74tfVljNrhbVepuiQ=
 github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38 h1:smF2tmSOzy2Mm+0dGI2AIUHY+w0BUc+4tn40djz7+6U=
 github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38/go.mod h1:r7bzyVFMNntcxPZXK3/+KdruV1H5KSlyVY0gc+NgInI=
 github.com/alecthomas/chroma v0.6.3 h1:8H1D0yddf0mvgvO4JDBKnzLd9ERmzzAijBxnZXGV/FA=
