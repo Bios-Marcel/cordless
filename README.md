@@ -172,7 +172,7 @@ two-factor authentication enabled. After logging in using either method, your
 token is stored locally on your machine. The token will not be encrypted, so be
 careful with your configuration file.
 
-If you are logging in with a bot token, you have to append `Bot ` (yes, with
+If you are logging in with a bot token, you have to prepend `Bot ` (yes, with
 the space) in front of the token.
 
 **THIS APPLICATION NEVER SAVES YOUR ACTUAL PASSWORD LOCALLY.**
