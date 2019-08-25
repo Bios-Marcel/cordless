@@ -9,3 +9,4 @@ stage/
 prime/
 snap/.snapcraft
 .vscode/
+log.txt

@@ -10,6 +10,7 @@ require (
 	github.com/Bios-Marcel/shortnotforlong v1.0.0
 	github.com/Bios-Marcel/tview v0.0.0-20191228174509-82f4aa41eebe
 	github.com/alecthomas/chroma v0.6.6
+	github.com/MOZGIII/fdswap-go v0.2.0
 	github.com/atotto/clipboard v0.1.2
 	github.com/gdamore/tcell v1.3.1-0.20191115014413-b6a97de0c118
 	github.com/gen2brain/beeep v0.0.0-20190317152856-aa3d7c1499fd
