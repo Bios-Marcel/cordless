@@ -1515,44 +1515,51 @@ func (window *Window) registerGuildHandlers() {
 
 	go func() {
 		for guildCreate := range guildCreateChannel {
+			guild := guildCreate
 			window.app.QueueUpdateDraw(func() {
-				window.guildList.AddGuild(guildCreate.ID, guildCreate.Name)
+				window.guildList.AddGuild(guild.ID, guild.Name)
 			})
 		}
 	}()
 
 	go func() {
 		for guildUpdate := range guildUpdateChannel {
+			guild := guildUpdate
 			window.app.QueueUpdateDraw(func() {
-				window.guildList.UpdateName(guildUpdate.ID, guildUpdate.Name)
+				window.guildList.UpdateName(guild.ID, guild.Name)
 			})
 		}
 	}()
 
 	go func() {
 		for guildRemove := range guildRemoveChannel {
-			clearChannelTree := window.selectedGuildNode.GetReference() == guildRemove.ID
-			var isInGuildChannel bool
-
-			if window.selectedChannel != nil && window.selectedChannel.GuildID == guildRemove.ID {
-				isInGuildChannel = true
+			if window.selectedGuildNode == nil {
+				continue
 			}
 
-			window.selectedGuildNode = nil
-			window.selectedGuild = nil
+			if window.previousGuildNode != nil && window.previousGuildNode.GetReference() == guildRemove.ID {
+				window.previousGuildNode = nil
+				window.previousGuild = nil
+				window.previousChannelNode = nil
+				window.previousChannel = nil
+			}
 
-			window.app.QueueUpdateDraw(func() {
-				if clearChannelTree {
+			if window.selectedGuildNode.GetReference() == guildRemove.ID {
+				guildID := guildRemove.ID
+				window.app.QueueUpdateDraw(func() {
+					if window.selectedChannel != nil && window.selectedChannel.GuildID == guildID {
+						window.chatView.ClearViewAndCache()
+						window.selectedChannel = nil
+						window.selectedChannelNode = nil
+					}
+
 					window.channelTree.Clear()
-				}
-
-				if isInGuildChannel {
 					window.userList.Clear()
-					window.chatView.ClearViewAndCache()
-				}
-
-				window.guildList.RemoveGuild(guildRemove.ID)
-			})
+					window.guildList.RemoveGuild(guildID)
+					window.selectedGuildNode = nil
+					window.selectedGuild = nil
+				})
+			}
 		}
 	}()
 }
@@ -1678,11 +1685,26 @@ func (window *Window) registerGuildChannelHandler() {
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelDelete) {
 		if window.isChannelEventRelevant(event.Channel) {
-			window.channelTree.Lock()
+			if window.previousChannelNode != nil && window.previousChannelNode.GetReference() == event.ID {
+				window.previousGuildNode = nil
+				window.previousGuild = nil
+				window.previousChannelNode = nil
+				window.previousChannel = nil
+			}
+
+			if window.selectedChannelNode != nil && window.selectedChannelNode.GetReference() == event.ID {
+				window.selectedChannel = nil
+				window.selectedChannelNode = nil
+				window.app.QueueUpdateDraw(func() {
+					window.chatView.ClearViewAndCache()
+				})
+			}
+
 			window.app.QueueUpdateDraw(func() {
+				window.channelTree.Lock()
 				window.channelTree.RemoveChannel(event.Channel)
+				window.channelTree.Unlock()
 			})
-			window.channelTree.Unlock()
 		}
 	})
 }
