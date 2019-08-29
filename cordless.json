@@ -2,8 +2,8 @@
 	"homepage": "https://github.com/Bios-Marcel/cordless",
 	"description": "A third party discord client alternative.",
 	"license": "BSD-3-Clause",
-	"version": "2019-08-10",
-	"url": "https://github.com/Bios-Marcel/cordless/releases/download/2019-08-10/cordless.exe",
+	"version": "2019-08-29",
+	"url": "https://github.com/Bios-Marcel/cordless/releases/download/2019-08-29/cordless.exe",
 	"bin": "cordless.exe",
-	"hash": "35826babfe26e54b8c6594982cd5bf4f851150c560972ece9a841e70b9f713b6"
+	"hash": "af3c715aa2eef143f26f5a2587bc3418da30eed97b721613d8ec3b4ddb9b73f8"
 }
