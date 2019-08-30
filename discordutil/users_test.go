@@ -276,3 +276,103 @@ func TestSortUserRoles(t *testing.T) {
 		})
 	}
 }
+
+func TestIsBlocked(t *testing.T) {
+	type args struct {
+		state *discordgo.State
+		user  *discordgo.User
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "no relationships",
+			args: args{
+				state: &discordgo.State{},
+				user:  &discordgo.User{ID: "a"},
+			},
+			want: false,
+		}, {
+			name: "only a friendship with the user in question",
+			args: args{
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							&discordgo.Relationship{
+								User: &discordgo.User{ID: "a"},
+								Type: discordgo.RelationTypeFriend,
+							},
+						},
+					},
+				},
+				user: &discordgo.User{ID: "a"},
+			},
+			want: false,
+		}, {
+			name: "only one blocked other user",
+			args: args{
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							&discordgo.Relationship{
+								User: &discordgo.User{ID: "a"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+						},
+					},
+				},
+				user: &discordgo.User{ID: "a"},
+			},
+			want: true,
+		}, {
+			name: "only one blocked other user",
+			args: args{
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							&discordgo.Relationship{
+								User: &discordgo.User{ID: "b"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+						},
+					},
+				},
+				user: &discordgo.User{ID: "a"},
+			},
+			want: false,
+		}, {
+			name: "multiple blocked users, including the one in question",
+			args: args{
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							&discordgo.Relationship{
+								User: &discordgo.User{ID: "c"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+							&discordgo.Relationship{
+								User: &discordgo.User{ID: "b"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+							&discordgo.Relationship{
+								User: &discordgo.User{ID: "a"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+						},
+					},
+				},
+				user: &discordgo.User{ID: "a"},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsBlocked(tt.args.state, tt.args.user); got != tt.want {
+				t.Errorf("IsBlocked() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
