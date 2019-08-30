@@ -19,7 +19,7 @@ jobs:
       - name: Run tests
         env:
           GO111MODULE: on
-        run: go test ./...
+        run: go test -race ./...
 
       - name: Run build
         env:
