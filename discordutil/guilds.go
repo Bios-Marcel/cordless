@@ -6,13 +6,18 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 )
 
+// GuildLoader reflects an instance that allows loading guilds from a discord backend.
+type GuildLoader interface {
+	UserGuilds(int, string, string) ([]*discordgo.UserGuild, error)
+}
+
 // LoadGuilds loads all guilds the current user is part of.
-func LoadGuilds(session *discordgo.Session) ([]*discordgo.UserGuild, error) {
+func LoadGuilds(guildLoader GuildLoader) ([]*discordgo.UserGuild, error) {
 	guilds := make([]*discordgo.UserGuild, 0)
 	var beforeID string
 
 	for {
-		newGuilds, discordError := session.UserGuilds(100, beforeID, "")
+		newGuilds, discordError := guildLoader.UserGuilds(100, beforeID, "")
 		if discordError != nil {
 			return nil, discordError
 		}
