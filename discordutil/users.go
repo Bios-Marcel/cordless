@@ -114,11 +114,11 @@ func SortUserRoles(roles []string, guildRoles []*discordgo.Role) {
 		}
 
 		if secondRole == nil {
-			return true
+			return false
 		}
 
 		if firstRole == nil {
-			return false
+			return true
 		}
 
 		return firstRole.Position > secondRole.Position
