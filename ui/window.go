@@ -1417,19 +1417,21 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				}
 
 				if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
-					window.app.QueueUpdateDraw(func() {
-						window.privateList.MarkChannelAsUnread(channel)
-					})
+					if !readstate.IsChannelMuted(channel) {
+						window.app.QueueUpdateDraw(func() {
+							window.privateList.MarkChannelAsUnread(channel)
+						})
+					}
 				} else if channel.Type == discordgo.ChannelTypeGuildText {
-					window.app.QueueUpdateDraw(func() {
-						if mentionsYou {
+					if mentionsYou {
+						window.app.QueueUpdateDraw(func() {
 							window.channelTree.MarkChannelAsMentioned(channel.ID)
-						} else {
-							if !readstate.IsChannelMuted(channel) {
-								window.channelTree.MarkChannelAsUnread(channel.ID)
-							}
-						}
-					})
+						})
+					} else if !readstate.IsChannelMuted(channel) {
+						window.app.QueueUpdateDraw(func() {
+							window.channelTree.MarkChannelAsUnread(channel.ID)
+						})
+					}
 				}
 			}
 		}
