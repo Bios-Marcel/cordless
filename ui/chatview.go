@@ -404,7 +404,7 @@ func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 	}
 
 	//Might happen when there are unsupported types.
-	return "[gray]message couldn't be a rendered."
+	return "[gray]message couldn't be rendered."
 }
 
 func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) string {
