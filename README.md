@@ -20,7 +20,6 @@
       - [Arch based Linux distributions](#arch-based-linux-distributions)
     - [Installing on Windows](#installing-on-windows)
     - [Installing on macOS](#installing-on-macos)
-    - [Using pre-built binaries](#using-pre-built-binaries)
     - [Building it from source](#building-it-from-source)
     - [Login](#login)
       - [Retrieving your token via discord or chrome](#retrieving-your-token-via-discord-or-chrome)
@@ -129,19 +128,6 @@ brew install cordless
 
 If you don't install via homebrew, then you should get `pngpaste`, since it's
 what allows you to paste images.
-
-### Using pre-built binaries
-
-**UPDATES HAVE TO BE INSTALLED MANUALLY**
-
-You can always find the latest release on this repositories
-[release page](../../releases/latest).
-
-For your information, since May 22th 2019 all binaries will be build using
-the following parameters: `-ldflags="-w -s"`. So checksums of binaries built
-without those parameters will not align with the ones built with those
-parameters. Meaning that if you want to compare checksums, please keep this
-in mind.
 
 ### Building it from source
 
