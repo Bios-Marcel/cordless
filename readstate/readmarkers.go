@@ -139,17 +139,41 @@ func HasGuildBeenRead(guildID string) bool {
 	return true
 }
 
-// IsChannelMuted checks whether the channel is muted or not. Currently this
-// only works for guild channels.
+// IsChannelMuted checks whether the channel is muted or not. This works for
+// private channels as well as for guild channels. The reasoning for this is,
+// that discord saves all private channel settings in the settings object for
+// the Guild with the GuildID emtpy.
 func IsChannelMuted(channel *discordgo.Channel) bool {
-	if channel.GuildID != "" {
+	//optimization for the case of guild channels, as the handling for
+	//private channels will be unnecessariyl slower.
+	if channel.GuildID == "" {
 		for _, settings := range state.UserGuildSettings {
-			if settings.GuildID == channel.GuildID {
+			if settings.GetGuildID() == channel.GuildID {
 				for _, override := range settings.ChannelOverrides {
 					if override.ChannelID == channel.ID {
 						if override.Muted {
 							return true
 						}
+
+						break
+					}
+				}
+
+				//No break here, since it can happen that there are multiple
+				//instances of UserGuildSettings for non guilds ... don't ask
+				//me why ...
+			}
+		}
+	} else {
+		for _, settings := range state.UserGuildSettings {
+			if settings.GetGuildID() == channel.GuildID {
+				for _, override := range settings.ChannelOverrides {
+					if override.ChannelID == channel.ID {
+						if override.Muted {
+							return true
+						}
+
+						break
 					}
 				}
 
@@ -157,8 +181,6 @@ func IsChannelMuted(channel *discordgo.Channel) bool {
 			}
 		}
 	}
-
-	//FIXME Do this for private channels
 
 	return false
 }
