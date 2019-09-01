@@ -112,6 +112,25 @@ func (e *Editor) MoveCursorRight(left, right, selection []rune) {
 	e.setAndFixText(newText)
 }
 
+func (e *Editor) MoveCursorToIndex(left, right, selection []rune, index int) {
+	var newText string
+	if index < len(left) {
+		newText = leftRegion + string(left[:index]) + selRegion + string(left[index]) + rightRegion + string(left[index+1:]) + string(right) + endRegion
+	} else {
+		indexSelection := index - len(left)
+		if indexSelection < len(selection) {
+			newText = leftRegion + string(left) + string(left[:indexSelection]) + selRegion + string(selection[indexSelection]) + rightRegion + string(selection[indexSelection+1:]) + string(right) + endRegion
+		} else {
+			indexRight := index - len(left) - len(selection)
+			if indexRight < len(right) {
+				newText = leftRegion + string(left) + string(selection) + string(right[:indexRight]) + selRegion + string(right[indexRight]) + rightRegion + string(right[indexRight+1:]) + endRegion
+			}
+		}
+	}
+
+	e.setAndFixText(newText)
+}
+
 func (e *Editor) SelectWordLeft(left, right, selection []rune) {
 	if len(left) > 0 {
 		selectionFrom := 0
@@ -363,7 +382,8 @@ func (editor *Editor) UpdateMentionHandler() {
 }
 
 func (editor *Editor) ShowMentionHandler(atSymbolIndex int) {
-	lookupKeyword := editor.GetText()[atSymbolIndex+1:]
+	text := editor.internalTextView.GetRegionText("left")
+	lookupKeyword := text[atSymbolIndex+1:]
 	editor.currentMentionBeginIndex = atSymbolIndex + 1
 	editor.currentMentionEndIndex = len(lookupKeyword) + atSymbolIndex
 	if editor.mentionShowHandler != nil {
