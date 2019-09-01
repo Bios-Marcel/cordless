@@ -262,7 +262,7 @@ func (channelTree *ChannelTree) MarkChannelAsRead(channelID string) {
 
 			if channelTree.channelStates[node] != channelLoaded {
 				channelTree.channelStates[node] = channelRead
-				node.SetColor(tcell.ColorWhite)
+				node.SetColor(config.GetTheme().PrimaryTextColor)
 			}
 
 			return false
@@ -297,7 +297,7 @@ func (channelTree *ChannelTree) MarkChannelAsLoaded(channelID string) {
 	for node, state := range channelTree.channelStates {
 		if state == channelLoaded {
 			channelTree.channelStates[node] = channelRead
-			node.SetColor(tcell.ColorWhite)
+			node.SetColor(config.GetTheme().PrimaryTextColor)
 			break
 		}
 	}

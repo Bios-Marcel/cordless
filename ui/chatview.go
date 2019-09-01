@@ -13,6 +13,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/Bios-Marcel/cordless/times"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/config"
@@ -35,6 +36,7 @@ var (
 	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
 	spoilerRegex        = regexp.MustCompile(`(?s)\|\|(.+?)\|\|`)
 	roleMentionRegex    = regexp.MustCompile(`<@&\d*>`)
+	defaultTextColor    = tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)
 )
 
 // ChatView is using a tview.TextView in order to be able to display messages
@@ -298,7 +300,7 @@ func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 		newText = formattedMessage
 	} else {
 		if isBlocked {
-			newText = messagePartsToColouredString(message.Timestamp, "Blocked user", "Blocked message")
+			newText = chatView.messagePartsToColouredString(message.Timestamp, "Blocked user", "Blocked message")
 		} else {
 			newText = chatView.formatMessage(message)
 		}
@@ -358,7 +360,7 @@ func (chatView *ChatView) Rerender() {
 }
 
 func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
-	return messagePartsToColouredString(
+	return chatView.messagePartsToColouredString(
 		message.Timestamp,
 		chatView.formatMessageAuthor(message),
 		chatView.formatMessageText(message))
@@ -424,12 +426,12 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 				return data
 			}
 
-			return linkColor + "@" + role.Name + "[white]"
+			return linkColor + "@" + role.Name + "[" + defaultTextColor + "]"
 		})
 
 	messageText = strings.NewReplacer(
-		"@everyone", linkColor+"@everyone[white]",
-		"@here", linkColor+"@here[white]",
+		"@everyone", linkColor+"@everyone["+defaultTextColor+"]",
+		"@here", linkColor+"@here["+defaultTextColor+"]",
 	).Replace(messageText)
 
 	for _, user := range message.Mentions {
@@ -452,7 +454,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 			color = linkColor
 		}
 
-		replacement := color + "@" + userName + "[white]"
+		replacement := color + "@" + userName + "[" + defaultTextColor + "]"
 		messageText = strings.NewReplacer(
 			"<@"+user.ID+">", replacement,
 			"<@!"+user.ID+">", replacement,
@@ -467,7 +469,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 				return data
 			}
 
-			return linkColor + "#" + channel.Name + "[white]"
+			return linkColor + "#" + channel.Name + "[" + defaultTextColor + "]"
 		})
 
 	// FIXME Needs improvement, as it wastes space and breaks things
@@ -592,7 +594,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 
 	shouldShow, contains := chatView.showSpoilerContent[message.ID]
 	if !contains || !shouldShow {
-		messageText = spoilerRegex.ReplaceAllString(messageText, "[red]!SPOILER![white]")
+		messageText = spoilerRegex.ReplaceAllString(messageText, "[red]!SPOILER!["+defaultTextColor+"]")
 	}
 	messageText = strings.Replace(messageText, "\\|", "|", -1)
 
@@ -647,14 +649,14 @@ func removeLeadingWhitespaceInCode(code string) string {
 	return tabsTrimmed
 }
 
-func messagePartsToColouredString(timestamp discordgo.Timestamp, author, message string) string {
+func (chatView *ChatView) messagePartsToColouredString(timestamp discordgo.Timestamp, author, message string) string {
 	time, parseError := timestamp.Parse()
 	var timeCellText string
 	if parseError == nil {
 		timeCellText = times.TimeToLocalString(&time)
 	}
 
-	return fmt.Sprintf("[gray]%s %s [white]%s[\"\"][\"\"]", timeCellText, author, message)
+	return fmt.Sprintf("[gray]%s %s ["+defaultTextColor+"]%s[\"\"][\"\"]", timeCellText, author, message)
 }
 
 func parseBoldAndUnderline(messageText string) string {

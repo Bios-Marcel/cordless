@@ -192,28 +192,28 @@ func TestChatView_formatMessageText(t *testing.T) {
 			input: &discordgo.Message{
 				Content: "||simple||",
 			},
-			want:     "[red]!SPOILER![white]",
+			want:     "[red]!SPOILER![#ffffff]",
 			chatView: defaultChatView,
 		}, {
 			name: "simple spoiler inbetween",
 			input: &discordgo.Message{
 				Content: "gimme ||simple|| pls",
 			},
-			want:     "gimme [red]!SPOILER![white] pls",
+			want:     "gimme [red]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "formatted spoiler inbetween",
 			input: &discordgo.Message{
 				Content: "gimme ||**simple**|| pls",
 			},
-			want:     "gimme [red]!SPOILER![white] pls",
+			want:     "gimme [red]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "formatted spoiler inbetween",
 			input: &discordgo.Message{
 				Content: "gimme ||**simple**|| pls",
 			},
-			want:     "gimme [red]!SPOILER![white] pls",
+			want:     "gimme [red]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "unclosed spoiler",
@@ -229,7 +229,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 			},
 			//FIXME Not sure whether this is correct, but it's the
 			//current state, so i'll be specifying it for now.
-			want:     "gimme [::b][red]!SPOILER![white][::-] pls",
+			want:     "gimme [::b][red]!SPOILER![#ffffff][::-] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "codeblock without specified langauge",
@@ -327,7 +327,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 			input: &discordgo.Message{
 				Content: "||```\nowo\n```||",
 			},
-			want:     "[red]!SPOILER![white]",
+			want:     "[red]!SPOILER![#ffffff]",
 			chatView: defaultChatView,
 		}, {
 			name: "codeblock with revelaed spoiler around",
