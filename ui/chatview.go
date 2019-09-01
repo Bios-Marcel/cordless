@@ -401,7 +401,11 @@ func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 		return "[gray]added " + message.Mentions[0].Username + " to the group."
 	} else if message.Type == discordgo.MessageTypeRecipientRemove {
 		return "[gray]removed " + message.Mentions[0].Username + " from the group."
+	} else if message.Type == discordgo.MessageTypeChannelFollowAdd {
+		return "[gray]has added '" + message.Content + "' to this channel"
 	}
+
+	//TODO Support boost messages; Would be handy to see what they look like first.
 
 	//Might happen when there are unsupported types.
 	return "[gray]message couldn't be rendered."
