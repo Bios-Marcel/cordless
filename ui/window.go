@@ -842,13 +842,17 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		data, ok := node.GetReference().(string)
 		oldText := window.messageInput.GetText()
 		if ok {
-			newText := oldText[:beginIndex] + strings.TrimSpace(data) + oldText[endIndex+1:] + " "
-			window.messageInput.SetText(newText)
+			left := oldText[:beginIndex] + strings.TrimSpace(data) + " "
+			right := oldText[endIndex+1:]
+			window.messageInput.SetText(left + right)
+			window.messageInput.MoveCursorToIndex([]rune(left), []rune(right), []rune{}, len(left))
 		} else {
 			role, ok := node.GetReference().(*discordgo.Role)
 			if ok {
-				newText := oldText[:beginIndex-1] + "<@&" + strings.TrimSpace(role.ID) + ">" + oldText[endIndex+1:] + " "
-				window.messageInput.SetText(newText)
+				left := "<@&" + strings.TrimSpace(role.ID) + "> "
+				right := oldText[endIndex+1:]
+				window.messageInput.SetText(left + right)
+				window.messageInput.MoveCursorToIndex([]rune(left), []rune(right), []rune{}, len(left))
 			}
 		}
 		window.messageInput.mentionHideHandler()
