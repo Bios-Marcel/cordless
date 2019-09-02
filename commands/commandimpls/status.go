@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 )
 
@@ -56,7 +58,7 @@ const (
 	[yellow]idle
 
 	[gray]$ status-get Marcel#7299
-	[red]Do not disturb`
+	"[" + tviewutil.ColorToHex(config.GetTheme().ErrorColor) + "]Do not disturb`
 )
 
 type StatusCmd struct {
@@ -92,7 +94,7 @@ func statusToString(status discordgo.Status) string {
 	case discordgo.StatusOnline:
 		return "[green]Online[white]"
 	case discordgo.StatusDoNotDisturb:
-		return "[red]Do not disturb[white]"
+		return "[" + tviewutil.ColorToHex(config.GetTheme().ErrorColor) + "]Do not disturb[white]"
 	case discordgo.StatusIdle:
 		return "[yellow]Idle[white]"
 	case discordgo.StatusInvisible:
@@ -106,7 +108,7 @@ func statusToString(status discordgo.Status) string {
 
 func (cmd *StatusGetCmd) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) > 1 {
-		fmt.Fprintln(writer, "[red]Invalid parameters")
+		fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Invalid parameters")
 		cmd.PrintHelp(writer)
 		return
 	}
@@ -126,7 +128,7 @@ func (cmd *StatusGetCmd) Execute(writer io.Writer, parameters []string) {
 	}
 
 	if len(matches) == 0 {
-		fmt.Fprintf(writer, "[red]No match for '%s'.\n", input)
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]No match for '%s'.\n", input)
 	} else if len(matches) > 1 {
 		fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", input)
 		fmt.Fprintln(writer, "The following matches were found:")
@@ -140,7 +142,7 @@ func (cmd *StatusGetCmd) Execute(writer io.Writer, parameters []string) {
 
 func (cmd *StatusSetCmd) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 0 || len(parameters) > 1 {
-		fmt.Fprintln(writer, "[red]Invalid parameters")
+		fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Invalid parameters")
 		cmd.PrintHelp(writer)
 		return
 	}
@@ -158,12 +160,12 @@ func (cmd *StatusSetCmd) Execute(writer io.Writer, parameters []string) {
 	case "invisible":
 		updatedSettings, settingStatusError = cmd.session.UserUpdateStatus(discordgo.StatusInvisible)
 	default:
-		fmt.Fprintf(writer, "[red]Invalid status: '%s'\n", strings.ToLower(parameters[0]))
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Invalid status: '%s'\n", strings.ToLower(parameters[0]))
 		cmd.PrintHelp(writer)
 	}
 
 	if settingStatusError != nil {
-		fmt.Fprintf(writer, "[red]Error setting status:\n\t[red]'%s'\n", settingStatusError.Error())
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error setting status:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]'%s'\n", settingStatusError.Error())
 	} else if updatedSettings != nil {
 		cmd.session.State.Settings = updatedSettings
 	}

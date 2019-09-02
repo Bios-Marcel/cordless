@@ -938,7 +938,7 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 			retry := "Retry sending"
 			edit := "Edit"
 			cancel := "Cancel"
-			window.ShowDialog(tcell.ColorRed,
+			window.ShowDialog(config.GetTheme().ErrorColor,
 				fmt.Sprintf("Error sending message: %s.\n\nWhat do you want to do?", sendError),
 				func(button string) {
 					switch button {
@@ -1017,7 +1017,7 @@ func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.Tr
 		guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
 	} else {
 		if !readstate.HasGuildBeenRead(guildID) {
-			guildNode.SetColor(tcell.ColorRed)
+			guildNode.SetColor(config.GetTheme().AttentionColor)
 		} else {
 			guildNode.SetColor(tview.Styles.PrimaryTextColor)
 		}
@@ -1352,7 +1352,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 						notifyError := beeep.Notify("Cordless - "+notificationLocation, tempMessage.ContentWithMentionsReplaced(), "assets/information.png")
 						if notifyError != nil {
-							log.Printf("[red]Error sending notification:\n\t[red]%s\n", notifyError)
+							log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
 						}
 					}
 				}
@@ -1853,7 +1853,7 @@ func (window *Window) ExecuteCommand(input string) {
 		if command != nil {
 			command.Execute(window.commandView, parts[1:])
 		} else {
-			fmt.Fprintf(window.commandView, "[red]The command '%s' doesn't exist[white]\n", parts[0])
+			fmt.Fprintf(window.commandView, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]The command '%s' doesn't exist[white]\n", parts[0])
 		}
 	}
 }
@@ -1882,7 +1882,7 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 //ShowErrorDialog shows a simple error dialog that has only an Okay button,
 // a generic title and the given text.
 func (window *Window) ShowErrorDialog(text string) {
-	window.ShowDialog(tcell.ColorRed, "An error occured - "+text, func(_ string) {}, "Okay")
+	window.ShowDialog(config.GetTheme().ErrorColor, "An error occured - "+text, func(_ string) {}, "Okay")
 }
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
@@ -1897,7 +1897,7 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 				retry := "Retry sending"
 				edit := "Edit"
 				cancel := "Cancel"
-				window.ShowDialog(tcell.ColorRed,
+				window.ShowDialog(config.GetTheme().ErrorColor,
 					fmt.Sprintf("Error editing message: %s.\n\nWhat do you want to do?", discordError),
 					func(button string) {
 						switch button {

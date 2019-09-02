@@ -36,7 +36,6 @@ var (
 	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
 	spoilerRegex        = regexp.MustCompile(`(?s)\|\|(.+?)\|\|`)
 	roleMentionRegex    = regexp.MustCompile(`<@&\d*>`)
-	defaultTextColor    = tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)
 )
 
 // ChatView is using a tview.TextView in order to be able to display messages
@@ -426,12 +425,12 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 				return data
 			}
 
-			return linkColor + "@" + role.Name + "[" + defaultTextColor + "]"
+			return linkColor + "@" + role.Name + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
 		})
 
 	messageText = strings.NewReplacer(
-		"@everyone", linkColor+"@everyone["+defaultTextColor+"]",
-		"@here", linkColor+"@here["+defaultTextColor+"]",
+		"@everyone", linkColor+"@everyone["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]",
+		"@here", linkColor+"@here["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]",
 	).Replace(messageText)
 
 	for _, user := range message.Mentions {
@@ -454,7 +453,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 			color = linkColor
 		}
 
-		replacement := color + "@" + userName + "[" + defaultTextColor + "]"
+		replacement := color + "@" + userName + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
 		messageText = strings.NewReplacer(
 			"<@"+user.ID+">", replacement,
 			"<@!"+user.ID+">", replacement,
@@ -469,7 +468,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 				return data
 			}
 
-			return linkColor + "#" + channel.Name + "[" + defaultTextColor + "]"
+			return linkColor + "#" + channel.Name + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
 		})
 
 	// FIXME Needs improvement, as it wastes space and breaks things
@@ -594,7 +593,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 
 	shouldShow, contains := chatView.showSpoilerContent[message.ID]
 	if !contains || !shouldShow {
-		messageText = spoilerRegex.ReplaceAllString(messageText, "[red]!SPOILER!["+defaultTextColor+"]")
+		messageText = spoilerRegex.ReplaceAllString(messageText, "["+tviewutil.ColorToHex(config.GetTheme().AttentionColor)+"]!SPOILER!["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]")
 	}
 	messageText = strings.Replace(messageText, "\\|", "|", -1)
 
@@ -656,7 +655,7 @@ func (chatView *ChatView) messagePartsToColouredString(timestamp discordgo.Times
 		timeCellText = times.TimeToLocalString(&time)
 	}
 
-	return fmt.Sprintf("[gray]%s %s ["+defaultTextColor+"]%s[\"\"][\"\"]", timeCellText, author, message)
+	return fmt.Sprintf("[gray]%s %s ["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]%s[\"\"][\"\"]", timeCellText, author, message)
 }
 
 func parseBoldAndUnderline(messageText string) string {

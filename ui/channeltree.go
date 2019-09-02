@@ -9,7 +9,6 @@ import (
 	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
-	"github.com/gdamore/tcell"
 )
 
 type channelState int
@@ -117,7 +116,7 @@ func createTopLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Cha
 	channelNode := createChannelNode(channel)
 	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 		channelTree.channelStates[channelNode] = channelUnread
-		channelNode.SetColor(tcell.ColorRed)
+		channelNode.SetColor(config.GetTheme().AttentionColor)
 	}
 	channelTree.GetRoot().AddChild(channelNode)
 }
@@ -135,7 +134,7 @@ func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.
 		if ok && channelID == channel.ParentID {
 			if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 				channelTree.channelStates[channelNode] = channelUnread
-				channelNode.SetColor(tcell.ColorRed)
+				channelNode.SetColor(config.GetTheme().AttentionColor)
 			}
 
 			node.AddChild(channelNode)
@@ -241,7 +240,7 @@ func (channelTree *ChannelTree) MarkChannelAsUnread(channelID string) {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channelID {
 			channelTree.channelStates[node] = channelUnread
-			node.SetColor(tcell.ColorRed)
+			node.SetColor(config.GetTheme().AttentionColor)
 
 			return false
 		}
@@ -282,7 +281,7 @@ func (channelTree *ChannelTree) MarkChannelAsMentioned(channelID string) {
 			if stateError == nil {
 				node.SetText("(@You) " + discordutil.GetChannelNameForTree(channel))
 			}
-			node.SetColor(tcell.ColorRed)
+			node.SetColor(config.GetTheme().AttentionColor)
 
 			return false
 		}

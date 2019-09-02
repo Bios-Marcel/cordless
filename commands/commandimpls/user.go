@@ -10,7 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 )
 
@@ -151,7 +153,7 @@ func (cmd *UserGetCmd) Execute(writer io.Writer, parameters []string) {
 			case "-m", "--mfa", "--tfa", "--2fa":
 				userInformation += fmt.Sprintf("Two-Factor Authentication : %v\n", cmd.session.State.User.MFAEnabled)
 			default:
-				fmt.Fprintf(writer, "[red]Invalid parameter '%s'\n", param)
+				fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Invalid parameter '%s'\n", param)
 				cmd.PrintHelp(writer)
 				return
 			}
@@ -172,13 +174,13 @@ func (cmd *UserSetCmd) Execute(writer io.Writer, parameters []string) {
 			if index != len(parameters)-1 {
 				newName = parameters[index+1]
 			} else {
-				fmt.Fprintln(writer, "[red]Error, you didn't supply a new name.")
+				fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error, you didn't supply a new name.")
 			}
 		case "-e", "--email", "--e-mail", "--mail":
 			if index != len(parameters)-1 {
 				newEmail = parameters[index+1]
 			} else {
-				fmt.Fprintln(writer, "[red]Error, you didn't supply a new e-mail address.")
+				fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error, you didn't supply a new e-mail address.")
 			}
 		case "-a", "--avatar", "--profile-picture":
 			if index != len(parameters)-1 && !strings.HasPrefix(parameters[index+1], "-") {
@@ -192,7 +194,7 @@ func (cmd *UserSetCmd) Execute(writer io.Writer, parameters []string) {
 	}
 
 	if newName == "" && !askForNewPassword && newEmail == "" && newAvatar == cmd.session.State.User.Avatar {
-		fmt.Fprintln(writer, "[red]No valid parameters were supplied.")
+		fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]No valid parameters were supplied.")
 		cmd.PrintHelp(writer)
 		return
 	}
@@ -211,7 +213,7 @@ func (cmd *UserSetCmd) Execute(writer io.Writer, parameters []string) {
 		if strings.HasPrefix(newAvatar, "~") {
 			currentUser, userResolveError := user.Current()
 			if userResolveError != nil {
-				fmt.Fprintf(writer, "[red]Error resolving path:\n\t[red]%s\n", userResolveError.Error())
+				fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error resolving path:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", userResolveError.Error())
 				return
 			}
 
@@ -222,26 +224,26 @@ func (cmd *UserSetCmd) Execute(writer io.Writer, parameters []string) {
 
 		resolvedPath, resolveError := filepath.EvalSymlinks(resolvedPath)
 		if resolveError != nil {
-			fmt.Fprintf(writer, "[red]Error resolving path:\n\t[red]%s\n", resolveError.Error())
+			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error resolving path:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", resolveError.Error())
 			return
 		}
 
 		isAbs := filepath.IsAbs(resolvedPath)
 		if !isAbs {
-			fmt.Fprintln(writer, "[red]Error reading file:\n\t[red]the path is not absolute")
+			fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error reading file:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]the path is not absolute")
 			return
 		}
 
 		data, readError := ioutil.ReadFile(resolvedPath)
 		if readError != nil {
-			fmt.Fprintf(writer, "[red]Error reading file:\n\t[red]%s\n", readError.Error())
+			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error reading file:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", readError.Error())
 			return
 		}
 
 		contentType := http.DetectContentType(data)
 		newAvatar = base64.StdEncoding.EncodeToString(data)
 		if contentType != "image/png" && contentType != "image/jpeg" && contentType != "image/gif" {
-			fmt.Fprintf(writer, "[red]Error updating avatar:\n\r[red]content type '%s' not supported", contentType)
+			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error updating avatar:\n\r["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]content type '%s' not supported", contentType)
 			return
 		}
 		newAvatar = fmt.Sprintf("data:%s;base64,%s", contentType, newAvatar)
@@ -255,7 +257,7 @@ func (cmd *UserSetCmd) Execute(writer io.Writer, parameters []string) {
 			newPasswordConfirmation := cmd.window.PromptSecretInput("Updating your user information", "Please enter your new password again, to make sure it is correct.")
 
 			if newPassword != newPasswordConfirmation {
-				fmt.Fprintln(writer, "[red]Error, new passwords differ from each other, please try again.")
+				fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error, new passwords differ from each other, please try again.")
 				cmd.window.ForceRedraw()
 				return
 			}
@@ -263,7 +265,7 @@ func (cmd *UserSetCmd) Execute(writer io.Writer, parameters []string) {
 
 		currentPassword := cmd.window.PromptSecretInput("Updating your user information", "Please enter your current password.")
 		if currentPassword == "" {
-			fmt.Fprintln(writer, "[red]Empty password, aborting.")
+			fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Empty password, aborting.")
 		} else {
 			_, err := cmd.session.UserUpdate(newEmail, currentPassword, newName, newAvatar, newPassword)
 			if err == nil {

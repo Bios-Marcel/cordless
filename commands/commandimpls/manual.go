@@ -5,7 +5,9 @@ import (
 	"io"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 const manualDocumentation = `[::b]NAME
@@ -81,7 +83,7 @@ func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 				}
 			}
 
-			fmt.Fprintf(writer, "[red]No manual entry for '%s' found.\n", input)
+			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]No manual entry for '%s' found.\n", input)
 		}
 	}
 }

@@ -24,7 +24,10 @@ func main() {
 			TertiaryTextColor:           tcell.ColorWhite,
 			InverseTextColor:            tcell.NewRGBColor(104, 142, 196),
 			ContrastSecondaryTextColor:  tcell.NewRGBColor(104, 142, 196),
-		}}
+		},
+		AttentionColor: tcell.ColorOrange,
+		ErrorColor:     tcell.ColorRed,
+	}
 
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "    ")

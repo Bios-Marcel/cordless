@@ -181,7 +181,7 @@ func TestSortUserRoles(t *testing.T) {
 			args: args{
 				roles: []string{"a"},
 				guildRoles: []*discordgo.Role{
-					&discordgo.Role{ID: "a"},
+					{ID: "a"},
 				},
 			},
 			expected: []string{"a"},
@@ -190,11 +190,11 @@ func TestSortUserRoles(t *testing.T) {
 			args: args{
 				roles: []string{"a", "b"},
 				guildRoles: []*discordgo.Role{
-					&discordgo.Role{
+					{
 						ID:       "a",
 						Position: 0,
 					},
-					&discordgo.Role{
+					{
 						ID:       "b",
 						Position: 1,
 					},
@@ -206,15 +206,15 @@ func TestSortUserRoles(t *testing.T) {
 			args: args{
 				roles: []string{"a", "b", "c"},
 				guildRoles: []*discordgo.Role{
-					&discordgo.Role{
+					{
 						ID:       "a",
 						Position: 0,
 					},
-					&discordgo.Role{
+					{
 						ID:       "b",
 						Position: 1,
 					},
-					&discordgo.Role{
+					{
 						ID:       "c",
 						Position: 2,
 					},
@@ -226,15 +226,15 @@ func TestSortUserRoles(t *testing.T) {
 			args: args{
 				roles: []string{"a", "b", "c"},
 				guildRoles: []*discordgo.Role{
-					&discordgo.Role{
+					{
 						ID:       "a",
 						Position: 4,
 					},
-					&discordgo.Role{
+					{
 						ID:       "b",
 						Position: 2,
 					},
-					&discordgo.Role{
+					{
 						ID:       "c",
 						Position: 0,
 					},
@@ -246,19 +246,19 @@ func TestSortUserRoles(t *testing.T) {
 			args: args{
 				roles: []string{"a", "b", "c", "d"},
 				guildRoles: []*discordgo.Role{
-					&discordgo.Role{
+					{
 						ID:       "a",
 						Position: 0,
 					},
-					&discordgo.Role{
+					{
 						ID:       "b",
 						Position: 2,
 					},
-					&discordgo.Role{
+					{
 						ID:       "c",
 						Position: 2,
 					},
-					&discordgo.Role{
+					{
 						ID:       "d",
 						Position: 4,
 					},
@@ -300,7 +300,7 @@ func TestIsBlocked(t *testing.T) {
 				state: &discordgo.State{
 					Ready: discordgo.Ready{
 						Relationships: []*discordgo.Relationship{
-							&discordgo.Relationship{
+							{
 								User: &discordgo.User{ID: "a"},
 								Type: discordgo.RelationTypeFriend,
 							},
@@ -316,7 +316,7 @@ func TestIsBlocked(t *testing.T) {
 				state: &discordgo.State{
 					Ready: discordgo.Ready{
 						Relationships: []*discordgo.Relationship{
-							&discordgo.Relationship{
+							{
 								User: &discordgo.User{ID: "a"},
 								Type: discordgo.RelationTypeBlocked,
 							},
@@ -332,7 +332,7 @@ func TestIsBlocked(t *testing.T) {
 				state: &discordgo.State{
 					Ready: discordgo.Ready{
 						Relationships: []*discordgo.Relationship{
-							&discordgo.Relationship{
+							{
 								User: &discordgo.User{ID: "b"},
 								Type: discordgo.RelationTypeBlocked,
 							},
@@ -348,15 +348,15 @@ func TestIsBlocked(t *testing.T) {
 				state: &discordgo.State{
 					Ready: discordgo.Ready{
 						Relationships: []*discordgo.Relationship{
-							&discordgo.Relationship{
+							{
 								User: &discordgo.User{ID: "c"},
 								Type: discordgo.RelationTypeBlocked,
 							},
-							&discordgo.Relationship{
+							{
 								User: &discordgo.User{ID: "b"},
 								Type: discordgo.RelationTypeBlocked,
 							},
-							&discordgo.Relationship{
+							{
 								User: &discordgo.User{ID: "a"},
 								Type: discordgo.RelationTypeBlocked,
 							},

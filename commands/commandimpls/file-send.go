@@ -10,7 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 )
 
@@ -46,7 +48,7 @@ func NewFileSendCommand(discord *discordgo.Session, window *ui.Window) *FileSend
 func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 	channel := cmd.window.GetSelectedChannel()
 	if channel == nil {
-		fmt.Fprintln(writer, "[red]In order to use this command, you have to be in a channel.")
+		fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]In order to use this command, you have to be in a channel.")
 		return
 	}
 
@@ -60,7 +62,7 @@ func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 		if strings.HasPrefix(parameter, "~") {
 			currentUser, userResolveError := user.Current()
 			if userResolveError != nil {
-				fmt.Fprintf(writer, "[red]Error resolving path:\n\t[red]%s\n", userResolveError.Error())
+				fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error resolving path:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", userResolveError.Error())
 				continue
 			}
 
@@ -71,20 +73,20 @@ func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 
 		isAbs := filepath.IsAbs(resolvedPath)
 		if !isAbs {
-			fmt.Fprintln(writer, "[red]Error reading file:\n\t[red]the path is not absolute")
+			fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error reading file:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]the path is not absolute")
 			continue
 		}
 
 		data, readError := ioutil.ReadFile(resolvedPath)
 		if readError != nil {
-			fmt.Fprintf(writer, "[red]Error reading file:\n\t[red]%s\n", readError.Error())
+			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error reading file:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", readError.Error())
 			continue
 		}
 
 		dataChannel := bytes.NewReader(data)
 		_, sendError := cmd.discord.ChannelFileSend(channel.ID, path.Base(resolvedPath), dataChannel)
 		if sendError != nil {
-			fmt.Fprintf(writer, "[red]Error sending file:\n\t[red]%s\n", sendError.Error())
+			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending file:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", sendError.Error())
 		}
 	}
 }

@@ -25,10 +25,10 @@ func TestSortGuilds(t *testing.T) {
 	}
 
 	guilds := []*discordgo.Guild{
-		&discordgo.Guild{ID: guildThreeID},
-		&discordgo.Guild{ID: guildOneID},
-		&discordgo.Guild{ID: guildFourID},
-		&discordgo.Guild{ID: guildTwoID},
+		{ID: guildThreeID},
+		{ID: guildOneID},
+		{ID: guildFourID},
+		{ID: guildTwoID},
 	}
 
 	SortGuilds(settings, guilds)

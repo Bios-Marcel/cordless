@@ -3,7 +3,9 @@ package ui
 import (
 	"testing"
 
+	"github.com/Bios-Marcel/cordless/config"
 	_ "github.com/Bios-Marcel/cordless/syntax"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 )
 
@@ -192,28 +194,28 @@ func TestChatView_formatMessageText(t *testing.T) {
 			input: &discordgo.Message{
 				Content: "||simple||",
 			},
-			want:     "[red]!SPOILER![#ffffff]",
+			want:     "[" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff]",
 			chatView: defaultChatView,
 		}, {
 			name: "simple spoiler inbetween",
 			input: &discordgo.Message{
 				Content: "gimme ||simple|| pls",
 			},
-			want:     "gimme [red]!SPOILER![#ffffff] pls",
+			want:     "gimme [" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "formatted spoiler inbetween",
 			input: &discordgo.Message{
 				Content: "gimme ||**simple**|| pls",
 			},
-			want:     "gimme [red]!SPOILER![#ffffff] pls",
+			want:     "gimme [" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "formatted spoiler inbetween",
 			input: &discordgo.Message{
 				Content: "gimme ||**simple**|| pls",
 			},
-			want:     "gimme [red]!SPOILER![#ffffff] pls",
+			want:     "gimme [" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "unclosed spoiler",
@@ -229,7 +231,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 			},
 			//FIXME Not sure whether this is correct, but it's the
 			//current state, so i'll be specifying it for now.
-			want:     "gimme [::b][red]!SPOILER![#ffffff][::-] pls",
+			want:     "gimme [::b][" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff][::-] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "codeblock without specified langauge",
@@ -327,7 +329,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 			input: &discordgo.Message{
 				Content: "||```\nowo\n```||",
 			},
-			want:     "[red]!SPOILER![#ffffff]",
+			want:     "[" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff]",
 			chatView: defaultChatView,
 		}, {
 			name: "codeblock with revelaed spoiler around",

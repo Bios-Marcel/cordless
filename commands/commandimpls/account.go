@@ -7,6 +7,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 const accountDocumentation = `[orange][::u]# account command[white]
@@ -98,7 +99,7 @@ func (account *Account) addAcount(writer io.Writer, parameters []string) {
 	newName := strings.ToLower(parameters[0])
 	for _, acc := range config.GetConfig().Accounts {
 		if acc.Name == newName {
-			fmt.Fprintf(writer, "[red]The name '%s' is already in use.\n", acc.Name)
+			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]The name '%s' is already in use.\n", acc.Name)
 			return
 		}
 	}
@@ -134,7 +135,7 @@ func deleteAccount(writer io.Writer, account string) {
 		config.GetConfig().Accounts = newAccounts
 		config.PersistConfig()
 	} else {
-		fmt.Fprintf(writer, "[red]Account '%s' could not be found.\n", account)
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Account '%s' could not be found.\n", account)
 	}
 
 }
@@ -157,7 +158,7 @@ func (account *Account) switchAccount(writer io.Writer, accountName string) {
 	persistError := account.saveAndRestart(writer)
 	if persistError != nil {
 		config.GetConfig().Token = oldToken
-		fmt.Fprintf(writer, "[red]Error switching accounts '%s'.\n", persistError.Error())
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error switching accounts '%s'.\n", persistError.Error())
 	}
 }
 
@@ -167,7 +168,7 @@ func (account *Account) logout(writer io.Writer) {
 	err := account.saveAndRestart(writer)
 	if err != nil {
 		config.GetConfig().Token = oldToken
-		fmt.Fprintf(writer, "[red]Error logging you out '%s'.\n", err.Error())
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error logging you out '%s'.\n", err.Error())
 	}
 }
 

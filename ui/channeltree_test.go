@@ -30,7 +30,7 @@ func TestChannelTree(t *testing.T) {
 		Name:     "C3",
 		Position: 3,
 		PermissionOverwrites: []*discordgo.PermissionOverwrite{
-			&discordgo.PermissionOverwrite{
+			{
 				ID:   "R1",
 				Type: "role",
 				Deny: discordgo.PermissionReadMessages,

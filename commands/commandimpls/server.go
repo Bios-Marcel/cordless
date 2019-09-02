@@ -5,7 +5,9 @@ import (
 	"io"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 )
 
@@ -123,7 +125,7 @@ func (cmd *ServerJoinCmd) Execute(writer io.Writer, parameters []string) {
 
 	invite, err := cmd.session.InviteAccept(inviteID)
 	if err != nil {
-		fmt.Fprintf(writer, "[red]Error accepting invite with ID '%s':\n\t[red]%s\n", inviteID, err)
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error accepting invite with ID '%s':\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", inviteID, err)
 	} else {
 		fmt.Fprintf(writer, "Joined server '%s'\n", invite.Guild.Name)
 	}
@@ -150,12 +152,12 @@ func (cmd *ServerLeaveCmd) Execute(writer io.Writer, parameters []string) {
 	if len(matches) == 1 {
 		err := cmd.session.GuildLeave(matches[0].ID)
 		if err != nil {
-			fmt.Fprintf(writer, "[red]Error leaving server '%s':\n\t[red]%s\n", matches[0].Name, err)
+			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error leaving server '%s':\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", matches[0].Name, err)
 		} else {
 			fmt.Fprintf(writer, "Left server '%s'.\n", matches[0].Name)
 		}
 	} else if len(matches) == 0 {
-		fmt.Fprintf(writer, "[red]No server with the ID or Name '%s' was found.\n", input)
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]No server with the ID or Name '%s' was found.\n", input)
 	} else {
 		fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", input)
 		fmt.Fprintln(writer, "The following matches were found:")

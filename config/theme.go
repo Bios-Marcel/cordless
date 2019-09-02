@@ -15,6 +15,8 @@ import (
 // applied to tview.Styles
 type Theme struct {
 	*tview.Theme
+	AttentionColor tcell.Color
+	ErrorColor     tcell.Color
 }
 
 var (
@@ -41,7 +43,10 @@ func createDefaultTheme() *Theme {
 			TertiaryTextColor:           tcell.ColorGreen,
 			InverseTextColor:            tcell.ColorBlue,
 			ContrastSecondaryTextColor:  tcell.ColorDarkCyan,
-		}}
+		},
+		AttentionColor: tcell.ColorOrange,
+		ErrorColor:     tcell.ColorRed,
+	}
 }
 
 // GetThemeFile returns the path to the theme file.

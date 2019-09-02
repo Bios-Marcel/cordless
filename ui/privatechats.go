@@ -114,7 +114,7 @@ func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
 	newNode := createPrivateChannelNode(channel)
 	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 		privateList.privateChannelStates[newNode] = unread
-		newNode.SetColor(tcell.ColorRed)
+		newNode.SetColor(config.GetTheme().AttentionColor)
 	}
 	privateList.chatsNode.AddChild(newNode)
 }
@@ -207,7 +207,7 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channel.ID {
 			privateList.privateChannelStates[node] = unread
-			node.SetColor(tcell.ColorRed)
+			node.SetColor(config.GetTheme().AttentionColor)
 			break
 		}
 	}
