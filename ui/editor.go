@@ -113,7 +113,13 @@ func (e *Editor) MoveCursorRight(left, right, selection []rune) {
 }
 
 func (e *Editor) MoveCursorToIndex(left, right, selection []rune, index int) {
-	var newText string
+	var newText string = string(left) + string(selection) + string(right)
+	if index < 0 {
+		index = 0
+	} else if index >= len(newText) {
+		index = len(newText) - 1
+	}
+
 	if index < len(left) {
 		newText = leftRegion + string(left[:index]) + selRegion + string(left[index]) + rightRegion + string(left[index+1:]) + string(right) + endRegion
 	} else {
