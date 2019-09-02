@@ -220,7 +220,7 @@ func (privateList *PrivateChatList) MarkChannelAsRead(channelID string) {
 		if ok && referenceChannelID == channelID {
 			if privateList.privateChannelStates[node] != loaded {
 				privateList.privateChannelStates[node] = read
-				node.SetColor(tcell.ColorWhite)
+				node.SetColor(config.GetTheme().PrimaryTextColor)
 			}
 			break
 		}
@@ -263,7 +263,7 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 	for node, state := range privateList.privateChannelStates {
 		if state == loaded {
 			privateList.privateChannelStates[node] = read
-			node.SetColor(tcell.ColorWhite)
+			node.SetColor(config.GetTheme().PrimaryTextColor)
 			break
 		}
 	}
