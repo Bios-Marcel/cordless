@@ -14,18 +14,19 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 )
 
-const fileSendDocumentation = `[orange][::u]# file-send command[white]
+const fileSendDocumentation = `[::b]NAME
+	file-send - send files from your local machine
 
-The file-send command allows you to send multiple files to your current channel.
+[::b]SYNOPSIS
+	[::b]file-send <FILE_PATH>...
 
-Usage:
-	file-send <FILE_PATH>...
+[::b]DESCRIPTION
+	The file-send command allows you to send multiple files to your current channel.
 
-Examples:
-	file-send ~/file.txt
-	file-send ~/file1.txt ~/file2.txt
-	file-send "~/file one.txt" ~/file2.txt
-`
+[::b]EXAMPLES
+	[gray]$ file-send ~/file.txt
+	[gray]$ file-send ~/file1.txt ~/file2.txt
+	[gray]$ file-send "~/file one.txt" ~/file2.txt`
 
 // FileSend represents the command used to send multiple files to a channel.
 type FileSend struct {
@@ -45,7 +46,7 @@ func NewFileSendCommand(discord *discordgo.Session, window *ui.Window) *FileSend
 func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 	channel := cmd.window.GetSelectedChannel()
 	if channel == nil {
-		fmt.Fprintln(writer, "[red]In order to sue this command, you have to be in a channel.")
+		fmt.Fprintln(writer, "[red]In order to use this command, you have to be in a channel.")
 		return
 	}
 
