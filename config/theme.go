@@ -15,8 +15,9 @@ import (
 // applied to tview.Styles
 type Theme struct {
 	*tview.Theme
-	AttentionColor tcell.Color
-	ErrorColor     tcell.Color
+	AttentionColor   tcell.Color
+	ErrorColor       tcell.Color
+	RandomUserColors []tcell.Color
 }
 
 var (
@@ -46,6 +47,24 @@ func createDefaultTheme() *Theme {
 		},
 		AttentionColor: tcell.ColorOrange,
 		ErrorColor:     tcell.ColorRed,
+		RandomUserColors: []tcell.Color{
+			tcell.NewRGBColor(0xd8, 0x50, 0x4e),
+			tcell.NewRGBColor(0xd8, 0x7e, 0x4e),
+			tcell.NewRGBColor(0xd8, 0xa5, 0x4e),
+			tcell.NewRGBColor(0xd8, 0xc6, 0x4e),
+			tcell.NewRGBColor(0xb8, 0xd8, 0x4e),
+			tcell.NewRGBColor(0x91, 0xd8, 0x4e),
+			tcell.NewRGBColor(0x67, 0xd8, 0x4e),
+			tcell.NewRGBColor(0x4e, 0xd8, 0x7c),
+			tcell.NewRGBColor(0x4e, 0xd8, 0xaa),
+			tcell.NewRGBColor(0x4e, 0xd8, 0xcf),
+			tcell.NewRGBColor(0x4e, 0xb6, 0xd8),
+			tcell.NewRGBColor(0x4e, 0x57, 0xd8),
+			tcell.NewRGBColor(0x75, 0x4e, 0xd8),
+			tcell.NewRGBColor(0xa3, 0x4e, 0xd8),
+			tcell.NewRGBColor(0xcf, 0x4e, 0xd8),
+			tcell.NewRGBColor(0xd8, 0x4e, 0x9c),
+		},
 	}
 }
 

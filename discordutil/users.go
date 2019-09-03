@@ -4,6 +4,8 @@ import (
 	"math/rand"
 	"sort"
 
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 )
@@ -12,24 +14,6 @@ var (
 	botPrefix = tview.Escape("[BOT]")
 	botColor  = "#9496fc"
 
-	colors = []string{
-		"#d8504e",
-		"#d87e4e",
-		"#d8a54e",
-		"#d8c64e",
-		"#b8d84e",
-		"#91d84e",
-		"#67d84e",
-		"#4ed87c",
-		"#4ed8aa",
-		"#4ed8cf",
-		"#4eb6d8",
-		"#4e57d8",
-		"#754ed8",
-		"#a34ed8",
-		"#cf4ed8",
-		"#d84e9c",
-	}
 	//global state that persist during a session.
 	userColorCache = make(map[string]string)
 
@@ -54,14 +38,21 @@ func GetUserColor(user *discordgo.User) string {
 }
 
 func getRandomColorString() string {
-	randIndex := rand.Intn(len(colors))
+	randColorLength := len(config.GetTheme().RandomUserColors)
+	if randColorLength == 0 {
+		return "[#44e544]"
+	} else if randColorLength == 1 {
+		return tviewutil.ColorToHex(config.GetTheme().RandomUserColors[0])
+	}
+
+	randIndex := rand.Intn(randColorLength)
 	if randIndex == lastRandomNumber {
 		return getRandomColorString()
 	}
 
 	lastRandomNumber = randIndex
 
-	return colors[randIndex]
+	return tviewutil.ColorToHex(config.GetTheme().RandomUserColors[randIndex])
 }
 
 // GetMemberName returns the name to use for representing this user. This is
