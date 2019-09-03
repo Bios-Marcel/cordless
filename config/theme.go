@@ -15,6 +15,12 @@ import (
 // applied to tview.Styles
 type Theme struct {
 	*tview.Theme
+	BlockedUserColor tcell.Color
+	InfoMessageColor tcell.Color
+	BotColor         tcell.Color
+	MessageTimeColor tcell.Color
+	DefaultUserColor tcell.Color
+	LinkColor        tcell.Color
 	AttentionColor   tcell.Color
 	ErrorColor       tcell.Color
 	RandomUserColors []tcell.Color
@@ -45,8 +51,14 @@ func createDefaultTheme() *Theme {
 			InverseTextColor:            tcell.ColorBlue,
 			ContrastSecondaryTextColor:  tcell.ColorDarkCyan,
 		},
-		AttentionColor: tcell.ColorOrange,
-		ErrorColor:     tcell.ColorRed,
+		BlockedUserColor: tcell.ColorGray,
+		InfoMessageColor: tcell.ColorGray,
+		BotColor:         tcell.NewRGBColor(0x94, 0x96, 0xfc),
+		MessageTimeColor: tcell.ColorGray,
+		LinkColor:        tcell.ColorDarkCyan,
+		DefaultUserColor: tcell.NewRGBColor(0x44, 0xe5, 0x44),
+		AttentionColor:   tcell.ColorOrange,
+		ErrorColor:       tcell.ColorRed,
 		RandomUserColors: []tcell.Color{
 			tcell.NewRGBColor(0xd8, 0x50, 0x4e),
 			tcell.NewRGBColor(0xd8, 0x7e, 0x4e),

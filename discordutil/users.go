@@ -12,7 +12,6 @@ import (
 
 var (
 	botPrefix = tview.Escape("[BOT]")
-	botColor  = "#9496fc"
 
 	//global state that persist during a session.
 	userColorCache = make(map[string]string)
@@ -24,7 +23,7 @@ var (
 // a new color will be a generated and cached.
 func GetUserColor(user *discordgo.User) string {
 	if user.Bot {
-		return botColor
+		return tviewutil.ColorToHex(config.GetTheme().BotColor)
 	}
 
 	color, ok := userColorCache[user.ID]
@@ -40,7 +39,7 @@ func GetUserColor(user *discordgo.User) string {
 func getRandomColorString() string {
 	randColorLength := len(config.GetTheme().RandomUserColors)
 	if randColorLength == 0 {
-		return "[#44e544]"
+		return "[" + tviewutil.ColorToHex(config.GetTheme().DefaultUserColor) + "]"
 	} else if randColorLength == 1 {
 		return tviewutil.ColorToHex(config.GetTheme().RandomUserColors[0])
 	}

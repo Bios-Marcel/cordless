@@ -29,7 +29,6 @@ import (
 )
 
 var (
-	linkColor           = "[#efec1c]"
 	codeBlockRegex      = regexp.MustCompile("(?sm)(^|.)?(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
 	colorRegex          = regexp.MustCompile("\\[#.{6}\\]")
 	channelMentionRegex = regexp.MustCompile(`<#\d*>`)
@@ -176,7 +175,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 		SetRegions(true).
 		SetWordWrap(true).
 		SetBorder(true).
-		SetTitleColor(tcell.ColorGreen)
+		SetTitleColor(config.GetTheme().InverseTextColor)
 
 	return &chatView
 }
@@ -382,34 +381,34 @@ func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string
 		return "[" + discordutil.GetUserColor(message.Author) + "]" + messageAuthor
 	}
 
-	return "[#44e544]" + messageAuthor
+	return "[" + tviewutil.ColorToHex(config.GetTheme().DefaultUserColor) + "]" + messageAuthor
 }
 
 func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 	if message.Type == discordgo.MessageTypeDefault {
 		return chatView.formatDefaultMessageText(message)
 	} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
-		return "[gray]joined the server."
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]joined the server."
 	} else if message.Type == discordgo.MessageTypeCall {
-		return "[gray]has started a call."
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]has started a call."
 	} else if message.Type == discordgo.MessageTypeChannelIconChange {
-		return "[gray]changed the channel icon."
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]changed the channel icon."
 	} else if message.Type == discordgo.MessageTypeChannelNameChange {
-		return "[gray]changed the channel name to " + message.Content + "."
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]changed the channel name to " + message.Content + "."
 	} else if message.Type == discordgo.MessageTypeChannelPinnedMessage {
-		return "[gray]pinned a message."
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]pinned a message."
 	} else if message.Type == discordgo.MessageTypeRecipientAdd {
-		return "[gray]added " + message.Mentions[0].Username + " to the group."
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]added " + message.Mentions[0].Username + " to the group."
 	} else if message.Type == discordgo.MessageTypeRecipientRemove {
-		return "[gray]removed " + message.Mentions[0].Username + " from the group."
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]removed " + message.Mentions[0].Username + " from the group."
 	} else if message.Type == discordgo.MessageTypeChannelFollowAdd {
-		return "[gray]has added '" + message.Content + "' to this channel"
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]has added '" + message.Content + "' to this channel"
 	}
 
 	//TODO Support boost messages; Would be handy to see what they look like first.
 
 	//Might happen when there are unsupported types.
-	return "[gray]message couldn't be rendered."
+	return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]message couldn't be rendered."
 }
 
 func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) string {
@@ -425,12 +424,12 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 				return data
 			}
 
-			return linkColor + "@" + role.Name + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
+			return "[" + tviewutil.ColorToHex(config.GetTheme().LinkColor) + "]@" + role.Name + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
 		})
 
-	messageText = strings.NewReplacer(
-		"@everyone", linkColor+"@everyone["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]",
-		"@here", linkColor+"@here["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]",
+	messageText = strings.NewReplacer("@everyone", "["+tviewutil.ColorToHex(config.GetTheme().LinkColor)+"]@everyone["+
+		tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]", "@here",
+		"["+tviewutil.ColorToHex(config.GetTheme().LinkColor)+"]@here["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]",
 	).Replace(messageText)
 
 	for _, user := range message.Mentions {
@@ -448,9 +447,9 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 
 		var color string
 		if chatView.state.User.ID == user.ID {
-			color = "[#ef9826]"
+			color = "[" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]"
 		} else {
-			color = linkColor
+			color = "[" + tviewutil.ColorToHex(config.GetTheme().LinkColor) + "]"
 		}
 
 		replacement := color + "@" + userName + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
@@ -468,7 +467,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 				return data
 			}
 
-			return linkColor + "#" + channel.Name + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
+			return "[" + tviewutil.ColorToHex(config.GetTheme().LinkColor) + "]#" + channel.Name + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
 		})
 
 	// FIXME Needs improvement, as it wastes space and breaks things
@@ -655,7 +654,7 @@ func (chatView *ChatView) messagePartsToColouredString(timestamp discordgo.Times
 		timeCellText = times.TimeToLocalString(&time)
 	}
 
-	return fmt.Sprintf("[gray]%s %s ["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]%s[\"\"][\"\"]", timeCellText, author, message)
+	return fmt.Sprintf("["+tviewutil.ColorToHex(config.GetTheme().MessageTimeColor)+"]%s %s ["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]%s[\"\"][\"\"]", timeCellText, author, message)
 }
 
 func parseBoldAndUnderline(messageText string) string {

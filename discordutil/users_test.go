@@ -4,6 +4,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/discordgo"
 )
 
@@ -37,7 +40,7 @@ func TestGetUserColor(t *testing.T) {
 				ID:  "1398541219874",
 				Bot: true,
 			},
-			want: botColor,
+			want: tviewutil.ColorToHex(config.GetTheme().BotColor),
 		},
 		{
 			name: "Verify that a new ID doesn't get the same color as a specific previous ID.",
