@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/tview"
@@ -56,4 +58,12 @@ func main() {
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "    ")
 	encoder.Encode(theme)
+}
+
+// Usage: fromHex("#FF0000")
+func fromHex(hexString string) tcell.Color {
+	trimmed := strings.TrimPrefix(strings.TrimSpace(hexString), "#")
+	var r, g, b int32
+	fmt.Sscanf(trimmed, "%02x%02x%02x", &r, &g, &b)
+	return tcell.NewRGBColor(r, g, b)
 }
