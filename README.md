@@ -2,7 +2,8 @@
 
 | OS | Build-Status |
 | - |:- |
-| linux | [![CircleCI](https://circleci.com/gh/Bios-Marcel/cordless.svg?style=svg)](https://circleci.com/gh/Bios-Marcel/cordless) |
+| linux | [![CircleCI](https://circleci.com/gh/Bios-Marcel/cordless.svg?style=svg)](https://circleci.com/gh/Bios-Marcel/cordless) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FBios-Marcel%2Fcordless.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FBios-Marcel%2Fcordless?ref=badge_shield)
+|
 | darwin | [![Build Status](https://travis-ci.org/Bios-Marcel/cordless.svg?branch=master)](https://travis-ci.org/Bios-Marcel/cordless) |
 | windows | [![Build status](https://ci.appveyor.com/api/projects/status/svv866htsr33hdoh/branch/master?svg=true)](https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master) |
 | freebsd | [![builds.sr.ht status](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml.svg)](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml?) |
@@ -261,3 +262,7 @@ cordless handle them.
 If you need help or have questions that you don't want to create an issue for.
 feel free to hit me up on Discord: `Marcel#7299`. Alternatively, just join the
 public Cordless server linked at the top of the Readme.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FBios-Marcel%2Fcordless.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FBios-Marcel%2Fcordless?ref=badge_large)
