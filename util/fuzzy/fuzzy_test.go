@@ -56,4 +56,8 @@ func TestFuzzyScore(t *testing.T) {
 		t.Errorf("Unexpected score difference.\n")
 	}
 
+	if Score("Hual#1299 ", "Thur_MaliGnY#1112") >= 0 {
+		t.Errorf("Unexpected non-negative score")
+	}
+
 }

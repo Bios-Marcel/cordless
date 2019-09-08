@@ -79,6 +79,9 @@ func Score(needle, haystack string) float64 {
 			j = letterIndex
 		}
 
+		if j == haystackLength-1 && i < needleLength-1 {
+			return -1
+		}
 	}
 	return score
 }
