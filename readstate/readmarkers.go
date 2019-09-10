@@ -145,7 +145,7 @@ func HasGuildBeenRead(guildID string) bool {
 // the Guild with the GuildID emtpy.
 func IsChannelMuted(channel *discordgo.Channel) bool {
 	//optimization for the case of guild channels, as the handling for
-	//private channels will be unnecessariyl slower.
+	//private channels will be unnecessarily slower.
 	if channel.GuildID == "" {
 		for _, settings := range state.UserGuildSettings {
 			if settings.GetGuildID() == channel.GuildID {
