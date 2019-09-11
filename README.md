@@ -12,23 +12,22 @@
 
 ## Overview
 
-- [Cordless](#cordless)
-  - [Overview](#overview)
-  - [How to install it](#how-to-install-it)
-    - [Installing on Linux](#installing-on-linux)
-      - [Snap](#snap)
-      - [Arch based Linux distributions](#arch-based-linux-distributions)
-    - [Installing on Windows](#installing-on-windows)
-    - [Installing on macOS](#installing-on-macos)
-    - [Building it from source](#building-it-from-source)
-    - [Login](#login)
-      - [Retrieving your token via discord or chrome](#retrieving-your-token-via-discord-or-chrome)
-  - [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
-  - [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
-  - [Contributing](#contributing)
-  - [Why should or shouldn't you use this project](#why-should-or-shouldnt-you-use-this-project)
-  - [Similar projects](#similar-projects)
-  - [Troubleshooting](#troubleshooting)
+- [Credits](#credits)
+- [How to install it](#how-to-install-it)
+- [Installing on Linux](#installing-on-linux)
+  - [Snap](#snap)
+  - [Arch based Linux distributions](#arch-based-linux-distributions)
+- [Installing on Windows](#installing-on-windows)
+- [Installing on macOS](#installing-on-macos)
+- [Building it from source](#building-it-from-source)
+- [Login](#login)
+  - [Retrieving your token via discord or chrome](#retrieving-your-token-via-discord-or-chrome)
+- [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
+- [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
+- [Contributing](#contributing)
+- [Why should or shouldn't you use this project](#why-should-or-shouldnt-you-use-this-project)
+- [Similar projects](#similar-projects)
+- [Troubleshooting](#troubleshooting)
 
 Cordless is supposed to be a custom [Discord](https://discordapp.com) client
 that aims to have a low memory footprint and be aimed at power-users.
@@ -41,9 +40,14 @@ develop any further.
 
 The application only uses the official Discord API and doesn't send data to
 any third party. However, this application is not a official product
-by Discord (Hammer & Chisel).
+by Discord Inc.
 
 ![Demo Screenshot](.github/images/chat-demo.png)
+
+## Credits
+
+Big thanks to [JetBrains](https://www.jetbrains.com/?from=cordless) for providing the
+cordless project with free licenses!
 
 ## How to install it
 
@@ -204,12 +208,8 @@ want to contribute code, please create a new branch and commit only changes
 relevant to your planned pull request onto that branch. This will help
 isolating new changes and make merging those into `master` easier.
 
-I also encourage you to report anything you deem a bug, because that means
-that there might problems with the UX that could still be worked on. Obviously
-feature requests are welcome as well, no matter if those are features which are
-already part of the official discord client or not.
-
-Oh and please try to keep things pragmatic and foul-language free ;)
+If you encounter any issues, whether it's bugs or the lack of certain features,
+don't hesitate to create a new GitHub issue.
 
 If there are specific issues you want to be solved quickly, you can set a
 bounty on those via [IssueHunt](https://issuehunt.io/r/Bios-Marcel/cordless).
@@ -227,8 +227,8 @@ Reasons to use it:
 
 - Your PC is not very powerful
 - You're on a mobile device and value your battery life
+- You want to reduce your bandwidth usage
 - You just like terminal applications
-- You are scared that the discord client communicates too much with the HQ
 
 Reasons not to use it:
 
@@ -252,11 +252,10 @@ Hit me up if you have a similar project and I'll gladly add it to the list.
 ## Troubleshooting
 
 If you happen to encounter a crash or a bug, please submit a bug report via
-the projects issue tracker.
+the projects GitHub issue tracker.
 
-In case that you simply can't use any shortcuts that the application has, this
-might be due to your terminal emulator accepting those instead of letting
-cordless handle them.
+For general problems faced by cordless users, check out the wiki at:
+https://github.com/Bios-Marcel/cordless/wiki/Troubleshooting
 
 If you need help or have questions that you don't want to create an issue for.
 feel free to hit me up on Discord: `Marcel#7299`. Alternatively, just join the
