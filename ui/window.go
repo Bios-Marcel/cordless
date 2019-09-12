@@ -198,8 +198,21 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerGuildHandlers()
 	window.registerGuildMemberHandlers()
 
+	if config.GetConfig().MouseEnabled {
+		switchToPrivateButton := tview.NewButton("Show PMs")
+		switchToPrivateButton.SetBorderColor(config.GetTheme().PrimitiveBackgroundColor)
+		switchToPrivateButton.SetSelectedFunc(func() {
+			window.SwitchToFriendsPage()
+		})
+		switchToPrivateButtonInsets := tview.NewFlex().SetDirection(tview.FlexColumn)
+		switchToPrivateButtonInsets.AddItem(tview.NewBox(), 1, 0 ,false)
+		switchToPrivateButtonInsets.AddItem(switchToPrivateButton, 0, 1 ,false)
+		switchToPrivateButtonInsets.AddItem(tview.NewBox(), 1, 0 ,false)
+
+		guildPage.AddItem(switchToPrivateButtonInsets, 1, 0, false)
+	}
 	guildPage.AddItem(guildList, 0, 1, true)
-	guildPage.AddItem(channelTree, 0, 2, true)
+	guildPage.AddItem(channelTree, 0, 2, false)
 
 	window.leftArea.AddPage(guildPageName, guildPage, true, false)
 
@@ -207,7 +220,25 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.privateList.Load()
 	window.registerPrivateChatsHandler()
 
-	window.leftArea.AddPage(privatePageName, window.privateList.GetComponent(), true, false)
+
+	if config.GetConfig().MouseEnabled {
+		privatePage := tview.NewFlex().SetDirection(tview.FlexRow)
+		switchToGuildButton := tview.NewButton("Show Guilds")
+		switchToGuildButton.SetBorderColor(config.GetTheme().PrimitiveBackgroundColor)
+		switchToGuildButton.SetSelectedFunc(func() {
+			window.SwitchToGuildsPage()
+		})
+		switchToGuildButtonInsets := tview.NewFlex().SetDirection(tview.FlexColumn)
+		switchToGuildButtonInsets.AddItem(tview.NewBox(), 1, 0, false)
+		switchToGuildButtonInsets.AddItem(switchToGuildButton, 0, 1, false)
+		switchToGuildButtonInsets.AddItem(tview.NewBox(), 1, 0, false)
+		privatePage.AddItem(switchToGuildButtonInsets, 1, 0, false)
+		privatePage.AddItem(window.privateList.GetComponent(), 0, 1, false)
+
+		window.leftArea.AddPage(privatePageName, privatePage, true, false)
+	} else {
+		window.leftArea.AddPage(privatePageName, window.privateList.GetComponent(), true, false)
+	}
 
 	window.privateList.SetOnChannelSelect(func(node *tview.TreeNode, channelID string) {
 		channel, stateError := window.session.State.Channel(channelID)
