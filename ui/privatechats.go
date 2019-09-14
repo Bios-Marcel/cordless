@@ -55,9 +55,11 @@ func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 		SetSelectedFunc(privateList.onNodeSelected).
 		SetBorder(true)
 
-	privateList.internalTreeView.GetRoot().
-		AddChild(privateList.chatsNode).
-		AddChild(privateList.friendsNode)
+	privateList.internalTreeView.GetRoot().AddChild(privateList.chatsNode)
+
+	if !state.User.Bot {
+		privateList.internalTreeView.GetRoot().AddChild(privateList.friendsNode)
+	}
 
 	return privateList
 }
