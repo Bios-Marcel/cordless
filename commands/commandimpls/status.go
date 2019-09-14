@@ -141,6 +141,11 @@ func (cmd *StatusGetCmd) Execute(writer io.Writer, parameters []string) {
 }
 
 func (cmd *StatusSetCmd) Execute(writer io.Writer, parameters []string) {
+	if cmd.session.State.User.Bot {
+		fmt.Fprintln(writer,"[red]This command can't be used by bots due to Discord API restrictions.")
+		return
+	}
+
 	if len(parameters) == 0 || len(parameters) > 1 {
 		fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Invalid parameters")
 		cmd.PrintHelp(writer)

@@ -114,6 +114,11 @@ func (cmd *ServerJoinCmd) Execute(writer io.Writer, parameters []string) {
 		return
 	}
 
+	if cmd.session.State.User.Bot {
+		fmt.Fprintln(writer,"[red]This command can't be used by bots due to Discord API restrictions.")
+		return
+	}
+
 	input := parameters[0]
 	lastSlash := strings.LastIndex(input, "/")
 	var inviteID string

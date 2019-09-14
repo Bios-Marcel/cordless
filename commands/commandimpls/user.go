@@ -165,6 +165,11 @@ func (cmd *UserGetCmd) Execute(writer io.Writer, parameters []string) {
 }
 
 func (cmd *UserSetCmd) Execute(writer io.Writer, parameters []string) {
+	if cmd.session.State.User.Bot {
+		fmt.Fprintln(writer,"[red]This command can't be used by bots due to Discord API restrictions.")
+		return
+	}
+
 	var newName, newEmail string
 	newAvatar := cmd.session.State.User.Avatar
 	var askForNewPassword bool
