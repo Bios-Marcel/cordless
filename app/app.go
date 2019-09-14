@@ -1,16 +1,11 @@
 package app
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"runtime"
-
 	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/shortcuts"
-
-	"github.com/princebot/getpass"
+	"log"
+	"os"
 
 	"github.com/Bios-Marcel/cordless/commands/commandimpls"
 	"github.com/Bios-Marcel/cordless/config"
@@ -20,16 +15,8 @@ import (
 )
 
 const (
-	splashText = `
- ██████╗ ██████╗ ██████╗ ██████╗ ██╗     ███████╗███████╗███████╗              
-██╔════╝██╔═══██╗██╔══██╗██╔══██╗██║     ██╔════╝██╔════╝██╔════╝     /   \    
-██║     ██║   ██║██████╔╝██║  ██║██║     █████╗  ███████╗███████╗ ████-   -████
-██║     ██║   ██║██╔══██╗██║  ██║██║     ██╔══╝  ╚════██║╚════██║     \   /    
-╚██████╗╚██████╔╝██║  ██║██████╔╝███████╗███████╗███████║███████║              
- ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝╚══════╝              `
-
-	defaultLoginMessage = "Please choose whether to login via authentication token (1) or email and password (2)."
-	userSession         = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0"
+	userSession = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0"
+	defaultLoginMessage = "Input your token. Prepend 'Bot ' for bot tokens.\n\nFor information on how to retrieve your token, check:\nhttps://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token"
 )
 
 var suspended = false
@@ -49,10 +36,8 @@ func Run() {
 	}
 
 	app := tview.NewApplication()
-	splashScreen := tview.NewTextView()
-	splashScreen.SetTextAlign(tview.AlignCenter)
-	splashScreen.SetText(tview.Escape(splashText + "\n\nConfig lies at: " + configDir))
-	app.SetRoot(splashScreen, true)
+	loginScreen := ui.NewLogin( app, configDir)
+	app.SetRoot(loginScreen, true)
 	runNext := make(chan bool, 1)
 
 	configuration, configLoadError := config.LoadConfig()
@@ -69,7 +54,7 @@ func Run() {
 			panic(shortcutsLoadError)
 		}
 
-		discord := attemptLogin(defaultLoginMessage, app, configuration)
+		discord := attemptLogin(loginScreen, defaultLoginMessage, app, configuration)
 
 		config.GetConfig().Token = discord.Token
 
@@ -138,22 +123,17 @@ func Run() {
 	}
 }
 
-func attemptLogin(loginMessage string, app *tview.Application, configuration *config.Config) *discordgo.Session {
+func attemptLogin(loginScreen *ui.Login, loginMessage string, app *tview.Application, configuration *config.Config) *discordgo.Session {
 	var (
 		session      *discordgo.Session
 		discordError error
 	)
 
 	if configuration.Token == "" {
-		if suspended {
-			session, discordError = login(loginMessage)
-		} else {
-			suspended = true
-			app.Suspend(func() {
-				session, discordError = login(loginMessage)
-			})
-			suspended = false
-		}
+		token := loginScreen.RequestToken(loginMessage)
+		session, discordError = discordgo.NewWithToken(
+			userSession,
+			token)
 	} else {
 		session, discordError = discordgo.NewWithToken(
 			userSession,
@@ -162,79 +142,15 @@ func attemptLogin(loginMessage string, app *tview.Application, configuration *co
 
 	if discordError != nil {
 		configuration.Token = ""
-		return attemptLogin(fmt.Sprintf("Error during login attempt (%s).\n%s", discordError, defaultLoginMessage), app, configuration)
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s\n\n%s", discordError, defaultLoginMessage), app, configuration)
 	}
 
 	//When logging in via token, the token isn't ever validated, therefore we do a test lookup here.
 	_, discordError = session.UserGuilds(0, "", "")
 	if discordError == discordgo.ErrUnauthorized {
 		configuration.Token = ""
-		return attemptLogin(fmt.Sprintf("Your password or token was incorrect, please try again.\n%s", defaultLoginMessage), app, configuration)
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s\n\n%s", discordError, defaultLoginMessage), app, configuration)
 	}
 
 	return session
-}
-
-func login(loginMessage string) (*discordgo.Session, error) {
-	log.Println(loginMessage)
-	var choice int
-
-	var err error
-	if runtime.GOOS == "windows" {
-		_, err = fmt.Scanf("%d\n", &choice)
-	} else {
-		_, err = fmt.Scanf("%d", &choice)
-	}
-
-	if err != nil {
-		log.Println("Invalid input, please try again.")
-		return login(loginMessage)
-	}
-
-	if choice == 1 {
-		return askForToken()
-	} else if choice == 2 {
-		return askForEmailAndPassword()
-	} else {
-		log.Println()
-		return login(fmt.Sprintf("Invalid choice, please try again.\n%s", defaultLoginMessage))
-	}
-}
-
-func askForEmailAndPassword() (*discordgo.Session, error) {
-	log.Println("Please input your email.")
-	reader := bufio.NewReader(os.Stdin)
-
-	nameAsBytes, _, inputError := reader.ReadLine()
-	if inputError != nil {
-		log.Fatalf("Error reading your email (%s).\n", inputError.Error())
-	}
-	name := string(nameAsBytes[:])
-
-	passwordAsBytes, inputError := getpass.Get("Please input your password.\n")
-	if inputError != nil {
-		log.Fatalf("Error reading your email (%s).\n", inputError.Error())
-	}
-	password := string(passwordAsBytes[:])
-
-	return discordgo.NewWithPassword(userSession, name, password)
-}
-
-func askForToken() (*discordgo.Session, error) {
-	log.Println("Please input your token.")
-	reader := bufio.NewReader(os.Stdin)
-	tokenAsBytes, _, inputError := reader.ReadLine()
-
-	if inputError != nil {
-		log.Fatalf("Error reading your token (%s).\n", inputError.Error())
-	}
-
-	token := string(tokenAsBytes[:])
-
-	if token == "" {
-		log.Println("An empty token is not valid, please try again.")
-		return askForToken()
-	}
-
-	return discordgo.NewWithToken(userSession, token)
 }

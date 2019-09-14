@@ -21,7 +21,6 @@
 - [Installing on macOS](#installing-on-macos)
 - [Building it from source](#building-it-from-source)
 - [Login](#login)
-  - [Retrieving your token via discord or chrome](#retrieving-your-token-via-discord-or-chrome)
 - [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
 - [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
 - [Contributing](#contributing)
@@ -152,22 +151,14 @@ In order to execute the application, simply run the executable, which lies at
 
 ### Login
 
-On launch, cordless will offer you two login methods:
-
-1. Using an authentication token
-2. Using email and password
-
-I recommend the first way, as the second one won't work anyway in case you have
-two-factor authentication enabled. After logging in using either method, your
-token is stored locally on your machine. The token will not be encrypted, so be
-careful with your configuration file.
+Logging in works via the UI on first startup of the application.
 
 If you are logging in with a bot token, you have to prepend `Bot ` (yes, with
-the space) in front of the token.
+the space) in front of the token. Pasting only works via your terminals normal pasting shortcut.
 
 **THIS APPLICATION NEVER SAVES YOUR ACTUAL PASSWORD LOCALLY.**
 
-If you need to find out how to retrieve your token, [check the wiki at](https://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token-via-the-discord-app-or-a-chromium-based-browser).
+If you need to find out how to retrieve your token, [check the wiki at](https://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token).
 
 ## Quick overview - Navigation (switching between boxes / containers)
 
