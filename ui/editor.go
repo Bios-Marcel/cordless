@@ -112,29 +112,21 @@ func (e *Editor) MoveCursorRight(left, right, selection []rune) {
 	e.setAndFixText(newText)
 }
 
-func (e *Editor) MoveCursorToIndex(left, right, selection []rune, index int) {
-	var newText string = string(left) + string(selection) + string(right)
+func (e *Editor) MoveCursorToIndex(text string, index int) {
+	// Bound the index to the string length
 	if index < 0 {
 		index = 0
-	} else if index >= len(newText) {
-		index = len(newText) - 1
+	} else if index >= len(text) {
+		index = len(text) - 1
 	}
 
-	if index < len(left) {
-		newText = leftRegion + string(left[:index]) + selRegion + string(left[index]) + rightRegion + string(left[index+1:]) + string(right) + endRegion
-	} else {
-		indexSelection := index - len(left)
-		if indexSelection < len(selection) {
-			newText = leftRegion + string(left) + string(left[:indexSelection]) + selRegion + string(selection[indexSelection]) + rightRegion + string(selection[indexSelection+1:]) + string(right) + endRegion
-		} else {
-			indexRight := index - len(left) - len(selection)
-			if indexRight < len(right) {
-				newText = leftRegion + string(left) + string(selection) + string(right[:indexRight]) + selRegion + string(right[indexRight]) + rightRegion + string(right[indexRight+1:]) + endRegion
-			}
-		}
+	left := string(text[:index])
+	right := string(text[index:])
+	if len(right) == 1 {
+		right = " " + selectionChar
+		left += " "
 	}
-
-	e.setAndFixText(newText)
+	e.setAndFixText(leftRegion + left + selRegion + string(right[0]) + rightRegion + right[1:] + endRegion)
 }
 
 func (e *Editor) SelectWordLeft(left, right, selection []rune) {
