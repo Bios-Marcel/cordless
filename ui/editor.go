@@ -121,12 +121,14 @@ func (e *Editor) MoveCursorToIndex(text string, index int) {
 	}
 
 	left := string(text[:index])
-	right := string(text[index:])
-	if len(right) == 1 {
-		right = " " + selectionChar
-		left += " "
+	var right string
+	if index == len(text)-1 {
+		right = selectionChar
+		e.setAndFixText(leftRegion + left + selRegion + right + endRegion)
+	} else {
+		right = string(text[index:])
+		e.setAndFixText(leftRegion + left + selRegion + string(right[0]) + rightRegion + right[1:] + endRegion)
 	}
-	e.setAndFixText(leftRegion + left + selRegion + string(right[0]) + rightRegion + right[1:] + endRegion)
 }
 
 func (e *Editor) SelectWordLeft(left, right, selection []rune) {
