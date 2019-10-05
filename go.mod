@@ -13,6 +13,7 @@ require (
 	github.com/gdamore/tcell v1.3.0
 	github.com/gen2brain/beeep v0.0.0-20190317152856-aa3d7c1499fd
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
+	github.com/google/go-github/v28 v28.1.1
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pkg/errors v0.8.1

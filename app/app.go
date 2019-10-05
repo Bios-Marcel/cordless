@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/shortcuts"
+	"github.com/Bios-Marcel/cordless/version"
 	"log"
 	"os"
 
@@ -15,7 +16,7 @@ import (
 )
 
 const (
-	userSession = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0"
+	userSession         = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0"
 	defaultLoginMessage = "Input your token. Prepend 'Bot ' for bot tokens.\n\nFor information on how to retrieve your token, check:\nhttps://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token"
 )
 
@@ -36,7 +37,7 @@ func Run() {
 	}
 
 	app := tview.NewApplication()
-	loginScreen := ui.NewLogin( app, configDir)
+	loginScreen := ui.NewLogin(app, configDir)
 	app.SetRoot(loginScreen, true)
 	runNext := make(chan bool, 1)
 
@@ -44,6 +45,15 @@ func Run() {
 
 	if configLoadError != nil {
 		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
+	}
+
+	updateAvailableChannel := make(chan bool, 1)
+	if configuration.ShowUpdateNotifications {
+		go func() {
+			updateAvailableChannel <- version.IsLocalOutdated(configuration.DontShowUpdateNotificationFor)
+		}()
+	} else {
+		updateAvailableChannel <- false
 	}
 
 	app.MouseEnabled = configuration.MouseEnabled
@@ -64,7 +74,7 @@ func Run() {
 			log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
 		}
 
-		readyChan := make(chan *discordgo.Ready)
+		readyChan := make(chan *discordgo.Ready, 1)
 		discord.AddHandlerOnce(func(s *discordgo.Session, event *discordgo.Ready) {
 			readyChan <- event
 		})
@@ -76,8 +86,40 @@ func Run() {
 		}
 
 		readyEvent := <-readyChan
+		close(readyChan)
 
 		readstate.Load(discord.State)
+
+		isUpdateAvailable := <-updateAvailableChannel
+		close(updateAvailableChannel)
+		if isUpdateAvailable {
+			waitForUpdateDialogChannel := make(chan bool, 1)
+
+			dialog := tview.NewModal()
+			dialog.SetText(fmt.Sprintf("Version %s of cordless is available!\nYou are currently running version %s.\n\nUpdates have to be installed manually or via your package manager.", version.GetLatestRemoteVersion(), version.Version))
+			buttonOk := "Thanks for the info"
+			buttonDontRemindAgainForThisVersion := fmt.Sprintf("Skip reminders for %s", version.GetLatestRemoteVersion())
+			buttonNeverRemindMeAgain := "Never remind me again"
+			dialog.AddButtons([]string{buttonOk, buttonDontRemindAgainForThisVersion, buttonNeverRemindMeAgain})
+			dialog.SetDoneFunc(func(index int, label string) {
+				if label == buttonDontRemindAgainForThisVersion {
+					configuration.DontShowUpdateNotificationFor = version.GetLatestRemoteVersion()
+					config.PersistConfig()
+				} else if label == buttonNeverRemindMeAgain {
+					configuration.ShowUpdateNotifications = false
+					config.PersistConfig()
+				}
+
+				waitForUpdateDialogChannel <- true
+			})
+
+			app.QueueUpdateDraw(func() {
+				app.SetRoot(dialog, true)
+			})
+
+			<-waitForUpdateDialogChannel
+			close(waitForUpdateDialogChannel)
+		}
 
 		app.QueueUpdateDraw(func() {
 			window, createError := ui.NewWindow(runNext, app, discord, readyEvent)

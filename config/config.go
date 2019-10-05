@@ -50,6 +50,8 @@ var (
 		ShortenerPort:                          63212,
 		DesktopNotifications:                   true,
 		ShowPlaceholderForBlockedMessages:      true,
+		DontShowUpdateNotificationFor:          "",
+		ShowUpdateNotifications:                true,
 	}
 )
 
@@ -105,6 +107,14 @@ type Config struct {
 	// The time of the message will still be correct in order to not mess up
 	// the timeline of messages.
 	ShowPlaceholderForBlockedMessages bool
+
+	// ShowUpdateNotifications decides whether update notifications are
+	// shown at all.
+	ShowUpdateNotifications bool
+	// DontShowUpdateNotificationFor decides what version to skip update
+	// notifications for. Since there's always only one latest version, this
+	// is a string and not an array of strings.
+	DontShowUpdateNotificationFor string
 
 	// Accounts contains all saved accounts, allowing the user to dynamicly
 	// switch between the accounts.
