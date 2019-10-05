@@ -64,10 +64,18 @@ export EXE_HASH
 envsubst < cordless.json_template > cordless.json
 
 #
-# Commit and push the new scoop manifest
+# Setting the cordless versionnumber to the current release date.
+# This number can be requested on startup and is only used for that purpose.
+#
+
+envsubst < version.go_template > version/version.go
+
+#
+# Commit and push the new scoop manifest and set the cordless versionnumer
 #
 
 git commit cordless.json -m "Bump scoop package to version $RELEASE_DATE"
+git commit version/version.go -m "Bump cordless versionnumber to version $RELEASE_DATE"
 git push
 
 #
