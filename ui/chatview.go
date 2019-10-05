@@ -37,6 +37,7 @@ var (
 	roleMentionRegex    = regexp.MustCompile(`<@&\d*>`)
 )
 
+
 // ChatView is using a tview.TextView in order to be able to display messages
 // in a simple way. It supports highlighting specific element types and it
 // also supports multiline.
