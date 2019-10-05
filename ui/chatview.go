@@ -386,6 +386,8 @@ func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string
 
 func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 	if message.Type == discordgo.MessageTypeDefault {
+		if message.Content == "<uwu:xvk3>" {
+			message = "test123"
 		return chatView.formatDefaultMessageText(message)
 	} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
 		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]joined the server."
