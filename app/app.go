@@ -2,17 +2,16 @@ package app
 
 import (
 	"fmt"
-	"github.com/Bios-Marcel/cordless/readstate"
-	"github.com/Bios-Marcel/cordless/shortcuts"
-	"github.com/Bios-Marcel/cordless/version"
-	"log"
-	"os"
-
 	"github.com/Bios-Marcel/cordless/commands/commandimpls"
 	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/readstate"
+	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/ui"
+	"github.com/Bios-Marcel/cordless/version"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
+	"log"
+	"os"
 )
 
 const (

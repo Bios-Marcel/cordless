@@ -115,7 +115,7 @@ func (cmd *ServerJoinCmd) Execute(writer io.Writer, parameters []string) {
 	}
 
 	if cmd.session.State.User.Bot {
-		fmt.Fprintln(writer,"[red]This command can't be used by bots due to Discord API restrictions.")
+		fmt.Fprintln(writer, "[red]This command can't be used by bots due to Discord API restrictions.")
 		return
 	}
 

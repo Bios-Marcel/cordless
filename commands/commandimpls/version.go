@@ -19,7 +19,6 @@ const versionDocumentation = `[::b]NAME
 	your installation might contain commits which aren't part of the stated
 	version.`
 
-
 type VersionCmd struct{}
 
 func NewVersionCommand() *VersionCmd {
@@ -41,5 +40,3 @@ func (cmd VersionCmd) Name() string {
 func (cmd VersionCmd) Aliases() []string {
 	return nil
 }
-
-

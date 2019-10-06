@@ -27,26 +27,26 @@ func Test_MentionsCurrentUserExplicitly(t *testing.T) {
 			name: "one foreign mention",
 			message: &discordgo.Message{
 				Mentions: []*discordgo.User{
-					&discordgo.User{ID: "1"},
+					{ID: "1"},
 				},
 			},
 			want: false,
-		},  {
+		}, {
 			name: "multiple foreign mention",
 			message: &discordgo.Message{
 				Mentions: []*discordgo.User{
-					&discordgo.User{ID: "1"},
-					&discordgo.User{ID: "2"},
-					&discordgo.User{ID: "3"},
-					&discordgo.User{ID: "4"},
+					{ID: "1"},
+					{ID: "2"},
+					{ID: "3"},
+					{ID: "4"},
 				},
 			},
 			want: false,
-		},{
+		}, {
 			name: "one mention for current user",
 			message: &discordgo.Message{
 				Mentions: []*discordgo.User{
-					&discordgo.User{ID: "123"},
+					{ID: "123"},
 				},
 			},
 			want: true,
@@ -54,11 +54,11 @@ func Test_MentionsCurrentUserExplicitly(t *testing.T) {
 			name: "multiple mentions containing one for current user in the middle",
 			message: &discordgo.Message{
 				Mentions: []*discordgo.User{
-					&discordgo.User{ID: "1"},
-					&discordgo.User{ID: "2"},
-					&discordgo.User{ID: "123"},
-					&discordgo.User{ID: "4"},
-					&discordgo.User{ID: "5"},
+					{ID: "1"},
+					{ID: "2"},
+					{ID: "123"},
+					{ID: "4"},
+					{ID: "5"},
 				},
 			},
 			want: true,
@@ -66,11 +66,11 @@ func Test_MentionsCurrentUserExplicitly(t *testing.T) {
 			name: "multiple mentions containing one for current user in the end",
 			message: &discordgo.Message{
 				Mentions: []*discordgo.User{
-					&discordgo.User{ID: "1"},
-					&discordgo.User{ID: "2"},
-					&discordgo.User{ID: "3"},
-					&discordgo.User{ID: "4"},
-					&discordgo.User{ID: "123"},
+					{ID: "1"},
+					{ID: "2"},
+					{ID: "3"},
+					{ID: "4"},
+					{ID: "123"},
 				},
 			},
 			want: true,
@@ -78,11 +78,11 @@ func Test_MentionsCurrentUserExplicitly(t *testing.T) {
 			name: "multiple mentions containing one for current user in the beginning",
 			message: &discordgo.Message{
 				Mentions: []*discordgo.User{
-					&discordgo.User{ID: "123"},
-					&discordgo.User{ID: "2"},
-					&discordgo.User{ID: "3"},
-					&discordgo.User{ID: "4"},
-					&discordgo.User{ID: "5"},
+					{ID: "123"},
+					{ID: "2"},
+					{ID: "3"},
+					{ID: "4"},
+					{ID: "5"},
 				},
 			},
 			want: true,
