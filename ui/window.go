@@ -1763,8 +1763,8 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 			return event
 		})
 
-		var primitiveBGColor = tviewutil.ColorToHex(config.GetTheme().PrimitiveBackgroundColor)
-		var primaryTextColor = tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)
+		primitiveBGColor := tviewutil.ColorToHex(config.GetTheme().PrimitiveBackgroundColor)
+		primaryTextColor := tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)
 
 		shortcutDescription = tview.NewTextView()
 		shortcutDescription.SetDynamicColors(true)
@@ -1783,17 +1783,12 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		buttonBar.AddItem(tview.NewBox(), 1, 0, false)
 		buttonBar.AddItem(exitButton, 0, 1, false)
 
-		descriptionBar := tview.NewFlex()
-		descriptionBar.SetDirection(tview.FlexColumn)
-
-		descriptionBar.AddItem(shortcutDescription, 0, 1, false)
-
 		shortcutsView := tview.NewFlex()
 		shortcutsView.SetDirection(tview.FlexRow)
 
 		shortcutsView.AddItem(table.GetPrimitive(), 0, 1, false)
 		shortcutsView.AddItem(buttonBar, 1, 0, false)
-		shortcutsView.AddItem(descriptionBar, 1, 0, false)
+		shortcutsView.AddItem(shortcutDescription, 1, 0, false)
 
 		window.app.SetRoot(shortcutsView, true)
 		window.app.SetFocus(table.GetPrimitive())
