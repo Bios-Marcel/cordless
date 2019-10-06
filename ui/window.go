@@ -205,9 +205,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			window.SwitchToFriendsPage()
 		})
 		switchToPrivateButtonInsets := tview.NewFlex().SetDirection(tview.FlexColumn)
-		switchToPrivateButtonInsets.AddItem(tview.NewBox(), 1, 0 ,false)
-		switchToPrivateButtonInsets.AddItem(switchToPrivateButton, 0, 1 ,false)
-		switchToPrivateButtonInsets.AddItem(tview.NewBox(), 1, 0 ,false)
+		switchToPrivateButtonInsets.AddItem(tview.NewBox(), 1, 0, false)
+		switchToPrivateButtonInsets.AddItem(switchToPrivateButton, 0, 1, false)
+		switchToPrivateButtonInsets.AddItem(tview.NewBox(), 1, 0, false)
 
 		guildPage.AddItem(switchToPrivateButtonInsets, 1, 0, false)
 	}
@@ -219,7 +219,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.privateList = NewPrivateChatList(window.session.State)
 	window.privateList.Load()
 	window.registerPrivateChatsHandler()
-
 
 	if config.GetConfig().MouseEnabled {
 		privatePage := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -1284,31 +1283,31 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 // events. It updates the cache and the UI if necessary.
 func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
 	go func() {
-		for message := range input {
-			tempMessage := message
-			window.session.State.MessageAdd(tempMessage)
+		for tempMessage := range input {
+			message := tempMessage
+			window.session.State.MessageAdd(message)
 
-			channel, stateError := window.session.State.Channel(tempMessage.ChannelID)
+			channel, stateError := window.session.State.Channel(message.ChannelID)
 			if stateError != nil {
 				continue
 			}
 
 			window.chatView.Lock()
-			if window.selectedChannel != nil && tempMessage.ChannelID == window.selectedChannel.ID {
-				if tempMessage.Author.ID != window.session.State.User.ID {
-					readstate.UpdateReadBuffered(window.session, channel, tempMessage.ID)
+			if window.selectedChannel != nil && message.ChannelID == window.selectedChannel.ID {
+				if message.Author.ID != window.session.State.User.ID {
+					readstate.UpdateReadBuffered(window.session, channel, message.ID)
 				}
 
 				window.app.QueueUpdateDraw(func() {
-					window.chatView.AddMessage(tempMessage)
+					window.chatView.AddMessage(message)
 				})
 			}
 			window.chatView.Unlock()
 
-			if channel.Type == discordgo.ChannelTypeGuildText {
+			if channel.Type == discordgo.ChannelTypeGuildText && window.selectedGuild == nil ||
+				window.selectedGuild.ID != channel.GuildID {
 				for _, guildNode := range window.guildList.GetRoot().GetChildren() {
-					if guildNode.GetReference() == channel.GuildID &&
-						(window.selectedGuild == nil || window.selectedGuild.ID != channel.GuildID) {
+					if guildNode.GetReference() == channel.GuildID {
 						window.app.QueueUpdateDraw(func() {
 							window.updateServerReadStatus(channel.GuildID, guildNode, false)
 						})
@@ -1317,44 +1316,38 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				}
 			}
 
-			if channel.Type == discordgo.ChannelTypeGuildText || channel.Type == discordgo.ChannelTypeDM ||
-				channel.Type == discordgo.ChannelTypeGroupDM {
-				// TODO,HACK.FIXME Since the cache is inconsistent, I have to
-				// update it myself. This should be moved over into the
-				// discordgo code ASAP.
-				channel.LastMessageID = message.ID
-				window.app.QueueUpdateDraw(func() {
+			// TODO,HACK.FIXME Since the cache is inconsistent, I have to
+			// update it myself. This should be moved over into the
+			// discordgo code ASAP.
+			channel.LastMessageID = message.ID
+
+			if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+				//Avoid unnecessary drawing if the updates wouldn't be visible either way.
+				//FIXME Useful to use locking here?
+				if window.leftArea.GetCurrentPage() == privatePageName {
+					window.app.QueueUpdateDraw(func() {
+						window.privateList.ReorderChannelList()
+					})
+				} else {
 					window.privateList.ReorderChannelList()
-				})
+				}
 			}
 
-			if tempMessage.Author.ID == window.session.State.User.ID {
-				readstate.UpdateReadLocal(tempMessage.ChannelID, tempMessage.ID)
+			if message.Author.ID == window.session.State.User.ID {
+				readstate.UpdateReadLocal(message.ChannelID, message.ID)
 				continue
 			}
 
-			if (window.selectedChannel == nil || tempMessage.ChannelID != window.selectedChannel.ID) ||
-				!window.userActive {
-				mentionsYou := false
-				for _, user := range tempMessage.Mentions {
-					if user.ID == window.session.State.User.ID {
-						mentionsYou = true
-						break
-					}
-				}
+			if window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID {
+				mentionsCurrentUser := discordutil.MentionsCurrentUserExplicitly(window.session.State, message)
+				if !window.userActive && config.GetConfig().DesktopNotifications {
+					if mentionsCurrentUser ||
+						//Always show notification for private messages
+						channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 
-				if config.GetConfig().DesktopNotifications {
-					if !mentionsYou {
-						if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
-							mentionsYou = true
-						}
-					}
-
-					if mentionsYou {
 						var notificationLocation string
-
 						if channel.Type == discordgo.ChannelTypeDM {
-							notificationLocation = tempMessage.Author.Username
+							notificationLocation = message.Author.Username
 						} else if channel.Type == discordgo.ChannelTypeGroupDM {
 							notificationLocation = channel.Name
 							if notificationLocation == "" {
@@ -1367,30 +1360,21 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 								}
 							}
 
-							notificationLocation = tempMessage.Author.Username + " - " + notificationLocation
+							notificationLocation = message.Author.Username + " - " + notificationLocation
 						} else if channel.Type == discordgo.ChannelTypeGuildText {
-							if tempMessage.GuildID != "" {
-								guild, cacheError := window.session.State.Guild(tempMessage.GuildID)
-								if guild != nil && cacheError == nil {
-									notificationLocation = fmt.Sprintf("%s - %s - %s", guild.Name, channel.Name, tempMessage.Author.Username)
-								} else {
-									notificationLocation = fmt.Sprintf("%s - %s", tempMessage.Author.Username, channel.Name)
-								}
+							guild, cacheError := window.session.State.Guild(message.GuildID)
+							if guild != nil && cacheError == nil {
+								notificationLocation = fmt.Sprintf("%s - %s - %s", guild.Name, channel.Name, message.Author.Username)
 							} else {
-								notificationLocation = fmt.Sprintf("%s - %s", tempMessage.Author.Username, channel.Name)
+								notificationLocation = fmt.Sprintf("%s - %s", message.Author.Username, channel.Name)
 							}
 						}
 
-						notifyError := beeep.Notify("Cordless - "+notificationLocation, tempMessage.ContentWithMentionsReplaced(), "assets/information.png")
+						notifyError := beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
 						if notifyError != nil {
 							log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
 						}
 					}
-				}
-
-				//We needn't adjust the text of the currently selected channel.
-				if window.selectedChannel == nil || tempMessage.ChannelID == window.selectedChannel.ID {
-					continue
 				}
 
 				if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
@@ -1400,7 +1384,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						})
 					}
 				} else if channel.Type == discordgo.ChannelTypeGuildText {
-					if mentionsYou {
+					if mentionsCurrentUser {
 						window.app.QueueUpdateDraw(func() {
 							window.channelTree.MarkChannelAsMentioned(channel.ID)
 						})
