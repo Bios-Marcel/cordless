@@ -1304,8 +1304,8 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			}
 			window.chatView.Unlock()
 
-			if channel.Type == discordgo.ChannelTypeGuildText && window.selectedGuild == nil ||
-				window.selectedGuild.ID != channel.GuildID {
+			if channel.Type == discordgo.ChannelTypeGuildText && (window.selectedGuild == nil ||
+				window.selectedGuild.ID != channel.GuildID) {
 				for _, guildNode := range window.guildList.GetRoot().GetChildren() {
 					if guildNode.GetReference() == channel.GuildID {
 						window.app.QueueUpdateDraw(func() {
