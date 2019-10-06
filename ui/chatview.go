@@ -35,8 +35,8 @@ var (
 	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
 	spoilerRegex        = regexp.MustCompile(`(?s)\|\|(.+?)\|\|`)
 	roleMentionRegex    = regexp.MustCompile(`<@&\d*>`)
+	badEmoji            = regexp.MustCompile(`<(:\w+:)\d+>`)
 )
-
 
 // ChatView is using a tview.TextView in order to be able to display messages
 // in a simple way. It supports highlighting specific element types and it
@@ -387,8 +387,10 @@ func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string
 
 func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 	if message.Type == discordgo.MessageTypeDefault {
-		if message.Content == "<uwu:xvk3>" {
-			message = "test123"
+		var partial = badEmoji.FindAllStringSubmatch(message.Content, -1)
+		for i := len(partial)-1; i>=0; i--	{
+			message.Content = strings.Replace(message.Content, partial[i][0], partial[i][1], -1)
+		}
 		return chatView.formatDefaultMessageText(message)
 	} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
 		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]joined the server."
