@@ -1597,14 +1597,14 @@ func (window *Window) registerPrivateChatsHandler() {
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.RelationshipRemove) {
 		if event.Relationship.Type == discordgo.RelationTypeFriend {
-			window.app.QueueUpdateDraw(func() {
-				for _, relationship := range window.session.State.Relationships {
-					if relationship.ID == event.ID {
+			for _, relationship := range window.session.State.Relationships {
+				if relationship.ID == event.ID {
+					window.app.QueueUpdateDraw(func() {
 						window.privateList.RemoveFriend(relationship.User.ID)
-						break
-					}
+					})
+					break
 				}
-			})
+			}
 		}
 	})
 }
