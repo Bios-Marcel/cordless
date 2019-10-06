@@ -1738,6 +1738,8 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 				window.app.SetFocus(table.GetPrimitive())
 			} else if event.Key() == tcell.KeyBacktab {
 				window.app.SetFocus(resetButton)
+			} else if event.Key() == tcell.KeyESC {
+				doClose()
 			}
 
 			return event
@@ -1758,6 +1760,8 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 				window.app.SetFocus(exitButton)
 			} else if event.Key() == tcell.KeyBacktab {
 				window.app.SetFocus(table.GetPrimitive())
+			} else if event.Key() == tcell.KeyESC {
+				doClose()
 			}
 
 			return event
