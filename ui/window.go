@@ -907,13 +907,13 @@ func (window *Window) IsCursorInsideCodeBlock() bool {
 }
 
 func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
-	time, parseError := message.Timestamp.Parse()
+	messageTime, parseError := message.Timestamp.Parse()
 	if parseError != nil {
 		return
 	}
 
 	// All quotes should be UTC.
-	time = time.UTC()
+	messageTimeUTC := messageTime.UTC()
 
 	currentContent := strings.TrimSpace(window.messageInput.GetText())
 	username := message.Author.Username
@@ -928,7 +928,7 @@ func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
 	}
 
 	quotedMessage := strings.ReplaceAll(message.ContentWithMentionsReplaced(), "\n", "\n> ")
-	quotedMessage = fmt.Sprintf("> **%s** %s UTC:\n> %s\n", username, times.TimeToString(&time), quotedMessage)
+	quotedMessage = fmt.Sprintf("> **%s** %s UTC:\n> %s\n", username, times.TimeToString(&messageTimeUTC), quotedMessage)
 	if currentContent != "" {
 		quotedMessage = quotedMessage + currentContent
 	}
@@ -1129,55 +1129,135 @@ func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.Tr
 //
 // The input is expected to be a string without sorrounding whitespace.
 func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText string) string {
-	output := codeBlockRegex.ReplaceAllStringFunc(inputText, func(input string) string {
+	message := codeBlockRegex.ReplaceAllStringFunc(inputText, func(input string) string {
 		return strings.ReplaceAll(input, ":", "\\:")
 	})
 
 	if targetChannel.GuildID != "" {
-		guild, discordError := window.session.State.Guild(targetChannel.GuildID)
+		channelGuild, discordError := window.session.State.Guild(targetChannel.GuildID)
 		if discordError == nil {
 			//Those could be optimized by searching the string for patterns.
-			for _, channel := range guild.Channels {
+			for _, channel := range channelGuild.Channels {
 				if channel.Type == discordgo.ChannelTypeGuildText {
-					output = strings.ReplaceAll(output, "#"+channel.Name, "<#"+channel.ID+">")
+					message = strings.ReplaceAll(message, "#"+channel.Name, "<#"+channel.ID+">")
 				}
 			}
 
-			//Customemojis
-			if len(guild.Emojis) > 0 {
-				output = emojiRegex.ReplaceAllStringFunc(output, func(match string) string {
-					firstDoubleColon := strings.IndexRune(match, ':')
-					emjoiSequence := match[firstDoubleColon+1 : len(match)-1]
-					for _, emoji := range guild.Emojis {
-						if emoji.Name == emjoiSequence {
-							return match[:firstDoubleColon] + "<:" + emoji.Name + ":" + emoji.ID + ">"
-						}
-					}
-
-					return match
-				})
-			}
+			message = window.replaceCustomEmojiSequences(channelGuild, message)
 		}
+	} else {
+		message = window.replaceCustomEmojiSequences(nil, message)
 	}
 
 	//Replace formatter characters and replace emoji codes.
-	output = discordemojimap.Replace(output)
-	output = strings.Replace(output, "\\:", ":", -1)
+	message = discordemojimap.Replace(message)
+	message = strings.Replace(message, "\\:", ":", -1)
 
 	if targetChannel.GuildID == "" {
 		for _, user := range targetChannel.Recipients {
-			output = strings.ReplaceAll(output, "@"+user.Username+"#"+user.Discriminator, "<@"+user.ID+">")
+			message = strings.ReplaceAll(message, "@"+user.Username+"#"+user.Discriminator, "<@"+user.ID+">")
 		}
 	} else {
 		members, discordError := window.session.State.Members(targetChannel.GuildID)
 		if discordError == nil {
 			for _, member := range members {
-				output = strings.ReplaceAll(output, "@"+member.User.Username+"#"+member.User.Discriminator, "<@"+member.User.ID+">")
+				message = strings.ReplaceAll(message, "@"+member.User.Username+"#"+member.User.Discriminator, "<@"+member.User.ID+">")
 			}
 		}
 	}
 
-	return output
+	return message
+}
+
+// replaceCustomEmojiSequences replaces all emoji codes for non-unicode
+// emojis, e.g. discord custom emojis. the search is lowercase and doesn't
+// differentiate between emojis with the same name. Instead it goes by whatever
+// it finds first. For private channels, the channelGuild may be nil.
+func (window *Window) replaceCustomEmojiSequences(channelGuild *discordgo.Guild, message string) string {
+	//Simple handling for nitro, since nitro users can pretty much send anything.
+	if window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitroClassic ||
+		window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitro {
+		return emojiRegex.ReplaceAllStringFunc(message, func(match string) string {
+			firstDoubleColon := strings.IndexRune(match, ':')
+			emojiSequence := strings.ToLower(match[firstDoubleColon+1 : len(match)-1])
+			for _, guild := range window.session.State.Guilds {
+				for _, emoji := range guild.Emojis {
+					if strings.ToLower(emoji.Name) == emojiSequence {
+						if emoji.Animated {
+							return match[:firstDoubleColon] + "<a:" + emoji.Name + ":" + emoji.ID + ">"
+						} else {
+							return match[:firstDoubleColon] + "<:" + emoji.Name + ":" + emoji.ID + ">"
+						}
+					}
+				}
+			}
+
+			return match
+		})
+	}
+
+	return emojiRegex.ReplaceAllStringFunc(message, func(match string) string {
+		firstDoubleColon := strings.IndexRune(match, ':')
+		emojiSequence := strings.ToLower(match[firstDoubleColon+1 : len(match)-1])
+
+		//Local guild emojis take priority
+		if channelGuild != nil {
+			emojiResult := window.findMatchInGuild(channelGuild, true, emojiSequence)
+			if emojiResult != "" {
+				return match[:firstDoubleColon] + emojiResult
+			}
+		}
+
+		//Check for global emotes
+		for _, guild := range window.session.State.Guilds {
+			emojiResult := window.findMatchInGuild(guild, false, emojiSequence)
+			if emojiResult != "" {
+				return match[:firstDoubleColon] + emojiResult
+			}
+		}
+
+		return match
+	})
+}
+
+// findMatchInGuild searches for a fitting emoji. Fitting means the correct name
+// (caseinsensitive), not animated and the correct permissions. If the result
+// is an empty string, it means no result was found.
+func (window *Window) findMatchInGuild(guild *discordgo.Guild, omitGWCheck bool, emojiSequence string) string {
+	for _, emoji := range guild.Emojis {
+		if emoji.Animated {
+			continue
+		}
+
+		if strings.ToLower(emoji.Name) == emojiSequence && (omitGWCheck || strings.HasPrefix(emoji.Name, "GW")) {
+			if len(emoji.Roles) != 0 {
+				selfMember, cacheError := window.session.State.Member(guild.ID, window.session.State.User.ID)
+				if cacheError != nil {
+					selfMember, discordError := window.session.GuildMember(guild.ID, window.session.State.User.ID)
+					if discordError != nil {
+						log.Println(discordError)
+						continue
+					}
+
+					window.session.State.MemberAdd(selfMember)
+				}
+
+				if selfMember != nil {
+					for _, emojiRole := range emoji.Roles {
+						for _, selfRole := range selfMember.Roles {
+							if selfRole == emojiRole {
+								return "<:" + emoji.Name + ":" + emoji.ID + ">"
+							}
+						}
+					}
+				}
+			}
+
+			return "<:" + emoji.Name + ":" + emoji.ID + ">"
+		}
+	}
+
+	return ""
 }
 
 // ShowDialog shows a dialog at the bottom of the window. It doesn't surrender
