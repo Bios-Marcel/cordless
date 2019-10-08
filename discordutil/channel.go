@@ -9,16 +9,6 @@ import (
 	"github.com/Bios-Marcel/tview"
 )
 
-// GetChannelNameForTree returns the string representation of a channel in
-// the channel tree on the left.
-func GetChannelNameForTree(channel *discordgo.Channel) string {
-	if channel.NSFW {
-		return "🔞" + channel.Name
-	}
-
-	return channel.Name
-}
-
 // SortMessagesByTimestamp sorts all messages in the given array according to
 // their creation date.
 func SortMessagesByTimestamp(messages []*discordgo.Message) {

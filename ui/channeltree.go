@@ -144,7 +144,10 @@ func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.
 }
 
 func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
-	channelNode := tview.NewTreeNode(discordutil.GetChannelNameForTree(channel))
+	channelNode := tview.NewTreeNode(channel.Name)
+	if channel.NSFW {
+		channelNode.SetPrefix("🔞")
+	}
 	channelNode.SetReference(channel.ID)
 	return channelNode
 }
@@ -165,7 +168,7 @@ func (channelTree *ChannelTree) AddOrUpdateChannel(channel *discordgo.Channel) {
 			}*/
 
 			updated = true
-			node.SetText(discordutil.GetChannelNameForTree(channel))
+			node.SetText(channel.Name)
 
 			return false
 		}
@@ -256,7 +259,7 @@ func (channelTree *ChannelTree) MarkChannelAsRead(channelID string) {
 		if ok && referenceChannelID == channelID {
 			channel, stateError := channelTree.state.Channel(channelID)
 			if stateError == nil {
-				node.SetText(discordutil.GetChannelNameForTree(channel))
+				node.SetText(channel.Name)
 			}
 
 			if channelTree.channelStates[node] != channelLoaded {
@@ -279,7 +282,7 @@ func (channelTree *ChannelTree) MarkChannelAsMentioned(channelID string) {
 			channelTree.channelStates[node] = channelMentioned
 			channel, stateError := channelTree.state.Channel(channelID)
 			if stateError == nil {
-				node.SetText("(@You) " + discordutil.GetChannelNameForTree(channel))
+				node.SetText("(@You) " + channel.Name)
 			}
 			node.SetColor(config.GetTheme().AttentionColor)
 
@@ -307,7 +310,7 @@ func (channelTree *ChannelTree) MarkChannelAsLoaded(channelID string) {
 			channelTree.channelStates[node] = channelLoaded
 			channel, stateError := channelTree.state.Channel(channelID)
 			if stateError == nil {
-				node.SetText(discordutil.GetChannelNameForTree(channel))
+				node.SetText(channel.Name)
 			}
 			node.SetColor(tview.Styles.ContrastBackgroundColor)
 			return false
