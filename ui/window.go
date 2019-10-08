@@ -1092,7 +1092,7 @@ func (window *Window) addNodeToMentionWindow(mentionWindow *tview.TreeView, name
 }
 
 func (window *Window) PopulateMentionWindowFromCurrentChannel(mentionWindow *tview.TreeView, namePart string) {
-	var memberNames []string
+	memberNames := make([]string, 0, len(window.selectedChannel.Recipients))
 	for _, user := range window.selectedChannel.Recipients {
 		userName := user.Username + "#" + user.Discriminator
 		memberNames = append(memberNames, userName)
