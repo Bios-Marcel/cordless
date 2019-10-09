@@ -37,11 +37,15 @@ const (
 )
 
 var (
-	emojiRegex = regexp.MustCompile("(m?)(^|[^<]):.+?:")
+	//emojiRegex is used to fidn emojicodes for custom emojis. The !? part
+	// after the first double colon exists in order as a flag to tell cordless
+	// to use the emoji as a custom emoji, since there can be clashes with for
+	// example :joy:, which is a default emoji code.
+	emojiRegex = regexp.MustCompile("(m?)(^|[^<]):!?.+?:")
 )
 
 // Window is basically the whole application, as it contains all the
-// components and the necccessary global state.
+// components and the necessary global state.
 type Window struct {
 	app               *tview.Application
 	middleContainer   *tview.Flex
@@ -1133,6 +1137,9 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 		return strings.ReplaceAll(input, ":", "\\:")
 	})
 
+	//Replace formatter characters and replace emoji codes.
+	message = discordemojimap.Replace(message)
+
 	if targetChannel.GuildID != "" {
 		channelGuild, discordError := window.session.State.Guild(targetChannel.GuildID)
 		if discordError == nil {
@@ -1149,8 +1156,6 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 		message = window.replaceCustomEmojiSequences(nil, message)
 	}
 
-	//Replace formatter characters and replace emoji codes.
-	message = discordemojimap.Replace(message)
 	message = strings.Replace(message, "\\:", ":", -1)
 
 	if targetChannel.GuildID == "" {
@@ -1179,7 +1184,7 @@ func (window *Window) replaceCustomEmojiSequences(channelGuild *discordgo.Guild,
 		window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitro {
 		return emojiRegex.ReplaceAllStringFunc(message, func(match string) string {
 			firstDoubleColon := strings.IndexRune(match, ':')
-			emojiSequence := strings.ToLower(match[firstDoubleColon+1 : len(match)-1])
+			emojiSequence := strings.ToLower(strings.TrimPrefix(match[firstDoubleColon+1:len(match)-1], "!"))
 			for _, guild := range window.session.State.Guilds {
 				for _, emoji := range guild.Emojis {
 					if strings.ToLower(emoji.Name) == emojiSequence {
@@ -1198,7 +1203,7 @@ func (window *Window) replaceCustomEmojiSequences(channelGuild *discordgo.Guild,
 
 	return emojiRegex.ReplaceAllStringFunc(message, func(match string) string {
 		firstDoubleColon := strings.IndexRune(match, ':')
-		emojiSequence := strings.ToLower(match[firstDoubleColon+1 : len(match)-1])
+		emojiSequence := strings.ToLower(strings.TrimPrefix(match[firstDoubleColon+1:len(match)-1], "!"))
 
 		//Local guild emojis take priority
 		if channelGuild != nil {
