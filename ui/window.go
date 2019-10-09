@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	//emojiRegex is used to fidn emojicodes for custom emojis. The !? part
+	//emojiRegex is used to find emojicodes for custom emojis. The !? part
 	// after the first double colon exists in order as a flag to tell cordless
 	// to use the emoji as a custom emoji, since there can be clashes with for
 	// example :joy:, which is a default emoji code.
