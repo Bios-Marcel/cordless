@@ -174,6 +174,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 		SetDynamicColors(true).
 		SetRegions(true).
 		SetWordWrap(true).
+		SetIndicateOverflow(true).
 		SetBorder(true).
 		SetTitleColor(config.GetTheme().InverseTextColor)
 

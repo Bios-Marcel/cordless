@@ -38,7 +38,8 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 	commandInput := NewEditor()
 	commandInput.internalTextView.
 		SetWrap(false).
-		SetWordWrap(false)
+		SetWordWrap(false).
+		SetIndicateOverflow(true)
 
 	cmdView := &CommandView{
 		commandOutput: commandOutput,

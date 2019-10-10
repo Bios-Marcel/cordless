@@ -12,6 +12,12 @@ github.com/Bios-Marcel/tview v0.0.0-20191005105220-888684dabd6b h1:Z4pYp0FKemDpt
 github.com/Bios-Marcel/tview v0.0.0-20191005105220-888684dabd6b/go.mod h1:AtXfMotMUyN+IQ7JwQyvrWr9dQN+TNRlq+slKB0fmQc=
 github.com/Bios-Marcel/tview v0.0.0-20191008165233-c1d70afae712 h1:woFPJ1+2P7cPwDO7ES0WqEZ5Gr7uomx2mX+waHZDFlg=
 github.com/Bios-Marcel/tview v0.0.0-20191008165233-c1d70afae712/go.mod h1:AtXfMotMUyN+IQ7JwQyvrWr9dQN+TNRlq+slKB0fmQc=
+github.com/Bios-Marcel/tview v0.0.0-20191010184840-e957ee729af5 h1:fpOcmkGt7VZAZM+vLHxEsyoHyMiPHus5gDrJluQdhH8=
+github.com/Bios-Marcel/tview v0.0.0-20191010184840-e957ee729af5/go.mod h1:AtXfMotMUyN+IQ7JwQyvrWr9dQN+TNRlq+slKB0fmQc=
+github.com/Bios-Marcel/tview v0.0.0-20191010185340-4087ce6a56dd h1:1lP9nen8TalO7/wh4nGsYMK0QtaKRzoJ5I/cfGjDMZM=
+github.com/Bios-Marcel/tview v0.0.0-20191010185340-4087ce6a56dd/go.mod h1:AtXfMotMUyN+IQ7JwQyvrWr9dQN+TNRlq+slKB0fmQc=
+github.com/Bios-Marcel/tview v0.0.0-20191010190327-42c5245b3d25 h1:6qaZmnHVaTfn3KLpbs1EZxi8ZWPnvyKSVN6m1azdpVg=
+github.com/Bios-Marcel/tview v0.0.0-20191010190327-42c5245b3d25/go.mod h1:AtXfMotMUyN+IQ7JwQyvrWr9dQN+TNRlq+slKB0fmQc=
 github.com/DATA-DOG/go-sqlmock v1.3.3 h1:CWUqKXe0s8A2z6qCgkP4Kru7wC11YoAnoupUKFDnH08=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/GeertJohan/go.incremental v1.0.0/go.mod h1:6fAjUhbVuX1KcMD3c8TEgVUqmo4seqhv0i0kdATSkM0=
