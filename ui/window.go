@@ -1433,6 +1433,16 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 	})
 }
 
+func (window *Window) QueueUpdateDrawSynchronized(runnable func()) {
+	blocker := make(chan bool, 1)
+	window.app.QueueUpdateDraw(func() {
+		runnable()
+		blocker <- true
+	})
+	<-blocker
+	close(blocker)
+}
+
 // startMessageHandlerRoutines registers the handlers for certain message
 // events. It updates the cache and the UI if necessary.
 func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
@@ -1452,7 +1462,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 					readstate.UpdateReadBuffered(window.session, channel, message.ID)
 				}
 
-				window.app.QueueUpdateDraw(func() {
+				window.QueueUpdateDrawSynchronized(func() {
 					window.chatView.AddMessage(message)
 				})
 			}
@@ -1558,7 +1568,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			window.session.State.MessageRemove(tempMessageDeleted)
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageDeleted.ChannelID {
-				window.app.QueueUpdateDraw(func() {
+				window.QueueUpdateDrawSynchronized(func() {
 					window.chatView.DeleteMessage(tempMessageDeleted)
 				})
 			}
@@ -1578,7 +1588,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessagesDeleted.ChannelID {
-				window.app.QueueUpdateDraw(func() {
+				window.QueueUpdateDrawSynchronized(func() {
 					window.chatView.DeleteMessages(tempMessagesDeleted.Messages)
 				})
 			}
@@ -1600,7 +1610,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						message.MentionRoles = tempMessageEdited.MentionRoles
 						message.MentionEveryone = tempMessageEdited.MentionEveryone
 
-						window.app.QueueUpdateDraw(func() {
+						window.QueueUpdateDrawSynchronized(func() {
 							window.chatView.UpdateMessage(message)
 						})
 						break
@@ -1783,7 +1793,7 @@ func (window *Window) registerGuildChannelHandler() {
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelCreate) {
 		if window.isChannelEventRelevant(event.Channel) {
 			window.channelTree.Lock()
-			window.app.QueueUpdateDraw(func() {
+			window.QueueUpdateDrawSynchronized(func() {
 				window.channelTree.AddOrUpdateChannel(event.Channel)
 			})
 			window.channelTree.Unlock()
@@ -1793,7 +1803,7 @@ func (window *Window) registerGuildChannelHandler() {
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelUpdate) {
 		if window.isChannelEventRelevant(event.Channel) {
 			window.channelTree.Lock()
-			window.app.QueueUpdateDraw(func() {
+			window.QueueUpdateDrawSynchronized(func() {
 				window.channelTree.AddOrUpdateChannel(event.Channel)
 			})
 			window.channelTree.Unlock()
@@ -1817,6 +1827,7 @@ func (window *Window) registerGuildChannelHandler() {
 				})
 			}
 
+			//On purpose, since we don't care much about removing the channel timely.
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.Lock()
 				window.channelTree.RemoveChannel(event.Channel)
