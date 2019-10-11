@@ -331,7 +331,7 @@ func (chatView *ChatView) AddDateDelimiter(date string, write bool) string {
 	_, _, width, _ := chatView.internalTextView.GetInnerRect()
 	dashes := (width - len(chatView.format)) / 2
 	padding := strings.Repeat("\u2500", dashes-1)
-	dateDelimiterLine := "\n[\"" + intToString(0) + "\"]" + padding + " " + date + " " + padding
+	dateDelimiterLine := "\n[\"" + "\"]" + padding + " " + date + " " + padding
 	if write {
 		fmt.Fprint(chatView.internalTextView, dateDelimiterLine)
 	}
