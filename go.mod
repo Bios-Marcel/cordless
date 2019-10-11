@@ -7,7 +7,7 @@ require (
 	github.com/Bios-Marcel/discordgo v0.20.4-0.20191007163810-41c4e4a91fd6
 	github.com/Bios-Marcel/goclipimg v0.0.0-20190417192721-b58a8831f27d
 	github.com/Bios-Marcel/shortnotforlong v1.0.0
-	github.com/Bios-Marcel/tview v0.0.0-20191010190327-42c5245b3d25
+	github.com/Bios-Marcel/tview v0.0.0-20191011210517-9ff18389d0f6
 	github.com/alecthomas/chroma v0.6.6
 	github.com/atotto/clipboard v0.1.2
 	github.com/gdamore/tcell v1.3.0

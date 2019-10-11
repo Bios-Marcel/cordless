@@ -335,6 +335,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.messageContainer = window.chatView.GetPrimitive()
 
 	window.messageInput = NewEditor()
+	window.messageInput.internalTextView.SetIndicateOverflow(true)
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
 		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), maths.Min(height, 20), 0)
 	})

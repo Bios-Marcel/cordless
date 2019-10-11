@@ -48,7 +48,8 @@ func NewChannelTree(state *discordgo.State) *ChannelTree {
 		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetCycleSelection(true).
 		SetTopLevel(1).
-		SetBorder(true)
+		SetBorder(true).
+		SetIndicateOverflow(true)
 
 	channelTree.SetRoot(tview.NewTreeNode(""))
 	channelTree.SetSelectedFunc(func(node *tview.TreeNode) {
