@@ -29,5 +29,9 @@ func TimeToString(time *time.Time) string {
 
 // CompareMessageDates returns false if the dates do not match and the t2 time
 func CompareMessageDates(t1, t2 time.Time) (bool, time.Time) {
-	return t1.Truncate(24 * time.Hour).Equal(t2.Truncate(24 * time.Hour)), t2
+	var match bool
+	if t1.Year() == t2.Year() && t1.YearDay() == t2.YearDay() {
+		match = true
+	}
+	return match, t2
 }
