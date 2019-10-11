@@ -49,6 +49,7 @@ type ChatView struct {
 	data       []*discordgo.Message
 	bufferSize int
 	ownUserID  string
+	format     string
 
 	shortenLinks bool
 
@@ -69,6 +70,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 		internalTextView:   tview.NewTextView(),
 		state:              state,
 		ownUserID:          ownUserID,
+		format:             "2006-01-02",
 		selection:          -1,
 		bufferSize:         100,
 		selectionMode:      false,
@@ -324,6 +326,36 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	}
 }
 
+// AddDateDelimiter adds a date delimiter between messages to mark the date
+func (chatView *ChatView) AddDateDelimiter(date string, write bool) string {
+	_, _, width, _ := chatView.internalTextView.GetInnerRect()
+	dashes := (width - len(chatView.format)) / 2
+	padding := strings.Repeat("\u2500", dashes)
+	dateDelimiterLine := "\n[\"" + intToString(0) + "\"]" + padding + date + padding
+	if write {
+		fmt.Fprint(chatView.internalTextView, dateDelimiterLine)
+	}
+	return dateDelimiterLine
+}
+
+// DateDelimiter inserts datedelimiters where needed
+func (chatView *ChatView) DateDelimiter(messages []*discordgo.Message, i int, write bool) string {
+	var res string
+	if i > 0 {
+		t1, _ := messages[i-1].Timestamp.Parse()
+		t2, _ := messages[i].Timestamp.Parse()
+
+		if equal, date := times.CompareMessageDates(t1, t2); !equal {
+			res = chatView.AddDateDelimiter(date.Format(chatView.format), write)
+		}
+	} else if i == 0 {
+		time, _ := messages[i].Timestamp.Parse()
+		date := time.Format(chatView.format)
+		res = chatView.AddDateDelimiter(date, write)
+	}
+	return res
+}
+
 // AddMessages is the same as AddMessage, but for an array of messages instead
 // of a single message. Calling this method will not repeat certain actions and
 // therefore be slightly more performant than calling AddMessage multiple
@@ -331,7 +363,8 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 
-	for _, message := range messages {
+	for i, message := range messages {
+		chatView.DateDelimiter(messages, i, true)
 		chatView.addMessageInternal(message)
 	}
 
@@ -349,6 +382,7 @@ func (chatView *ChatView) Rerender() {
 		formattedMessage, contains := chatView.formattedMessages[message.ID]
 		//Should always be true, otherwise we got ourselves a bug.
 		if contains {
+			newContent += chatView.DateDelimiter(chatView.data, index, false)
 			newContent = newContent + "\n[\"" + intToString(index) + "\"]" + formattedMessage
 		} else {
 			panic("Bug in chatview, a message could not be found.")
