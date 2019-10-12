@@ -215,7 +215,7 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 					return
 				}
 
-				fmt.Fprintf(writer, "A friends-reuest has been sent to '%s'.\n", input)
+				fmt.Fprintf(writer, "A friends-request has been sent to '%s'.\n", input)
 				return
 			}
 
@@ -240,7 +240,7 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 			if requestError != nil {
 				fmt.Fprintf(writer, "Error sending friends-request (%s).\n", requestError)
 			} else {
-				fmt.Fprintf(writer, "A friends-reuest has been sent to '%s'.\n", user.String())
+				fmt.Fprintf(writer, "A friends-request has been sent to '%s'.\n", user.String())
 			}
 		} else {
 			fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", input)
