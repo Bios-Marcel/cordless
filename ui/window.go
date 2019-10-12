@@ -982,12 +982,11 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 }
 
 func (window *Window) sendMessage(targetChannelID, message string) {
-	messageText := window.jsEngine.OnMessageSend(message)
 	window.app.QueueUpdateDraw(func() {
 		window.messageInput.SetText("")
 		window.chatView.internalTextView.ScrollToEnd()
 	})
-	_, sendError := window.session.ChannelMessageSend(targetChannelID, messageText)
+	_, sendError := window.session.ChannelMessageSend(targetChannelID, message)
 	if sendError != nil {
 		window.app.QueueUpdateDraw(func() {
 			retry := "Retry sending"
@@ -1000,7 +999,7 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 					case retry:
 						go window.sendMessage(targetChannelID, message)
 					case edit:
-						window.messageInput.SetText(messageText)
+						window.messageInput.SetText(message)
 					}
 				}, retry, edit, cancel)
 		})
@@ -1140,6 +1139,8 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 	message := codeBlockRegex.ReplaceAllStringFunc(inputText, func(input string) string {
 		return strings.ReplaceAll(input, ":", "\\:")
 	})
+
+	message = window.jsEngine.OnMessageSend(message)
 
 	//Replace formatter characters and replace emoji codes.
 	message = discordemojimap.Replace(message)
