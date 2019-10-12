@@ -317,6 +317,11 @@ func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 //AddMessage add an additional message to the ChatView.
 func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
+	t1, _ := chatView.data[len(chatView.data)-1].Timestamp.Parse()
+	t2, _ := message.Timestamp.Parse()
+	if equal, date := times.CompareMessageDates(t1.Local(), t2.Local()); !equal {
+		chatView.AddDateDelimiter(date.Format(chatView.format), true)
+	}
 
 	chatView.addMessageInternal(message)
 
