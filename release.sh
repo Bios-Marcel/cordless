@@ -21,6 +21,24 @@
 set -e
 
 #
+# RELEASE_DATE is the current date in format Year-Month-Day, since cordless
+# uses dates for versioning.
+#
+
+RELEASE_DATE="$(date +%Y-%m-%d)"
+export RELEASE_DATE
+
+#
+# Setting the cordless versionnumber to the current release date.
+# This number can be requested on startup and is only used for that purpose.
+#
+# This has to happen before building, since version numbers are incorrect otherwise.
+#
+
+envsubst < version.go_template > version/version.go
+git commit version/version.go -m "Bump cordless versionnumber to version $RELEASE_DATE"
+
+#
 # Define executable names for later usage.
 #
 
@@ -39,11 +57,6 @@ GOOS=darwin go build -o $BIN_DARWIN -ldflags="-s -w"
 GOOS=windows go build -o $BIN_WINDOWS -ldflags="-s -w"
 
 #
-# Setup environment variables.
-#
-# RELEASE_DATE is the current date in format Year-Month-Day, since cordless
-# uses dates for versioning.
-#
 # EXE_HASH is sha256 of the previously built cordless.exe and is required
 # for scoop to properly work.
 #
@@ -51,8 +64,6 @@ GOOS=windows go build -o $BIN_WINDOWS -ldflags="-s -w"
 # and unexport them at a later point and time.
 #
 
-RELEASE_DATE="$(date +%Y-%m-%d)"
-export RELEASE_DATE
 EXE_HASH="$(sha256sum ./$BIN_WINDOWS | cut -f 1 -d " ")"
 export EXE_HASH
 
@@ -64,18 +75,10 @@ export EXE_HASH
 envsubst < cordless.json_template > cordless.json
 
 #
-# Setting the cordless versionnumber to the current release date.
-# This number can be requested on startup and is only used for that purpose.
-#
-
-envsubst < version.go_template > version/version.go
-
-#
-# Commit and push the new scoop manifest and set the cordless versionnumer
+# Commit and push the new scoop manifest.
 #
 
 git commit cordless.json -m "Bump scoop package to version $RELEASE_DATE"
-git commit version/version.go -m "Bump cordless versionnumber to version $RELEASE_DATE"
 git push
 
 #
