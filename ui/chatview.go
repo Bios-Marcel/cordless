@@ -589,7 +589,9 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 		messageText = strings.Replace(messageText, values[2], formattedCode, 1)
 	}
 
-	messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
+	messageText = strings.
+		NewReplacer("\\*", "*", "\\_", "_", "\\`", "`").
+		Replace(parseBoldAndUnderline(messageText))
 
 	shouldShow, contains := chatView.showSpoilerContent[message.ID]
 	if !contains || !shouldShow {
