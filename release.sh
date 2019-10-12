@@ -141,7 +141,6 @@ fi
 # download the latets tarball in order to get its sha256 sum.
 #
 
-rm cordless.rb
 wget https://github.com/Bios-Marcel/cordless/archive/$RELEASE_DATE.tar.gz
 TAR_HASH="$(sha256sum ./$RELEASE_DATE.tar.gz | cut -f 1 -d " ")"
 export TAR_HASH
