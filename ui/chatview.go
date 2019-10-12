@@ -320,7 +320,7 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	t1, _ := chatView.data[len(chatView.data)-1].Timestamp.Parse()
 	t2, _ := message.Timestamp.Parse()
 	if equal := times.CompareMessageDates(t1.Local(), t2.Local()); !equal {
-		chatView.AddDateDelimiter(t2.Format(chatView.format), true)
+		fmt.Fprint(chatView.internalTextView, chatView.CreateDateDelimiter(t2.Format(chatView.format)))
 	}
 
 	chatView.addMessageInternal(message)
@@ -331,34 +331,36 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	}
 }
 
-// AddDateDelimiter adds a date delimiter between messages to mark the date
-func (chatView *ChatView) AddDateDelimiter(date string, write bool) string {
+// CreateDateDelimiter creates a date delimiter between messages to mark the date and returns it
+func (chatView *ChatView) CreateDateDelimiter(date string) string {
 	_, _, width, _ := chatView.internalTextView.GetInnerRect()
 	dashes := (width - len(chatView.format)) / 2
 	padding := strings.Repeat("\u2500", dashes-1)
 	dateDelimiterLine := "\n[\"" + "\"]" + padding + " " + date + " " + padding
-	if write {
-		fmt.Fprint(chatView.internalTextView, dateDelimiterLine)
-	}
 	return dateDelimiterLine
 }
 
-// DateDelimiter inserts datedelimiters where needed
-func (chatView *ChatView) DateDelimiter(messages []*discordgo.Message, i int, write bool) string {
+// ReturnDateDelimiter creates datedelimiters between two messages and returns them
+func (chatView *ChatView) ReturnDateDelimiter(messages []*discordgo.Message, index int) string {
 	var res string
-	if i > 0 {
-		t1, _ := messages[i-1].Timestamp.Parse()
-		t2, _ := messages[i].Timestamp.Parse()
+	if index > 0 {
+		t1, _ := messages[index-1].Timestamp.Parse()
+		t2, _ := messages[index].Timestamp.Parse()
 
 		if equal := times.CompareMessageDates(t1.Local(), t2.Local()); !equal {
-			res = chatView.AddDateDelimiter(t2.Format(chatView.format), write)
+			res = chatView.CreateDateDelimiter(t2.Local().Format(chatView.format))
 		}
-	} else if i == 0 {
-		time, _ := messages[i].Timestamp.Parse()
+	} else if index == 0 {
+		time, _ := messages[index].Timestamp.Parse()
 		date := time.Format(chatView.format)
-		res = chatView.AddDateDelimiter(date, write)
+		res = chatView.CreateDateDelimiter(date)
 	}
 	return res
+}
+
+// WriteDateDelimiter runs ReturnDateDelimiter and writes it to chatView.internalTextView
+func (chatView *ChatView) WriteDateDelimiter(messages []*discordgo.Message, index int) {
+	fmt.Fprint(chatView.internalTextView, chatView.ReturnDateDelimiter(messages, index))
 }
 
 // AddMessages is the same as AddMessage, but for an array of messages instead
@@ -368,8 +370,8 @@ func (chatView *ChatView) DateDelimiter(messages []*discordgo.Message, i int, wr
 func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 
-	for i, message := range messages {
-		chatView.DateDelimiter(messages, i, true)
+	for index, message := range messages {
+		chatView.WriteDateDelimiter(messages, index)
 		chatView.addMessageInternal(message)
 	}
 
@@ -387,7 +389,7 @@ func (chatView *ChatView) Rerender() {
 		formattedMessage, contains := chatView.formattedMessages[message.ID]
 		//Should always be true, otherwise we got ourselves a bug.
 		if contains {
-			newContent += chatView.DateDelimiter(chatView.data, index, false)
+			newContent += chatView.ReturnDateDelimiter(chatView.data, index)
 			newContent = newContent + "\n[\"" + intToString(index) + "\"]" + formattedMessage
 		} else {
 			panic("Bug in chatview, a message could not be found.")
