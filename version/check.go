@@ -19,10 +19,14 @@ func IsLocalOutdated(dontRemindFor string) bool {
 		return false
 	}
 
+	return isCurrentOlder(Version, GetLatestRemoteVersion())
+}
+
+func isCurrentOlder(current, other string) bool {
 	var yearRemote, monthRemote, dayRemote int
-	fmt.Sscanf(GetLatestRemoteVersion(), "%04d-%02d-%02d", &yearRemote, &monthRemote, &dayRemote)
+	fmt.Sscanf(other, "%04d-%02d-%02d", &yearRemote, &monthRemote, &dayRemote)
 	var yearLocal, monthLocal, dayLocal int
-	fmt.Sscanf(Version, "%04d-%02d-%02d", &yearLocal, &monthLocal, &dayLocal)
+	fmt.Sscanf(current, "%04d-%02d-%02d", &yearLocal, &monthLocal, &dayLocal)
 	return !(yearLocal >= yearRemote && monthLocal >= monthRemote && dayLocal >= dayRemote)
 }
 
