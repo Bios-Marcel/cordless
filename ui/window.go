@@ -140,10 +140,16 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	channelTree.SetOnChannelSelect(func(channelID string) {
 		channel, cacheError := window.session.State.Channel(channelID)
 		if cacheError == nil {
-			loadError := window.LoadChannel(channel)
-			if loadError == nil {
-				channelTree.MarkChannelAsLoaded(channelID)
-			}
+			go func() {
+				window.chatView.Lock()
+				defer window.chatView.Unlock()
+				window.QueueUpdateDrawSynchronized(func() {
+					loadError := window.LoadChannel(channel)
+					if loadError == nil {
+						channelTree.MarkChannelAsLoaded(channelID)
+					}
+				})
+			}()
 		}
 	})
 	window.registerGuildChannelHandler()
@@ -251,39 +257,52 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			return
 		}
 
-		window.LoadChannel(channel)
-		if channel.Type == discordgo.ChannelTypeGroupDM {
-			loadError := window.userList.LoadGroup(channel.ID)
-			if loadError != nil {
-				fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
-			}
-		}
+		go func() {
+			window.chatView.Lock()
+			defer window.chatView.Unlock()
+			window.QueueUpdateDrawSynchronized(func() {
+				window.LoadChannel(channel)
 
-		window.RefreshLayout()
+				if channel.Type == discordgo.ChannelTypeGroupDM {
+					loadError := window.userList.LoadGroup(channel.ID)
+					if loadError != nil {
+						fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
+					}
+				}
+
+				window.RefreshLayout()
+			})
+		}()
 	})
 
 	window.privateList.SetOnFriendSelect(func(userID string) {
-		userChannels, _ := window.session.UserChannels()
-		for _, userChannel := range userChannels {
-			if userChannel.Type == discordgo.ChannelTypeDM &&
-				(userChannel.Recipients[0].ID == userID) {
-				window.LoadChannel(userChannel)
-				window.RefreshLayout()
-				return
-			}
-		}
-
-		newChannel, discordError := window.session.UserChannelCreate(userID)
-		if discordError == nil {
-			messages, discordError := window.session.ChannelMessages(newChannel.ID, 100, "", "", "")
-			if discordError == nil {
-				for _, message := range messages {
-					window.session.State.MessageAdd(message)
+		go func() {
+			window.chatView.Lock()
+			defer window.chatView.Unlock()
+			userChannels, _ := window.session.UserChannels()
+			for _, userChannel := range userChannels {
+				if userChannel.Type == discordgo.ChannelTypeDM &&
+					(userChannel.Recipients[0].ID == userID) {
+					window.QueueUpdateDrawSynchronized(func() {
+						window.loadPrivateChannel(userChannel)
+					})
+					return
 				}
 			}
-			window.LoadChannel(newChannel)
-			window.RefreshLayout()
-		}
+
+			newChannel, discordError := window.session.UserChannelCreate(userID)
+			if discordError == nil {
+				messages, discordError := window.session.ChannelMessages(newChannel.ID, 100, "", "", "")
+				if discordError == nil {
+					for _, message := range messages {
+						window.session.State.MessageAdd(message)
+					}
+				}
+				window.QueueUpdateDrawSynchronized(func() {
+					window.loadPrivateChannel(newChannel)
+				})
+			}
+		}()
 	})
 
 	window.chatArea = tview.NewFlex().
@@ -895,6 +914,11 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerMouseFocusListeners()
 
 	return window, nil
+}
+
+func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
+	window.LoadChannel(channel)
+	window.RefreshLayout()
 }
 
 func (window *Window) insertNewLineAtCursor() {
@@ -2226,11 +2250,9 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	discordutil.SortMessagesByTimestamp(messages)
 
-	window.chatView.Lock()
 	window.chatView.SetMessages(messages)
 	window.chatView.ClearSelection()
 	window.chatView.internalTextView.ScrollToEnd()
-	window.chatView.Unlock()
 
 	window.UpdateChatHeader(channel)
 
@@ -2247,8 +2269,6 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 			window.previousGuildNode = window.selectedGuildNode
 		}
 	}
-
-	window.channelTree.Lock()
 
 	//If there is a  currently loaded guild channel and it isn't the same as
 	//the new one we assume it must be read and mark it white.
@@ -2274,7 +2294,6 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 		window.privateList.MarkChannelAsLoaded(channel)
 	}
-	window.channelTree.Unlock()
 
 	window.exitMessageEditModeAndKeepText()
 
