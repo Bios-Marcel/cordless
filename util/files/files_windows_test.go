@@ -14,17 +14,17 @@ func TestToAbsolutePath(t *testing.T) {
 		{
 			name:    "absolute path",
 			input:   "C:/test.txt",
-			want:    "C:/test.txt",
+			want:    "C:\\test.txt",
 			wantErr: false,
 		}, {
 			name:    "absolute path; file uri",
 			input:   "file://C:/te%20st.txt",
-			want:    "C:/te st.txt",
+			want:    "C:\\te st.txt",
 			wantErr: false,
 		}, {
 			name:    "absolute path; contains Escaped characters",
 			input:   "C:/te%20st.txt",
-			want:    "C:/te st.txt",
+			want:    "C:\\te st.txt",
 			wantErr: false,
 		},
 	}
