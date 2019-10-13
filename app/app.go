@@ -16,7 +16,7 @@ import (
 
 const (
 	userSession         = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0"
-	defaultLoginMessage = "Input your token. Prepend 'Bot ' for bot tokens.\n\nFor information on how to retrieve your token, check:\nhttps://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token\nToken input is hidden by default, toggle with Ctrl + R"
+	defaultLoginMessage = "\nPlease input your token. Prepend 'Bot ' for bot tokens.\n\nFor information on how to retrieve your token, check:\nhttps://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token\n\nToken input is hidden by default, toggle with Ctrl + R."
 )
 
 var suspended = false
