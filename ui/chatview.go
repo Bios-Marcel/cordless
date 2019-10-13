@@ -320,11 +320,7 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 	t1, _ := chatView.data[len(chatView.data)-1].Timestamp.Parse()
 	t2, _ := message.Timestamp.Parse()
-<<<<<<< HEAD
-	if !times.CompareMessageDates(t1.Local(), t2.Local()) {
-=======
 	if !times.AreDatesTheSameDay(t1.Local(), t2.Local()) {
->>>>>>> upstream/master
 		fmt.Fprint(chatView.internalTextView, chatView.CreateDateDelimiter(t2.Format(chatView.format)))
 	}
 
