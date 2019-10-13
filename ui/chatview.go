@@ -28,6 +28,8 @@ import (
 	"github.com/alecthomas/chroma/styles"
 )
 
+const dashCharacter = "\u2500"
+
 var (
 	codeBlockRegex      = regexp.MustCompile("(?sm)(^|.)?(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
 	colorRegex          = regexp.MustCompile("\\[#.{6}\\]")
@@ -239,14 +241,13 @@ func (chatView *ChatView) DeleteMessage(deletedMessage *discordgo.Message) {
 
 // DeleteMessages drops the messages from the cache and triggers a rerender
 func (chatView *ChatView) DeleteMessages(deletedMessages []string) {
-	filteredMessages := make([]*discordgo.Message, 0)
-
 	for _, message := range deletedMessages {
 		delete(chatView.showSpoilerContent, message)
 		delete(chatView.formattedMessages, message)
 
 	}
 
+	filteredMessages := make([]*discordgo.Message, 0)
 OUTER_LOOP:
 	for _, message := range chatView.data {
 		for _, toDelete := range deletedMessages {
@@ -335,10 +336,11 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 // CreateDateDelimiter creates a date delimiter between messages to mark the date and returns it
 func (chatView *ChatView) CreateDateDelimiter(date string) string {
 	_, _, width, _ := chatView.internalTextView.GetInnerRect()
-	dashes := (width - len(chatView.format)) / 2
-	padding := strings.Repeat("\u2500", dashes-1)
-	dateDelimiterLine := "\n[\"" + "\"]" + padding + " " + date + " " + padding
-	return dateDelimiterLine
+	characterAmountLeftForDashes := width - len(date) - 2 /* Because of the spaces */
+	amountDashesLeft := characterAmountLeftForDashes / 2
+	dashesLeft := strings.Repeat(dashCharacter, amountDashesLeft)
+	dashesRight := strings.Repeat(dashCharacter, characterAmountLeftForDashes-amountDashesLeft)
+	return "\n[\"\"]" + dashesLeft + " " + date + " " + dashesRight
 }
 
 // ReturnDateDelimiter creates datedelimiters between two messages and returns them
@@ -384,7 +386,6 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 
 // Rerender clears the text view and fills it again using the current cache.
 func (chatView *ChatView) Rerender() {
-	chatView.internalTextView.SetText("")
 	var newContent string
 	for index, message := range chatView.data {
 		formattedMessage, contains := chatView.formattedMessages[message.ID]
@@ -396,7 +397,7 @@ func (chatView *ChatView) Rerender() {
 			panic("Bug in chatview, a message could not be found.")
 		}
 	}
-	fmt.Fprint(chatView.internalTextView, newContent)
+	chatView.internalTextView.SetText(newContent)
 }
 
 func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
