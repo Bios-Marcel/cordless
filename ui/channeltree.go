@@ -149,6 +149,14 @@ func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	if channel.NSFW {
 		channelNode.SetPrefix("🔞")
 	}
+
+	// Adds a padlock prefix if the channel if not readable by the everyone group
+	for _, permission := range channel.PermissionOverwrites {
+		if permission.Type == "role" && permission.ID == channel.GuildID && permission.Deny%2048 == 1024 {
+			channelNode.SetPrefix("\U0001F512")
+		}
+	}
+
 	channelNode.SetReference(channel.ID)
 	return channelNode
 }
