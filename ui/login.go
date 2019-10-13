@@ -34,7 +34,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 		tokenChannel:       make(chan string, 1),
 		tokenInput:         tview.NewInputField(),
 		tokenInputMasked:   true,
-		tokenInputMaskRune: 42,
+		tokenInputMaskRune: '*',
 		loginButton:        tview.NewButton("Login"),
 		messageText:        tview.NewTextView(),
 	}
