@@ -120,6 +120,7 @@ func (login *Login) submit() {
 
 // RequestToken shows the UI components and waits til the user has entered a token.
 func (login *Login) RequestToken(message string) string {
+	login.tokenInput.SetMaskCharacter(42)
 	login.tokenInput.SetVisible(true)
 	login.loginButton.SetVisible(true)
 	login.messageText.SetText(message)
