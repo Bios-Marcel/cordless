@@ -16,23 +16,27 @@ const splashText = `
 
 type Login struct {
 	*tview.Flex
-	app          *tview.Application
-	tokenInput   *tview.InputField
-	loginButton  *tview.Button
-	tokenChannel chan string
-	messageText  *tview.TextView
-	runNext      chan bool
+	app                *tview.Application
+	tokenInput         *tview.InputField
+	tokenInputMasked   bool
+	tokenInputMaskRune rune
+	loginButton        *tview.Button
+	tokenChannel       chan string
+	messageText        *tview.TextView
+	runNext            chan bool
 }
 
 // NewLogin creates a new login screen with the login components hidden by default.
 func NewLogin(app *tview.Application, configDir string) *Login {
 	login := &Login{
-		Flex:         tview.NewFlex().SetDirection(tview.FlexRow),
-		app:          app,
-		tokenChannel: make(chan string, 1),
-		tokenInput:   tview.NewInputField(),
-		loginButton:  tview.NewButton("Login"),
-		messageText:  tview.NewTextView(),
+		Flex:               tview.NewFlex().SetDirection(tview.FlexRow),
+		app:                app,
+		tokenChannel:       make(chan string, 1),
+		tokenInput:         tview.NewInputField(),
+		tokenInputMasked:   true,
+		tokenInputMaskRune: '*',
+		loginButton:        tview.NewButton("Login"),
+		messageText:        tview.NewTextView(),
 	}
 
 	splashScreen := tview.NewTextView()
@@ -59,6 +63,16 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 			app.Stop()
 			os.Exit(0)
 			return nil
+		}
+
+		if event.Key() == tcell.KeyCtrlR {
+			if login.tokenInputMasked {
+				login.tokenInputMasked = false
+				login.tokenInput.SetMaskCharacter(0)
+			} else {
+				login.tokenInputMasked = true
+				login.tokenInput.SetMaskCharacter(login.tokenInputMaskRune)
+			}
 		}
 
 		return event
@@ -120,6 +134,7 @@ func (login *Login) submit() {
 
 // RequestToken shows the UI components and waits til the user has entered a token.
 func (login *Login) RequestToken(message string) string {
+	login.tokenInput.SetMaskCharacter(login.tokenInputMaskRune)
 	login.tokenInput.SetVisible(true)
 	login.loginButton.SetVisible(true)
 	login.messageText.SetText(message)
