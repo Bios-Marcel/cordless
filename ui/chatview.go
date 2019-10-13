@@ -176,6 +176,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 		SetDynamicColors(true).
 		SetRegions(true).
 		SetWordWrap(true).
+		SetIndicateOverflow(true).
 		SetBorder(true).
 		SetTitleColor(config.GetTheme().InverseTextColor)
 
@@ -319,7 +320,11 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 	t1, _ := chatView.data[len(chatView.data)-1].Timestamp.Parse()
 	t2, _ := message.Timestamp.Parse()
+<<<<<<< HEAD
 	if !times.CompareMessageDates(t1.Local(), t2.Local()) {
+=======
+	if !times.AreDatesTheSameDay(t1.Local(), t2.Local()) {
+>>>>>>> upstream/master
 		fmt.Fprint(chatView.internalTextView, chatView.CreateDateDelimiter(t2.Format(chatView.format)))
 	}
 
@@ -342,20 +347,20 @@ func (chatView *ChatView) CreateDateDelimiter(date string) string {
 
 // ReturnDateDelimiter creates datedelimiters between two messages and returns them
 func (chatView *ChatView) ReturnDateDelimiter(messages []*discordgo.Message, index int) string {
-	var res string
-	if index > 0 {
-		t1, _ := messages[index-1].Timestamp.Parse()
-		t2, _ := messages[index].Timestamp.Parse()
-
-		if !times.CompareMessageDates(t1.Local(), t2.Local()) {
-			res = chatView.CreateDateDelimiter(t2.Local().Format(chatView.format))
-		}
-	} else if index == 0 {
+	if index == 0 {
 		time, _ := messages[index].Timestamp.Parse()
 		date := time.Format(chatView.format)
-		res = chatView.CreateDateDelimiter(date)
+		return chatView.CreateDateDelimiter(date)
 	}
-	return res
+
+	t1, _ := messages[index-1].Timestamp.Parse()
+	t2, _ := messages[index].Timestamp.Parse()
+
+	if !times.AreDatesTheSameDay(t1.Local(), t2.Local()) {
+		return chatView.CreateDateDelimiter(t2.Local().Format(chatView.format))
+	}
+
+	return ""
 }
 
 // WriteDateDelimiter runs ReturnDateDelimiter and writes it to chatView.internalTextView
@@ -629,7 +634,9 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 		messageText = strings.Replace(messageText, values[2], formattedCode, 1)
 	}
 
-	messageText = strings.Replace(strings.Replace(parseBoldAndUnderline(messageText), "\\*", "*", -1), "\\_", "_", -1)
+	messageText = strings.
+		NewReplacer("\\*", "*", "\\_", "_", "\\`", "`").
+		Replace(parseBoldAndUnderline(messageText))
 
 	shouldShow, contains := chatView.showSpoilerContent[message.ID]
 	if !contains || !shouldShow {

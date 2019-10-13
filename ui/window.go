@@ -37,11 +37,15 @@ const (
 )
 
 var (
-	emojiRegex = regexp.MustCompile("(m?)(^|[^<]):.+?:")
+	//emojiRegex is used to find emojicodes for custom emojis. The !? part
+	// after the first double colon exists in order as a flag to tell cordless
+	// to use the emoji as a custom emoji, since there can be clashes with for
+	// example :joy:, which is a default emoji code.
+	emojiRegex = regexp.MustCompile("(m?)(^|[^<]):!?.+?:")
 )
 
 // Window is basically the whole application, as it contains all the
-// components and the necccessary global state.
+// components and the necessary global state.
 type Window struct {
 	app               *tview.Application
 	middleContainer   *tview.Flex
@@ -136,10 +140,16 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	channelTree.SetOnChannelSelect(func(channelID string) {
 		channel, cacheError := window.session.State.Channel(channelID)
 		if cacheError == nil {
-			loadError := window.LoadChannel(channel)
-			if loadError == nil {
-				channelTree.MarkChannelAsLoaded(channelID)
-			}
+			go func() {
+				window.chatView.Lock()
+				defer window.chatView.Unlock()
+				window.QueueUpdateDrawSynchronized(func() {
+					loadError := window.LoadChannel(channel)
+					if loadError == nil {
+						channelTree.MarkChannelAsLoaded(channelID)
+					}
+				})
+			}()
 		}
 	})
 	window.registerGuildChannelHandler()
@@ -247,39 +257,52 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			return
 		}
 
-		window.LoadChannel(channel)
-		if channel.Type == discordgo.ChannelTypeGroupDM {
-			loadError := window.userList.LoadGroup(channel.ID)
-			if loadError != nil {
-				fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
-			}
-		}
+		go func() {
+			window.chatView.Lock()
+			defer window.chatView.Unlock()
+			window.QueueUpdateDrawSynchronized(func() {
+				window.LoadChannel(channel)
 
-		window.RefreshLayout()
+				if channel.Type == discordgo.ChannelTypeGroupDM {
+					loadError := window.userList.LoadGroup(channel.ID)
+					if loadError != nil {
+						fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
+					}
+				}
+
+				window.RefreshLayout()
+			})
+		}()
 	})
 
 	window.privateList.SetOnFriendSelect(func(userID string) {
-		userChannels, _ := window.session.UserChannels()
-		for _, userChannel := range userChannels {
-			if userChannel.Type == discordgo.ChannelTypeDM &&
-				(userChannel.Recipients[0].ID == userID) {
-				window.LoadChannel(userChannel)
-				window.RefreshLayout()
-				return
-			}
-		}
-
-		newChannel, discordError := window.session.UserChannelCreate(userID)
-		if discordError == nil {
-			messages, discordError := window.session.ChannelMessages(newChannel.ID, 100, "", "", "")
-			if discordError == nil {
-				for _, message := range messages {
-					window.session.State.MessageAdd(message)
+		go func() {
+			window.chatView.Lock()
+			defer window.chatView.Unlock()
+			userChannels, _ := window.session.UserChannels()
+			for _, userChannel := range userChannels {
+				if userChannel.Type == discordgo.ChannelTypeDM &&
+					(userChannel.Recipients[0].ID == userID) {
+					window.QueueUpdateDrawSynchronized(func() {
+						window.loadPrivateChannel(userChannel)
+					})
+					return
 				}
 			}
-			window.LoadChannel(newChannel)
-			window.RefreshLayout()
-		}
+
+			newChannel, discordError := window.session.UserChannelCreate(userID)
+			if discordError == nil {
+				messages, discordError := window.session.ChannelMessages(newChannel.ID, 100, "", "", "")
+				if discordError == nil {
+					for _, message := range messages {
+						window.session.State.MessageAdd(message)
+					}
+				}
+				window.QueueUpdateDrawSynchronized(func() {
+					window.loadPrivateChannel(newChannel)
+				})
+			}
+		}()
 	})
 
 	window.chatArea = tview.NewFlex().
@@ -331,8 +354,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.messageContainer = window.chatView.GetPrimitive()
 
 	window.messageInput = NewEditor()
+	window.messageInput.internalTextView.SetIndicateOverflow(true)
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
-		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), maths.Min(height, 20), 0)
+		_, _, _, chatViewHeight := window.chatView.internalTextView.GetRect()
+		newHeight := maths.Min(height, chatViewHeight/2)
+
+		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), newHeight, 0)
 	})
 
 	window.messageInput.SetMentionShowHandler(func(namePart string) {
@@ -889,6 +916,11 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return window, nil
 }
 
+func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
+	window.LoadChannel(channel)
+	window.RefreshLayout()
+}
+
 func (window *Window) insertNewLineAtCursor() {
 	left := window.messageInput.internalTextView.GetRegionText("left")
 	right := window.messageInput.internalTextView.GetRegionText("right")
@@ -974,12 +1006,11 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 }
 
 func (window *Window) sendMessage(targetChannelID, message string) {
-	messageText := window.jsEngine.OnMessageSend(message)
 	window.app.QueueUpdateDraw(func() {
 		window.messageInput.SetText("")
 		window.chatView.internalTextView.ScrollToEnd()
 	})
-	_, sendError := window.session.ChannelMessageSend(targetChannelID, messageText)
+	_, sendError := window.session.ChannelMessageSend(targetChannelID, message)
 	if sendError != nil {
 		window.app.QueueUpdateDraw(func() {
 			retry := "Retry sending"
@@ -992,7 +1023,7 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 					case retry:
 						go window.sendMessage(targetChannelID, message)
 					case edit:
-						window.messageInput.SetText(messageText)
+						window.messageInput.SetText(message)
 					}
 				}, retry, edit, cancel)
 		})
@@ -1133,6 +1164,11 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 		return strings.ReplaceAll(input, ":", "\\:")
 	})
 
+	message = window.jsEngine.OnMessageSend(message)
+
+	//Replace formatter characters and replace emoji codes.
+	message = discordemojimap.Replace(message)
+
 	if targetChannel.GuildID != "" {
 		channelGuild, discordError := window.session.State.Guild(targetChannel.GuildID)
 		if discordError == nil {
@@ -1149,8 +1185,6 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 		message = window.replaceCustomEmojiSequences(nil, message)
 	}
 
-	//Replace formatter characters and replace emoji codes.
-	message = discordemojimap.Replace(message)
 	message = strings.Replace(message, "\\:", ":", -1)
 
 	if targetChannel.GuildID == "" {
@@ -1179,7 +1213,7 @@ func (window *Window) replaceCustomEmojiSequences(channelGuild *discordgo.Guild,
 		window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitro {
 		return emojiRegex.ReplaceAllStringFunc(message, func(match string) string {
 			firstDoubleColon := strings.IndexRune(match, ':')
-			emojiSequence := strings.ToLower(match[firstDoubleColon+1 : len(match)-1])
+			emojiSequence := strings.ToLower(strings.TrimPrefix(match[firstDoubleColon+1:len(match)-1], "!"))
 			for _, guild := range window.session.State.Guilds {
 				for _, emoji := range guild.Emojis {
 					if strings.ToLower(emoji.Name) == emojiSequence {
@@ -1198,7 +1232,7 @@ func (window *Window) replaceCustomEmojiSequences(channelGuild *discordgo.Guild,
 
 	return emojiRegex.ReplaceAllStringFunc(message, func(match string) string {
 		firstDoubleColon := strings.IndexRune(match, ':')
-		emojiSequence := strings.ToLower(match[firstDoubleColon+1 : len(match)-1])
+		emojiSequence := strings.ToLower(strings.TrimPrefix(match[firstDoubleColon+1:len(match)-1], "!"))
 
 		//Local guild emojis take priority
 		if channelGuild != nil {
@@ -1428,6 +1462,16 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 	})
 }
 
+func (window *Window) QueueUpdateDrawSynchronized(runnable func()) {
+	blocker := make(chan bool, 1)
+	window.app.QueueUpdateDraw(func() {
+		runnable()
+		blocker <- true
+	})
+	<-blocker
+	close(blocker)
+}
+
 // startMessageHandlerRoutines registers the handlers for certain message
 // events. It updates the cache and the UI if necessary.
 func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *discordgo.Message, bulkDelete chan *discordgo.MessageDeleteBulk) {
@@ -1447,7 +1491,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 					readstate.UpdateReadBuffered(window.session, channel, message.ID)
 				}
 
-				window.app.QueueUpdateDraw(func() {
+				window.QueueUpdateDrawSynchronized(func() {
 					window.chatView.AddMessage(message)
 				})
 			}
@@ -1553,7 +1597,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			window.session.State.MessageRemove(tempMessageDeleted)
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageDeleted.ChannelID {
-				window.app.QueueUpdateDraw(func() {
+				window.QueueUpdateDrawSynchronized(func() {
 					window.chatView.DeleteMessage(tempMessageDeleted)
 				})
 			}
@@ -1573,7 +1617,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessagesDeleted.ChannelID {
-				window.app.QueueUpdateDraw(func() {
+				window.QueueUpdateDrawSynchronized(func() {
 					window.chatView.DeleteMessages(tempMessagesDeleted.Messages)
 				})
 			}
@@ -1595,7 +1639,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						message.MentionRoles = tempMessageEdited.MentionRoles
 						message.MentionEveryone = tempMessageEdited.MentionEveryone
 
-						window.app.QueueUpdateDraw(func() {
+						window.QueueUpdateDrawSynchronized(func() {
 							window.chatView.UpdateMessage(message)
 						})
 						break
@@ -1778,7 +1822,7 @@ func (window *Window) registerGuildChannelHandler() {
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelCreate) {
 		if window.isChannelEventRelevant(event.Channel) {
 			window.channelTree.Lock()
-			window.app.QueueUpdateDraw(func() {
+			window.QueueUpdateDrawSynchronized(func() {
 				window.channelTree.AddOrUpdateChannel(event.Channel)
 			})
 			window.channelTree.Unlock()
@@ -1788,7 +1832,7 @@ func (window *Window) registerGuildChannelHandler() {
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelUpdate) {
 		if window.isChannelEventRelevant(event.Channel) {
 			window.channelTree.Lock()
-			window.app.QueueUpdateDraw(func() {
+			window.QueueUpdateDrawSynchronized(func() {
 				window.channelTree.AddOrUpdateChannel(event.Channel)
 			})
 			window.channelTree.Unlock()
@@ -1812,6 +1856,7 @@ func (window *Window) registerGuildChannelHandler() {
 				})
 			}
 
+			//On purpose, since we don't care much about removing the channel timely.
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.Lock()
 				window.channelTree.RemoveChannel(event.Channel)
@@ -2205,11 +2250,9 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	discordutil.SortMessagesByTimestamp(messages)
 
-	window.chatView.Lock()
 	window.chatView.SetMessages(messages)
 	window.chatView.ClearSelection()
 	window.chatView.internalTextView.ScrollToEnd()
-	window.chatView.Unlock()
 
 	window.UpdateChatHeader(channel)
 
@@ -2226,8 +2269,6 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 			window.previousGuildNode = window.selectedGuildNode
 		}
 	}
-
-	window.channelTree.Lock()
 
 	//If there is a  currently loaded guild channel and it isn't the same as
 	//the new one we assume it must be read and mark it white.
@@ -2253,7 +2294,6 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 		window.privateList.MarkChannelAsLoaded(channel)
 	}
-	window.channelTree.Unlock()
 
 	window.exitMessageEditModeAndKeepText()
 

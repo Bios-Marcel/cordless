@@ -27,10 +27,8 @@ func TimeToString(time *time.Time) string {
 	return ""
 }
 
-// CompareMessageDates returns true if the dates match, otherwise returns false
-func CompareMessageDates(t1, t2 time.Time) bool {
-	if t1.Year() == t2.Year() && t1.YearDay() == t2.YearDay() {
-		return true
-	}
-	return false
+// AreDatesTheSameDay returns true if the passed times represent the same day
+// of the year.
+func AreDatesTheSameDay(t1, t2 time.Time) bool {
+	return t1.Year() == t2.Year() && t1.YearDay() == t2.YearDay()
 }

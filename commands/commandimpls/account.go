@@ -2,6 +2,7 @@ package commandimpls
 
 import (
 	"fmt"
+	"github.com/Bios-Marcel/cordless/commands"
 	"io"
 	"strings"
 
@@ -145,21 +146,20 @@ func (account *Account) printAccountSwitchHelp(writer io.Writer) {
 }
 
 func (account *Account) switchAccount(writer io.Writer, accountName string) {
-	var newToken string
 	for _, acc := range config.GetConfig().Accounts {
 		if acc.Name == accountName {
-			newToken = acc.Token
-			break
+			oldToken := config.GetConfig().Token
+			config.GetConfig().Token = acc.Token
+			persistError := account.saveAndRestart(writer)
+			if persistError != nil {
+				config.GetConfig().Token = oldToken
+				commands.PrintError(writer, "Error switching accounts", persistError.Error())
+			}
+			return
 		}
 	}
 
-	oldToken := config.GetConfig().Token
-	config.GetConfig().Token = newToken
-	persistError := account.saveAndRestart(writer)
-	if persistError != nil {
-		config.GetConfig().Token = oldToken
-		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error switching accounts '%s'.\n", persistError.Error())
-	}
+	commands.PrintError(writer, "Error switching accounts", fmt.Sprintf("No account named '%s' was found", accountName))
 }
 
 func (account *Account) logout(writer io.Writer) {

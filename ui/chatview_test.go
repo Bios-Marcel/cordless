@@ -353,6 +353,22 @@ func TestChatView_formatMessageText(t *testing.T) {
 			},
 			want:     "\n[#c9dddc]▐ [#ffffff]owo\nf\n[#c9dddc]▐ [#ffffff]owo",
 			chatView: defaultChatView,
+		}, {
+			name: "Remove escape characters",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "\\`\\*\\_",
+			},
+			want:     "`*_",
+			chatView: defaultChatView,
+		}, {
+			name: "Remove escape characters, but not any additional backslashes",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "\\\\`\\*\\_",
+			},
+			want:     "\\`*_",
+			chatView: defaultChatView,
 		},
 	}
 	for _, tt := range tests {

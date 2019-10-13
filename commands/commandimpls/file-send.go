@@ -3,17 +3,14 @@ package commandimpls
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os/user"
-	"path"
-	"path/filepath"
-	"strings"
-
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+	"github.com/Bios-Marcel/cordless/util/files"
 	"github.com/Bios-Marcel/discordgo"
+	"io"
+	"io/ioutil"
+	"path"
 )
 
 const fileSendDocumentation = `[::b]NAME
@@ -58,22 +55,9 @@ func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 	}
 
 	for _, parameter := range parameters {
-		var resolvedPath string
-		if strings.HasPrefix(parameter, "~") {
-			currentUser, userResolveError := user.Current()
-			if userResolveError != nil {
-				fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error resolving path:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", userResolveError.Error())
-				continue
-			}
-
-			resolvedPath = filepath.Join(currentUser.HomeDir, strings.TrimPrefix(parameter, "~"))
-		} else {
-			resolvedPath = parameter
-		}
-
-		isAbs := filepath.IsAbs(resolvedPath)
-		if !isAbs {
-			fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error reading file:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]the path is not absolute")
+		resolvedPath, resolveError := files.ToAbsolutePath(parameter)
+		if resolveError != nil {
+			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error reading file:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", resolveError.Error())
 			continue
 		}
 

@@ -23,7 +23,8 @@ func NewGuildList(guilds []*discordgo.Guild, window *Window) *GuildList {
 		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetCycleSelection(true).
 		SetTopLevel(1).
-		SetBorder(true)
+		SetBorder(true).
+		SetIndicateOverflow(true)
 
 	root := tview.NewTreeNode("")
 	guildList.SetRoot(root)

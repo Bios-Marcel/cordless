@@ -53,7 +53,8 @@ func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 		SetTopLevel(1).
 		SetCycleSelection(true).
 		SetSelectedFunc(privateList.onNodeSelected).
-		SetBorder(true)
+		SetBorder(true).
+		SetIndicateOverflow(true)
 
 	privateList.internalTreeView.GetRoot().AddChild(privateList.chatsNode)
 

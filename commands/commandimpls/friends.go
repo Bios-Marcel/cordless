@@ -3,6 +3,7 @@ package commandimpls
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -189,14 +190,14 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 		//successful, we send a friendsrequest. Otherwise we check if the input
 		//might have been a user idea, lookup the user and do a request.
 		input := parameters[1]
-		users, err := f.session.State.Users()
-		var matches []*discordgo.User
 
+		users, err := f.session.State.Users()
 		if err != nil {
 			fmt.Fprintf(writer, "An error occured during commandexecution (%s).\n", err.Error())
 			return
 		}
 
+		var matches []*discordgo.User
 		for _, user := range users {
 			if user.ID == input || user.Username == input || user.String() == input {
 				matches = append(matches, user)
@@ -204,6 +205,21 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 		}
 
 		if len(matches) == 0 {
+			//Send friendsrequest via username and discriminator if possible
+			parts := strings.Split(input, "#")
+			if len(parts) == 2 {
+				discriminator, _ := strconv.ParseInt(parts[1], 10, 32)
+				requestError := f.session.RelationshipFriendRequestSendByNameAndDiscriminator(parts[0], int(discriminator))
+				if requestError != nil {
+					fmt.Fprintf(writer, "Error sending friendsrequest to '%s'.\n\t%s\n", input, requestError.Error())
+					return
+				}
+
+				fmt.Fprintf(writer, "A friends-request has been sent to '%s'.\n", input)
+				return
+			}
+
+			//If no match was found, try sending a friendsrequest if the input is a snowflake.
 			for _, char := range input {
 				if !unicode.IsNumber(char) {
 					fmt.Fprintf(writer, "No matches for '%s' found. Please ask that person to add you or find out the UserID.\n", input)
@@ -224,7 +240,7 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 			if requestError != nil {
 				fmt.Fprintf(writer, "Error sending friends-request (%s).\n", requestError)
 			} else {
-				fmt.Fprintf(writer, "A friends-reuest has been sent to '%s'.\n", user.String())
+				fmt.Fprintf(writer, "A friends-request has been sent to '%s'.\n", user.String())
 			}
 		} else {
 			fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", input)

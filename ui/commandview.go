@@ -33,7 +33,8 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 		SetWordWrap(true).
 		SetWrap(true).
 		SetText("[::b]### Welcome back. ###\n	If you need to know more, run the [::b]man[::-] command.\n").
-		SetBorder(true)
+		SetBorder(true).
+		SetIndicateOverflow(true)
 
 	commandInput := NewEditor()
 	commandInput.internalTextView.

@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"fmt"
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"io"
 	"strings"
 )
@@ -82,4 +85,11 @@ OUTER_LOOP:
 	}
 
 	return parameters
+}
+
+// PrintError message writes an error to the given io.Writer in the
+// default format, using the correct colors and punctuation.
+func PrintError(writer io.Writer, error, reason string) {
+	errorColor := tviewutil.ColorToHex(config.GetTheme().ErrorColor)
+	fmt.Fprintf(writer, "[%s]%s:\n\t[%s]%s\n", errorColor, error, errorColor, reason)
 }
