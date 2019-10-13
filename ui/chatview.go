@@ -319,7 +319,7 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 	t1, _ := chatView.data[len(chatView.data)-1].Timestamp.Parse()
 	t2, _ := message.Timestamp.Parse()
-	if equal := times.CompareMessageDates(t1.Local(), t2.Local()); !equal {
+	if !times.CompareMessageDates(t1.Local(), t2.Local()) {
 		fmt.Fprint(chatView.internalTextView, chatView.CreateDateDelimiter(t2.Format(chatView.format)))
 	}
 
@@ -347,7 +347,7 @@ func (chatView *ChatView) ReturnDateDelimiter(messages []*discordgo.Message, ind
 		t1, _ := messages[index-1].Timestamp.Parse()
 		t2, _ := messages[index].Timestamp.Parse()
 
-		if equal := times.CompareMessageDates(t1.Local(), t2.Local()); !equal {
+		if !times.CompareMessageDates(t1.Local(), t2.Local()) {
 			res = chatView.CreateDateDelimiter(t2.Local().Format(chatView.format))
 		}
 	} else if index == 0 {
