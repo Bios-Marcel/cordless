@@ -1,7 +1,5 @@
 github.com/Bios-Marcel/discordemojimap v0.0.0-20190404160132-506fd0e8d912 h1:QxaGxuQTupp5haCZu+zuQoQ9JbiM13N5UiTSJpsuvh8=
 github.com/Bios-Marcel/discordemojimap v0.0.0-20190404160132-506fd0e8d912/go.mod h1:D1W9gRQXP1UESEobmNIng2i+E8UvdDF4NJ9EOXn9Ano=
-github.com/Bios-Marcel/discordgo v0.20.4-0.20191007163810-41c4e4a91fd6 h1:SKG4DGHPz6ZIWfdnnHB/bto0SyypPhV6OAR8vrVmGeQ=
-github.com/Bios-Marcel/discordgo v0.20.4-0.20191007163810-41c4e4a91fd6/go.mod h1:bLnfQU0j/SejmPozgW5GepmKvd8CrbMIml2I0IZENVE=
 github.com/Bios-Marcel/discordgo v0.20.4-0.20191012193840-26cddf403c14 h1:rMm2kL+lOb4eYdDexAsFV8dlEX+0V/Jkr05SZQpZ83E=
 github.com/Bios-Marcel/discordgo v0.20.4-0.20191012193840-26cddf403c14/go.mod h1:bLnfQU0j/SejmPozgW5GepmKvd8CrbMIml2I0IZENVE=
 github.com/Bios-Marcel/goclipimg v0.0.0-20190417192721-b58a8831f27d h1:vfrX8l3fHuaP7gRgEc7mX/lHVTlfQcQeaIdSPmT6Ej0=
