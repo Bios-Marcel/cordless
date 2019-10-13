@@ -343,20 +343,20 @@ func (chatView *ChatView) CreateDateDelimiter(date string) string {
 
 // ReturnDateDelimiter creates datedelimiters between two messages and returns them
 func (chatView *ChatView) ReturnDateDelimiter(messages []*discordgo.Message, index int) string {
-	var res string
-	if index > 0 {
-		t1, _ := messages[index-1].Timestamp.Parse()
-		t2, _ := messages[index].Timestamp.Parse()
-
-		if !times.AreDatesTheSameDay(t1.Local(), t2.Local()) {
-			res = chatView.CreateDateDelimiter(t2.Local().Format(chatView.format))
-		}
-	} else if index == 0 {
+	if index == 0 {
 		time, _ := messages[index].Timestamp.Parse()
 		date := time.Format(chatView.format)
-		res = chatView.CreateDateDelimiter(date)
+		return chatView.CreateDateDelimiter(date)
 	}
-	return res
+
+	t1, _ := messages[index-1].Timestamp.Parse()
+	t2, _ := messages[index].Timestamp.Parse()
+
+	if !times.AreDatesTheSameDay(t1.Local(), t2.Local()) {
+		return chatView.CreateDateDelimiter(t2.Local().Format(chatView.format))
+	}
+
+	return ""
 }
 
 // WriteDateDelimiter runs ReturnDateDelimiter and writes it to chatView.internalTextView
