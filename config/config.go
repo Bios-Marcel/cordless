@@ -52,6 +52,7 @@ var (
 		ShowPlaceholderForBlockedMessages:      true,
 		DontShowUpdateNotificationFor:          "",
 		ShowUpdateNotifications:                true,
+		IndicateChannelAccessRestriction:       false,
 	}
 )
 
@@ -119,6 +120,9 @@ type Config struct {
 	// Accounts contains all saved accounts, allowing the user to dynamicly
 	// switch between the accounts.
 	Accounts []*Account
+
+	// Show a padlock prefix of the channels that have access restriction
+	IndicateChannelAccessRestriction bool
 }
 
 // Account has a name and a token. The name is just for the users recognition.
