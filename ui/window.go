@@ -1672,9 +1672,16 @@ func (window *Window) registerGuildHandlers() {
 	go func() {
 		for guildCreate := range guildCreateChannel {
 			guild := guildCreate
-			window.app.QueueUpdateDraw(func() {
-				window.guildList.AddGuild(guild.ID, guild.Name)
-			})
+			if window.guildList.GetCurrentNode() == nil {
+				window.app.QueueUpdateDraw(func() {
+					window.guildList.AddGuild(guild.ID, guild.Name)
+					window.guildList.SetCurrentNode(window.guildList.GetRoot())
+				})
+			} else {
+				window.app.QueueUpdateDraw(func() {
+					window.guildList.AddGuild(guild.ID, guild.Name)
+				})
+			}
 		}
 	}()
 
