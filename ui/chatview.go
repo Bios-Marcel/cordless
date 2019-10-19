@@ -113,7 +113,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 					return nil
 				}
 
-				chatView.updateHighlights()
+				chatView.refreshSelectionAndScrollToSelection()
 
 				return nil
 			}
@@ -127,7 +127,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 					return nil
 				}
 
-				chatView.updateHighlights()
+				chatView.refreshSelectionAndScrollToSelection()
 
 				return nil
 			}
@@ -136,7 +136,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 				if chatView.selection != 0 {
 					chatView.selection = 0
 
-					chatView.updateHighlights()
+					chatView.refreshSelectionAndScrollToSelection()
 				}
 
 				return nil
@@ -146,7 +146,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 				if chatView.selection != len(chatView.data)-1 {
 					chatView.selection = len(chatView.data) - 1
 
-					chatView.updateHighlights()
+					chatView.refreshSelectionAndScrollToSelection()
 				}
 
 				return nil
@@ -162,7 +162,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 					chatView.showSpoilerContent[messageID] = true
 				}
 				chatView.formattedMessages[messageID] = chatView.formatMessage(message)
-				chatView.Rerender()
+				chatView.Reprint()
 				return nil
 			}
 
@@ -200,7 +200,7 @@ func intToString(value int) string {
 	return strconv.FormatInt(int64(value), 10)
 }
 
-func (chatView *ChatView) updateHighlights() {
+func (chatView *ChatView) refreshSelectionAndScrollToSelection() {
 	chatView.internalTextView.Highlight(intToString(chatView.selection))
 	if chatView.selection != -1 {
 		chatView.internalTextView.ScrollToHighlight()
@@ -214,18 +214,18 @@ func (chatView *ChatView) GetPrimitive() tview.Primitive {
 }
 
 // UpdateMessage reformats the passed message, updates the cache and triggers
-// a rerender.
+// a reprint.
 func (chatView *ChatView) UpdateMessage(updatedMessage *discordgo.Message) {
 	for _, message := range chatView.data {
 		if message.ID == updatedMessage.ID {
 			chatView.formattedMessages[updatedMessage.ID] = chatView.formatMessage(updatedMessage)
-			chatView.Rerender()
+			chatView.Reprint()
 			break
 		}
 	}
 }
 
-// DeleteMessage drops the message from the cache and triggers a rerender
+// DeleteMessage drops the message from the cache and triggers a reprint
 func (chatView *ChatView) DeleteMessage(deletedMessage *discordgo.Message) {
 	delete(chatView.showSpoilerContent, deletedMessage.ID)
 	delete(chatView.formattedMessages, deletedMessage.ID)
@@ -236,10 +236,10 @@ func (chatView *ChatView) DeleteMessage(deletedMessage *discordgo.Message) {
 		}
 	}
 	chatView.data = filteredMessages
-	chatView.Rerender()
+	chatView.Reprint()
 }
 
-// DeleteMessages drops the messages from the cache and triggers a rerender
+// DeleteMessages drops the messages from the cache and triggers a reprint
 func (chatView *ChatView) DeleteMessages(deletedMessages []string) {
 	for _, message := range deletedMessages {
 		delete(chatView.showSpoilerContent, message)
@@ -260,7 +260,7 @@ OUTER_LOOP:
 	}
 
 	chatView.data = filteredMessages
-	chatView.Rerender()
+	chatView.Reprint()
 }
 
 // ClearViewAndCache clears the TextView buffer and removes all data for
@@ -270,7 +270,7 @@ func (chatView *ChatView) ClearViewAndCache() {
 	chatView.showSpoilerContent = make(map[string]bool)
 	chatView.formattedMessages = make(map[string]string)
 	chatView.selection = -1
-	chatView.internalTextView.SetText("")
+	chatView.internalTextView.Clear()
 	chatView.SetTitle("")
 }
 
@@ -281,17 +281,22 @@ func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 		return
 	}
 
-	var rerender bool
+	var reprint bool
 	if len(chatView.data) >= chatView.bufferSize {
 		idToDrop := chatView.data[0].ID
 		delete(chatView.showSpoilerContent, idToDrop)
 		delete(chatView.formattedMessages, idToDrop)
 		chatView.data = append(chatView.data[1:], message)
-		rerender = true
+		reprint = true
+
+		//Moving up the selection, since we have removed the first message. If
+		//the previously selected message was the first message, then no
+		// message will be selected.
 		if chatView.selection > -1 {
 			chatView.selection--
 		}
-		chatView.updateHighlights()
+
+		chatView.refreshSelectionAndScrollToSelection()
 	} else {
 		chatView.data = append(chatView.data, message)
 	}
@@ -309,8 +314,8 @@ func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 		chatView.formattedMessages[message.ID] = newText
 	}
 
-	if rerender {
-		chatView.Rerender()
+	if reprint {
+		chatView.Reprint()
 	} else {
 		fmt.Fprint(chatView.internalTextView, "\n[\""+intToString(len(chatView.data)-1)+"\"]"+newText)
 	}
@@ -327,7 +332,7 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 
 	chatView.addMessageInternal(message)
 
-	chatView.updateHighlights()
+	chatView.refreshSelectionAndScrollToSelection()
 	if wasScrolledToTheEnd {
 		chatView.internalTextView.ScrollToEnd()
 	}
@@ -378,14 +383,19 @@ func (chatView *ChatView) AddMessages(messages []*discordgo.Message) {
 		chatView.addMessageInternal(message)
 	}
 
-	chatView.updateHighlights()
+	chatView.refreshSelectionAndScrollToSelection()
 	if wasScrolledToTheEnd {
 		chatView.internalTextView.ScrollToEnd()
 	}
 }
 
-// Rerender clears the text view and fills it again using the current cache.
-func (chatView *ChatView) Rerender() {
+// Reprint clears the internal TextView and prints all currently cached
+// messages into the internal TextView again. This will not actually cause a
+// redraw in the user interface. This would still only be done by
+// ForceDraw ,QueueUpdateDraw or user events. Calling this method is
+// necessary if previously added content has changed or has been removed, since
+// can only append to the TextViews buffers, but not cut parts out.
+func (chatView *ChatView) Reprint() {
 	var newContent string
 	for index, message := range chatView.data {
 		formattedMessage, contains := chatView.formattedMessages[message.ID]
@@ -814,7 +824,7 @@ func parseBoldAndUnderline(messageText string) string {
 // ClearSelection clears the current selection of messages.
 func (chatView *ChatView) ClearSelection() {
 	chatView.selection = -1
-	chatView.updateHighlights()
+	chatView.refreshSelectionAndScrollToSelection()
 }
 
 // SignalSelectionDeleted notifies the ChatView that its currently selected
@@ -829,7 +839,7 @@ func (chatView *ChatView) SignalSelectionDeleted() {
 // manipulation of single message elements happens in this function.
 func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 	chatView.data = make([]*discordgo.Message, 0)
-	chatView.internalTextView.SetText("")
+	chatView.internalTextView.Clear()
 
 	chatView.AddMessages(messages)
 }
