@@ -177,16 +177,7 @@ changer via <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>.
 
 ## Extending Cordless via the scripting interface
 
-Cordless has a very basic scripting interface that exposes predefined events.
-Scripts can simply be dumped into the subfolder `scripts` of the cordless
-configuration folder.
-
-An example can be found here:
-[Kaomoji](https://github.com/Bios-Marcel/cordless-kaomoji)
-
-**Currently the scripting interface only offers a single event, if people show
-interest in this feature, I might add more, as I am currently not very
-interested in it.**
+[Check the wiki](https://github.com/Bios-Marcel/cordless/wiki/Extending-Cordless-via-the-scripting-interface)
 
 ## Contributing
 
