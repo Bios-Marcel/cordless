@@ -113,10 +113,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.commandView = NewCommandView(window.ExecuteCommand)
 	log.SetOutput(window.commandView)
-
-	window.jsEngine.SetErrorOutput(window.commandView.commandOutput)
-	if err := window.jsEngine.LoadScripts(config.GetScriptDirectory()); err != nil {
-		return nil, err
+	initError := window.initJSEngine()
+	if initError != nil {
+		return nil, initError
 	}
 
 	guilds := readyEvent.Guilds
@@ -916,6 +915,44 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return window, nil
 }
 
+func (window *Window) initJSEngine() error {
+	window.jsEngine.SetErrorOutput(window.commandView.commandOutput)
+	if err := window.jsEngine.LoadScripts(config.GetScriptDirectory()); err != nil {
+		return err
+	}
+
+	window.jsEngine.SetTriggerNotificationFunction(func(title, text string) {
+		notifyError := beeep.Notify("Cordless - "+title, text, "assets/information.png")
+		if notifyError != nil {
+			log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
+		}
+	})
+
+	window.jsEngine.SetGetCurrentGuildFunction(func() string {
+		if window.selectedGuild != nil {
+			return window.selectedGuild.ID
+		}
+		return ""
+	})
+
+	window.jsEngine.SetGetCurrentChannelFunction(func() string {
+		if window.selectedChannel != nil {
+			return window.selectedChannel.ID
+		}
+		return ""
+	})
+
+	window.jsEngine.SetPrintToConsoleFunction(func(text string) {
+		log.Print(text)
+	})
+
+	window.jsEngine.SetPrintLineToConsoleFunction(func(text string) {
+		log.Println(text)
+	})
+
+	return nil
+}
+
 func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
 	window.LoadChannel(channel)
 	window.RefreshLayout()
@@ -1479,6 +1516,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 		for tempMessage := range input {
 			message := tempMessage
 			window.session.State.MessageAdd(message)
+			go window.jsEngine.OnMessageReceive(message)
 
 			channel, stateError := window.session.State.Channel(message.ChannelID)
 			if stateError != nil {
@@ -1595,6 +1633,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 		for messageDeleted := range delete {
 			tempMessageDeleted := messageDeleted
 			window.session.State.MessageRemove(tempMessageDeleted)
+			go window.jsEngine.OnMessageDelete(tempMessageDeleted)
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageDeleted.ChannelID {
 				window.QueueUpdateDrawSynchronized(func() {
