@@ -36,14 +36,14 @@ func TestAreDatesTheSameDay(t *testing.T) {
 				t2: time.Date(2000, 10, 11, 10, 10, 10, 0, time.UTC),
 			},
 			want: false,
-		},  {
+		}, {
 			name: "t1 earlier hour",
 			args: args{
 				t1: time.Date(2000, 10, 10, 10, 10, 10, 0, time.UTC),
 				t2: time.Date(2000, 10, 10, 11, 10, 10, 0, time.UTC),
 			},
 			want: true,
-		},  {
+		}, {
 			name: "t1 earlier minute",
 			args: args{
 				t1: time.Date(2000, 10, 10, 10, 10, 10, 0, time.UTC),
@@ -64,7 +64,7 @@ func TestAreDatesTheSameDay(t *testing.T) {
 				t2: time.Date(2000, 10, 10, 10, 10, 10, 1, time.UTC),
 			},
 			want: true,
-		},  {
+		}, {
 			name: "same",
 			args: args{
 				t1: time.Date(2000, 10, 10, 10, 10, 10, 0, time.UTC),
