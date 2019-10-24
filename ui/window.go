@@ -943,11 +943,11 @@ func (window *Window) initJSEngine() error {
 	})
 
 	window.jsEngine.SetPrintToConsoleFunction(func(text string) {
-		log.Print(text)
+		fmt.Fprint(window.commandView, text)
 	})
 
 	window.jsEngine.SetPrintLineToConsoleFunction(func(text string) {
-		log.Println(text)
+		fmt.Fprintln(window.commandView, text)
 	})
 
 	return nil
