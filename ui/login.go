@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/Bios-Marcel/tview"
+	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
 	"os"
 )
@@ -63,6 +64,14 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 			app.Stop()
 			os.Exit(0)
 			return nil
+		}
+
+		if event.Key() == tcell.KeyCtrlV {
+			content, clipError := clipboard.ReadAll()
+			if clipError != nil {
+				panic(clipError)
+			}
+			login.tokenInput.Insert(content)
 		}
 
 		if event.Key() == tcell.KeyCtrlR {
