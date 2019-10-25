@@ -152,6 +152,7 @@ func Run() {
 			window.RegisterCommand(serverJoinCmd)
 			window.RegisterCommand(serverLeaveCmd)
 			window.RegisterCommand(commandimpls.NewServerCommand(serverJoinCmd, serverLeaveCmd))
+			window.RegisterCommand(commandimpls.NewNickSetCmd(discord, window))
 		})
 	}()
 
