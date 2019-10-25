@@ -43,7 +43,7 @@ const (
 
 [::b]DESCRPTION
 	This command allows you to set all or single values of your user
-	information. Every value has a specific parameter and you'l always
+	information. Every value has a specific parameter and you'll always
 	be asked for your password when trying to change any data.
 
 [::b]OPTIONS
