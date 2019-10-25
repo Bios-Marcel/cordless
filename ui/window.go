@@ -2279,24 +2279,26 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 			}
 
 			var discordError error
-			messages, discordError = window.session.ChannelMessages(channel.ID, 100-localMessageCount, beforeID, "", "")
-			if discordError == nil {
-				if channel.GuildID != "" {
-					for _, message := range messages {
-						message.GuildID = channel.GuildID
+			messagesToGet := 100 - localMessageCount
+			if messagesToGet > 0 {
+				messages, discordError = window.session.ChannelMessages(channel.ID, messagesToGet, beforeID, "", "")
+				if discordError == nil {
+					if channel.GuildID != "" {
+						for _, message := range messages {
+							message.GuildID = channel.GuildID
+						}
+					}
+					if localMessageCount == 0 {
+						channel.Messages = messages
+					} else {
+						//There are already messages in cache; However, those came from updates events.
+						//Therefore those have to be newer than the newly retrieved ones.
+						channel.Messages = append(messages, channel.Messages...)
 					}
 				}
-				if localMessageCount == 0 {
-					channel.Messages = messages
-				} else {
-					//There are already messages in cache; However, those came from updates events.
-					//Therefore those have to be newer than the newly retrieved ones.
-					channel.Messages = append(messages, channel.Messages...)
-				}
 			}
-		} else {
-			messages = channel.Messages
 		}
+		messages = channel.Messages
 	}
 
 	discordutil.SortMessagesByTimestamp(messages)
