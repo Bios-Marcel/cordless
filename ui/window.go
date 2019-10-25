@@ -1515,7 +1515,6 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for tempMessage := range input {
 			message := tempMessage
-			window.session.State.MessageAdd(message)
 			go window.jsEngine.OnMessageReceive(message)
 
 			channel, stateError := window.session.State.Channel(message.ChannelID)
@@ -1632,7 +1631,6 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for messageDeleted := range delete {
 			tempMessageDeleted := messageDeleted
-			window.session.State.MessageRemove(tempMessageDeleted)
 			go window.jsEngine.OnMessageDelete(tempMessageDeleted)
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageDeleted.ChannelID {
@@ -1647,13 +1645,6 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for messagesDeleted := range bulkDelete {
 			tempMessagesDeleted := messagesDeleted
-			for _, messageID := range messagesDeleted.Messages {
-				message, stateError := window.session.State.Message(tempMessagesDeleted.ChannelID, messageID)
-				if stateError == nil {
-					window.session.State.MessageRemove(message)
-				}
-			}
-
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessagesDeleted.ChannelID {
 				window.QueueUpdateDrawSynchronized(func() {
@@ -1667,7 +1658,6 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for messageEdited := range edit {
 			tempMessageEdited := messageEdited
-			window.session.State.MessageAdd(tempMessageEdited)
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
 				for _, message := range window.chatView.data {
@@ -1902,6 +1892,7 @@ func (window *Window) registerGuildChannelHandler() {
 				})
 			}
 
+			delete(requestedChannels, event.Channel.ID)
 			//On purpose, since we don't care much about removing the channel timely.
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.Lock()
@@ -2270,28 +2261,42 @@ func (window *Window) RefreshLayout() {
 	window.app.ForceDraw()
 }
 
+var requestedChannels = make(map[string]bool)
+
 //LoadChannel eagerly loads the channels messages.
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	var messages []*discordgo.Message
 
-	if channel.LastMessageID != "" && len(channel.Messages) == 0 {
-		cache, cacheError := window.session.State.Channel(channel.ID)
-		if cacheError == nil || cache != nil && len(cache.Messages) == 0 {
+	if channel.LastMessageID != "" {
+		localMessageCount := len(channel.Messages)
+		hasBeenRequested := requestedChannels[channel.ID]
+		if !hasBeenRequested {
+			requestedChannels[channel.ID] = true
+
+			var beforeID string
+			if localMessageCount > 0 {
+				beforeID = channel.Messages[0].ID
+			}
+
 			var discordError error
-			messages, discordError = window.session.ChannelMessages(channel.ID, 100, "", "", "")
+			messages, discordError = window.session.ChannelMessages(channel.ID, 100-localMessageCount, beforeID, "", "")
 			if discordError == nil {
 				if channel.GuildID != "" {
 					for _, message := range messages {
 						message.GuildID = channel.GuildID
 					}
 				}
-				cache.Messages = append(cache.Messages, messages...)
+				if localMessageCount == 0 {
+					channel.Messages = messages
+				} else {
+					//There are already messages in cache; However, those came from updates events.
+					//Therefore those have to be newer than the newly retrieved ones.
+					channel.Messages = append(messages, channel.Messages...)
+				}
 			}
 		} else {
-			messages = make([]*discordgo.Message, 0)
+			messages = channel.Messages
 		}
-	} else {
-		messages = channel.Messages
 	}
 
 	discordutil.SortMessagesByTimestamp(messages)

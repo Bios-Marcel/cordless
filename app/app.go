@@ -78,6 +78,7 @@ func Run() {
 			readyChan <- event
 		})
 
+		discord.State.MaxMessageCount = 100
 		discordError := discord.Open()
 		if discordError != nil {
 			app.Stop()
