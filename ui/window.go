@@ -1658,6 +1658,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for messageEdited := range edit {
 			tempMessageEdited := messageEdited
+			go window.jsEngine.OnMessageEdit(tempMessageEdited)
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
 				for _, message := range window.chatView.data {

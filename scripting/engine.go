@@ -20,6 +20,9 @@ type Engine interface {
 	// OnMessageReceive gets called every time a message is received, no matter
 	// in which channel or guild.
 	OnMessageReceive(*discordgo.Message)
+	// OnMessageEdit gets called every time a message is edited, no matter in
+	// which channel or guild.
+	OnMessageEdit(*discordgo.Message)
 	// OnMessageDelete gets called every time a message gets deleted, no matter
 	// in which channel or guild.
 	OnMessageDelete(*discordgo.Message)

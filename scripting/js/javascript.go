@@ -114,7 +114,7 @@ func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 	return
 }
 
-// OnMessageRead implements Engine
+// OnMessageReceive implements Engine
 func (engine *JavaScriptEngine) OnMessageReceive(message *discordgo.Message) {
 	for _, vm := range engine.vms {
 		onMessageReceiveJS, resolveError := vm.Get("onMessageReceive")
@@ -138,6 +138,29 @@ func (engine *JavaScriptEngine) OnMessageReceive(message *discordgo.Message) {
 	}
 }
 
+// OnMessageEdit implements Engine
+func (engine *JavaScriptEngine) OnMessageEdit(message *discordgo.Message) {
+	for _, vm := range engine.vms {
+		onMessageEditJS, resolveError := vm.Get("onMessageEdit")
+		if onMessageEditJS.IsUndefined() {
+			continue
+		}
+		if resolveError != nil {
+			log.Printf("Error resolving function onMessageEdit: %s\n", resolveError)
+			continue
+		}
+
+		messageToJS, toValueError := vm.ToValue(*message)
+		if toValueError != nil {
+			log.Printf("Error converting message to Otto value: %s\n", toValueError)
+		} else {
+			_, callError := onMessageEditJS.Call(otto.NullValue(), messageToJS)
+			if callError != nil {
+				log.Printf("Error calling onMessageEdit: %s\n", callError)
+			}
+		}
+	}
+}
 // OnMessageDelete implements Engine
 func (engine *JavaScriptEngine) OnMessageDelete(message *discordgo.Message) {
 	for _, vm := range engine.vms {
