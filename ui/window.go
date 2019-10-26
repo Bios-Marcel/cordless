@@ -1029,7 +1029,14 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 	message = window.prepareMessage(targetChannel, message)
 	if len(message) > 2000 {
 		window.app.QueueUpdateDraw(func() {
-			window.ShowErrorDialog("Messages must be 2000 characters or less to send")
+			sendAsFile := "Send as file"
+			window.ShowDialog(config.GetTheme().PrimitiveBackgroundColor, "Your message is too long, what do you want to do?",
+				func(button string) {
+					if button == sendAsFile {
+						window.messageInput.SetText("")
+						go window.sendMessageAsFile(message, targetChannel.ID)
+					}
+				}, sendAsFile, "Nothing")
 		})
 		return
 	}
@@ -1040,6 +1047,39 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 	}
 
 	go window.sendMessage(targetChannel.ID, message)
+}
+
+func (window *Window) sendMessageAsFile(message string, channel string) {
+	reader := bytes.NewBufferString(message)
+	messageAsFile := &discordgo.File{
+		Name:        "message.txt",
+		ContentType: "text",
+		Reader:      reader,
+	}
+	complexMessage := &discordgo.MessageSend{
+		Content: "The message was too long, therefore, you get a file:",
+		Embed:   nil,
+		Tts:     false,
+		Files:   nil,
+		File:    messageAsFile,
+	}
+	_, sendError := window.session.ChannelMessageSendComplex(channel, complexMessage)
+	if sendError != nil {
+		retry := "Retry sending"
+		edit := "Edit"
+		window.app.QueueUpdateDraw(func() {
+			window.ShowDialog(config.GetTheme().ErrorColor,
+				fmt.Sprintf("Error sending message: %s.\n\nWhat do you want to do?", sendError),
+				func(button string) {
+					switch button {
+					case retry:
+						go window.sendMessageAsFile(channel, message)
+					case edit:
+						window.messageInput.SetText(message)
+					}
+				}, retry, edit, "Cancel")
+		})
+	}
 }
 
 func (window *Window) sendMessage(targetChannelID, message string) {
