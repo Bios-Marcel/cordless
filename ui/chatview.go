@@ -229,14 +229,14 @@ func (chatView *ChatView) UpdateMessage(updatedMessage *discordgo.Message) {
 func (chatView *ChatView) DeleteMessage(deletedMessage *discordgo.Message) {
 	delete(chatView.showSpoilerContent, deletedMessage.ID)
 	delete(chatView.formattedMessages, deletedMessage.ID)
-	filteredMessages := make([]*discordgo.Message, 0)
-	for _, message := range chatView.data {
-		if message.ID != deletedMessage.ID {
-			filteredMessages = append(filteredMessages, message)
+
+	for index, message := range chatView.data {
+		if message.ID == deletedMessage.ID {
+			chatView.data = append(chatView.data[:index], chatView.data[index+1:]...)
+			chatView.Reprint()
+			break
 		}
 	}
-	chatView.data = filteredMessages
-	chatView.Reprint()
 }
 
 // DeleteMessages drops the messages from the cache and triggers a reprint
@@ -244,10 +244,9 @@ func (chatView *ChatView) DeleteMessages(deletedMessages []string) {
 	for _, message := range deletedMessages {
 		delete(chatView.showSpoilerContent, message)
 		delete(chatView.formattedMessages, message)
-
 	}
 
-	filteredMessages := make([]*discordgo.Message, 0)
+	filteredMessages := make([]*discordgo.Message, 0, len(chatView.data)-len(deletedMessages))
 OUTER_LOOP:
 	for _, message := range chatView.data {
 		for _, toDelete := range deletedMessages {
@@ -259,8 +258,10 @@ OUTER_LOOP:
 		filteredMessages = append(filteredMessages, message)
 	}
 
-	chatView.data = filteredMessages
-	chatView.Reprint()
+	if len(chatView.data) != len(filteredMessages) {
+		chatView.data = filteredMessages
+		chatView.Reprint()
+	}
 }
 
 // ClearViewAndCache clears the TextView buffer and removes all data for
@@ -274,6 +275,8 @@ func (chatView *ChatView) ClearViewAndCache() {
 	chatView.SetTitle("")
 }
 
+// addMessageInternal prints a new message to the textview or triggers a
+// rerender. It also takes the blocked relation into consideration.
 func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 	isBlocked := discordutil.IsBlocked(chatView.state, message.Author)
 
@@ -331,7 +334,6 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	}
 
 	chatView.addMessageInternal(message)
-
 	chatView.refreshSelectionAndScrollToSelection()
 	if wasScrolledToTheEnd {
 		chatView.internalTextView.ScrollToEnd()
