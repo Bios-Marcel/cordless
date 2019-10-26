@@ -9,20 +9,38 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/Bios-Marcel/cordless/scripting"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
 
-// This decleration makes sure that JavaScriptEngine complies with the
+// This declaration makes sure that JavaScriptEngine complies with the
 // Engine interface.
 var _ scripting.Engine = &JavaScriptEngine{}
 
 // JavaScriptEngine stores scripting engine state
 type JavaScriptEngine struct {
-	vms         []*otto.Otto
-	errorOutput io.Writer
+	scriptInstances []*ScriptInstance
+	errorOutput     io.Writer
+	// globalInstance is used for actions that don't require to be run on a
+	// specific VM, but any VM. An example for this is converting a Go-struct
+	// into a valid Otto-Value.
+	globalInstance *otto.Otto
+}
+
+// ScriptInstance represents a usable and already loaded javascript. The
+// callbacks are pre-evaluated and the instance can be locked as soon as any
+// of the requested callbacks are available.
+type ScriptInstance struct {
+	vm   *otto.Otto
+	lock sync.Mutex
+
+	onMessageSend    *otto.Value
+	onMessageReceive *otto.Value
+	onMessageEdit    *otto.Value
+	onMessageDelete  *otto.Value
 }
 
 // New instantiates a new scripting engine
@@ -30,7 +48,11 @@ func New() *JavaScriptEngine {
 	return &JavaScriptEngine{}
 }
 
-// LoadScripts implements Engine
+// LoadScripts implements Engine. Each script gets a designated Otto-VM in
+// order to avoid scripts modifying each others state by accident. All
+// available callbacks get eagerly evaluated in the beginning. Locking of the
+// instances when calling one of the callbacks only happens, if a callback
+// actually exists.
 func (engine *JavaScriptEngine) LoadScripts(dirname string) (err error) {
 	_, statError := os.Stat(dirname)
 	if os.IsNotExist(statError) {
@@ -51,7 +73,7 @@ func (engine *JavaScriptEngine) readScriptsRecursively(dirname string) error {
 	for _, file := range files {
 		path := filepath.Join(dirname, file.Name())
 
-		//Skip dotfolders and read non-dotfolders.
+		//Skip dot-folders and read non-dot-folders.
 		if file.IsDir() {
 			if !strings.HasPrefix(file.Name(), ".") {
 				readError := engine.readScriptsRecursively(path)
@@ -74,11 +96,54 @@ func (engine *JavaScriptEngine) readScriptsRecursively(dirname string) error {
 		}
 
 		vm := otto.New()
-		engine.vms = append(engine.vms, vm)
 		_, err = vm.Run(file)
 		if err != nil {
 			return errors.Wrapf(err, "failed to run script '%s'", path)
 		}
+
+		instance := &ScriptInstance{
+			vm:   vm,
+			lock: sync.Mutex{},
+		}
+
+		onMessageSendJS, resolveError := vm.Get("onMessageSend")
+		if !onMessageSendJS.IsUndefined() {
+			instance.onMessageSend = &onMessageSendJS
+		}
+		if resolveError != nil {
+			return errors.Wrap(resolveError, "error resolving function onMessageSend")
+		}
+
+		onMessageReceiveJS, resolveError := vm.Get("onMessageReceive")
+		if !onMessageReceiveJS.IsUndefined() {
+			instance.onMessageReceive = &onMessageReceiveJS
+		}
+		if resolveError != nil {
+			return errors.Wrap(resolveError, "error resolving function onMessageReceive")
+		}
+
+		onMessageEditJS, resolveError := vm.Get("onMessageEdit")
+		if !onMessageEditJS.IsUndefined() {
+			instance.onMessageEdit = &onMessageEditJS
+		}
+		if resolveError != nil {
+			return errors.Wrap(resolveError, "error resolving function onMessageEdit")
+		}
+
+		onMessageDeleteJS, resolveError := vm.Get("onMessageDelete")
+		if !onMessageDeleteJS.IsUndefined() {
+			instance.onMessageDelete = &onMessageDeleteJS
+		}
+		if resolveError != nil {
+			return errors.Wrap(resolveError, "error resolving function onMessageDelete")
+		}
+
+		engine.scriptInstances = append(engine.scriptInstances, instance)
+	}
+
+	//Avoid unnecessarily creating an unused VM.
+	if len(engine.scriptInstances) > 0 {
+		engine.globalInstance = otto.New()
 	}
 
 	return nil
@@ -88,27 +153,25 @@ func (engine *JavaScriptEngine) SetErrorOutput(errorOutput io.Writer) {
 	engine.errorOutput = errorOutput
 }
 
-func escapeNewlines(parameter string) string {
-	return strings.NewReplacer(
-		"\\", "\\\\",
-		"\n", "\\n",
-		"\"", "\\\"").
-		Replace(parameter)
-}
-
 // OnMessageSend implements Engine
 func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 	newText = oldText
-	for _, vm := range engine.vms {
-		jsValue, jsError := vm.Run(fmt.Sprintf("onMessageSend(\"%s\")", escapeNewlines(newText)))
-		if jsError != nil {
-			if engine.errorOutput != nil && !jsValue.IsUndefined() {
-				fmt.Fprintf(engine.errorOutput, "Error occurred during execution of javascript: %s\n", jsError.Error())
+	for _, instance := range engine.scriptInstances {
+		func() {
+			if instance.onMessageSend != nil {
+				defer instance.lock.Unlock()
+				instance.lock.Lock()
+				jsValue, jsError := instance.onMessageSend.Call(otto.NullValue(), newText)
+				if jsError != nil {
+					if engine.errorOutput != nil && !jsValue.IsUndefined() {
+						fmt.Fprintf(engine.errorOutput, "Error occurred during execution of javascript: %s\n", jsError.Error())
+					}
+					//This script failed, go to next one
+					return
+				}
+				newText = jsValue.String()
 			}
-			//This script failed, go to next one
-			continue
-		}
-		newText = jsValue.String()
+		}()
 	}
 
 	return
@@ -116,72 +179,81 @@ func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 
 // OnMessageReceive implements Engine
 func (engine *JavaScriptEngine) OnMessageReceive(message *discordgo.Message) {
-	for _, vm := range engine.vms {
-		onMessageReceiveJS, resolveError := vm.Get("onMessageReceive")
-		if onMessageReceiveJS.IsUndefined() {
-			continue
-		}
-		if resolveError != nil {
-			log.Printf("Error resolving function onMessageReceive: %s\n", resolveError)
-			continue
-		}
+	if len(engine.scriptInstances) == 0 {
+		return
+	}
 
-		messageToJS, toValueError := vm.ToValue(*message)
-		if toValueError != nil {
-			log.Printf("Error converting message to Otto value: %s\n", toValueError)
-		} else {
-			_, callError := onMessageReceiveJS.Call(otto.NullValue(), messageToJS)
-			if callError != nil {
-				log.Printf("Error calling onMessageReceive: %s\n", callError)
+	messageToJS, toValueError := engine.globalInstance.ToValue(*message)
+	if toValueError != nil {
+		log.Printf("Error converting message to Otto value: %s\n", toValueError)
+		return
+	}
+
+	for _, instance := range engine.scriptInstances {
+		func() {
+			if instance.onMessageReceive != nil {
+				instance.lock.Lock()
+				defer instance.lock.Unlock()
+
+				_, callError := instance.onMessageReceive.Call(otto.NullValue(), messageToJS)
+				if callError != nil {
+					log.Printf("Error calling onMessageReceive: %s\n", callError)
+				}
 			}
-		}
+		}()
 	}
 }
 
 // OnMessageEdit implements Engine
 func (engine *JavaScriptEngine) OnMessageEdit(message *discordgo.Message) {
-	for _, vm := range engine.vms {
-		onMessageEditJS, resolveError := vm.Get("onMessageEdit")
-		if onMessageEditJS.IsUndefined() {
-			continue
-		}
-		if resolveError != nil {
-			log.Printf("Error resolving function onMessageEdit: %s\n", resolveError)
-			continue
-		}
+	if len(engine.scriptInstances) == 0 {
+		return
+	}
 
-		messageToJS, toValueError := vm.ToValue(*message)
-		if toValueError != nil {
-			log.Printf("Error converting message to Otto value: %s\n", toValueError)
-		} else {
-			_, callError := onMessageEditJS.Call(otto.NullValue(), messageToJS)
-			if callError != nil {
-				log.Printf("Error calling onMessageEdit: %s\n", callError)
+	messageToJS, toValueError := engine.globalInstance.ToValue(*message)
+	if toValueError != nil {
+		log.Printf("Error converting message to Otto value: %s\n", toValueError)
+		return
+	}
+
+	for _, instance := range engine.scriptInstances {
+		func() {
+			if instance.onMessageEdit != nil {
+				instance.lock.Lock()
+				defer instance.lock.Unlock()
+
+				_, callError := instance.onMessageEdit.Call(otto.NullValue(), messageToJS)
+				if callError != nil {
+					log.Printf("Error calling onMessageEdit: %s\n", callError)
+				}
 			}
-		}
+		}()
 	}
 }
+
 // OnMessageDelete implements Engine
 func (engine *JavaScriptEngine) OnMessageDelete(message *discordgo.Message) {
-	for _, vm := range engine.vms {
-		onMessageDeleteJS, resolveError := vm.Get("onMessageDelete")
-		if onMessageDeleteJS.IsUndefined() {
-			continue
-		}
-		if resolveError != nil {
-			log.Printf("Error resolving function onMessageDelete: %s\n", resolveError)
-			continue
-		}
+	if len(engine.scriptInstances) == 0 {
+		return
+	}
 
-		messageToJS, toValueError := vm.ToValue(*message)
-		if toValueError != nil {
-			log.Printf("Error converting message to Otto value: %s\n", toValueError)
-		} else {
-			_, callError := onMessageDeleteJS.Call(otto.NullValue(), messageToJS)
-			if callError != nil {
-				log.Printf("Error calling onMessageDelete: %s\n", callError)
+	messageToJS, toValueError := engine.globalInstance.ToValue(*message)
+	if toValueError != nil {
+		log.Printf("Error converting message to Otto value: %s\n", toValueError)
+		return
+	}
+
+	for _, instance := range engine.scriptInstances {
+		func() {
+			if instance.onMessageDelete != nil {
+				instance.lock.Lock()
+				defer instance.lock.Unlock()
+				_, callError := instance.onMessageDelete.Call(otto.NullValue(), messageToJS)
+				if callError != nil {
+					log.Printf("Error calling onMessageDelete: %s\n", callError)
+				}
 			}
-		}
+		}()
 	}
 }
 
@@ -261,8 +333,8 @@ func (engine *JavaScriptEngine) SetGetCurrentChannelFunction(function func() str
 }
 
 func (engine *JavaScriptEngine) setFunctionOnVMs(name string, function func(call otto.FunctionCall) otto.Value) {
-	for _, vm := range engine.vms {
-		setError := vm.Set(name, function)
+	for _, instance := range engine.scriptInstances {
+		setError := instance.vm.Set(name, function)
 		if setError != nil {
 			log.Printf("Error setting function %s: %s", name, setError)
 		}
