@@ -63,9 +63,9 @@ Snap will automatically install updates.
 
 #### Arch based Linux distributions
 
-If you are on an arch based distribution, you could use the AUR package:
+On Arch based distributions, you can use the AUR package to install cordless:
 
-Manually:
+##### Manually:
 
 ```shell
 $ git clone https://aur.archlinux.org/cordless-git.git
@@ -73,23 +73,30 @@ $ cd cordless-git
 $ makepkg -sric
 ```
 
-With yay:
+##### With AUR Helpers:
 
+###### yay:
 ```shell
 $ yay -Syu cordless-git
+```
+or
+```shell
+$ yay -S cordless-git
+```
+###### trizen:
+```shell
+$ trizen -S cordless-git
+```
+
+###### pacaur
+```shell
+$ pacuar -S cordless-git
 ```
 
 #### Manual Linux installation
 
-If you are installing manually via:
-
-```sh
-go get -u github.com/Bios-Marcel/cordless
-```
-
-then you also need xclip in order to be able to copy and paste properly.
-
-There is currently no wayland support for copy and paste.
+[Building it from source](#building-it-from-source) (note: requires xclip in order to be able to copy and paste properly.
+ There is currently no wayland support for copy and paste.)
 
 ### Installing on Windows
 
