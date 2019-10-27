@@ -23,7 +23,7 @@ func NewNickSetCmd(session *discordgo.Session, clientState commands.ClientState)
 
 func (cmd NickSetCmd) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) != 1 {
-		commands.PrintError(writer, "Error setting nickname", "Usage: nick-set <NAME>")
+		commands.PrintError(writer, "Error setting nickname", "Either use 'nick-set <NAME>' or 'nick-set \"\"' to explicitly reset the nickname.")
 		return
 	}
 
