@@ -3,6 +3,7 @@ package commandimpls
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/Bios-Marcel/discordemojimap"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -205,7 +206,7 @@ func (cmd *UserSetCmd) Execute(writer io.Writer, parameters []string) {
 	}
 
 	if newName != "" {
-		newName = strings.TrimSpace(newName)
+		newName = discordemojimap.Replace(strings.TrimSpace(newName))
 	}
 
 	if newEmail != "" {
