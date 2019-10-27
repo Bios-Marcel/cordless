@@ -93,11 +93,6 @@ $ trizen -S cordless-git
 $ pacuar -S cordless-git
 ```
 
-#### Manual Linux installation
-
-[Building it from source](#building-it-from-source) (note: requires xclip in order to be able to copy and paste properly.
- There is currently no wayland support for copy and paste.)
-
 ### Installing on Windows
 
 In order to install the latest version on Windows, you first need
@@ -148,6 +143,8 @@ First you have to grab the code via:
 ```shell
 go get -u github.com/Bios-Marcel/cordless
 ```
+
+Note: Linux users need xclip in order to copy and paste properly, there is currently no support for wayland.
 
 In order to execute the application, simply run the executable, which lies at
 `$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
