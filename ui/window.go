@@ -66,6 +66,7 @@ type Window struct {
 	messageInput     *Editor
 
 	editingMessageID *string
+	messageLoader    *discordutil.MessageLoader
 
 	userList *UserTree
 
@@ -102,6 +103,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		app:             app,
 		jsEngine:        js.New(),
 		userActiveTimer: time.NewTimer(userInactiveTime),
+		messageLoader:   discordutil.CreateMessageLoader(session),
 	}
 
 	go func() {
@@ -1933,7 +1935,7 @@ func (window *Window) registerGuildChannelHandler() {
 				})
 			}
 
-			delete(requestedChannels, event.Channel.ID)
+			window.messageLoader.DeleteFromCache(event.Channel.ID)
 			//On purpose, since we don't care much about removing the channel timely.
 			window.app.QueueUpdateDraw(func() {
 				window.channelTree.Lock()
@@ -2302,44 +2304,11 @@ func (window *Window) RefreshLayout() {
 	window.app.ForceDraw()
 }
 
-var requestedChannels = make(map[string]bool)
-
 //LoadChannel eagerly loads the channels messages.
 func (window *Window) LoadChannel(channel *discordgo.Channel) error {
-	var messages []*discordgo.Message
-
-	if channel.LastMessageID != "" {
-		localMessageCount := len(channel.Messages)
-		hasBeenRequested := requestedChannels[channel.ID]
-		if !hasBeenRequested {
-			requestedChannels[channel.ID] = true
-
-			var beforeID string
-			if localMessageCount > 0 {
-				beforeID = channel.Messages[0].ID
-			}
-
-			var discordError error
-			messagesToGet := 100 - localMessageCount
-			if messagesToGet > 0 {
-				messages, discordError = window.session.ChannelMessages(channel.ID, messagesToGet, beforeID, "", "")
-				if discordError == nil {
-					if channel.GuildID != "" {
-						for _, message := range messages {
-							message.GuildID = channel.GuildID
-						}
-					}
-					if localMessageCount == 0 {
-						channel.Messages = messages
-					} else {
-						//There are already messages in cache; However, those came from updates events.
-						//Therefore those have to be newer than the newly retrieved ones.
-						channel.Messages = append(messages, channel.Messages...)
-					}
-				}
-			}
-		}
-		messages = channel.Messages
+	messages, loadError := window.messageLoader.LoadMessages(channel)
+	if loadError != nil {
+		return loadError
 	}
 
 	discordutil.SortMessagesByTimestamp(messages)

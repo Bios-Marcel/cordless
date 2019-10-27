@@ -96,3 +96,100 @@ func Test_MentionsCurrentUserExplicitly(t *testing.T) {
 		})
 	}
 }
+
+type messageSupplier struct {
+	requestAmount int
+}
+
+func (l *messageSupplier) ChannelMessages(channelID string, limit int, beforeID, afterID, aroundID string) ([]*discordgo.Message, error) {
+	l.requestAmount++
+	return nil, nil
+}
+
+func Test_LoadMessages_CacheAccess(t *testing.T) {
+	t.Run("Test emtpy channel", func(t *testing.T) {
+		channelEmpty := &discordgo.Channel{
+			ID:            "1",
+			LastMessageID: "",
+		}
+		supplier := &messageSupplier{}
+		loader := CreateMessageLoader(supplier)
+
+		_, loadError := loader.LoadMessages(channelEmpty)
+		if loadError != nil {
+			t.Errorf("Error loading channels: %s", loadError)
+		}
+
+		if supplier.requestAmount != 0 {
+			t.Errorf("Cache was accessed %d times instead of 1 time.", supplier.requestAmount)
+		}
+
+		_, loadError = loader.LoadMessages(channelEmpty)
+		if loadError != nil {
+			t.Errorf("Error loading channels: %s", loadError)
+		}
+
+		if supplier.requestAmount != 0 {
+			t.Errorf("Cache was accessed %d times instead of 1 time.", supplier.requestAmount)
+		}
+	})
+
+	t.Run("Test cache access", func(t *testing.T) {
+		channelNotEmpty := &discordgo.Channel{
+			ID:            "1",
+			LastMessageID: "123",
+		}
+		supplier := &messageSupplier{}
+		loader := CreateMessageLoader(supplier)
+
+		_, loadError := loader.LoadMessages(channelNotEmpty)
+		if loadError != nil {
+			t.Errorf("Error loading channels: %s", loadError)
+		}
+		_, loadError = loader.LoadMessages(channelNotEmpty)
+		if loadError != nil {
+			t.Errorf("Error loading channels: %s", loadError)
+		}
+
+		if supplier.requestAmount != 1 {
+			t.Errorf("Cache was accessed %d times instead of 1 time.", supplier.requestAmount)
+		}
+	})
+
+	t.Run("Test cache access with cacheclear", func(t *testing.T) {
+		channelNotEmpty := &discordgo.Channel{
+			ID:            "1",
+			LastMessageID: "123",
+		}
+		supplier := &messageSupplier{}
+		loader := CreateMessageLoader(supplier)
+
+		if loader.IsCached(channelNotEmpty.ID) {
+			t.Error("Channel cache should still be clear.")
+		}
+
+		_, loadError := loader.LoadMessages(channelNotEmpty)
+		if loadError != nil {
+			t.Errorf("Error loading channels: %s", loadError)
+		}
+		_, loadError = loader.LoadMessages(channelNotEmpty)
+		if loadError != nil {
+			t.Errorf("Error loading channels: %s", loadError)
+		}
+
+		if supplier.requestAmount != 1 {
+			t.Errorf("Cache was accessed %d times instead of 1 time.", supplier.requestAmount)
+		}
+
+		if !loader.IsCached(channelNotEmpty.ID) {
+			t.Error("Channel should've been cached but wasn't.")
+		}
+
+		loader.DeleteFromCache(channelNotEmpty.ID)
+
+		if loader.IsCached(channelNotEmpty.ID) {
+			t.Error("Cache should've been cleared, but wasn't.")
+		}
+
+	})
+}
