@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 )
@@ -41,7 +42,7 @@ func NewGuildList(guilds []*discordgo.Guild, window *Window) *GuildList {
 		if guild.Name == "" {
 			continue
 		}
-		guildNode := tview.NewTreeNode(tview.Escape(guild.Name))
+		guildNode := tview.NewTreeNode(tviewutil.Escape(guild.Name))
 		guildNode.SetReference(guild.ID)
 		root.AddChild(guildNode)
 
@@ -81,7 +82,7 @@ func (g *GuildList) RemoveGuild(guildID string) {
 // AddGuild adds a new node that references the given guildID and shows the
 // given name.
 func (g *GuildList) AddGuild(guildID, name string) {
-	node := tview.NewTreeNode(tview.Escape(name))
+	node := tview.NewTreeNode(tviewutil.Escape(name))
 	node.SetReference(guildID)
 	g.GetRoot().AddChild(node)
 }
@@ -90,7 +91,7 @@ func (g *GuildList) AddGuild(guildID, name string) {
 func (g *GuildList) UpdateName(guildID, newName string) {
 	for _, node := range g.GetRoot().GetChildren() {
 		if node.GetReference() == guildID {
-			node.SetText(tview.Escape(newName))
+			node.SetText(tviewutil.Escape(newName))
 			break
 		}
 	}

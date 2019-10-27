@@ -467,7 +467,7 @@ func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 }
 
 func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) string {
-	messageText := tview.Escape(message.Content)
+	messageText := tviewutil.Escape(message.Content)
 
 	//Message.MentionRoles only contains the mentions for mentionable.
 	//Therefore we do it like this, in order to render every mention.

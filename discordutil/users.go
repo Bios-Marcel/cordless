@@ -72,7 +72,7 @@ func GetUserName(user *discordgo.User) string {
 }
 
 func getUserName(name string, bot bool) string {
-	discordName := tview.Escape(name)
+	discordName := tviewutil.Escape(name)
 
 	if bot {
 		return botPrefix + discordName

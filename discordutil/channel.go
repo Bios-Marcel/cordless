@@ -2,11 +2,11 @@ package discordutil
 
 import (
 	"fmt"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"sort"
 	"strconv"
 
 	"github.com/Bios-Marcel/discordgo"
-	"github.com/Bios-Marcel/tview"
 )
 
 // SortMessagesByTimestamp sorts all messages in the given array according to
@@ -50,7 +50,7 @@ func GetPrivateChannelName(channel *discordgo.Channel) string {
 		channelName = "Unnamed"
 	}
 
-	return tview.Escape(channelName)
+	return tviewutil.Escape(channelName)
 }
 
 // CompareChannels checks which channel is smaller. Smaller meaning it is the

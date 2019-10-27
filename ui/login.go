@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/tview"
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
@@ -42,7 +43,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 
 	splashScreen := tview.NewTextView()
 	splashScreen.SetTextAlign(tview.AlignCenter)
-	splashScreen.SetText(tview.Escape(splashText + "\n\nConfig lies at: " + configDir))
+	splashScreen.SetText(tviewutil.Escape(splashText + "\n\nConfig lies at: " + configDir))
 
 	login.messageText.SetDynamicColors(true)
 
