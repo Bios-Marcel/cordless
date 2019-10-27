@@ -3,8 +3,10 @@ package commandimpls
 import (
 	"fmt"
 	"github.com/Bios-Marcel/cordless/commands"
+	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/discordgo"
 	"io"
+	"strings"
 )
 
 type NickSetCmd struct {
@@ -29,7 +31,8 @@ func (cmd NickSetCmd) Execute(writer io.Writer, parameters []string) {
 	if selectedGuild == nil {
 		commands.PrintError(writer, "Error setting nickname", "No guild selected")
 	} else {
-		setError := cmd.session.GuildMemberNickname(selectedGuild.ID, "@me", parameters[0])
+		newName := discordemojimap.Replace(strings.TrimSpace(parameters[0]))
+		setError := cmd.session.GuildMemberNickname(selectedGuild.ID, "@me", newName)
 		if setError != nil {
 			commands.PrintError(writer, "Error setting nickname", setError.Error())
 		}
