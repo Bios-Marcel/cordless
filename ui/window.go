@@ -1990,87 +1990,13 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	}
 
 	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt && event.Rune() == 'S' {
-		var table *shortcuts.ShortcutTable
-		var shortcutDescription *tview.TextView
-		var exitButton *tview.Button
-		var resetButton *tview.Button
-
-		table = shortcuts.NewShortcutTable()
-		table.SetShortcuts(shortcuts.Shortcuts)
-
-		doClose := func() {
+		shortcuts.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
 			window.currentContainer = window.rootContainer
 			window.app.ForceDraw()
-		}
-		table.SetOnClose(doClose)
-
-		exitButton = tview.NewButton("Go back")
-		exitButton.SetSelectedFunc(doClose)
-		exitButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			if event.Key() == tcell.KeyTab {
-				window.app.SetFocus(table.GetPrimitive())
-			} else if event.Key() == tcell.KeyBacktab {
-				window.app.SetFocus(resetButton)
-			} else if event.Key() == tcell.KeyESC {
-				doClose()
-			}
-
-			return event
+		}, func(view *tview.Flex) {
+			window.currentContainer = view
 		})
-
-		resetButton = tview.NewButton("Restore all defaults")
-		resetButton.SetSelectedFunc(func() {
-			for _, shortcut := range shortcuts.Shortcuts {
-				shortcut.Reset()
-			}
-			shortcuts.Persist()
-
-			table.SetShortcuts(shortcuts.Shortcuts)
-			window.app.ForceDraw()
-		})
-		resetButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			if event.Key() == tcell.KeyTab {
-				window.app.SetFocus(exitButton)
-			} else if event.Key() == tcell.KeyBacktab {
-				window.app.SetFocus(table.GetPrimitive())
-			} else if event.Key() == tcell.KeyESC {
-				doClose()
-			}
-
-			return event
-		})
-
-		primitiveBGColor := tviewutil.ColorToHex(config.GetTheme().PrimitiveBackgroundColor)
-		primaryTextColor := tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)
-
-		shortcutDescription = tview.NewTextView()
-		shortcutDescription.SetDynamicColors(true)
-		shortcutDescription.SetText("[" + primaryTextColor + "][:" + primitiveBGColor + "]R [:" + primaryTextColor + "][" + primitiveBGColor + "]Reset shortcut" +
-			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Backspace [:" + primaryTextColor + "][" + primitiveBGColor + "]Delete shortcut" +
-			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Enter [:" + primaryTextColor + "][" + primitiveBGColor + "]Change shortcut" +
-			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Esc [:" + primaryTextColor + "][" + primitiveBGColor + "]Close dialog")
-
-		table.SetFocusNext(func() { window.app.SetFocus(resetButton) })
-		table.SetFocusPrevious(func() { window.app.SetFocus(exitButton) })
-
-		buttonBar := tview.NewFlex()
-		buttonBar.SetDirection(tview.FlexColumn)
-
-		buttonBar.AddItem(resetButton, 0, 1, false)
-		buttonBar.AddItem(tview.NewBox(), 1, 0, false)
-		buttonBar.AddItem(exitButton, 0, 1, false)
-
-		shortcutsView := tview.NewFlex()
-		shortcutsView.SetDirection(tview.FlexRow)
-
-		shortcutsView.AddItem(table.GetPrimitive(), 0, 1, false)
-		shortcutsView.AddItem(buttonBar, 1, 0, false)
-		shortcutsView.AddItem(shortcutDescription, 1, 0, false)
-
-		window.app.SetRoot(shortcutsView, true)
-		window.app.SetFocus(table.GetPrimitive())
-		window.currentContainer = shortcutsView
 	} else if shortcuts.ToggleCommandView.Equals(event) {
 		window.SetCommandModeEnabled(!window.commandMode)
 
