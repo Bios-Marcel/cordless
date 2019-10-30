@@ -20,7 +20,6 @@ import (
 	"github.com/Bios-Marcel/cordless/scripting"
 	"github.com/Bios-Marcel/cordless/scripting/js"
 	"github.com/Bios-Marcel/cordless/shortcuts"
-	"github.com/Bios-Marcel/cordless/times"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/maths"
@@ -978,17 +977,10 @@ func (window *Window) IsCursorInsideCodeBlock() bool {
 }
 
 func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
-	messageTime, parseError := message.Timestamp.Parse()
-	if parseError != nil {
-		return
-	}
-
-	// All quotes should be UTC.
-	messageTimeUTC := messageTime.UTC()
-
-	currentContent := strings.TrimSpace(window.messageInput.GetText())
 	username := message.Author.Username
 	if message.GuildID != "" {
+		//The error handling here is rather lax, since not being able to show
+		// a nickname isn't really a gamerbreaker.
 		guild, stateError := window.session.State.Guild(message.GuildID)
 		if stateError == nil {
 			member, stateError := window.session.State.Member(guild.ID, message.Author.ID)
@@ -998,13 +990,13 @@ func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
 		}
 	}
 
-	quotedMessage := strings.ReplaceAll(message.ContentWithMentionsReplaced(), "\n", "\n> ")
-	quotedMessage = fmt.Sprintf("> **%s** %s UTC:\n> %s\n", username, times.TimeToString(&messageTimeUTC), quotedMessage)
-	if currentContent != "" {
-		quotedMessage = quotedMessage + currentContent
+	quotedMessage, generateError := discordutil.GenerateQuote(message.ContentWithMentionsReplaced(), username, message.Timestamp, window.messageInput.GetText())
+	if generateError == nil {
+		window.messageInput.SetText(quotedMessage)
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+	} else {
+		window.ShowErrorDialog(fmt.Sprintf("Error quoting message:\n\t%s", generateError.Error()))
 	}
-	window.messageInput.SetText(quotedMessage)
-	window.app.SetFocus(window.messageInput.GetPrimitive())
 }
 
 func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message string) {
@@ -1052,21 +1044,7 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 }
 
 func (window *Window) sendMessageAsFile(message string, channel string) {
-	reader := bytes.NewBufferString(message)
-	messageAsFile := &discordgo.File{
-		Name:        "message.txt",
-		ContentType: "text",
-		Reader:      reader,
-	}
-	complexMessage := &discordgo.MessageSend{
-		Content: "The message was too long, therefore, you get a file:",
-		Embed:   nil,
-		Tts:     false,
-		Files:   nil,
-		File:    messageAsFile,
-	}
-	_, sendError := window.session.ChannelMessageSendComplex(channel, complexMessage)
-	if sendError != nil {
+	discordutil.SendMessageAsFile(window.session, message, channel, func(sendError error) {
 		retry := "Retry sending"
 		edit := "Edit"
 		window.app.QueueUpdateDraw(func() {
@@ -1081,7 +1059,7 @@ func (window *Window) sendMessageAsFile(message string, channel string) {
 					}
 				}, retry, edit, "Cancel")
 		})
-	}
+	})
 }
 
 func (window *Window) sendMessage(targetChannelID, message string) {
@@ -1192,7 +1170,6 @@ func (window *Window) PopulateMentionWindowFromCurrentGuild(mentionWindow *tview
 		}
 		window.addNodeToMentionWindow(mentionWindow, displayName, userMentionReference)
 	}
-
 }
 
 func (window *Window) addNodeToMentionWindow(mentionWindow *tview.TreeView, name string, reference interface{}) {

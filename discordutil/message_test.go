@@ -193,3 +193,142 @@ func Test_LoadMessages_CacheAccess(t *testing.T) {
 
 	})
 }
+
+func TestGenerateQuote(t *testing.T) {
+	type args struct {
+		message           string
+		author            string
+		time              discordgo.Timestamp
+		messageAfterQuote string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "simple line",
+			args: args{
+				message:           "Hello World",
+				author:            "humaN",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "",
+			},
+			want: "> **humaN** 21:30:57 UTC:\n> Hello World\n",
+			wantErr: false,
+		}, {
+			name: "simple line; non UTC - positive",
+			args: args{
+				message:           "Hello World",
+				author:            "humaN",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+03:00"),
+				messageAfterQuote: "",
+			},
+			want: "> **humaN** 18:30:57 UTC:\n> Hello World\n",
+			wantErr: false,
+		},  {
+			name: "simple line; non UTC - negative",
+			args: args{
+				message:           "Hello World",
+				author:            "humaN",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000-02:00"),
+				messageAfterQuote: "",
+			},
+			want: "> **humaN** 23:30:57 UTC:\n> Hello World\n",
+			wantErr: false,
+		}, {
+			name: "multi line",
+			args: args{
+				message:           "Hello World\nBye World",
+				author:            "humaN",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "",
+			},
+			want: "> **humaN** 21:30:57 UTC:\n> Hello World\n> Bye World\n",
+			wantErr: false,
+		}, {
+			name: "simple line with message after quote",
+			args: args{
+				message:           "Hello World",
+				author:            "humaN",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "Hei",
+			},
+			want: "> **humaN** 21:30:57 UTC:\n> Hello World\nHei",
+			wantErr: false,
+		},  {
+			name: "simple line with multline message after quote",
+			args: args{
+				message:           "Hello World",
+				author:            "humaN",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "Hei\nHo",
+			},
+			want: "> **humaN** 21:30:57 UTC:\n> Hello World\nHei\nHo",
+			wantErr: false,
+		},  {
+			name: "simple line with whitespace message after quote",
+			args: args{
+				message:           "Hello World",
+				author:            "humaN",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "    \t    ",
+			},
+			want: "> **humaN** 21:30:57 UTC:\n> Hello World\n",
+			wantErr: false,
+		},   {
+			name: "simple line with surrounding whitespace message after quote",
+			args: args{
+				message:           "Hello World",
+				author:            "humaN",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "    \t    hei",
+			},
+			want: "> **humaN** 21:30:57 UTC:\n> Hello World\nhei",
+			wantErr: false,
+		}, {
+			name: "empty author; we won't handle this, but still specify expected behaviour",
+			args: args{
+				message:           "Hello World\nBye World",
+				author:            "",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "",
+			},
+			want: "> **** 21:30:57 UTC:\n> Hello World\n> Bye World\n",
+			wantErr: false,
+		},  {
+			name: "empty message; we won't handle this, but still specify expected behaviour",
+			args: args{
+				message:           "",
+				author:            "author",
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "",
+			},
+			want: "> **author** 21:30:57 UTC:\n> \n",
+			wantErr: false,
+		}, {
+			name: "Invalid timestamps should cause an error",
+			args: args{
+				message:           "",
+				author:            "",
+				time:              discordgo.Timestamp("OwO, an invalid timestamp"),
+				messageAfterQuote: "",
+			},
+			want: "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GenerateQuote(tt.args.message, tt.args.author, tt.args.time, tt.args.messageAfterQuote)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GenerateQuote() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GenerateQuote() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -1,6 +1,12 @@
 package discordutil
 
-import "github.com/Bios-Marcel/discordgo"
+import (
+	"bytes"
+	"fmt"
+	"github.com/Bios-Marcel/cordless/times"
+	"github.com/Bios-Marcel/discordgo"
+	"strings"
+)
 
 // MentionsCurrentUserExplicitly checks whether the message contains any
 // explicit mentions for the user associated with the currently logged in user.
@@ -93,4 +99,47 @@ func (l *MessageLoader) LoadMessages(channel *discordgo.Channel) ([]*discordgo.M
 	}
 
 	return messages, nil
+}
+
+// SendMessageAsFile sends the given message into the given channel using the
+// passed discord Session. If an error occurs, onFailure gets called.
+func SendMessageAsFile(session *discordgo.Session, message string, channel string, onFailure func(error)) {
+	reader := bytes.NewBufferString(message)
+	messageAsFile := &discordgo.File{
+		Name:        "message.txt",
+		ContentType: "text",
+		Reader:      reader,
+	}
+	complexMessage := &discordgo.MessageSend{
+		Content: "The message was too long, therefore, you get a file:",
+		Embed:   nil,
+		Tts:     false,
+		Files:   nil,
+		File:    messageAsFile,
+	}
+	_, sendError := session.ChannelMessageSendComplex(channel, complexMessage)
+	if sendError != nil {
+		onFailure(sendError)
+	}
+}
+
+// Generates a Quote using the given Input. The `messageAfterQuote` will be
+// appended after the quote in case it is not empty.
+func GenerateQuote(message, author string, time discordgo.Timestamp, messageAfterQuote string) (string, error) {
+	messageTime, parseError := time.Parse()
+	if parseError != nil {
+		return "", parseError
+	}
+
+	// All quotes should be UTC.
+	messageTimeUTC := messageTime.UTC()
+
+	quotedMessage := strings.ReplaceAll(message, "\n", "\n> ")
+	quotedMessage = fmt.Sprintf("> **%s** %s UTC:\n> %s\n", author, times.TimeToString(&messageTimeUTC), quotedMessage)
+	currentContent := strings.TrimSpace(messageAfterQuote)
+	if currentContent != "" {
+		quotedMessage = quotedMessage + currentContent
+	}
+
+	return quotedMessage, nil
 }
