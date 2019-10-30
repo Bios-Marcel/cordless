@@ -980,7 +980,7 @@ func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
 	username := message.Author.Username
 	if message.GuildID != "" {
 		//The error handling here is rather lax, since not being able to show
-		// a nickname isn't really a gamerbreaker.
+		// a nickname isn't really a gamebreaker.
 		guild, stateError := window.session.State.Guild(message.GuildID)
 		if stateError == nil {
 			member, stateError := window.session.State.Member(guild.ID, message.Author.ID)
