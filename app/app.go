@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	userSession         = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0"
-	defaultLoginMessage = "\nPlease input your token. Prepend 'Bot ' for bot tokens.\n\nFor information on how to retrieve your token, check:\nhttps://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token\n\nToken input is hidden by default, toggle with Ctrl + R."
+	userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
 )
 
 var suspended = false
@@ -63,7 +62,7 @@ func Run() {
 			panic(shortcutsLoadError)
 		}
 
-		discord := attemptLogin(loginScreen, defaultLoginMessage, app, configuration)
+		discord := attemptLogin(loginScreen, "", configuration)
 
 		config.GetConfig().Token = discord.Token
 
@@ -167,33 +166,28 @@ func Run() {
 	}
 }
 
-func attemptLogin(loginScreen *ui.Login, loginMessage string, app *tview.Application, configuration *config.Config) *discordgo.Session {
+func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *config.Config) *discordgo.Session {
 	var (
 		session      *discordgo.Session
 		discordError error
 	)
 
 	if configuration.Token == "" {
-		token := loginScreen.RequestToken(loginMessage)
-		session, discordError = discordgo.NewWithToken(
-			userSession,
-			token)
+		session, discordError = loginScreen.RequestLogin(loginMessage)
 	} else {
-		session, discordError = discordgo.NewWithToken(
-			userSession,
-			configuration.Token)
+		session, discordError = discordgo.NewWithToken(userAgent, configuration.Token)
 	}
 
 	if discordError != nil {
 		configuration.Token = ""
-		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s\n\n%s", discordError, defaultLoginMessage), app, configuration)
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
 	}
 
 	//When logging in via token, the token isn't ever validated, therefore we do a test lookup here.
 	_, discordError = session.UserGuilds(0, "", "")
 	if discordError == discordgo.ErrUnauthorized {
 		configuration.Token = ""
-		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s\n\n%s", discordError, defaultLoginMessage), app, configuration)
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
 	}
 
 	return session
