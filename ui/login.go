@@ -9,6 +9,7 @@ import (
 	"github.com/gdamore/tcell"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const splashText = `
@@ -313,7 +314,7 @@ func (login *Login) attemptLogin() {
 		// attempt parsing a 2fa code, since the underlying rest-call can also handle
 		// non-2fa login calls.
 		var mfaToken int64
-		mfaTokenText := login.tfaTokenInput.GetText()
+		mfaTokenText := strings.ReplaceAll(login.tfaTokenInput.GetText(), " ", "")
 		if mfaTokenText != "" {
 			var parseError error
 			mfaToken, parseError = strconv.ParseInt(mfaTokenText, 10, 32)
