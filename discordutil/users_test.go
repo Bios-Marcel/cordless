@@ -379,3 +379,160 @@ func TestIsBlocked(t *testing.T) {
 		})
 	}
 }
+
+func TestIsBlocked1(t *testing.T) {
+	type args struct {
+		state *discordgo.State
+		user  *discordgo.User
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "Relation with same ID but different user",
+			args: args{
+				user: &discordgo.User{ID: "1"},
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							{
+								ID:   "1",
+								User: &discordgo.User{ID: "2"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+						},
+					},
+				},
+			},
+			want: false,
+		}, {
+			name: "Relation with same ID and same user",
+			args: args{
+				user: &discordgo.User{ID: "1"},
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							{
+								ID:   "1",
+								User: &discordgo.User{ID: "1"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+						},
+					},
+				},
+			},
+			want: true,
+		}, {
+			name: "Relation with different ID and user",
+			args: args{
+				user: &discordgo.User{ID: "1"},
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							{
+								ID:   "2",
+								User: &discordgo.User{ID: "2"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+						},
+					},
+				},
+			},
+			want: false,
+		}, {
+			name: "Relation with multiple different IDs and users",
+			args: args{
+				user: &discordgo.User{ID: "1"},
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							{
+								ID:   "2",
+								User: &discordgo.User{ID: "2"},
+								Type: discordgo.RelationTypeBlocked,
+							}, {
+								ID:   "3",
+								User: &discordgo.User{ID: "3"},
+								Type: discordgo.RelationTypeBlocked,
+							}, {
+								ID:   "4",
+								User: &discordgo.User{ID: "4"},
+								Type: discordgo.RelationTypeBlocked,
+							}, {
+								ID:   "5",
+								User: &discordgo.User{ID: "5"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+						},
+					},
+				},
+			},
+			want: false,
+		}, {
+			name: "Relation with multiple different IDs and users and one match at the end",
+			args: args{
+				user: &discordgo.User{ID: "1"},
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							{
+								ID:   "2",
+								User: &discordgo.User{ID: "2"},
+								Type: discordgo.RelationTypeBlocked,
+							}, {
+								ID:   "3",
+								User: &discordgo.User{ID: "3"},
+								Type: discordgo.RelationTypeBlocked,
+							}, {
+								ID:   "4",
+								User: &discordgo.User{ID: "4"},
+								Type: discordgo.RelationTypeBlocked,
+							}, {
+								ID:   "1",
+								User: &discordgo.User{ID: "1"},
+								Type: discordgo.RelationTypeBlocked,
+							},
+						},
+					},
+				},
+			},
+			want: true,
+		},  {
+			name: "Relation with multiple different IDs and users and one user match with wrong type",
+			args: args{
+				user: &discordgo.User{ID: "1"},
+				state: &discordgo.State{
+					Ready: discordgo.Ready{
+						Relationships: []*discordgo.Relationship{
+							{
+								ID:   "2",
+								User: &discordgo.User{ID: "2"},
+							}, {
+								ID:   "3",
+								User: &discordgo.User{ID: "3"},
+							}, {
+								ID:   "4",
+								User: &discordgo.User{ID: "4"},
+							}, {
+								ID:   "1",
+								User: &discordgo.User{ID: "1"},
+								Type: discordgo.RelationTypeFriend,
+							},
+						},
+					},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsBlocked(tt.args.state, tt.args.user); got != tt.want {
+				t.Errorf("IsBlocked() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
