@@ -96,6 +96,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 
 	configureInputComponent(login.tokenInput)
 	login.tokenInput.SetTitle("Token")
+	login.tokenInput.SetMaskCharacter(login.tokenInputMaskRune)
 	configureInputComponent(login.usernameInput)
 	login.usernameInput.SetTitle("E-Mail")
 	configureInputComponent(login.passwordInput)
