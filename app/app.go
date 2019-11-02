@@ -176,16 +176,15 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *con
 		session, discordError = loginScreen.RequestLogin(loginMessage)
 	} else {
 		session, discordError = discordgo.NewWithToken(userAgent, configuration.Token)
+		//When logging in via token, the token isn't ever validated, therefore we do a test lookup here.
+		_, discordError = session.UserGuilds(0, "", "")
+		if discordError == discordgo.ErrUnauthorized {
+			configuration.Token = ""
+			return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
+		}
 	}
 
 	if discordError != nil {
-		configuration.Token = ""
-		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
-	}
-
-	//When logging in via token, the token isn't ever validated, therefore we do a test lookup here.
-	_, discordError = session.UserGuilds(0, "", "")
-	if discordError == discordgo.ErrUnauthorized {
 		configuration.Token = ""
 		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
 	}
