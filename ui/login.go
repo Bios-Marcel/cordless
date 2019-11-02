@@ -43,7 +43,6 @@ type Login struct {
 
 	loginTypeTokenButton    *tview.Button
 	loginTypePasswordButton *tview.Button
-	loginButton             *tview.Button
 	sessionChannel          chan *loginAttempt
 	messageText             *tview.TextView
 	runNext                 chan bool
@@ -74,9 +73,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 		tokenInputMaskRune:      '*',
 		loginTypeTokenButton:    tview.NewButton("Login via Authentication-Token"),
 		loginTypePasswordButton: tview.NewButton("Login via E-Mail and password (Optinally Supports 2FA)"),
-
-		loginButton: tview.NewButton("Login"),
-		messageText: tview.NewTextView(),
+		messageText:             tview.NewTextView(),
 	}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -110,11 +107,6 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 	login.tokenInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
 			login.attemptLogin()
-			return nil
-		}
-
-		if event.Key() == tcell.KeyTab {
-			login.app.SetFocus(login.loginButton)
 			return nil
 		}
 
@@ -190,7 +182,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 		}
 
 		if event.Key() == tcell.KeyTab {
-			login.app.SetFocus(login.loginButton)
+			login.app.SetFocus(login.usernameInput)
 			return nil
 		}
 
@@ -200,27 +192,6 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 				panic(clipError)
 			}
 			login.tfaTokenInput.Insert(content)
-		}
-
-		return event
-	})
-
-	login.loginButton.SetVisible(false)
-	login.loginButton.SetSelectedFunc(func() {
-		login.attemptLogin()
-	})
-
-	login.loginButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyTab {
-			switch login.loginType {
-			case None:
-				panic("Was in state loginType=None even though Login-Button was visible")
-			case Token:
-				login.app.SetFocus(login.tokenInput)
-			case Password:
-				login.app.SetFocus(login.usernameInput)
-			}
-			return nil
 		}
 
 		return event
@@ -269,7 +240,6 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 	passwordInputView.AddItem(createCenteredComponent(login.tfaTokenInput, 68), 3, 0, false)
 
 	login.AddItem(login.content, 0, 0, false)
-	login.AddItem(createCenteredComponent(login.loginButton, 68), 1, 0, false)
 	login.AddItem(tview.NewBox(), 0, 1, false)
 
 	login.loginChoiceView = loginChoiceView
@@ -300,7 +270,6 @@ func (login *Login) attemptLogin() {
 	login.app.SetFocus(nil)
 	login.ResizeItem(login.content, 0, 0)
 
-	login.loginButton.SetVisible(false)
 	login.messageText.SetText("Attempting to log in ...")
 
 	switch login.loginType {
@@ -360,21 +329,18 @@ func (login *Login) RequestLogin(additionalMessage string) (*discordgo.Session, 
 
 func (login *Login) showLoginTypeChoice() {
 	login.showView(login.loginChoiceView, 5)
-	login.loginButton.SetVisible(false)
 	login.app.SetFocus(login.loginTypeTokenButton)
 	login.messageText.SetText("Please decide for a login method.\n\nLogging in as a Bot will only work using a Authentication-Token.")
 }
 
 func (login *Login) showPasswordLogin() {
 	login.showView(login.passwordInputView, 9)
-	login.loginButton.SetVisible(true)
 	login.app.SetFocus(login.usernameInput)
 	login.messageText.SetText("Please input your E-Mail and password.\n\nIf you haven't enabled Two-Factor-Authentication on your account, just leave the field empty.")
 }
 
 func (login *Login) showTokenLogin() {
 	login.showView(login.tokenInputView, 3)
-	login.loginButton.SetVisible(true)
 	login.app.SetFocus(login.tokenInput)
 	login.messageText.SetText("Prepend 'Bot ' for bot tokens.\n\nFor information on how to retrieve your token, check:\nhttps://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token\n\nToken input is hidden by default, toggle with Ctrl + R.")
 }
