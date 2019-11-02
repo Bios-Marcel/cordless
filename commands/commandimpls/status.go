@@ -14,26 +14,26 @@ const (
 	statusHelpPage = `[::b]NAME
 	status - view your or others status or update your own
 
-[::b]SYNPOSIS
+[::b]SYNOPSIS
 	[::b]status [subcommand]
 
-[::b]DESCRPTION
+[::b]DESCRIPTION
 	This command allows to either update your status or view a users status.
 	For more information check the help pages of the subcommands.
 
 [::]SUBCOMMANDS
 	[::b]status-get (default)
 		prints the status of the given user or yourself
-	[::b]set-set
+	[::b]status-set
 		updates your current status`
 
 	statusSetHelpPage = `[::b]NAME
 	status-set - allows updating your own status
 
-[::b]SYNPOSIS
+[::b]SYNOPSIS
 	[::b]status-set[::-] <online|idle|dnd|invisible>
 
-[::b]DESCRPTION
+[::b]DESCRIPTION
 	This command can be used to set your current online status to the
 	value passed as the first parameter. Other users will immediately
 	see your status update.
@@ -44,10 +44,10 @@ const (
 	statusGetHelpPage = `[::b]NAME
 	status-get - prints your current status or the status of the given user
 
-[::b]SYNPOSIS
+[::b]SYNOPSIS
 	[::b]status-get[::-] [Username|Username#NNNN|UserID[]
 
-[::b]DESCRPTION
+[::b]DESCRIPTION
 	This command prints either your current status of no value was passed
 	or the status of the passed user, if the presence for that user could
 	be found. Due to a problem with the presences, this command might randomly

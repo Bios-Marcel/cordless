@@ -14,7 +14,7 @@ import (
 const serverHelpPage = `[::b]NAME
 	server - allows you to join or leave a server
 
-[::b]SYNPOSIS
+[::b]SYNOPSIS
 	[::b]server[::-] <subcommand <args>>
 
 [::b]DESCRIPTION
@@ -31,7 +31,7 @@ const serverHelpPage = `[::b]NAME
 const serverJoinHelpPage = `[::b]NAME
 	server-join - allows you to join a server
 
-[::b]SYNPOSIS
+[::b]SYNOPSIS
 	[::b]server-join[::-] <InviteCode|InviteURL>
 
 [::b]DESCRIPTION
@@ -46,7 +46,7 @@ const serverJoinHelpPage = `[::b]NAME
 const serverLeaveHelpPage = `[::b]NAME
 	server-leaves - allows you to leave a server
 
-[::b]SYNPOSIS
+[::b]SYNOPSIS
 	[::b]server-leave[::-] <ID|Name>
 
 [::b]DESCRIPTION
