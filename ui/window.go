@@ -1627,7 +1627,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				}
 
 				if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
-					if !readstate.IsChannelMuted(channel) {
+					if !readstate.IsPrivateChannelMuted(channel) {
 						window.app.QueueUpdateDraw(func() {
 							window.privateList.MarkChannelAsUnread(channel)
 						})
@@ -1637,7 +1637,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						window.app.QueueUpdateDraw(func() {
 							window.channelTree.MarkChannelAsMentioned(channel.ID)
 						})
-					} else if !readstate.IsChannelMuted(channel) {
+					} else if !readstate.IsGuildChannelMuted(channel) {
 						window.app.QueueUpdateDraw(func() {
 							window.channelTree.MarkChannelAsUnread(channel.ID)
 						})

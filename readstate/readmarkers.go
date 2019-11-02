@@ -16,7 +16,7 @@ var (
 	state      *discordgo.State
 )
 
-// Load loads the locally saved readmarkers returing an error if this failed.
+// Load loads the locally saved readmarkers returning an error if this failed.
 func Load(sessionState *discordgo.State) {
 	for _, channelState := range sessionState.ReadState {
 		lastMessageID := channelState.GetLastMessageID()
@@ -139,46 +139,57 @@ func HasGuildBeenRead(guildID string) bool {
 	return true
 }
 
-// IsChannelMuted checks whether the channel is muted or not. This works for
-// private channels as well as for guild channels. The reasoning for this is,
-// that discord saves all private channel settings in the settings object for
-// the Guild with the GuildID emtpy.
-func IsChannelMuted(channel *discordgo.Channel) bool {
+func isChannelMuted(channel *discordgo.Channel) bool {
 	//optimization for the case of guild channels, as the handling for
 	//private channels will be unnecessarily slower.
 	if channel.GuildID == "" {
-		for _, settings := range state.UserGuildSettings {
-			if settings.GetGuildID() == channel.GuildID {
-				for _, override := range settings.ChannelOverrides {
-					if override.ChannelID == channel.ID {
-						if override.Muted {
-							return true
-						}
+		return IsPrivateChannelMuted(channel)
+	}
 
-						break
+	return IsGuildChannelMuted(channel)
+}
+
+// IsGuildChannelMuted checks whether a guild channel has been set to silent.
+func IsGuildChannelMuted(channel *discordgo.Channel) bool {
+	for _, settings := range state.UserGuildSettings {
+		if settings.GetGuildID() == channel.GuildID {
+			for _, override := range settings.ChannelOverrides {
+				if override.ChannelID == channel.ID {
+					if override.Muted {
+						return true
 					}
-				}
 
-				//No break here, since it can happen that there are multiple
-				//instances of UserGuildSettings for non guilds ... don't ask
-				//me why ...
+					break
+				}
 			}
+
+			break
 		}
-	} else {
-		for _, settings := range state.UserGuildSettings {
-			if settings.GetGuildID() == channel.GuildID {
-				for _, override := range settings.ChannelOverrides {
-					if override.ChannelID == channel.ID {
-						if override.Muted {
-							return true
-						}
+	}
 
-						break
+	return false
+}
+
+// IsPrivateChannelMuted checks whether a private channel has been set to
+// silent.
+func IsPrivateChannelMuted(channel *discordgo.Channel) bool {
+	for _, settings := range state.UserGuildSettings {
+		//Discord holds the mute settings for private channels in the user-guildsettings
+		//but for an empty Guild ID. Doesn't really make sense, but ¯\_(ツ)_/¯
+		if settings.GetGuildID() == "" {
+			for _, override := range settings.ChannelOverrides {
+				if override.ChannelID == channel.ID {
+					if override.Muted {
+						return true
 					}
-				}
 
-				break
+					break
+				}
 			}
+
+			//No break here, since it can happen that there are multiple
+			//instances of UserGuildSettings for non guilds ... don't ask
+			//me why ...
 		}
 	}
 
@@ -191,12 +202,12 @@ func HasBeenRead(channel *discordgo.Channel, lastMessageID string) bool {
 		return true
 	}
 
-	if IsChannelMuted(channel) {
+	if isChannelMuted(channel) {
 		return true
 	}
 
 	// If there was no message, lastMessageID would've been empty, therefore
-	// this check only makes sense if the cache is filled aready.
+	// this check only makes sense if the cache is filled already.
 	if len(channel.Messages) > 0 && channel.Messages[len(channel.Messages)-1].Author.ID == state.User.ID {
 		return true
 	}
