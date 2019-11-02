@@ -21,10 +21,10 @@ const (
 	userHelpPage = `[::b]NAME
 	user - manipulate and retrieve your user information
 
-[::b]SYNPOSIS
+[::b]SYNOPSIS
 	[::b]user <command>
 
-[::b]DESCRPTION
+[::b]DESCRIPTION
 	This command allows you to manipulate and retrieve your user information.
 
 	This command is split into multiple subcommands. The default subcommand
@@ -39,10 +39,10 @@ const (
 	userSetHelpPage = `[::b]NAME
 	user-set - updates your accounts user information
 
-[::b]SYNPOSIS
+[::b]SYNOPSIS
 	[::b]user-set[::-] [OPTION[]...
 
-[::b]DESCRPTION
+[::b]DESCRIPTION
 	This command allows you to set all or single values of your user
 	information. Every value has a specific parameter and you'll always
 	be asked for your password when trying to change any data.
@@ -66,10 +66,10 @@ const (
 	userGetHelpPage = `[::b]NAME
 	user-get - prints your accounts user information
 
-[::b]SYNPOSIS
+[::b]SYNOPSIS
 	[::b]user-get[::-] [OPTION[]...
 
-[::b]DESCRPTION
+[::b]DESCRIPTION
 	This command prints your accounts user information to the
 	commandline ina human readable format. If no options were
 	supplied, then "-n", "-e" and "-a" are chosen as the default
