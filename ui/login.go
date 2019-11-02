@@ -347,6 +347,6 @@ func (login *Login) showTokenLogin() {
 
 func (login *Login) showView(view tview.Primitive, size int) {
 	login.content.RemoveAllItems()
-	login.ResizeItem(login.content, 3, 0)
+	login.ResizeItem(login.content, size, 0)
 	login.content.AddItem(createCenteredComponent(view, 68), size, 0, false)
 }
