@@ -369,6 +369,85 @@ func TestChatView_formatMessageText(t *testing.T) {
 			},
 			want:     "\\`*_",
 			chatView: defaultChatView,
+		}, {
+			name: "single custom emoji",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "<:owo:123>",
+			},
+			want:     "https://cdn.discordapp.com/emojis/123",
+			chatView: defaultChatView,
+		}, {
+			name: "single animated custom emoji",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "<a:owo:123>",
+			},
+			want:     "https://cdn.discordapp.com/emojis/123",
+			chatView: defaultChatView,
+		}, {
+			//FIXME Remove space, it's useless
+			name: "two custom emoji without space",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "<:owo:123><:owo:123>",
+			},
+			want:     "https://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/123",
+			chatView: defaultChatView,
+		}, {
+			//FIXME Remove space, it's useless
+			name: "two custom emoji with space",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "<:owo:123> <:owo:123>",
+			},
+			want:     "https://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/123",
+			chatView: defaultChatView,
+		}, {
+			//FIXME Remove space, it's useless
+			name: "multiple successive emoji without spaces",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "<:owo:123><:owo:124><:owo:125><:owo:126>",
+			},
+			want:     "https://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/124\n https://cdn.discordapp.com/emojis/125\n https://cdn.discordapp.com/emojis/126",
+			chatView: defaultChatView,
+		}, {
+			//FIXME Remove space, it's useless
+			name: "multiple successive emoji with spaces",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "<:owo:123> <:owo:124> <:owo:125> <:owo:126>",
+			},
+			want:     "https://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/124\n https://cdn.discordapp.com/emojis/125\n https://cdn.discordapp.com/emojis/126",
+			chatView: defaultChatView,
+		}, {
+			//FIXME Remove spaces behind prefix and suffix of emoji
+			name: "message with custom emoji",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "Look, <:owo:123> what's this?",
+			},
+			want:     "Look, \nhttps://cdn.discordapp.com/emojis/123\n what's this?",
+			chatView: defaultChatView,
+		}, {
+			//FIXME Remove spaces behind prefix and suffix of emoji
+			name: "message with multiple custom emoji with spaces",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "Look, <:owo:123> <:owo:123> what's this?",
+			},
+			want:     "Look, \nhttps://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/123\n what's this?",
+			chatView: defaultChatView,
+		}, {
+			//FIXME Remove spaces behind prefix and suffix of emoji
+			name: "message with multiple custom emoji without spaces",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "Look, <:owo:123><:owo:123> what's this?",
+			},
+			want:     "Look, \nhttps://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/123\n what's this?",
+			chatView: defaultChatView,
 		},
 	}
 	for _, tt := range tests {

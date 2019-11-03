@@ -3,13 +3,12 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	linkshortener "github.com/Bios-Marcel/shortnotforlong"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
-
-	linkshortener "github.com/Bios-Marcel/shortnotforlong"
 
 	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/Bios-Marcel/cordless/times"
@@ -31,12 +30,14 @@ import (
 const dashCharacter = "\u2500"
 
 var (
-	codeBlockRegex      = regexp.MustCompile("(?sm)(^|.)?(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
-	colorRegex          = regexp.MustCompile("\\[#.{6}\\]")
-	channelMentionRegex = regexp.MustCompile(`<#\d*>`)
-	urlRegex            = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
-	spoilerRegex        = regexp.MustCompile(`(?s)\|\|(.+?)\|\|`)
-	roleMentionRegex    = regexp.MustCompile(`<@&\d*>`)
+	successiveCustomEmojiRegex = regexp.MustCompile("<a?:.+?:\\d+(><)a?:.+?:\\d+>")
+	customEmojiRegex           = regexp.MustCompile("(?sm)(.?)<a?:.+?:(\\d+)>(.?)")
+	codeBlockRegex             = regexp.MustCompile("(?sm)(^|.)?(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
+	colorRegex                 = regexp.MustCompile("\\[#.{6}\\]")
+	channelMentionRegex        = regexp.MustCompile(`<#\d*>`)
+	urlRegex                   = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
+	spoilerRegex               = regexp.MustCompile(`(?s)\|\|(.+?)\|\|`)
+	roleMentionRegex           = regexp.MustCompile(`<@&\d*>`)
 )
 
 // ChatView is using a tview.TextView in order to be able to display messages
@@ -646,12 +647,44 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 	messageText = strings.
 		NewReplacer("\\*", "*", "\\_", "_", "\\`", "`").
 		Replace(parseBoldAndUnderline(messageText))
+	messageText = parseCustomEmojis(messageText)
 
 	shouldShow, contains := chatView.showSpoilerContent[message.ID]
 	if !contains || !shouldShow {
 		messageText = spoilerRegex.ReplaceAllString(messageText, "["+tviewutil.ColorToHex(config.GetTheme().AttentionColor)+"]!SPOILER!["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]")
 	}
 	messageText = strings.Replace(messageText, "\\|", "|", -1)
+
+	return messageText
+}
+
+func parseCustomEmojis(text string) string {
+	messageText := text
+
+	//Little hack, since the customEmojiRegex can't handle <:emoji:123><:emoji:123>
+	//And we do it this way in order to allow overlapping matches.
+	var matches [][]int
+	for resume := true; resume; resume = len(matches) > 0 {
+		matches = successiveCustomEmojiRegex.FindAllStringSubmatchIndex(messageText, -1)
+		//Iterating backwards, since the indexes would be incorrect after
+		//the first match otherwise
+		for i := len(matches) - 1; i >= 0; i-- {
+			match := matches[i]
+			messageText = messageText[:match[2]+1] + " " + messageText[match[3]-1:]
+		}
+	}
+
+	customEmojiMatches := customEmojiRegex.FindAllStringSubmatch(messageText, -1)
+	for _, match := range customEmojiMatches {
+		url := "https://cdn.discordapp.com/emojis/" + match[2]
+		if match[1] != "" && match[1] != "\n" {
+			url = match[1] + "\n" + url
+		}
+		if match[3] != "" && match[3] != "\n" {
+			url = url + "\n" + match[3]
+		}
+		messageText = strings.Replace(messageText, match[0], url, 1)
+	}
 
 	return messageText
 }
