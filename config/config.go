@@ -35,7 +35,7 @@ const (
 )
 
 var (
-	currentConfig = Config{
+	currentConfig = &Config{
 		Times:                                  HourMinuteAndSeconds,
 		UseRandomUserColors:                    false,
 		ShowUserContainer:                      true,
@@ -190,7 +190,7 @@ func GetConfigDirectory() (string, error) {
 
 //GetConfig returns the currently loaded configuration.
 func GetConfig() *Config {
-	return &currentConfig
+	return currentConfig
 }
 
 //LoadConfig loads the configuration initially and returns it.
@@ -212,7 +212,7 @@ func LoadConfig() (*Config, error) {
 
 	defer configFile.Close()
 	decoder := json.NewDecoder(configFile)
-	configLoadError := decoder.Decode(&currentConfig)
+	configLoadError := decoder.Decode(currentConfig)
 
 	//io.EOF would mean empty, therefore we use defaults.
 	if configLoadError != nil && configLoadError != io.EOF {
@@ -222,6 +222,18 @@ func LoadConfig() (*Config, error) {
 	return GetConfig(), nil
 }
 
+// UpdateCurrentToken updates the current token and all accounts where the
+// token was also used.
+func UpdateCurrentToken(newToken string) {
+	oldToken := currentConfig.Token
+	currentConfig.Token = newToken
+	for _, account := range currentConfig.Accounts {
+		if account.Token == oldToken {
+			account.Token = newToken
+		}
+	}
+}
+
 //PersistConfig saves the current configuration onto the filesystem.
 func PersistConfig() error {
 	configFilePath, configError := GetConfigFile()
@@ -229,7 +241,7 @@ func PersistConfig() error {
 		return configError
 	}
 
-	configAsJSON, jsonError := json.MarshalIndent(&currentConfig, "", "    ")
+	configAsJSON, jsonError := json.MarshalIndent(currentConfig, "", "    ")
 	if jsonError != nil {
 		return jsonError
 	}

@@ -3,6 +3,8 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"github.com/Bios-Marcel/cordless/util/text"
+	"github.com/mdp/qrterminal/v3"
 	"log"
 	"regexp"
 	"strings"
@@ -2064,6 +2066,88 @@ func (window *Window) ExecuteCommand(input string) {
 			fmt.Fprintf(window.commandView, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]The command '%s' doesn't exist[white]\n", parts[0])
 		}
 	}
+}
+
+// ShowTFASetup generates a new TFA-Secret and shows a QR-Code. The QR-Code can
+// be scanned and the resulting TFA-Token can be entered into cordless and used
+// to enable TFA on this account.
+func (window *Window) ShowTFASetup() {
+	tfaSecret := text.GenerateBase32Key()
+	qrURL := fmt.Sprintf("otpauth://totp/Discord:%s?secret=%s&issuer=Discord", window.session.State.User.Email, tfaSecret)
+	qrCodeText := text.GenerateQRCode(qrURL, qrterminal.M)
+	qrCodeImage := tview.NewTextView().SetText(qrCodeText).SetTextAlign(tview.AlignCenter)
+
+	qrCodeView := tview.NewFlex().SetDirection(tview.FlexRow)
+	qrCodeView.AddItem(qrCodeImage, strings.Count(qrCodeText, "\n")+1, 0, false)
+	defaultInstructions := "1. Scan the QR-Code with your 2FA application\n2. Enter the code generated on your 2FA device\n3. Hit Enter!"
+	message := tview.NewTextView().SetText(defaultInstructions).SetDynamicColors(true)
+	qrCodeView.AddItem(tviewutil.CreateCenteredComponent(message, 68), 0, 1, false)
+	tokenInput := tview.NewInputField()
+	tokenInput.SetBorder(true)
+	tokenInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEnter {
+			code, codeError := text.ParseTFACode(tokenInput.GetText())
+			if codeError != nil {
+				message.SetText(fmt.Sprintf("%s\n\n[red]Code invalid:\n\t[red]%s", defaultInstructions, codeError))
+				return nil
+			}
+
+			//panic(fmt.Sprintf("Secret: %s\nCode: %s", tfaSecret, code))
+			backupCodes, tfaError := window.session.TwoFactorEnable(tfaSecret, code)
+			if tfaError != nil {
+				message.SetText(fmt.Sprintf("%s\n\n[red]Error setting up Two-Factor-Authentication:\n\t[red]%s", defaultInstructions, tfaError))
+				return nil
+			}
+
+			//The token is being updated internally, therefore we need to update our config.
+			config.UpdateCurrentToken(window.session.Token)
+			configError := config.PersistConfig()
+			if configError != nil {
+				log.Println(fmt.Sprintf("Error settings new token: %s\n\t%s", window.session.Token, configError))
+			}
+
+			var backupCodesAsString string
+			for index, backupCode := range backupCodes {
+				if index != 0 {
+					backupCodesAsString += "\n"
+				}
+				backupCodesAsString += backupCode.Code
+			}
+
+			clipboard.WriteAll(backupCodesAsString)
+
+			successText := tview.NewTextView().SetTextAlign(tview.AlignCenter)
+			successText.SetText("Setting up Two-Factor-Authentication was a success.\n\n" +
+				"The backup codes have been put into your clipboard." +
+				"If you need to view your backup codes again, just run `tfa backup` in the cordless CLI.\n\n" +
+				"Currently cordless doesn't support applying backup codes.")
+
+			successView := tview.NewFlex().SetDirection(tview.FlexRow)
+
+			okayButton := tview.NewButton("Okay")
+			okayButton.SetSelectedFunc(func() {
+				window.app.SetRoot(window.rootContainer, true)
+			})
+
+			successView.AddItem(successText, 0, 1, false)
+			successView.AddItem(okayButton, 1, 0, false)
+			window.app.SetRoot(tviewutil.CreateCenteredComponent(successView, 68), true)
+			window.app.SetFocus(okayButton)
+
+			return nil
+		}
+
+		if event.Key() == tcell.KeyESC {
+			window.app.SetRoot(window.rootContainer, true)
+			window.app.ForceDraw()
+			return nil
+		}
+
+		return event
+	})
+	qrCodeView.AddItem(tviewutil.CreateCenteredComponent(tokenInput, 68), 3, 0, false)
+	window.app.SetRoot(qrCodeView, true)
+	window.app.SetFocus(tokenInput)
 }
 
 func (window *Window) startEditingMessage(message *discordgo.Message) {

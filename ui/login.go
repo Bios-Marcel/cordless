@@ -3,13 +3,12 @@ package ui
 import (
 	"errors"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+	"github.com/Bios-Marcel/cordless/util/text"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
 	"os"
-	"strconv"
-	"strings"
 )
 
 const splashText = `
@@ -90,7 +89,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 	splashScreen.SetTextAlign(tview.AlignCenter)
 	splashScreen.SetText(tviewutil.Escape(splashText + "\n\nConfig lies at: " + configDir))
 	login.AddItem(splashScreen, 12, 0, false)
-	login.AddItem(createCenteredComponent(login.messageText, 66), 0, 1, false)
+	login.AddItem(tviewutil.CreateCenteredComponent(login.messageText, 66), 0, 1, false)
 
 	login.messageText.SetDynamicColors(true)
 
@@ -229,16 +228,16 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 	})
 
 	loginChoiceView := tview.NewFlex().SetDirection(tview.FlexRow)
-	loginChoiceView.AddItem(createCenteredComponent(login.loginTypeTokenButton, 66), 1, 0, true)
+	loginChoiceView.AddItem(tviewutil.CreateCenteredComponent(login.loginTypeTokenButton, 66), 1, 0, true)
 	loginChoiceView.AddItem(tview.NewBox(), 1, 0, false)
-	loginChoiceView.AddItem(createCenteredComponent(tview.NewTextView().SetText("or").SetTextAlign(tview.AlignCenter), 66), 1, 0, false)
+	loginChoiceView.AddItem(tviewutil.CreateCenteredComponent(tview.NewTextView().SetText("or").SetTextAlign(tview.AlignCenter), 66), 1, 0, false)
 	loginChoiceView.AddItem(tview.NewBox(), 1, 0, false)
-	loginChoiceView.AddItem(createCenteredComponent(login.loginTypePasswordButton, 66), 1, 0, false)
+	loginChoiceView.AddItem(tviewutil.CreateCenteredComponent(login.loginTypePasswordButton, 66), 1, 0, false)
 
 	passwordInputView := tview.NewFlex().SetDirection(tview.FlexRow)
-	passwordInputView.AddItem(createCenteredComponent(login.usernameInput, 68), 3, 0, false)
-	passwordInputView.AddItem(createCenteredComponent(login.passwordInput, 68), 3, 0, false)
-	passwordInputView.AddItem(createCenteredComponent(login.tfaTokenInput, 68), 3, 0, false)
+	passwordInputView.AddItem(tviewutil.CreateCenteredComponent(login.usernameInput, 68), 3, 0, false)
+	passwordInputView.AddItem(tviewutil.CreateCenteredComponent(login.passwordInput, 68), 3, 0, false)
+	passwordInputView.AddItem(tviewutil.CreateCenteredComponent(login.tfaTokenInput, 68), 3, 0, false)
 
 	login.AddItem(login.content, 0, 0, false)
 	login.AddItem(tview.NewBox(), 0, 1, false)
@@ -253,15 +252,6 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 func configureInputComponent(component *tview.InputField) {
 	component.SetBorder(true)
 	component.SetFieldWidth(66)
-}
-
-func createCenteredComponent(component tview.Primitive, width int) tview.Primitive {
-	padding := tview.NewFlex().SetDirection(tview.FlexColumn)
-	padding.AddItem(tview.NewBox(), 0, 1, false)
-	padding.AddItem(component, width, 0, false)
-	padding.AddItem(tview.NewBox(), 0, 1, false)
-
-	return padding
 }
 
 func (login *Login) attemptLogin() {
@@ -289,16 +279,17 @@ func (login *Login) attemptLogin() {
 		// Even if the login is supposed to be without two-factor-authentication, we
 		// attempt parsing a 2fa code, since the underlying rest-call can also handle
 		// non-2fa login calls.
-		var mfaToken int64
-		mfaTokenText := strings.ReplaceAll(login.tfaTokenInput.GetText(), " ", "")
-		if mfaTokenText != "" {
+		input := login.tfaTokenInput.GetText()
+		var mfaTokenText string
+		if input != "" {
 			var parseError error
-			mfaToken, parseError = strconv.ParseInt(mfaTokenText, 10, 32)
+			mfaTokenText, parseError = text.ParseTFACode(input)
 			if parseError != nil {
 				login.sessionChannel <- &loginAttempt{nil, errors.New("[red]Two-Factor-Authentication Code incorrect.\n\n[red]Correct example: 564 231")}
 			}
 		}
-		session, loginError := discordgo.NewWithPasswordAndMFA(userAgent, login.usernameInput.GetText(), login.passwordInput.GetText(), int(mfaToken))
+
+		session, loginError := discordgo.NewWithPasswordAndMFA(userAgent, login.usernameInput.GetText(), login.passwordInput.GetText(), mfaTokenText)
 		login.sessionChannel <- &loginAttempt{session, loginError}
 	}
 
@@ -349,5 +340,5 @@ func (login *Login) showTokenLogin() {
 func (login *Login) showView(view tview.Primitive, size int) {
 	login.content.RemoveAllItems()
 	login.ResizeItem(login.content, size, 0)
-	login.content.AddItem(createCenteredComponent(view, 68), size, 0, false)
+	login.content.AddItem(tviewutil.CreateCenteredComponent(view, 68), size, 0, false)
 }

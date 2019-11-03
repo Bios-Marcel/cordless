@@ -152,6 +152,10 @@ func Run() {
 			window.RegisterCommand(serverLeaveCmd)
 			window.RegisterCommand(commandimpls.NewServerCommand(serverJoinCmd, serverLeaveCmd))
 			window.RegisterCommand(commandimpls.NewNickSetCmd(discord, window))
+			window.RegisterCommand(commandimpls.NewTFAEnableCommand(window, discord))
+			window.RegisterCommand(commandimpls.NewTFADisableCommand(discord))
+			window.RegisterCommand(commandimpls.NewTFABackupGetCmd(discord, window))
+			window.RegisterCommand(commandimpls.NewTFABackupResetCmd(discord, window))
 		})
 	}()
 

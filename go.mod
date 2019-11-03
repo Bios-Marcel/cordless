@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/Bios-Marcel/discordemojimap v0.0.0-20190404160132-506fd0e8d912
-	github.com/Bios-Marcel/discordgo v0.20.4-0.20191101185414-2d27b68262e6
+	github.com/Bios-Marcel/discordgo v0.20.4-0.20191103001117-f2fe84a74c31
 	github.com/Bios-Marcel/goclipimg v0.0.0-20190417192721-b58a8831f27d
 	github.com/Bios-Marcel/shortnotforlong v1.0.0
 	github.com/Bios-Marcel/tview v0.0.0-20191024171520-41147a2f8cf9
@@ -16,6 +16,7 @@ require (
 	github.com/google/go-github/v28 v28.1.1
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.4
+	github.com/mdp/qrterminal/v3 v3.0.0
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
@@ -23,4 +24,5 @@ require (
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/toast.v1 v1.0.0-20180812000517-0a84660828b2 // indirect
+	rsc.io/qr v0.2.0
 )
