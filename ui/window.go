@@ -2070,9 +2070,10 @@ func (window *Window) ShowTFASetup() {
 	qrURL := fmt.Sprintf("otpauth://totp/Discord:%s?secret=%s&issuer=Discord", window.session.State.User.Email, tfaSecret)
 	qrCodeText := text.GenerateQRCode(qrURL, qrterminal.M)
 	qrCodeImage := tview.NewTextView().SetText(qrCodeText).SetTextAlign(tview.AlignCenter)
-
+	qrCodeImage.SetTextColor(tcell.ColorWhite).SetBackgroundColor(tcell.ColorBlack)
 	qrCodeView := tview.NewFlex().SetDirection(tview.FlexRow)
-	qrCodeView.AddItem(qrCodeImage, strings.Count(qrCodeText, "\n")+1, 0, false)
+	width := len([]rune(strings.TrimSpace(strings.Split(qrCodeText, "\n")[2])))
+	qrCodeView.AddItem(tviewutil.CreateCenteredComponent(qrCodeImage, width), strings.Count(qrCodeText, "\n"), 0, false)
 	defaultInstructions := "1. Scan the QR-Code with your 2FA application\n2. Enter the code generated on your 2FA device\n3. Hit Enter!"
 	message := tview.NewTextView().SetText(defaultInstructions).SetDynamicColors(true)
 	qrCodeView.AddItem(tviewutil.CreateCenteredComponent(message, 68), 0, 1, false)
