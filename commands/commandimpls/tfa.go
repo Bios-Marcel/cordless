@@ -49,7 +49,7 @@ func NewTFADisableCommand(session *discordgo.Session) *TFADisableCmd {
 }
 
 func (cmd *TFADisableCmd) Execute(writer io.Writer, parameters []string) {
-	if cmd.session.State.User.MFAEnabled {
+	if cmd.session.MFA {
 		if len(parameters) != 1 {
 			fmt.Fprintln(writer, "Usage: tfa-disable <TFA Token>")
 		} else {
