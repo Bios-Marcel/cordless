@@ -139,7 +139,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 		case tcell.KeyTAB, tcell.KeyDown:
 			login.app.SetFocus(login.passwordInput)
 			return nil
-		case tcell.KeyUp:
+		case tcell.KeyBacktab, tcell.KeyUp:
 			login.app.SetFocus(login.tfaTokenInput)
 			return nil
 		case tcell.KeyCtrlV:
@@ -160,7 +160,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 		case tcell.KeyTAB, tcell.KeyDown:
 			login.app.SetFocus(login.tfaTokenInput)
 			return nil
-		case tcell.KeyUp:
+		case tcell.KeyBacktab, tcell.KeyUp:
 			login.app.SetFocus(login.usernameInput)
 			return nil
 		case tcell.KeyCtrlV:
@@ -181,7 +181,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 		case tcell.KeyTAB, tcell.KeyDown:
 			login.app.SetFocus(login.usernameInput)
 			return nil
-		case tcell.KeyUp:
+		case tcell.KeyBacktab, tcell.KeyUp:
 			login.app.SetFocus(login.passwordInput)
 			return nil
 		case tcell.KeyCtrlV:
