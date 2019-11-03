@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ParseTFACodes takes an arbitrary string and checks whether it's a valid 6
@@ -37,6 +38,7 @@ func GenerateBase32Key() string {
 		'2', '3', '4', '5', '6', '7',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	}
+	rand.Seed(time.Now().Unix())
 	for i := 0; i < 16; i++ {
 		tfaSecretRaw[i] = availableCharacters[rand.Int31n(int32(len(availableCharacters)))]
 	}
