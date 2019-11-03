@@ -2067,7 +2067,7 @@ func (window *Window) ExecuteCommand(input string) {
 // to enable TFA on this account.
 func (window *Window) ShowTFASetup() {
 	tfaSecret := text.GenerateBase32Key()
-	qrURL := fmt.Sprintf("otpauth://totp/Discord:%s?secret=%s&issuer=Discord", window.session.State.User.Email, tfaSecret)
+	qrURL := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=Discord", window.session.State.User.Email, tfaSecret)
 	qrCodeText := text.GenerateQRCode(qrURL, qrterminal.M)
 	qrCodeImage := tview.NewTextView().SetText(qrCodeText).SetTextAlign(tview.AlignCenter)
 	qrCodeImage.SetTextColor(tcell.ColorWhite).SetBackgroundColor(tcell.ColorBlack)
