@@ -2074,7 +2074,9 @@ func (window *Window) ShowTFASetup() {
 	qrCodeView := tview.NewFlex().SetDirection(tview.FlexRow)
 	width := len([]rune(strings.TrimSpace(strings.Split(qrCodeText, "\n")[2])))
 	qrCodeView.AddItem(tviewutil.CreateCenteredComponent(qrCodeImage, width), strings.Count(qrCodeText, "\n"), 0, false)
-	defaultInstructions := "1. Scan the QR-Code with your 2FA application\n2. Enter the code generated on your 2FA device\n3. Hit Enter!"
+	humanReadableSecret := tfaSecret[:4] + " " + tfaSecret[4:8] + " " + tfaSecret[8:12] + " " + tfaSecret[12:16]
+	defaultInstructions := "1. Scan the QR-Code with your 2FA application\n   or enter the secret manually:\n     " +
+		humanReadableSecret + "\n2. Enter the code generated on your 2FA device\n3. Hit Enter!"
 	message := tview.NewTextView().SetText(defaultInstructions).SetDynamicColors(true)
 	qrCodeView.AddItem(tviewutil.CreateCenteredComponent(message, 68), 0, 1, false)
 	tokenInput := tview.NewInputField()
