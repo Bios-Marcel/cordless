@@ -2,6 +2,7 @@ package commandimpls
 
 import (
 	"fmt"
+	"github.com/Bios-Marcel/cordless/commands"
 	"io"
 	"strings"
 
@@ -91,16 +92,15 @@ func (cmd *ServerCmd) PrintHelp(writer io.Writer) {
 func (cmd *ServerCmd) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 0 {
 		cmd.PrintHelp(writer)
-		return
-	}
-
-	switch parameters[0] {
-	case "join", "accept", "enter":
-		cmd.serverJoinCmd.Execute(writer, parameters[1:])
-	case "leave", "exit", "quit":
-		cmd.serverLeaveCmd.Execute(writer, parameters[1:])
-	default:
-		cmd.PrintHelp(writer)
+	} else {
+		combinedName := cmd.Name() + "-" + parameters[0]
+		if commands.CommandEquals(cmd.serverJoinCmd, combinedName) {
+			cmd.serverJoinCmd.Execute(writer, parameters[1:])
+		} else if commands.CommandEquals(cmd.serverLeaveCmd, combinedName) {
+			cmd.serverLeaveCmd.Execute(writer, parameters[1:])
+		} else {
+			cmd.PrintHelp(writer)
+		}
 	}
 }
 
