@@ -132,68 +132,65 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 	})
 
 	login.usernameInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEnter {
+		switch event.Key() {
+		case tcell.KeyEnter:
 			login.attemptLogin()
 			return nil
-		}
-
-		if event.Key() == tcell.KeyTab {
+		case tcell.KeyTAB, tcell.KeyDown:
 			login.app.SetFocus(login.passwordInput)
 			return nil
-		}
-
-		if event.Key() == tcell.KeyCtrlV {
+		case tcell.KeyUp:
+			login.app.SetFocus(login.tfaTokenInput)
+			return nil
+		case tcell.KeyCtrlV:
 			content, clipError := clipboard.ReadAll()
 			if clipError != nil {
 				panic(clipError)
 			}
 			login.usernameInput.Insert(content)
 		}
-
 		return event
 	})
 
 	login.passwordInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEnter {
+		switch event.Key() {
+		case tcell.KeyEnter:
 			login.attemptLogin()
 			return nil
-		}
-
-		if event.Key() == tcell.KeyTab {
+		case tcell.KeyTAB, tcell.KeyDown:
 			login.app.SetFocus(login.tfaTokenInput)
 			return nil
-		}
-
-		if event.Key() == tcell.KeyCtrlV {
+		case tcell.KeyUp:
+			login.app.SetFocus(login.usernameInput)
+			return nil
+		case tcell.KeyCtrlV:
 			content, clipError := clipboard.ReadAll()
 			if clipError != nil {
 				panic(clipError)
 			}
 			login.passwordInput.Insert(content)
 		}
-
 		return event
 	})
 
 	login.tfaTokenInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEnter {
+		switch event.Key() {
+		case tcell.KeyEnter:
 			login.attemptLogin()
 			return nil
-		}
-
-		if event.Key() == tcell.KeyTab {
+		case tcell.KeyTAB, tcell.KeyDown:
 			login.app.SetFocus(login.usernameInput)
 			return nil
-		}
-
-		if event.Key() == tcell.KeyCtrlV {
+		case tcell.KeyUp:
+			login.app.SetFocus(login.passwordInput)
+			return nil
+		case tcell.KeyCtrlV:
 			content, clipError := clipboard.ReadAll()
 			if clipError != nil {
 				panic(clipError)
 			}
 			login.tfaTokenInput.Insert(content)
 		}
-
 		return event
 	})
 
