@@ -93,3 +93,19 @@ func PrintError(writer io.Writer, error, reason string) {
 	errorColor := tviewutil.ColorToHex(config.GetTheme().ErrorColor)
 	fmt.Fprintf(writer, "[%s]%s:\n\t[%s]%s\n", errorColor, error, errorColor, reason)
 }
+
+// CommandEquals checks whether the text given matches either the name of the
+// given command or one of it's aliases.
+func CommandEquals(cmd Command, text string) bool {
+	if cmd.Name() == text {
+		return true
+	}
+
+	for _, alias := range cmd.Aliases() {
+		if alias == text {
+			return true
+		}
+	}
+
+	return false
+}

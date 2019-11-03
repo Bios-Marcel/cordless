@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"io"
 	"reflect"
 	"testing"
 )
@@ -86,6 +87,128 @@ func TestParseCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ParseCommand(tt.input); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParseCommand() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+type cmd struct {
+	name    string
+	aliases []string
+}
+
+func (c cmd) Execute(writer io.Writer, parameters []string) {
+	panic("shouldn't be needed for the test")
+}
+
+func (c cmd) PrintHelp(writer io.Writer) {
+	panic("shouldn't be needed for the test")
+}
+
+func (c cmd) Name() string {
+	return c.name
+}
+
+func (c cmd) Aliases() []string {
+	return c.aliases
+}
+
+func TestCommandEquals(t *testing.T) {
+	type args struct {
+		cmd  Command
+		text string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "match by name",
+			args: args{
+				cmd: cmd{
+					name:    "match",
+					aliases: nil,
+				},
+				text: "match",
+			},
+			want: true,
+		}, {
+			name: "match by name with nonmatching aliases",
+			args: args{
+				cmd: cmd{
+					name:    "match",
+					aliases: []string{"hello", "world"},
+				},
+				text: "match",
+			},
+			want: true,
+		}, {
+			name: "match by single alias",
+			args: args{
+				cmd: cmd{
+					name:    "nomatch",
+					aliases: []string{"match"},
+				},
+				text: "match",
+			},
+			want: true,
+		}, {
+			name: "match with multiple aliases and match in the middle",
+			args: args{
+				cmd: cmd{
+					name:    "nomatch",
+					aliases: []string{"a", "b", "match", "c", "d"},
+				},
+				text: "match",
+			},
+			want: true,
+		}, {
+			name: "match with multiple aliases and match at the end",
+			args: args{
+				cmd: cmd{
+					name:    "nomatch",
+					aliases: []string{"a", "b", "c", "d", "match"},
+				},
+				text: "match",
+			},
+			want: true,
+		}, {
+			name: "no match with no aliases",
+			args: args{
+				cmd: cmd{
+					name:    "nomatch",
+					aliases: nil,
+				},
+				text: "match",
+			},
+			want: false,
+		}, {
+			name: "no match with single aliases",
+			args: args{
+				cmd: cmd{
+					name:    "nomatch",
+					aliases: []string{"a"},
+				},
+				text: "match",
+			},
+			want: false,
+		}, {
+			name: "no match with multiple aliases",
+			args: args{
+				cmd: cmd{
+					name:    "nomatch",
+					aliases: []string{"a", "b", "c"},
+				},
+				text: "match",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CommandEquals(tt.args.cmd, tt.args.text); got != tt.want {
+				t.Errorf("CommandEquals() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -11,9 +11,124 @@ import (
 	"io"
 )
 
+const tfaHelpPage = `[::b]NAME
+	tfa - allows you to manage two-factor-authentication on your account
+
+[::b]SYNOPSIS
+	[::b]tfa[::-] <subcommand [args[]>
+
+[::b]DESCRIPTION
+	The tfa command allows you to enable / disable TFA and retrieve or
+	reset your TFA.backup codes. Some actions require you to either input a
+	valid TFA code or your current password.
+
+[::]SUBCOMMANDS
+	[::b]tfa-enable
+		enables two-factor-authentication on your account
+	[::b]tfa-disable
+		disables two-factor-authentication on your account
+	[::b]tfa-backup-get
+		retrieves your TFA backup codes from discord
+	[::b]tfa-backup-reset
+		resets and retrieves your TFA backup codes from discord`
+
+const tfaEnableHelpPage = `[::b]NAME
+	tfa-enable - enables two-factor-authentication on your account
+
+[::b]SYNOPSIS
+	[::b]tfa-enable[::-]
+
+[::b]DESCRIPTION
+	This command will open a view that shows a scannable QR-code and
+	instructions on how to proceed in order to enable TFA on your discord
+	account.`
+
+const tfaDisableHelpPage = `[::b]NAME
+	tfa-disable - disables two-factor-authentication on your account
+
+[::b]SYNOPSIS
+	[::b]tfa-disable[::-] <TFA Code>
+
+[::b]DESCRIPTION
+	This command will disable TFA on your discord account. In order to disable
+	TFA, you need to pass a valid TFA code for confirming that you actually own
+	the currently registered TFA secret.
+
+[::b]EXAMPLES
+	[gray]$ tfa-disable 123456
+	[gray]$ tfa-disable "123 456"`
+
+const tfaBackupGetHelpPage = `[::b]NAME
+	tfa-backup-get - retrieves your TFA backup codes from discord
+
+[::b]SYNOPSIS
+	[::b]tfa-backup-get[::-]
+
+[::b]DESCRIPTION
+	This command will retrieve your TFA backup codes from discord. Those can
+	be used in order to recover your account in case you've	lost your active
+	TFA device. In order to retrieve the codes, you need to	supply your
+	current password.`
+
+const tfaBackupResetHelpPage = `[::b]NAME
+	tfa-backup-reset - resets and retrieves your TFA backup codes from discord
+
+[::b]SYNOPSIS
+	[::b]tfa-backup-reset[::-]
+
+[::b]DESCRIPTION
+	This command will reset and retrieve your TFA backup codes from discord.
+	Those can be used in order to recover your account in case you've lost
+	your active TFA device. In order to retrieve the codes, you need to
+	supply your current password. If you still have unused backup codes
+	lying around, those will be invalidated and only the newly returned ones
+	can be used.`
+
+type TFACmd struct {
+	tfaEnable      *TFAEnableCmd
+	tfaDisable     *TFADisableCmd
+	tfaBackupGet   *TFABackupGetCmd
+	tfaBackupReset *TFABackupResetCmd
+}
+
+func NewTFACommand(tfaEnable *TFAEnableCmd, tfaDisable *TFADisableCmd, tfaBackupGet *TFABackupGetCmd, tfaBackupReset *TFABackupResetCmd) *TFACmd {
+	return &TFACmd{tfaEnable, tfaDisable, tfaBackupGet, tfaBackupReset}
+}
+
+func (cmd *TFACmd) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) == 0 {
+		cmd.PrintHelp(writer)
+	} else {
+		combinedName := cmd.Name() + "-" + parameters[1]
+		if commands.CommandEquals(cmd.tfaEnable, combinedName) {
+			cmd.tfaEnable.Execute(writer, parameters[1:])
+		} else if commands.CommandEquals(cmd.tfaDisable, combinedName) {
+			cmd.tfaDisable.Execute(writer, parameters[1:])
+		} else if commands.CommandEquals(cmd.tfaBackupGet, combinedName) {
+			cmd.tfaBackupGet.Execute(writer, parameters[1:])
+		} else if commands.CommandEquals(cmd.tfaBackupReset, combinedName) {
+			cmd.tfaBackupReset.Execute(writer, parameters[1:])
+		} else {
+			cmd.PrintHelp(writer)
+		}
+	}
+}
+
+func (cmd *TFACmd) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, tfaHelpPage)
+}
+
+func (cmd *TFACmd) Name() string {
+	return "tfa"
+}
+
+func (cmd *TFACmd) Aliases() []string {
+	return []string{"mfa", "2fa", "totp"}
+}
+
 type TFAEnableCmd struct {
-	window *ui.Window
-	session  *discordgo.Session
+	window  *ui.Window
+	session *discordgo.Session
 }
 
 func NewTFAEnableCommand(window *ui.Window, session *discordgo.Session) *TFAEnableCmd {
@@ -29,7 +144,7 @@ func (cmd *TFAEnableCmd) Execute(writer io.Writer, parameters []string) {
 }
 
 func (cmd *TFAEnableCmd) PrintHelp(writer io.Writer) {
-	fmt.Fprintln(writer, "TODO")
+	fmt.Fprintln(writer, tfaEnableHelpPage)
 }
 
 func (cmd *TFAEnableCmd) Name() string {
@@ -74,7 +189,7 @@ func (cmd *TFADisableCmd) Execute(writer io.Writer, parameters []string) {
 }
 
 func (cmd *TFADisableCmd) PrintHelp(writer io.Writer) {
-	fmt.Fprintln(writer, "TODO")
+	fmt.Fprintln(writer, tfaDisableHelpPage)
 }
 
 func (cmd *TFADisableCmd) Name() string {
@@ -99,7 +214,6 @@ func (cmd *TFABackupGetCmd) Execute(writer io.Writer, parameters []string) {
 		fmt.Fprintln(writer, "Two-Factor-Authentication isn't enabled on this account.")
 	} else {
 		go func() {
-
 			currentPassword := cmd.window.PromptSecretInput("Retrieving TFA backup codes", "Please enter your current password.")
 			if currentPassword == "" {
 				fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Empty password, aborting.")
@@ -120,7 +234,7 @@ func (cmd *TFABackupGetCmd) Execute(writer io.Writer, parameters []string) {
 }
 
 func (cmd *TFABackupGetCmd) PrintHelp(writer io.Writer) {
-	fmt.Fprintln(writer, "TODO")
+	fmt.Fprintln(writer, tfaBackupGetHelpPage)
 }
 
 func (cmd *TFABackupGetCmd) Name() string {
@@ -166,7 +280,7 @@ func (cmd *TFABackupResetCmd) Execute(writer io.Writer, parameters []string) {
 }
 
 func (cmd *TFABackupResetCmd) PrintHelp(writer io.Writer) {
-	fmt.Fprintln(writer, "TODO")
+	fmt.Fprintln(writer, tfaBackupResetHelpPage)
 }
 
 func (cmd *TFABackupResetCmd) Name() string {

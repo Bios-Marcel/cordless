@@ -2037,14 +2037,8 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 func (window *Window) FindCommand(name string) commands.Command {
 	for _, cmd := range window.commands {
-		if cmd.Name() == name {
+		if commands.CommandEquals(cmd, name) {
 			return cmd
-		}
-
-		for _, alias := range cmd.Aliases() {
-			if alias == name {
-				return cmd
-			}
 		}
 	}
 
