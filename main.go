@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/Bios-Marcel/cordless/app"
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/version"
 )
@@ -22,7 +23,9 @@ func main() {
 		fmt.Printf("You are running cordless version %s\nKeep in mind that this version might not be correct for manually built versions, as those can contain additional commits.\n", version.Version)
 	} else {
 		if setConfigDirectory != nil && *setConfigDirectory != "" {
-			
+			// due to how i implemented it, if given an invalid path cordless will assume default
+			// home directory.
+			config.SetConfigDirectory(*setConfigDirectory)
 		}
 		app.Run()
 	}

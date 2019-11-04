@@ -158,6 +158,16 @@ func GetScriptDirectory() string {
 	return cachedScriptDir
 }
 
+//SetConfigFile sets the configDirectory cache to the entered value,
+//bypassing how cordless sets defaults.
+func SetConfigDirectory(configPath string) (string, error) {
+	_, statError := os.Stat(configPath)
+	if statError != nil {
+		return "", statError
+	}
+	cachedConfigDir = configPath
+	return cachedConfigDir, nil
+}
 //GetConfigDirectory is the parent directory in the os, that contains the
 //settings for the application.
 func GetConfigDirectory() (string, error) {
