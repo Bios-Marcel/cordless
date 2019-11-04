@@ -134,7 +134,18 @@ type Account struct {
 
 var cachedConfigDir string
 var cachedScriptDir string
+var cachedConfigFilePath string
 
+//SetConfigFile sets the configFileName cache to the entered value,
+//bypassing how cordless sets defaults.
+func SetConfigFile(configFilePath string) (string, error) {
+	_, statError := os.Stat(configFilePath)
+	if statError != nil {
+		return "", statError
+	}
+	cachedConfigFilePath = configFilePath
+	return cachedConfigFilePath, nil
+}
 //GetConfigFile returns the absolute path to the configuration file or an error
 //in case of failure.
 func GetConfigFile() (string, error) {
@@ -142,6 +153,10 @@ func GetConfigFile() (string, error) {
 
 	if configError != nil {
 		return "", configError
+	}
+
+	if cachedConfigFilePath != "" {
+		return cachedConfigFilePath, nil
 	}
 
 	return filepath.Join(configDir, "config.json"), nil
