@@ -6,7 +6,6 @@ import (
 	"github.com/Bios-Marcel/cordless/util/text"
 	"github.com/mdp/qrterminal/v3"
 	"log"
-	"regexp"
 	"strings"
 	"time"
 
@@ -35,14 +34,6 @@ const (
 	guildPageName    = "Guilds"
 	privatePageName  = "Private"
 	userInactiveTime = 10 * time.Second
-)
-
-var (
-	//emojiRegex is used to find emojicodes for custom emojis. The !? part
-	// after the first double colon exists in order as a flag to tell cordless
-	// to use the emoji as a custom emoji, since there can be clashes with for
-	// example :joy:, which is a default emoji code.
-	emojiRegex = regexp.MustCompile("(m?)(^|[^<]):!?.+?:")
 )
 
 // Window is basically the whole application, as it contains all the
@@ -1023,10 +1014,11 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 	}
 
 	message = window.prepareMessage(targetChannel, message)
-	if len(message) > 2000 {
+	overlength := len(message) - 2000
+	if overlength > 0 {
 		window.app.QueueUpdateDraw(func() {
 			sendAsFile := "Send as file"
-			window.ShowDialog(config.GetTheme().PrimitiveBackgroundColor, "Your message is too long, what do you want to do?",
+			window.ShowDialog(config.GetTheme().PrimitiveBackgroundColor, fmt.Sprintf("Your message is %d characters too long, what do you want to do?", overlength),
 				func(button string) {
 					if button == sendAsFile {
 						window.messageInput.SetText("")
@@ -1224,9 +1216,6 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 
 	message = window.jsEngine.OnMessageSend(message)
 
-	//Replace formatter characters and replace emoji codes.
-	message = discordemojimap.Replace(message)
-
 	if targetChannel.GuildID != "" {
 		channelGuild, discordError := window.session.State.Guild(targetChannel.GuildID)
 		if discordError == nil {
@@ -1237,10 +1226,10 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 				}
 			}
 
-			message = window.replaceCustomEmojiSequences(channelGuild, message)
+			message = window.replaceEmojiSequences(channelGuild, message)
 		}
 	} else {
-		message = window.replaceCustomEmojiSequences(nil, message)
+		message = window.replaceEmojiSequences(nil, message)
 	}
 
 	message = strings.Replace(message, "\\:", ":", -1)
@@ -1261,55 +1250,113 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 	return message
 }
 
-// replaceCustomEmojiSequences replaces all emoji codes for non-unicode
-// emojis, e.g. discord custom emojis. the search is lowercase and doesn't
-// differentiate between emojis with the same name. Instead it goes by whatever
-// it finds first. For private channels, the channelGuild may be nil.
-func (window *Window) replaceCustomEmojiSequences(channelGuild *discordgo.Guild, message string) string {
-	//Simple handling for nitro, since nitro users can pretty much send anything.
-	if window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitroClassic ||
-		window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitro {
-		return emojiRegex.ReplaceAllStringFunc(message, func(match string) string {
-			firstDoubleColon := strings.IndexRune(match, ':')
-			emojiSequence := strings.ToLower(strings.TrimPrefix(match[firstDoubleColon+1:len(match)-1], "!"))
-			for _, guild := range window.session.State.Guilds {
-				for _, emoji := range guild.Emojis {
-					if strings.ToLower(emoji.Name) == emojiSequence {
-						if emoji.Animated {
-							return match[:firstDoubleColon] + "<a:" + emoji.Name + ":" + emoji.ID + ">"
-						} else {
-							return match[:firstDoubleColon] + "<:" + emoji.Name + ":" + emoji.ID + ">"
+func emojiSequenceIndexes(runes []rune) []int {
+	//TODO Exclamation mark
+	var sequencesBackwards []int
+	for i := len(runes) - 1; i >= 0; i-- {
+		if runes[i] == ':' {
+			for j := i - 1; j >= 0; j-- {
+				char := runes[j]
+				if char == ':' {
+					//Handle this ':' in the next iteration of the outer loop otherwise
+					if j != i-1 {
+						sequencesBackwards = append(sequencesBackwards, j, i)
+						i = j
+						break
+					} else {
+						break
+					}
+				} else {
+					//Valid chars for emoji names
+					if !((char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
+						//If invalid, jump out of loop
+						//Exception for exclamation marks
+						if !(char == '!' && j != 0 && runes[j-1] == ':') {
+							i = j
+							break
 						}
 					}
 				}
 			}
-
-			return match
-		})
+		}
 	}
 
-	return emojiRegex.ReplaceAllStringFunc(message, func(match string) string {
-		firstDoubleColon := strings.IndexRune(match, ':')
-		emojiSequence := strings.ToLower(strings.TrimPrefix(match[firstDoubleColon+1:len(match)-1], "!"))
+	return sequencesBackwards
+}
 
-		//Local guild emojis take priority
-		if channelGuild != nil {
-			emojiResult := window.findMatchInGuild(channelGuild, true, emojiSequence)
-			if emojiResult != "" {
-				return match[:firstDoubleColon] + emojiResult
+// mergeRuneSlices copies the passed rune arrays into a new rune array of the
+// correct size.
+func mergeRuneSlices(a, b, c []rune) *[]rune {
+	length := len(a) + len(b) + len(c)
+	result := make([]rune, length, length)
+	copy(result[:len(a)], a)
+	copy(result[len(a):len(a)+len(b)], b)
+	copy(result[len(a)+len(b):], c)
+	return &result
+}
+
+// replaceEmojiSequences replaces all emoji codes for custom emojis and unicode
+// emojis alike. The matching is case-insensitive. It can't differentiate
+// between different custom emojis. Forcing the usage of a custom emoji can be
+// done by adding a '!' being the first ':'.
+// For private channels, the channelGuild may be nil.
+func (window *Window) replaceEmojiSequences(channelGuild *discordgo.Guild, message string) string {
+	asRunes := []rune(message)
+	indexes := emojiSequenceIndexes(asRunes)
+INDEX_LOOP:
+	for i := 0; i < len(indexes); i += 2 {
+		log.Println(i)
+		startIndex := indexes[i]
+		endIndex := indexes[i+1]
+		emojiSequence := strings.ToLower(string(asRunes[startIndex+1 : endIndex]))
+		if !strings.HasPrefix(emojiSequence, "!") {
+			emoji := discordemojimap.GetEmoji(emojiSequence)
+			if emoji != "" {
+				asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
+				continue INDEX_LOOP
 			}
 		}
 
-		//Check for global emotes
-		for _, guild := range window.session.State.Guilds {
-			emojiResult := window.findMatchInGuild(guild, false, emojiSequence)
-			if emojiResult != "" {
-				return match[:firstDoubleColon] + emojiResult
+		emojiSequence = strings.TrimPrefix(emojiSequence, "!")
+
+		if window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitroClassic ||
+			window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitro {
+			for _, guild := range window.session.State.Guilds {
+				for _, emoji := range guild.Emojis {
+					if strings.ToLower(emoji.Name) == emojiSequence {
+						var emojiRunes []rune
+						if emoji.Animated {
+							emojiRunes = []rune("<a:" + emoji.Name + ":" + emoji.ID + ">")
+						} else {
+							emojiRunes = []rune("<:" + emoji.Name + ":" + emoji.ID + ">")
+						}
+						asRunes = *mergeRuneSlices(asRunes[:startIndex], emojiRunes, asRunes[endIndex+1:])
+						continue INDEX_LOOP
+					}
+				}
+			}
+		} else {
+			//Local guild emoji take priority
+			if channelGuild != nil {
+				emoji := window.findMatchInGuild(channelGuild, true, emojiSequence)
+				if emoji != "" {
+					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
+					continue INDEX_LOOP
+				}
+			}
+
+			//Check for global emotes
+			for _, guild := range window.session.State.Guilds {
+				emoji := window.findMatchInGuild(guild, false, emojiSequence)
+				if emoji != "" {
+					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
+					continue INDEX_LOOP
+				}
 			}
 		}
+	}
 
-		return match
-	})
+	return string(asRunes)
 }
 
 // findMatchInGuild searches for a fitting emoji. Fitting means the correct name
