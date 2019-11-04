@@ -165,7 +165,7 @@ func GetConfigDirectory() (string, error) {
 		return cachedConfigDir, nil
 	}
 
-	directory, err := getConfigDirectory()
+	directory, err := getDefaultConfigDirectory()
 	if err != nil {
 		return "", err
 	}
