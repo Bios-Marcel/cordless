@@ -16,7 +16,7 @@ func GenerateQRCode(text string, redundancyLevel qr.Level) string {
 		WhiteBlackChar: qrterminal.WHITE_BLACK,
 		WhiteChar:      qrterminal.WHITE_WHITE,
 		BlackWhiteChar: qrterminal.BLACK_WHITE,
-		QuietZone:      1,
+		QuietZone:      2,
 	}
 	qrterminal.GenerateWithConfig(text, qrConfig)
 	return buffer.String()
