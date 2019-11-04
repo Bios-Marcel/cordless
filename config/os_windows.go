@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func getConfigDirectory() (string, error) {
+func getDefaultConfigDirectory() (string, error) {
 	configDir := os.Getenv("APPDATA")
 
 	if configDir != "" {
