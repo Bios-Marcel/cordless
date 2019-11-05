@@ -19,11 +19,11 @@ cordless.
 Subcommands:
   * add         - Adds a new account
   * delete      - Deletes the given account
-  * switch      - Allows you to switch your active account
+  * switch      - Allows you to switch accounts
   * list        - Lists all available accounts
-  * current     - Displays the currently used account
-  * add-current - Add the token currently in use as a new account
-  * logout      - Resets the token, which will cause cordless to prompt you for credentials again
+  * current     - Displays the current account
+  * add-current - Adds the currently logged in token as a new account
+  * logout      - Logs out of the current account logged into cordless
 `
 
 // Account manages the users account
@@ -216,7 +216,7 @@ func (account *Account) currentAccount(writer io.Writer) {
 	if currentAccount != nil {
 		fmt.Fprintf(writer, "Current account '%s'.\n", currentAccount.Name)
 	} else {
-		fmt.Fprintln(writer, "Current token belongs to no saved account.")
+		fmt.Fprintln(writer, "You have not saved an account with this token.")
 	}
 }
 
