@@ -71,7 +71,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 		tokenInputMasked:        true,
 		tokenInputMaskRune:      '*',
 		loginTypeTokenButton:    tview.NewButton("Login via Authentication-Token"),
-		loginTypePasswordButton: tview.NewButton("Login via E-Mail and password (Optinally Supports 2FA)"),
+		loginTypePasswordButton: tview.NewButton("Login via E-Mail and password (Optionally Supports 2FA)"),
 		messageText:             tview.NewTextView(),
 	}
 
