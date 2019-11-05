@@ -319,7 +319,7 @@ func (login *Login) RequestLogin(additionalMessage string) (*discordgo.Session, 
 func (login *Login) showLoginTypeChoice() {
 	login.showView(login.loginChoiceView, 5)
 	login.app.SetFocus(login.loginTypeTokenButton)
-	login.messageText.SetText("Please decide for a login method.\n\nLogging in as a Bot will only work using a Authentication-Token.")
+	login.messageText.SetText("Please choose a login method.\n\nLogging in as a Bot will only work using a Authentication-Token.")
 }
 
 func (login *Login) showPasswordLogin() {
