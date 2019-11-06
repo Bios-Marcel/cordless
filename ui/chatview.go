@@ -31,7 +31,7 @@ const dashCharacter = "\u2500"
 
 var (
 	successiveCustomEmojiRegex = regexp.MustCompile("<a?:.+?:\\d+(><)a?:.+?:\\d+>")
-	customEmojiRegex           = regexp.MustCompile("(?sm)(.?)<a?:.+?:(\\d+)>(.?)")
+	customEmojiRegex           = regexp.MustCompile("(?sm)(.?)<(a?):(.+?):(\\d+)>(.?)")
 	codeBlockRegex             = regexp.MustCompile("(?sm)(^|.)?(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
 	colorRegex                 = regexp.MustCompile("\\[#.{6}\\]")
 	channelMentionRegex        = regexp.MustCompile(`<#\d*>`)
@@ -676,13 +676,16 @@ func parseCustomEmojis(text string) string {
 
 	customEmojiMatches := customEmojiRegex.FindAllStringSubmatch(messageText, -1)
 	for _, match := range customEmojiMatches {
-		custom_emoji_code := strings.Split(match[0], ":")[1]
-		url := tviewutil.Escape("[" + custom_emoji_code + "](https://cdn.discordapp.com/emojis/" + match[2] + ")")
+		custom_emoji_code := match[3]
+		if len(match[2]) > 0 {
+			custom_emoji_code = "a:" + custom_emoji_code
+		}
+		url := tviewutil.Escape("[" + custom_emoji_code + "](https://cdn.discordapp.com/emojis/" + match[4] + ")")
 		if match[1] != "" && match[1] != "\n" {
 			url = match[1] + "\n" + url
 		}
-		if match[3] != "" && match[3] != "\n" {
-			url = url + "\n" + match[3]
+		if match[5] != "" && match[5] != "\n" {
+			url = url + "\n" + match[5]
 		}
 		messageText = strings.Replace(messageText, match[0], url, 1)
 	}
