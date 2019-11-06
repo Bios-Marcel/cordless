@@ -38,6 +38,9 @@ The application only uses the official Discord API and doesn't send data to
 any third party. However, this application is not a official product
 by Discord Inc.
 
+For those who don't want to use paypal but still donate:
+0x49939106563a9de8a777Cf5394149423b1dFd970
+
 ![Demo Screenshot](.github/images/chat-demo.png)
 
 ## Credits
