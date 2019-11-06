@@ -89,7 +89,7 @@ type Config struct {
 	// OnTypeInListBehaviour defines whether the application focus the input
 	// input field on typing, searches the list or does nothing.
 	OnTypeInListBehaviour int
-	// MouseEnabled decides whether the mouse is useable or not.
+	// MouseEnabled decides whether the mouse is usable or not.
 	MouseEnabled bool
 
 	// ShortenLinks decides whether cordless starts a local webserver in order
