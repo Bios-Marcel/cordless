@@ -375,7 +375,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 				ID:      "OwO",
 				Content: "<:owo:123>",
 			},
-			want:     "https://cdn.discordapp.com/emojis/123",
+			want:     "[owo[](https://cdn.discordapp.com/emojis/123)",
 			chatView: defaultChatView,
 		}, {
 			name: "single animated custom emoji",
@@ -383,7 +383,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 				ID:      "OwO",
 				Content: "<a:owo:123>",
 			},
-			want:     "https://cdn.discordapp.com/emojis/123",
+			want:     "[a:owo[](https://cdn.discordapp.com/emojis/123)",
 			chatView: defaultChatView,
 		}, {
 			//FIXME Remove space, it's useless
@@ -392,7 +392,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 				ID:      "OwO",
 				Content: "<:owo:123><:owo:123>",
 			},
-			want:     "https://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/123",
+			want:     "[owo[](https://cdn.discordapp.com/emojis/123)\n [owo[](https://cdn.discordapp.com/emojis/123)",
 			chatView: defaultChatView,
 		}, {
 			//FIXME Remove space, it's useless
@@ -401,7 +401,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 				ID:      "OwO",
 				Content: "<:owo:123> <:owo:123>",
 			},
-			want:     "https://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/123",
+			want:     "[owo[](https://cdn.discordapp.com/emojis/123)\n [owo[](https://cdn.discordapp.com/emojis/123)",
 			chatView: defaultChatView,
 		}, {
 			//FIXME Remove space, it's useless
@@ -410,7 +410,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 				ID:      "OwO",
 				Content: "<:owo:123><:owo:124><:owo:125><:owo:126>",
 			},
-			want:     "https://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/124\n https://cdn.discordapp.com/emojis/125\n https://cdn.discordapp.com/emojis/126",
+			want:     "[owo[](https://cdn.discordapp.com/emojis/123)\n [owo[](https://cdn.discordapp.com/emojis/124)\n [owo[](https://cdn.discordapp.com/emojis/125)\n [owo[](https://cdn.discordapp.com/emojis/126)",
 			chatView: defaultChatView,
 		}, {
 			//FIXME Remove space, it's useless
@@ -419,7 +419,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 				ID:      "OwO",
 				Content: "<:owo:123> <:owo:124> <:owo:125> <:owo:126>",
 			},
-			want:     "https://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/124\n https://cdn.discordapp.com/emojis/125\n https://cdn.discordapp.com/emojis/126",
+			want:     "[owo[](https://cdn.discordapp.com/emojis/123)\n [owo[](https://cdn.discordapp.com/emojis/124)\n [owo[](https://cdn.discordapp.com/emojis/125)\n [owo[](https://cdn.discordapp.com/emojis/126)",
 			chatView: defaultChatView,
 		}, {
 			//FIXME Remove spaces behind prefix and suffix of emoji
@@ -428,7 +428,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 				ID:      "OwO",
 				Content: "Look, <:owo:123> what's this?",
 			},
-			want:     "Look, \nhttps://cdn.discordapp.com/emojis/123\n what's this?",
+			want:     "Look, \n[owo[](https://cdn.discordapp.com/emojis/123)\n what's this?",
 			chatView: defaultChatView,
 		}, {
 			//FIXME Remove spaces behind prefix and suffix of emoji
@@ -437,7 +437,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 				ID:      "OwO",
 				Content: "Look, <:owo:123> <:owo:123> what's this?",
 			},
-			want:     "Look, \nhttps://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/123\n what's this?",
+			want:     "Look, \n[owo[](https://cdn.discordapp.com/emojis/123)\n [owo[](https://cdn.discordapp.com/emojis/123)\n what's this?",
 			chatView: defaultChatView,
 		}, {
 			//FIXME Remove spaces behind prefix and suffix of emoji
@@ -446,7 +446,15 @@ func TestChatView_formatMessageText(t *testing.T) {
 				ID:      "OwO",
 				Content: "Look, <:owo:123><:owo:123> what's this?",
 			},
-			want:     "Look, \nhttps://cdn.discordapp.com/emojis/123\n https://cdn.discordapp.com/emojis/123\n what's this?",
+			want:     "Look, \n[owo[](https://cdn.discordapp.com/emojis/123)\n [owo[](https://cdn.discordapp.com/emojis/123)\n what's this?",
+			chatView: defaultChatView,
+		}, {
+			name: "message with custom animated emoji",
+			input: &discordgo.Message{
+				ID:      "OwO",
+				Content: "Hello <a:owo:123>",
+			},
+			want:     "Hello \n[a:owo[](https://cdn.discordapp.com/emojis/123)",
 			chatView: defaultChatView,
 		},
 	}
