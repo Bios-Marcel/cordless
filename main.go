@@ -24,13 +24,9 @@ func main() {
 		fmt.Printf("You are running cordless version %s\nKeep in mind that this version might not be correct for manually built versions, as those can contain additional commits.\n", version.Version)
 	} else {
 		if setConfigDirectory != nil {
-			// due to how i implemented it, if given an invalid path cordless will assume default
-			// home directory.
 			config.SetConfigDirectory(*setConfigDirectory)
 		}
 		if setConfigFile != nil {
-			// due to how i implemented it, if given an invalid config file path, cordless will assume default
-			// config file path.
 			config.SetConfigFile(*setConfigFile)
 		}
 		app.Run()
