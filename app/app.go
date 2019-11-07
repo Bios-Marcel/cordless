@@ -62,7 +62,7 @@ func Run() {
 			panic(shortcutsLoadError)
 		}
 
-		discord := attemptLogin(loginScreen, "", configuration)
+		discord, readyEvent := attemptLogin(loginScreen, "", configuration)
 
 		config.GetConfig().Token = discord.Token
 
@@ -72,21 +72,8 @@ func Run() {
 			log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
 		}
 
-		readyChan := make(chan *discordgo.Ready, 1)
-		discord.AddHandlerOnce(func(s *discordgo.Session, event *discordgo.Ready) {
-			readyChan <- event
-		})
-
 		discord.State.MaxMessageCount = 100
-		discordError := discord.Open()
-		if discordError != nil {
-			app.Stop()
-			log.Fatalln("Error establishing web socket connection", discordError)
-		}
-
-		readyEvent := <-readyChan
-		close(readyChan)
-
+		
 		readstate.Load(discord.State)
 
 		isUpdateAvailable := <-updateAvailableChannel
@@ -175,9 +162,10 @@ func Run() {
 	}
 }
 
-func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *config.Config) *discordgo.Session {
+func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *config.Config) (*discordgo.Session, *discordgo.Ready) {
 	var (
 		session      *discordgo.Session
+		readyEvent   *discordgo.Ready
 		discordError error
 	)
 
@@ -185,12 +173,6 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *con
 		session, discordError = loginScreen.RequestLogin(loginMessage)
 	} else {
 		session, discordError = discordgo.NewWithToken(userAgent, configuration.Token)
-		//When logging in via token, the token isn't ever validated, therefore we do a test lookup here.
-		_, discordError = session.UserGuilds(0, "", "")
-		if discordError == discordgo.ErrUnauthorized {
-			configuration.Token = ""
-			return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
-		}
 	}
 
 	if discordError != nil {
@@ -198,5 +180,20 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *con
 		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
 	}
 
-	return session
+	readyChan := make(chan *discordgo.Ready, 1)
+	session.AddHandlerOnce(func(s *discordgo.Session, event *discordgo.Ready) {
+		readyChan <- event
+	})
+
+	discordError = session.Open()
+
+	if discordError != nil {
+		configuration.Token = ""
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration);
+	}
+
+	readyEvent = <-readyChan
+	close(readyChan)
+
+	return session, readyEvent
 }

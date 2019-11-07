@@ -265,13 +265,7 @@ func (login *Login) attemptLogin() {
 		panic("Was in state loginType=None during login attempt.")
 	case Token:
 		session, loginError := discordgo.NewWithToken(userAgent, login.tokenInput.GetText())
-		if loginError != nil || session == nil {
-			login.sessionChannel <- &loginAttempt{session, loginError}
-		} else {
-			//Dummy lookup for validating the token.
-			_, loginError = session.UserGuilds(0, "", "")
-			login.sessionChannel <- &loginAttempt{session, loginError}
-		}
+		login.sessionChannel <- &loginAttempt{session, loginError}
 	case Password:
 		// Even if the login is supposed to be without two-factor-authentication, we
 		// attempt parsing a 2fa code, since the underlying rest-call can also handle
