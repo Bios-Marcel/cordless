@@ -140,7 +140,7 @@ var cachedConfigFilePath string
 //bypassing how cordless sets defaults.
 func SetConfigFile(configFilePath string) (string, error) {
 	parentDirectory := filepath.Dir(configFilePath)
-	checkConfig := CheckConfigDirectory(parentDirectory)
+	checkConfig := checkConfigDirectory(parentDirectory)
 	if checkConfig != nil {
 		return "", checkConfig
 	}
@@ -176,7 +176,7 @@ func GetScriptDirectory() string {
 //SetConfigFile sets the configDirectory cache to the entered value,
 //bypassing how cordless sets defaults.
 func SetConfigDirectory(configPath string) (string, error) {
-	checkConfig := CheckConfigDirectory(configPath)
+	checkConfig := checkConfigDirectory(configPath)
 	if checkConfig != nil {
 		return "", checkConfig
 	}
@@ -195,7 +195,7 @@ func GetConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	checkConfig := CheckConfigDirectory(directory)
+	checkConfig := checkConfigDirectory(directory)
 	if checkConfig != nil {
 		return "", checkConfig
 	}
@@ -206,7 +206,7 @@ func GetConfigDirectory() (string, error) {
 	return cachedConfigDir, nil
 }
 
-func CheckConfigDirectory(directoryPath string) error {
+func checkConfigDirectory(directoryPath string) error {
 	_, statError := os.Stat(directoryPath)
 	if os.IsNotExist(statError) {
 		//Folders have to be executable for some reason, therefore 766 instead of 666.
@@ -232,7 +232,7 @@ func LoadConfig() (*Config, error) {
 
 	configFile, openError := os.Open(configFilePath)
 
-		if os.IsNotExist(openError) {
+	if os.IsNotExist(openError) {
 		return GetConfig(), nil
 	}
 
