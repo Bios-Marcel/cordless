@@ -149,14 +149,13 @@ func SetConfigFile(configFilePath string) (string, error) {
 //GetConfigFile returns the absolute path to the configuration file or an error
 //in case of failure.
 func GetConfigFile() (string, error) {
-	configDir, configError := GetConfigDirectory()
-
-	if configError != nil {
-		return "", configError
-	}
-
 	if cachedConfigFilePath != "" {
 		return cachedConfigFilePath, nil
+	}
+
+	configDir, configError := GetConfigDirectory()
+	if configError != nil {
+		return "", configError
 	}
 
 	return filepath.Join(configDir, "config.json"), nil
@@ -227,7 +226,7 @@ func LoadConfig() (*Config, error) {
 
 	configFile, openError := os.Open(configFilePath)
 
-	if os.IsNotExist(openError) {
+		if os.IsNotExist(openError) {
 		return GetConfig(), nil
 	}
 
