@@ -1268,7 +1268,7 @@ func emojiSequenceIndexes(runes []rune) []int {
 					}
 				} else {
 					//Valid chars for emoji names
-					if !((char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
+					if !((char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '_') {
 						//If invalid, jump out of loop
 						//Exception for exclamation marks
 						if !(char == '!' && j != 0 && runes[j-1] == ':') {
