@@ -9,7 +9,7 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 )
 
-func TestParseBoldAndUnderline( t *testing.T ) {
+func TestParseBoldAndUnderline(t *testing.T) {
 	tests := []struct {
 		name  string
 		input string
@@ -92,17 +92,17 @@ func TestParseBoldAndUnderline( t *testing.T ) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run( tt.name, func(t *testing.T ) {
-			if got := parseBoldAndUnderline( tt.input ); got != tt.want {
-				t.Errorf( "ParseBoldAndUnderline() = '%v', want '%v'", got, tt.want )
+		t.Run(tt.name, func(t *testing.T) {
+			if got := parseBoldAndUnderline(tt.input); got != tt.want {
+				t.Errorf("ParseBoldAndUnderline() = '%v', want '%v'", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestChatView_formatMessageText( t *testing.T ) {
+func TestChatView_formatMessageText(t *testing.T) {
 	defaultChatView := &ChatView{
-		showSpoilerContent: make( map[string]bool ),
+		showSpoilerContent: make(map[string]bool),
 		state:              &discordgo.State{},
 		shortenLinks:       false,
 	}
@@ -194,28 +194,28 @@ func TestChatView_formatMessageText( t *testing.T ) {
 			input: &discordgo.Message{
 				Content: "||simple||",
 			},
-			want:     "[" + tviewutil.ColorToHex( config.GetTheme().AttentionColor ) + "]!SPOILER![#ffffff]",
+			want:     "[" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff]",
 			chatView: defaultChatView,
 		}, {
 			name: "simple spoiler inbetween",
 			input: &discordgo.Message{
 				Content: "gimme ||simple|| pls",
 			},
-			want:     "gimme [" + tviewutil.ColorToHex( config.GetTheme().AttentionColor ) + "]!SPOILER![#ffffff] pls",
+			want:     "gimme [" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "formatted spoiler inbetween",
 			input: &discordgo.Message{
 				Content: "gimme ||**simple**|| pls",
 			},
-			want:     "gimme [" + tviewutil.ColorToHex( config.GetTheme().AttentionColor ) + "]!SPOILER![#ffffff] pls",
+			want:     "gimme [" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "formatted spoiler inbetween",
 			input: &discordgo.Message{
 				Content: "gimme ||**simple**|| pls",
 			},
-			want:     "gimme [" + tviewutil.ColorToHex( config.GetTheme().AttentionColor ) + "]!SPOILER![#ffffff] pls",
+			want:     "gimme [" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "unclosed spoiler",
@@ -231,7 +231,7 @@ func TestChatView_formatMessageText( t *testing.T ) {
 			},
 			//FIXME Not sure whether this is correct, but it's the
 			//current state, so i'll be specifying it for now.
-			want:     "gimme [::b][" + tviewutil.ColorToHex( config.GetTheme().AttentionColor ) + "]!SPOILER![#ffffff][::-] pls",
+			want:     "gimme [::b][" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff][::-] pls",
 			chatView: defaultChatView,
 		}, {
 			name: "codeblock without specified langauge",
@@ -329,7 +329,7 @@ func TestChatView_formatMessageText( t *testing.T ) {
 			input: &discordgo.Message{
 				Content: "||```\nowo\n```||",
 			},
-			want:     "[" + tviewutil.ColorToHex( config.GetTheme().AttentionColor ) + "]!SPOILER![#ffffff]",
+			want:     "[" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff]",
 			chatView: defaultChatView,
 		}, {
 			name: "codeblock with revelaed spoiler around",
@@ -459,15 +459,15 @@ func TestChatView_formatMessageText( t *testing.T ) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run( tt.name, func(t *testing.T ) {
-			if got := tt.chatView.formatMessageText( tt.input ); got != tt.want {
-				t.Errorf( "ChatView.formatMessageText() = '%v', want: '%v'", got, tt.want )
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.chatView.formatMessageText(tt.input); got != tt.want {
+				t.Errorf("ChatView.formatMessageText() = '%v', want: '%v'", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_removeLeadingWhitespaceInCode( t *testing.T ) {
+func Test_removeLeadingWhitespaceInCode(t *testing.T) {
 	tests := []struct {
 		name string
 		code string
@@ -532,9 +532,9 @@ func Test_removeLeadingWhitespaceInCode( t *testing.T ) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run( tt.name, func(t *testing.T ) {
-			if got := removeLeadingWhitespaceInCode( tt.code ); got != tt.want {
-				t.Errorf( "removeLeadingWhitespaceInCode() = '%v', want '%v'", got, tt.want )
+		t.Run(tt.name, func(t *testing.T) {
+			if got := removeLeadingWhitespaceInCode(tt.code); got != tt.want {
+				t.Errorf("removeLeadingWhitespaceInCode() = '%v', want '%v'", got, tt.want)
 			}
 		})
 	}

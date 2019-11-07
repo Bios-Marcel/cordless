@@ -73,7 +73,7 @@ func Run() {
 		}
 
 		discord.State.MaxMessageCount = 100
-		
+
 		readstate.Load(discord.State)
 
 		isUpdateAvailable := <-updateAvailableChannel
@@ -189,7 +189,7 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *con
 
 	if discordError != nil {
 		configuration.Token = ""
-		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration);
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
 	}
 
 	readyEvent = <-readyChan

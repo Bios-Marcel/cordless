@@ -215,7 +215,7 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
 				messageAfterQuote: "",
 			},
-			want: "> **humaN** 21:30:57 UTC:\n> Hello World\n",
+			want:    "> **humaN** 21:30:57 UTC:\n> Hello World\n",
 			wantErr: false,
 		}, {
 			name: "simple line; non UTC - positive",
@@ -225,9 +225,9 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+03:00"),
 				messageAfterQuote: "",
 			},
-			want: "> **humaN** 18:30:57 UTC:\n> Hello World\n",
+			want:    "> **humaN** 18:30:57 UTC:\n> Hello World\n",
 			wantErr: false,
-		},  {
+		}, {
 			name: "simple line; non UTC - negative",
 			args: args{
 				message:           "Hello World",
@@ -235,7 +235,7 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000-02:00"),
 				messageAfterQuote: "",
 			},
-			want: "> **humaN** 23:30:57 UTC:\n> Hello World\n",
+			want:    "> **humaN** 23:30:57 UTC:\n> Hello World\n",
 			wantErr: false,
 		}, {
 			name: "multi line",
@@ -245,7 +245,7 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
 				messageAfterQuote: "",
 			},
-			want: "> **humaN** 21:30:57 UTC:\n> Hello World\n> Bye World\n",
+			want:    "> **humaN** 21:30:57 UTC:\n> Hello World\n> Bye World\n",
 			wantErr: false,
 		}, {
 			name: "simple line with message after quote",
@@ -255,9 +255,9 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
 				messageAfterQuote: "Hei",
 			},
-			want: "> **humaN** 21:30:57 UTC:\n> Hello World\nHei",
+			want:    "> **humaN** 21:30:57 UTC:\n> Hello World\nHei",
 			wantErr: false,
-		},  {
+		}, {
 			name: "simple line with multline message after quote",
 			args: args{
 				message:           "Hello World",
@@ -265,9 +265,9 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
 				messageAfterQuote: "Hei\nHo",
 			},
-			want: "> **humaN** 21:30:57 UTC:\n> Hello World\nHei\nHo",
+			want:    "> **humaN** 21:30:57 UTC:\n> Hello World\nHei\nHo",
 			wantErr: false,
-		},  {
+		}, {
 			name: "simple line with whitespace message after quote",
 			args: args{
 				message:           "Hello World",
@@ -275,9 +275,9 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
 				messageAfterQuote: "    \t    ",
 			},
-			want: "> **humaN** 21:30:57 UTC:\n> Hello World\n",
+			want:    "> **humaN** 21:30:57 UTC:\n> Hello World\n",
 			wantErr: false,
-		},   {
+		}, {
 			name: "simple line with surrounding whitespace message after quote",
 			args: args{
 				message:           "Hello World",
@@ -285,7 +285,7 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
 				messageAfterQuote: "    \t    hei",
 			},
-			want: "> **humaN** 21:30:57 UTC:\n> Hello World\nhei",
+			want:    "> **humaN** 21:30:57 UTC:\n> Hello World\nhei",
 			wantErr: false,
 		}, {
 			name: "empty author; we won't handle this, but still specify expected behaviour",
@@ -295,9 +295,9 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
 				messageAfterQuote: "",
 			},
-			want: "> **** 21:30:57 UTC:\n> Hello World\n> Bye World\n",
+			want:    "> **** 21:30:57 UTC:\n> Hello World\n> Bye World\n",
 			wantErr: false,
-		},  {
+		}, {
 			name: "empty message; we won't handle this, but still specify expected behaviour",
 			args: args{
 				message:           "",
@@ -305,7 +305,7 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
 				messageAfterQuote: "",
 			},
-			want: "> **author** 21:30:57 UTC:\n> \n",
+			want:    "> **author** 21:30:57 UTC:\n> \n",
 			wantErr: false,
 		}, {
 			name: "Invalid timestamps should cause an error",
@@ -315,7 +315,7 @@ func TestGenerateQuote(t *testing.T) {
 				time:              discordgo.Timestamp("OwO, an invalid timestamp"),
 				messageAfterQuote: "",
 			},
-			want: "",
+			want:    "",
 			wantErr: true,
 		},
 	}

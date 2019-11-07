@@ -49,12 +49,12 @@ func TestParseTFACode(t *testing.T) {
 			text:    "1000000",
 			want:    "",
 			wantErr: true,
-		},  {
+		}, {
 			name:    "non numeric",
 			text:    "javascript is good",
 			want:    "",
 			wantErr: true,
-		},  {
+		}, {
 			name:    "correct with spaces",
 			text:    "  123456  ",
 			want:    "123456",
