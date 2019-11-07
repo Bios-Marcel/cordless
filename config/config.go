@@ -139,9 +139,10 @@ var cachedConfigFilePath string
 //SetConfigFile sets the configFileName cache to the entered value,
 //bypassing how cordless sets defaults.
 func SetConfigFile(configFilePath string) (string, error) {
-	_, statError := os.Stat(configFilePath)
-	if statError != nil {
-		return "", statError
+	parentDirectory := filepath.Dir(configFilePath)
+	checkConfig := CheckConfigDirectory(parentDirectory)
+	if checkConfig != nil {
+		return "", checkConfig
 	}
 	cachedConfigFilePath = configFilePath
 	return cachedConfigFilePath, nil
@@ -175,9 +176,9 @@ func GetScriptDirectory() string {
 //SetConfigFile sets the configDirectory cache to the entered value,
 //bypassing how cordless sets defaults.
 func SetConfigDirectory(configPath string) (string, error) {
-	_, statError := os.Stat(configPath)
-	if statError != nil {
-		return "", statError
+	checkConfig := CheckConfigDirectory(configPath)
+	if checkConfig != nil {
+		return "", checkConfig
 	}
 	cachedConfigDir = configPath
 	return cachedConfigDir, nil
@@ -194,22 +195,27 @@ func GetConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	_, statError := os.Stat(directory)
-	if os.IsNotExist(statError) {
-		//Folders have to be executable for some reason, therefore 766 instead of 666.
-		createDirsError := os.MkdirAll(directory, 0766)
-		if createDirsError != nil {
-			return "", createDirsError
-		}
-	} else if statError != nil {
-		return "", statError
+	checkConfig := CheckConfigDirectory(directory)
+	if checkConfig != nil {
+		return "", checkConfig
 	}
-
 	//After first retrieval, we will save this, as we needn't redo all that
 	//stuff over and over again.
 	cachedConfigDir = directory
 
 	return cachedConfigDir, nil
+}
+
+func CheckConfigDirectory(directoryPath string) error {
+	_, statError := os.Stat(directoryPath)
+	if os.IsNotExist(statError) {
+		//Folders have to be executable for some reason, therefore 766 instead of 666.
+		createDirsError := os.MkdirAll(directoryPath, 0766)
+		if createDirsError != nil {
+			return createDirsError
+		}
+	}
+	return statError
 }
 
 //GetConfig returns the currently loaded configuration.
