@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/goclipimg"
@@ -1251,7 +1252,6 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 }
 
 func emojiSequenceIndexes(runes []rune) []int {
-	//TODO Exclamation mark
 	var sequencesBackwards []int
 	for i := len(runes) - 1; i >= 0; i-- {
 		if runes[i] == ':' {
@@ -1266,16 +1266,9 @@ func emojiSequenceIndexes(runes []rune) []int {
 					} else {
 						break
 					}
-				} else {
-					//Valid chars for emoji names
-					if !((char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '_') {
-						//If invalid, jump out of loop
-						//Exception for exclamation marks
-						if !(char == '!' && j != 0 && runes[j-1] == ':') {
-							i = j
-							break
-						}
-					}
+				} else if unicode.IsSpace(char) {
+					i = j
+					break
 				}
 			}
 		}
