@@ -55,7 +55,7 @@ const (
 		change the e-mail address associated with your account
 	[::b]-a, --avatar
 		change your avatar to a new local file of yours
-	[::b]-p, --np
+	[::b]-np, --new-password
 		changes the password you use to log in to your account
 
 [::b]EXAMPLES

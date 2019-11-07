@@ -676,11 +676,11 @@ func parseCustomEmojis(text string) string {
 
 	customEmojiMatches := customEmojiRegex.FindAllStringSubmatch(messageText, -1)
 	for _, match := range customEmojiMatches {
-		custom_emoji_code := match[3]
+		customEmojiCode := match[3]
 		if len(match[2]) > 0 {
-			custom_emoji_code = "a:" + custom_emoji_code
+			customEmojiCode = "a:" + customEmojiCode
 		}
-		url := tviewutil.Escape("[" + custom_emoji_code + "](https://cdn.discordapp.com/emojis/" + match[4] + ")")
+		url := tviewutil.Escape("[" + customEmojiCode + "]( https://cdn.discordapp.com/emojis/" + match[4] + " )")
 		if match[1] != "" && match[1] != "\n" {
 			url = match[1] + "\n" + url
 		}
