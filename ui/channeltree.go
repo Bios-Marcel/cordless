@@ -95,12 +95,29 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 		createTopLevelChannelNodes(channelTree, channel)
 	}
 	// Categories
+CATEGORY_LOOP:
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildCategory || channel.ParentID != "" ||
-			!discordutil.HasReadMessagesPermission(channel.ID, state) {
+		if channel.Type != discordgo.ChannelTypeGuildCategory || channel.ParentID != "" {
 			continue
 		}
-		createChannelCategoryNodes(channelTree, channel)
+
+		childless := true
+		for _, potentialChild := range channels {
+			if potentialChild.ParentID == channel.ID {
+				if discordutil.HasReadMessagesPermission(potentialChild.ID, state) {
+					//We have at least one child with read-permissions,
+					// therefore we add the category and jump to the next
+					createChannelCategoryNode(channelTree, channel)
+					continue CATEGORY_LOOP
+				}
+				childless = false
+			}
+		}
+
+		//If the category is childless, we want to add it anyway.
+		if childless {
+			createChannelCategoryNode(channelTree, channel)
+		}
 	}
 	// Second level channel
 	for _, channel := range channels {
@@ -123,7 +140,7 @@ func createTopLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Cha
 	channelTree.GetRoot().AddChild(channelNode)
 }
 
-func createChannelCategoryNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
+func createChannelCategoryNode(channelTree *ChannelTree, channel *discordgo.Channel) {
 	channelNode := createChannelNode(channel)
 	channelNode.SetSelectable(false)
 	channelTree.GetRoot().AddChild(channelNode)
