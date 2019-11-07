@@ -165,7 +165,7 @@ func Run() {
 func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *config.Config) (*discordgo.Session, *discordgo.Ready) {
 	var (
 		session      *discordgo.Session
-		readyEvent *discordgo.Ready
+		readyEvent   *discordgo.Ready
 		discordError error
 	)
 
