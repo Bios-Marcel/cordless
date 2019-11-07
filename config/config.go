@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"github.com/Bios-Marcel/cordless/util/files"
 	"io"
 	"io/ioutil"
 	"os"
@@ -140,11 +141,11 @@ var cachedConfigFilePath string
 // otherwise cordless assumes default directory
 func SetConfigFile(configFilePath string) (string, error) {
 	parentDirectory := filepath.Dir(configFilePath)
-	checkConfig := checkConfigDirectory(parentDirectory)
+	absolutePath, checkConfig := checkConfigDirectory(parentDirectory)
 	if checkConfig != nil {
 		return "", checkConfig
 	}
-	cachedConfigFilePath = configFilePath
+	cachedConfigFilePath = absolutePath
 	return cachedConfigFilePath, nil
 }
 
@@ -178,11 +179,11 @@ func GetScriptDirectory() string {
 // SetConfigFile sets the configDirectory cache to the entered value,
 // bypassing how cordless sets defaults.
 func SetConfigDirectory(configPath string) (string, error) {
-	checkConfig := checkConfigDirectory(configPath)
+	absolutePath, checkConfig := checkConfigDirectory(configPath)
 	if checkConfig != nil {
 		return "", checkConfig
 	}
-	cachedConfigDir = configPath
+	cachedConfigDir = absolutePath
 	return cachedConfigDir, nil
 }
 
@@ -201,29 +202,31 @@ func GetConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	checkConfig := checkConfigDirectory(directory)
+	absolutePath, checkConfig := checkConfigDirectory(directory)
 	if checkConfig != nil {
 		return "", checkConfig
 	}
 
 	// Set cache so that this doesn't run over again
-	cachedConfigDir = directory
+	cachedConfigDir = absolutePath
 	return cachedConfigDir, nil
 }
 
-// checkConfig handles errors that cordless can handle such as a directory not being
-// there. If we get permission errors it is up to the user to fix it as there is nothing
-// we can do.
-func checkConfigDirectory(directoryPath string) error {
+// checkConfig handles making new directories and ensuring absolute path
+// is returned
+func checkConfigDirectory(directoryPath string) (string,error) {
 	_, statError := os.Stat(directoryPath)
 	if os.IsNotExist(statError) {
 		// Folders have to be executable, hence 766 instead of 666.
 		createDirsError := os.MkdirAll(directoryPath, 0766)
 		if createDirsError != nil {
-			return createDirsError
+			return "", createDirsError
 		}
+	} else if statError != nil {
+		return "", statError
 	}
-	return statError
+	absolutePath, resolveError := files.ToAbsolutePath(directoryPath)
+	return absolutePath, resolveError
 }
 
 // GetConfig returns the currently loaded config object
