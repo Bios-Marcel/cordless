@@ -1298,7 +1298,6 @@ func (window *Window) replaceEmojiSequences(channelGuild *discordgo.Guild, messa
 	indexes := emojiSequenceIndexes(asRunes)
 INDEX_LOOP:
 	for i := 0; i < len(indexes); i += 2 {
-		log.Println(i)
 		startIndex := indexes[i]
 		endIndex := indexes[i+1]
 		emojiSequence := strings.ToLower(string(asRunes[startIndex+1 : endIndex]))
