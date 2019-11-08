@@ -1330,7 +1330,7 @@ INDEX_LOOP:
 		} else {
 			//Local guild emoji take priority
 			if channelGuild != nil {
-				emoji := window.findMatchInGuild(channelGuild, true, emojiSequence)
+				emoji := window.findEmojiInGuild(channelGuild, true, emojiSequence)
 				if emoji != "" {
 					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
 					continue INDEX_LOOP
@@ -1339,7 +1339,7 @@ INDEX_LOOP:
 
 			//Check for global emotes
 			for _, guild := range window.session.State.Guilds {
-				emoji := window.findMatchInGuild(guild, false, emojiSequence)
+				emoji := window.findEmojiInGuild(guild, false, emojiSequence)
 				if emoji != "" {
 					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
 					continue INDEX_LOOP
@@ -1351,10 +1351,10 @@ INDEX_LOOP:
 	return string(asRunes)
 }
 
-// findMatchInGuild searches for a fitting emoji. Fitting means the correct name
+// findEmojiInGuild searches for a fitting emoji. Fitting means the correct name
 // (caseinsensitive), not animated and the correct permissions. If the result
 // is an empty string, it means no result was found.
-func (window *Window) findMatchInGuild(guild *discordgo.Guild, omitGWCheck bool, emojiSequence string) string {
+func (window *Window) findEmojiInGuild(guild *discordgo.Guild, omitGWCheck bool, emojiSequence string) string {
 	for _, emoji := range guild.Emojis {
 		if emoji.Animated {
 			continue
