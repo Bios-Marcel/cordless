@@ -1330,7 +1330,7 @@ INDEX_LOOP:
 		} else {
 			//Local guild emoji take priority
 			if channelGuild != nil {
-				emoji := window.findEmojiInGuild(channelGuild, true, emojiSequence)
+				emoji := discordutil.FindEmojiInGuild(window.session, channelGuild, true, emojiSequence)
 				if emoji != "" {
 					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
 					continue INDEX_LOOP
@@ -1339,7 +1339,7 @@ INDEX_LOOP:
 
 			//Check for global emotes
 			for _, guild := range window.session.State.Guilds {
-				emoji := window.findEmojiInGuild(guild, false, emojiSequence)
+				emoji := discordutil.FindEmojiInGuild(window.session, guild, false, emojiSequence)
 				if emoji != "" {
 					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
 					continue INDEX_LOOP
@@ -1349,46 +1349,6 @@ INDEX_LOOP:
 	}
 
 	return string(asRunes)
-}
-
-// findEmojiInGuild searches for a fitting emoji. Fitting means the correct name
-// (caseinsensitive), not animated and the correct permissions. If the result
-// is an empty string, it means no result was found.
-func (window *Window) findEmojiInGuild(guild *discordgo.Guild, omitGWCheck bool, emojiSequence string) string {
-	for _, emoji := range guild.Emojis {
-		if emoji.Animated {
-			continue
-		}
-
-		if strings.ToLower(emoji.Name) == emojiSequence && (omitGWCheck || strings.HasPrefix(emoji.Name, "GW")) {
-			if len(emoji.Roles) != 0 {
-				selfMember, cacheError := window.session.State.Member(guild.ID, window.session.State.User.ID)
-				if cacheError != nil {
-					selfMember, discordError := window.session.GuildMember(guild.ID, window.session.State.User.ID)
-					if discordError != nil {
-						log.Println(discordError)
-						continue
-					}
-
-					window.session.State.MemberAdd(selfMember)
-				}
-
-				if selfMember != nil {
-					for _, emojiRole := range emoji.Roles {
-						for _, selfRole := range selfMember.Roles {
-							if selfRole == emojiRole {
-								return "<:" + emoji.Name + ":" + emoji.ID + ">"
-							}
-						}
-					}
-				}
-			}
-
-			return "<:" + emoji.Name + ":" + emoji.ID + ">"
-		}
-	}
-
-	return ""
 }
 
 // ShowDialog shows a dialog at the bottom of the window. It doesn't surrender
