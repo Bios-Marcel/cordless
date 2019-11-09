@@ -74,7 +74,7 @@ type Window struct {
 	selectedChannel     *discordgo.Channel
 	previousChannel     *discordgo.Channel
 
-	jsEngine scripting.Engine
+	extensionEngines []scripting.Engine
 
 	commandMode bool
 	commandView *CommandView
@@ -91,12 +91,12 @@ type Window struct {
 //start the application.
 func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.Session, readyEvent *discordgo.Ready) (*Window, error) {
 	window := &Window{
-		doRestart:       doRestart,
-		session:         session,
-		app:             app,
-		jsEngine:        js.New(),
-		userActiveTimer: time.NewTimer(userInactiveTime),
-		messageLoader:   discordutil.CreateMessageLoader(session),
+		doRestart:        doRestart,
+		session:          session,
+		app:              app,
+		extensionEngines: []scripting.Engine{js.New()},
+		userActiveTimer:  time.NewTimer(userInactiveTime),
+		messageLoader:    discordutil.CreateMessageLoader(session),
 	}
 
 	go func() {
@@ -108,9 +108,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.commandView = NewCommandView(window.ExecuteCommand)
 	log.SetOutput(window.commandView)
-	initError := window.initJSEngine()
-	if initError != nil {
-		return nil, initError
+
+	for _, engine := range window.extensionEngines {
+		initError := window.initExtensionEngine(engine)
+		if initError != nil {
+			return nil, initError
+		}
 	}
 
 	guilds := readyEvent.Guilds
@@ -910,38 +913,38 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return window, nil
 }
 
-func (window *Window) initJSEngine() error {
-	window.jsEngine.SetErrorOutput(window.commandView.commandOutput)
-	if err := window.jsEngine.LoadScripts(config.GetScriptDirectory()); err != nil {
+func (window *Window) initExtensionEngine(engine scripting.Engine) error {
+	engine.SetErrorOutput(window.commandView.commandOutput)
+	if err := engine.LoadScripts(config.GetScriptDirectory()); err != nil {
 		return err
 	}
 
-	window.jsEngine.SetTriggerNotificationFunction(func(title, text string) {
+	engine.SetTriggerNotificationFunction(func(title, text string) {
 		notifyError := beeep.Notify("Cordless - "+title, text, "assets/information.png")
 		if notifyError != nil {
 			log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
 		}
 	})
 
-	window.jsEngine.SetGetCurrentGuildFunction(func() string {
+	engine.SetGetCurrentGuildFunction(func() string {
 		if window.selectedGuild != nil {
 			return window.selectedGuild.ID
 		}
 		return ""
 	})
 
-	window.jsEngine.SetGetCurrentChannelFunction(func() string {
+	engine.SetGetCurrentChannelFunction(func() string {
 		if window.selectedChannel != nil {
 			return window.selectedChannel.ID
 		}
 		return ""
 	})
 
-	window.jsEngine.SetPrintToConsoleFunction(func(text string) {
+	engine.SetPrintToConsoleFunction(func(text string) {
 		fmt.Fprint(window.commandView, text)
 	})
 
-	window.jsEngine.SetPrintLineToConsoleFunction(func(text string) {
+	engine.SetPrintLineToConsoleFunction(func(text string) {
 		fmt.Fprintln(window.commandView, text)
 	})
 
@@ -1215,7 +1218,9 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 		return strings.ReplaceAll(input, ":", "\\:")
 	})
 
-	message = window.jsEngine.OnMessageSend(message)
+	for _, engine := range window.extensionEngines {
+		message = engine.OnMessageSend(message)
+	}
 
 	if targetChannel.GuildID != "" {
 		channelGuild, discordError := window.session.State.Guild(targetChannel.GuildID)
@@ -1535,7 +1540,11 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for tempMessage := range input {
 			message := tempMessage
-			go window.jsEngine.OnMessageReceive(message)
+			go func() {
+				for _, engine := range window.extensionEngines {
+					engine.OnMessageReceive(message)
+				}
+			}()
 
 			channel, stateError := window.session.State.Channel(message.ChannelID)
 			if stateError != nil {
@@ -1651,7 +1660,12 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for messageDeleted := range delete {
 			tempMessageDeleted := messageDeleted
-			go window.jsEngine.OnMessageDelete(tempMessageDeleted)
+
+			go func() {
+				for _, engine := range window.extensionEngines {
+					engine.OnMessageDelete(tempMessageDeleted)
+				}
+			}()
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageDeleted.ChannelID {
 				window.QueueUpdateDrawSynchronized(func() {
@@ -1678,7 +1692,11 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for messageEdited := range edit {
 			tempMessageEdited := messageEdited
-			go window.jsEngine.OnMessageEdit(tempMessageEdited)
+			go func() {
+				for _, engine := range window.extensionEngines {
+					engine.OnMessageEdit(tempMessageEdited)
+				}
+			}()
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
 				for _, message := range window.chatView.data {
