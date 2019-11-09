@@ -215,18 +215,21 @@ func GetConfigDirectory() (string, error) {
 // checkConfig handles making new directories and ensuring absolute path
 // is returned
 func checkConfigDirectory(directoryPath string) (string,error) {
-	_, statError := os.Stat(directoryPath)
+	absolutePath, resolveError := files.ToAbsolutePath(directoryPath)
+	if resolveError != nil {
+		return "", resolveError
+	}
+	_, statError := os.Stat(absolutePath)
 	if os.IsNotExist(statError) {
 		// Folders have to be executable, hence 766 instead of 666.
-		createDirsError := os.MkdirAll(directoryPath, 0766)
+		createDirsError := os.MkdirAll(absolutePath, 0766)
 		if createDirsError != nil {
 			return "", createDirsError
 		}
 	} else if statError != nil {
 		return "", statError
 	}
-	absolutePath, resolveError := files.ToAbsolutePath(directoryPath)
-	return absolutePath, resolveError
+	return absolutePath, statError
 }
 
 // GetConfig returns the currently loaded config object
