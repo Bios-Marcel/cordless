@@ -367,3 +367,42 @@ func (channelTree *ChannelTree) Lock() {
 func (channelTree *ChannelTree) Unlock() {
 	channelTree.mutex.Unlock()
 }
+
+func (c *ChannelTree) selectNextUnreadChannel(selectedChannel *tview.TreeNode, channels []*discordgo.Channel, down bool) {
+	selectedChannelID, ok := selectedChannel.GetReference().(string)
+	if ok {
+		var nextUnreadChannelID string
+		//We want to select the next unread channel from the currently selected channel
+		passedCurrentChannel := false
+		if down {
+			for _, channel := range channels {
+				if passedCurrentChannel && !readstate.HasBeenRead(channel, channel.LastMessageID) {
+					nextUnreadChannelID = channel.ID
+					break
+				}
+				if selectedChannelID == channel.ID {
+					passedCurrentChannel = true
+				}
+			}
+		} else {
+			for i := len(channels) - 1; i >= 0; i-- {
+				if passedCurrentChannel && !readstate.HasBeenRead(channels[i], channels[i].LastMessageID) {
+					nextUnreadChannelID = channels[i].ID
+					break
+				}
+				if selectedChannelID == channels[i].ID {
+					passedCurrentChannel = true
+				}
+			}
+		}
+
+		c.TreeView.GetRoot().Walk(func(channel *tview.TreeNode, parent *tview.TreeNode) bool {
+			channelID, ok := channel.GetReference().(string)
+			if ok && channelID == nextUnreadChannelID {
+				c.TreeView.SetCurrentNode(channel)
+				return false
+			}
+			return true
+		})
+	}
+}

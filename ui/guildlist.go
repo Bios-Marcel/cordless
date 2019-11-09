@@ -102,7 +102,7 @@ func (g *GuildList) selectNextUnreadGuild(selectedGuild *tview.TreeNode, guilds 
 	selectedGuildID, ok := selectedGuild.GetReference().(string)
 	if ok {
 		var nextUnreadGuildID string
-		//We want to select the next unread channel from the currently selected channel
+		//We want to select the next unread guild from the currently selected guild
 		passedCurrentGuild := false
 		if down {
 			for _, guild := range guilds {

@@ -610,6 +610,29 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			}
 		}
 
+		//Use the Ctrl modifier with the arrow keys to jump directly to the next unread channnel
+		if shortcuts.JumpDownNextUnread.Equals(event) || shortcuts.JumpUpNextUnread.Equals(event) {
+			currentChannel := window.channelTree.TreeView.GetCurrentNode()
+			selectedGuildID, ok := window.guildList.TreeView.GetCurrentNode().GetReference().(string)
+			if ok {
+				down := false
+				guild, cacheError := channelTree.state.Guild(selectedGuildID)
+				if cacheError != nil {
+					return nil
+				}
+				channels := guild.Channels
+				if shortcuts.JumpDownNextUnread.Equals(event) {
+					down = true
+				}
+
+				if currentChannel != nil {
+					window.channelTree.selectNextUnreadChannel(currentChannel, channels, down)
+					return nil
+				}
+				return nil
+			}
+		}
+
 		return event
 	}
 
