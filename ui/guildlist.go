@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
@@ -95,4 +96,45 @@ func (g *GuildList) UpdateName(guildID, newName string) {
 			break
 		}
 	}
+}
+
+func (g *GuildList) selectNextUnreadGuild(t *tview.TreeView, selectedGuild *tview.TreeNode, guilds []*discordgo.Guild, down bool) {
+	selectedGuildID, ok := selectedGuild.GetReference().(string)
+	if ok {
+		var nextUnreadGuildID string
+		//We want to select the next unread channel from the currently selected channel
+		passedCurrentGuild := false
+		if down {
+			for _, guild := range guilds {
+				if passedCurrentGuild && !readstate.HasGuildBeenRead(guild.ID) {
+					nextUnreadGuildID = guild.ID
+					break
+				}
+				if guild.ID == selectedGuildID {
+					passedCurrentGuild = true
+				}
+			}
+		} else {
+			for i := len(guilds) - 1; i >= 0; i-- {
+				if passedCurrentGuild && !readstate.HasGuildBeenRead(guilds[i].ID) {
+					nextUnreadGuildID = guilds[i].ID
+					break
+				}
+				if guilds[i].ID == selectedGuildID {
+					passedCurrentGuild = true
+				}
+			}
+		}
+
+		t.GetRoot().Walk(func(guild *tview.TreeNode, parent *tview.TreeNode) bool {
+			guildID, ok := guild.GetReference().(string)
+			if ok && guildID == nextUnreadGuildID {
+				t.SetCurrentNode(node)
+				return false
+			}
+			return true
+		})
+	}
+
+	return nil
 }

@@ -98,6 +98,11 @@ var (
 	ToggleCommandView = addShortcut("toggle_command_view", "Toggle command view",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt))
 
+	JumpDownNextUnread = addShortcut("jump_down_next_unread", "Jump down to next unread",
+		globalScope, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModCtrl))
+	JumpUpNextUnread = addShortcut("jump_up_next_unread", "Jump up to next unread",
+		globalScope, tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModCtrl))
+
 	scopes    []*Scope
 	Shortcuts []*Shortcut
 )
