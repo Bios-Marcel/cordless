@@ -98,7 +98,7 @@ func (g *GuildList) UpdateName(guildID, newName string) {
 	}
 }
 
-func (g *GuildList) selectNextUnreadGuild(t *tview.TreeView, selectedGuild *tview.TreeNode, guilds []*discordgo.Guild, down bool) {
+func (g *GuildList) selectNextUnreadGuild(selectedGuild *tview.TreeNode, guilds []*discordgo.Guild, down bool) {
 	selectedGuildID, ok := selectedGuild.GetReference().(string)
 	if ok {
 		var nextUnreadGuildID string
@@ -126,10 +126,10 @@ func (g *GuildList) selectNextUnreadGuild(t *tview.TreeView, selectedGuild *tvie
 			}
 		}
 
-		t.GetRoot().Walk(func(guild *tview.TreeNode, parent *tview.TreeNode) bool {
+		g.TreeView.GetRoot().Walk(func(guild *tview.TreeNode, parent *tview.TreeNode) bool {
 			guildID, ok := guild.GetReference().(string)
 			if ok && guildID == nextUnreadGuildID {
-				t.SetCurrentNode(guild)
+				g.TreeView.SetCurrentNode(guild)
 				return false
 			}
 			return true

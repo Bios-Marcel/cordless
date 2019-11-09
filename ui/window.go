@@ -549,15 +549,15 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		//Use the Ctrl modifier with the arrow keys to jump directly to the next unread guild
 		if shortcuts.JumpDownNextUnread.Equals(event) || shortcuts.JumpUpNextUnread.Equals(event) {
-			currentNode := window.guildList.TreeView.GetCurrentNode()
+			currentGuild := window.guildList.TreeView.GetCurrentNode()
 			down := false
 
 			if shortcuts.JumpDownNextUnread.Equals(event) {
 				down = true
 			}
 
-			if currentNode != nil {
-				window.guildList.selectNextUnreadGuild(window.guildList.TreeView, currentNode, guilds, down)
+			if currentGuild != nil {
+				window.guildList.selectNextUnreadGuild(currentGuild, guilds, down)
 				return nil
 			}
 		}
