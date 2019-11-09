@@ -129,12 +129,10 @@ func (g *GuildList) selectNextUnreadGuild(t *tview.TreeView, selectedGuild *tvie
 		t.GetRoot().Walk(func(guild *tview.TreeNode, parent *tview.TreeNode) bool {
 			guildID, ok := guild.GetReference().(string)
 			if ok && guildID == nextUnreadGuildID {
-				t.SetCurrentNode(node)
+				t.SetCurrentNode(guild)
 				return false
 			}
 			return true
 		})
 	}
-
-	return nil
 }
