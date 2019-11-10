@@ -361,8 +361,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.messageInput.SetMentionShowHandler(func(namePart string) {
 		mentionWindow.GetRoot().ClearChildren()
-		window.commandView.commandOutput.Clear()
-
 		window.PopulateMentionWindow(mentionWindow, namePart)
 		if !window.ShowMentionWindowChildren(mentionWindow, 10) {
 			window.HideMentionWindow(mentionWindow)
