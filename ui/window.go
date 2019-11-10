@@ -863,34 +863,22 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	// Invoked when enter is pressed
 	mentionWindow.SetSelectedFunc(func(node *tview.TreeNode) {
 		beginIndex, endIndex := window.messageInput.GetCurrentMentionIndices()
-		data, ok := node.GetReference().(string)
+		var mentionInsertion string
 		oldText := window.messageInput.GetText()
-		if ok {
-			left := oldText[:beginIndex] + strings.TrimSpace(data) + " "
-			right := oldText[endIndex+1:]
-			var text string
-			if len(right) == 0 {
-				text = left + " "
-			} else {
-				text = left + right
-			}
-			window.messageInput.SetText(text)
-			window.messageInput.MoveCursorToIndex(text, len(left))
-		} else {
-			role, ok := node.GetReference().(*discordgo.Role)
-			if ok {
-				left := "<@&" + strings.TrimSpace(role.ID) + "> "
-				right := oldText[endIndex+1:]
-				var text string
-				if len(right) == 0 {
-					text = left + " "
-				} else {
-					text = left + right
-				}
-				window.messageInput.SetText(text)
-				window.messageInput.MoveCursorToIndex(text, len(left))
-			}
+		reference := node.GetReference()
+		switch reference.(type) {
+		case string:
+			data := reference.(string)
+			mentionInsertion = strings.TrimSpace(data)
+		case *discordgo.Role:
+			role := reference.(*discordgo.Role)
+			mentionInsertion = "<@&" + strings.TrimSpace(role.ID) + ">"
+		default:
+			panic(fmt.Sprintf("Invalid data type in mention handler: %t:%v", reference, reference))
 		}
+
+		newMessageText := oldText[:beginIndex] + mentionInsertion + " " + oldText[endIndex+1:]
+		window.messageInput.SetText(newMessageText)
 		window.messageInput.mentionHideHandler()
 	})
 
@@ -957,18 +945,15 @@ func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
 }
 
 func (window *Window) insertNewLineAtCursor() {
-	left := window.messageInput.internalTextView.GetRegionText("left")
-	right := window.messageInput.internalTextView.GetRegionText("right")
-	selection := window.messageInput.internalTextView.GetRegionText("selection")
-	window.messageInput.InsertCharacter([]rune(left), []rune(right), []rune(selection), '\n')
+	window.messageInput.InsertCharacter('\n')
 	window.app.QueueUpdateDraw(func() {
-		window.messageInput.triggerHeightRequestIfNeccessary()
+		window.messageInput.triggerHeightRequestIfNecessary()
 		window.messageInput.internalTextView.ScrollToHighlight()
 	})
 }
 
 func (window *Window) IsCursorInsideCodeBlock() bool {
-	left := window.messageInput.internalTextView.GetRegionText("left")
+	left := window.messageInput.GetTextLeftOfSelection()
 	leftSplit := strings.Split(left, "```")
 	return len(leftSplit)%2 == 0
 }
