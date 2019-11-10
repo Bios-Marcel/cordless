@@ -279,6 +279,7 @@ func NewEditor() *Editor {
 			return nil
 		} else if shortcuts.PasteAtSelection.Equals(event) {
 			editor.Paste(event)
+			editor.triggerHeightRequestIfNecessary()
 			return nil
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter('\n')
