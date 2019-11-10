@@ -26,28 +26,27 @@ type Editor struct {
 }
 
 func (editor *Editor) applyBuffer() {
-	bufferToString := tviewutil.Escape(editor.buffer.String())
 	selectionStart := editor.buffer.Cursor.CurSelection[0]
 	selectionEnd := editor.buffer.Cursor.CurSelection[1]
 
-	editor.tempBuffer.Replace(editor.tempBuffer.Start(), editor.tempBuffer.End(), bufferToString)
+	//Copy relevant buffer-state over to temporary buffer
+	editor.tempBuffer.Replace(editor.tempBuffer.Start(), editor.tempBuffer.End(), tviewutil.Escape(editor.buffer.String()))
 	editor.tempBuffer.Cursor.GotoLoc(editor.buffer.Cursor.Loc)
 	editor.tempBuffer.Cursor.SetSelectionStart(selectionStart)
 	editor.tempBuffer.Cursor.SetSelectionEnd(selectionEnd)
 
+	//The \x04 is a non-printable character, this is used in order to prevent
+	//weird behaviour of tview in combinations that have selection and newlines
+	//or whitespace.
 	if editor.buffer.Cursor.HasSelection() {
-		editor.tempBuffer.Insert(selectionEnd, "[\"\"]")
-		editor.tempBuffer.Insert(selectionStart, "[\"selection\"]")
+		editor.tempBuffer.Insert(selectionEnd, "[\"\"]\x04")
+		editor.tempBuffer.Insert(selectionStart, "[\"selection\"]\x04")
 	} else {
-		cursorToRight := editor.tempBuffer.Cursor.Loc.Move(1, editor.tempBuffer)
-		cursorText := editor.buffer.Substr(editor.tempBuffer.Cursor.Loc, cursorToRight)
-		//Little workaround, since tviews textview actually trims whitespace on
-		//newline, therefore selection would be gone
-		if cursorText == "\n" || cursorText == "" {
-			editor.tempBuffer.Insert(editor.tempBuffer.Cursor.Loc, "[\"selection\"] [\"\"]\x04")
+		if editor.tempBuffer.Cursor.RuneUnder(editor.tempBuffer.Cursor.Loc.X) == '\n' {
+			editor.tempBuffer.Insert(editor.tempBuffer.Cursor.Loc, "[\"selection\"]\x04 [\"\"]\x04")
 		} else {
-			editor.tempBuffer.Insert(cursorToRight, "[\"\"]")
-			editor.tempBuffer.Insert(editor.tempBuffer.Cursor.Loc, "[\"selection\"]")
+			editor.tempBuffer.Insert(editor.tempBuffer.Cursor.Loc.Move(1, editor.tempBuffer), "[\"\"]\x04")
+			editor.tempBuffer.Insert(editor.tempBuffer.Cursor.Loc, "[\"selection\"]\x04")
 		}
 	}
 
@@ -57,22 +56,22 @@ func (editor *Editor) applyBuffer() {
 func (editor *Editor) MoveCursorLeft() {
 	if editor.buffer.Cursor.HasSelection() {
 		editor.buffer.Cursor.GotoLoc(editor.buffer.Cursor.CurSelection[0])
+		editor.buffer.Cursor.ResetSelection()
 	} else {
 		editor.buffer.Cursor.Left()
 	}
 
-	editor.buffer.Cursor.ResetSelection()
 	editor.applyBuffer()
 }
 
 func (editor *Editor) MoveCursorRight() {
 	if editor.buffer.Cursor.HasSelection() {
 		editor.buffer.Cursor.GotoLoc(editor.buffer.Cursor.CurSelection[1])
+		editor.buffer.Cursor.ResetSelection()
 	} else {
 		editor.buffer.Cursor.Right()
 	}
 
-	editor.buffer.Cursor.ResetSelection()
 	editor.applyBuffer()
 }
 
@@ -147,6 +146,54 @@ func (editor *Editor) selectRight(word bool) {
 	editor.applyBuffer()
 }
 
+func (editor *Editor) SelectAll() {
+	start := editor.buffer.Start()
+	editor.buffer.Cursor.SetSelectionStart(start)
+	end := editor.buffer.End()
+	editor.buffer.Cursor.SetSelectionEnd(end)
+	editor.buffer.Cursor.GotoLoc(end)
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectToStartOfLine() {
+	oldCursor := editor.buffer.Cursor.Loc
+	editor.buffer.Cursor.StartOfText()
+	newCursor := editor.buffer.Cursor.Loc
+	if !oldCursor.GreaterThan(newCursor) {
+		editor.buffer.Cursor.Start()
+		newCursor = editor.buffer.Cursor.Loc
+	}
+	editor.buffer.Cursor.SetSelectionStart(newCursor)
+	editor.buffer.Cursor.SetSelectionEnd(oldCursor)
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectToEndOfLine() {
+	oldCursor := editor.buffer.Cursor.Loc
+	editor.buffer.Cursor.End()
+	editor.buffer.Cursor.SetSelectionStart(oldCursor)
+	editor.buffer.Cursor.SetSelectionEnd(editor.buffer.Cursor.Loc)
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectToStartOfText() {
+	oldCursor := editor.buffer.Cursor.Loc
+	textStart := editor.buffer.Start()
+	editor.buffer.Cursor.GotoLoc(textStart)
+	editor.buffer.Cursor.SetSelectionStart(textStart)
+	editor.buffer.Cursor.SetSelectionEnd(oldCursor)
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectToEndOfText() {
+	oldCursor := editor.buffer.Cursor.Loc
+	textEnd := editor.buffer.End()
+	editor.buffer.Cursor.GotoLoc(textEnd)
+	editor.buffer.Cursor.SetSelectionStart(oldCursor)
+	editor.buffer.Cursor.SetSelectionEnd(textEnd)
+	editor.applyBuffer()
+}
+
 func (editor *Editor) MoveCursorWordLeft() {
 	if editor.buffer.Cursor.HasSelection() {
 		editor.buffer.Cursor.GotoLoc(editor.buffer.Cursor.CurSelection[0])
@@ -165,11 +212,31 @@ func (editor *Editor) MoveCursorWordRight() {
 	editor.applyBuffer()
 }
 
-func (editor *Editor) SelectAll() {
-	start := editor.buffer.Start()
-	editor.buffer.Cursor.SetSelectionStart(start)
-	end := editor.buffer.End()
-	editor.buffer.Cursor.SetSelectionEnd(end)
+func (editor *Editor) MoveCursorStartOfLine() {
+	oldCursor := editor.buffer.Cursor.Loc
+	editor.buffer.Cursor.StartOfText()
+	if !oldCursor.GreaterThan(editor.buffer.Cursor.Loc) {
+		editor.buffer.Cursor.Start()
+	}
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
+}
+
+func (editor *Editor) MoveCursorEndOfLine() {
+	editor.buffer.Cursor.End()
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
+}
+
+func (editor *Editor) MoveCursorStartOfText() {
+	editor.buffer.Cursor.GotoLoc(editor.buffer.Start())
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
+}
+
+func (editor *Editor) MoveCursorEndOfText() {
+	editor.buffer.Cursor.GotoLoc(editor.buffer.End())
+	editor.buffer.Cursor.ResetSelection()
 	editor.applyBuffer()
 }
 
@@ -260,12 +327,28 @@ func NewEditor() *Editor {
 			editor.SelectWordLeft()
 		} else if shortcuts.SelectWordRight.Equals(event) {
 			editor.SelectWordRight()
+		} else if shortcuts.SelectToStartOfLine.Equals(event) {
+			editor.SelectToStartOfLine()
+		} else if shortcuts.SelectToEndOfLine.Equals(event) {
+			editor.SelectToEndOfLine()
+		} else if shortcuts.SelectToStartOfText.Equals(event) {
+			editor.SelectToStartOfText()
+		} else if shortcuts.SelectToEndOfText.Equals(event) {
+			editor.SelectToEndOfText()
+		} else if shortcuts.SelectAll.Equals(event) {
+			editor.SelectAll()
 		} else if shortcuts.MoveCursorWordLeft.Equals(event) {
 			editor.MoveCursorWordLeft()
 		} else if shortcuts.MoveCursorWordRight.Equals(event) {
 			editor.MoveCursorWordRight()
-		} else if shortcuts.SelectAll.Equals(event) {
-			editor.SelectAll()
+		} else if shortcuts.MoveCursorStartOfLine.Equals(event) {
+			editor.MoveCursorStartOfLine()
+		} else if shortcuts.MoveCursorEndOfLine.Equals(event) {
+			editor.MoveCursorEndOfLine()
+		} else if shortcuts.MoveCursorStartOfText.Equals(event) {
+			editor.MoveCursorStartOfText()
+		} else if shortcuts.MoveCursorEndOfText.Equals(event) {
+			editor.MoveCursorEndOfText()
 		} else if shortcuts.DeleteRight.Equals(event) {
 			editor.DeleteRight()
 		} else if event.Key() == tcell.KeyBackspace2 ||
