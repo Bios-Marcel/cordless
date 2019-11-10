@@ -26,7 +26,7 @@ type Editor struct {
 }
 
 func (editor *Editor) applyBuffer() {
-	bufferToString := editor.buffer.String()
+	bufferToString := tviewutil.Escape(editor.buffer.String())
 	selectionStart := editor.buffer.Cursor.CurSelection[0]
 	selectionEnd := editor.buffer.Cursor.CurSelection[1]
 
