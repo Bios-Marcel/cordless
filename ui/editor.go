@@ -467,7 +467,13 @@ func (editor *Editor) SetBackgroundColor(color tcell.Color) {
 // SetText sets the texts of the internal TextView, but also sets the selection
 // and necessary groups for the navigation behaviour.
 func (editor *Editor) SetText(text string) {
-	editor.buffer.Replace(editor.buffer.Start(), editor.buffer.End(), text)
+	if text == "" {
+		editor.buffer.Remove(editor.buffer.Start(), editor.buffer.End())
+	} else {
+		editor.buffer.Replace(editor.buffer.Start(), editor.buffer.End(), text)
+	}
+	editor.buffer.Cursor.GotoLoc(editor.buffer.Start())
+	editor.buffer.Cursor.ResetSelection()
 	editor.applyBuffer()
 	editor.triggerHeightRequestIfNecessary()
 }
