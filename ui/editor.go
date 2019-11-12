@@ -472,8 +472,8 @@ func (editor *Editor) SetText(text string) {
 	} else {
 		editor.buffer.Replace(editor.buffer.Start(), editor.buffer.End(), text)
 	}
-	editor.buffer.Cursor.GotoLoc(editor.buffer.Start())
 	editor.buffer.Cursor.ResetSelection()
+	editor.buffer.Cursor.GotoLoc(editor.buffer.End())
 	editor.applyBuffer()
 	editor.triggerHeightRequestIfNecessary()
 }
