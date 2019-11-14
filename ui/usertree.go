@@ -35,7 +35,7 @@ func NewUserTree(state *discordgo.State) *UserTree {
 	}
 
 	userTree.internalTreeView.
-		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
+		SetVimBindingsEnabled(config.Current.OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetRoot(userTree.rootNode).
 		SetTopLevel(1).
 		SetCycleSelection(true)
@@ -142,7 +142,7 @@ func (userTree *UserTree) loadGuildRoles(guildID string) ([]*discordgo.Role, err
 // already part of the tree, in that case the nodes name is updated.
 func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 	nameToUse := discordutil.GetMemberName(member)
-	if config.GetConfig().UseRandomUserColors {
+	if config.Current.UseRandomUserColors {
 		nameToUse = "[" + discordutil.GetUserColor(member.User) + "]" + nameToUse
 	}
 
@@ -172,7 +172,7 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 // in that case the users node gets updated.
 func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
 	nameToUse := discordutil.GetUserName(user)
-	if config.GetConfig().UseRandomUserColors {
+	if config.Current.UseRandomUserColors {
 		nameToUse = "[" + discordutil.GetUserColor(user) + "]" + nameToUse
 	}
 

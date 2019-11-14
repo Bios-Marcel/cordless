@@ -78,13 +78,13 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 		bufferSize:         100,
 		selectionMode:      false,
 		showSpoilerContent: make(map[string]bool),
-		shortenLinks:       config.GetConfig().ShortenLinks,
+		shortenLinks:       config.Current.ShortenLinks,
 		formattedMessages:  make(map[string]string),
 		mutex:              &sync.Mutex{},
 	}
 
 	if chatView.shortenLinks {
-		chatView.shortener = linkshortener.NewShortener(config.GetConfig().ShortenerPort)
+		chatView.shortener = linkshortener.NewShortener(config.Current.ShortenerPort)
 		go func() {
 			shortenerError := chatView.shortener.Start()
 			if shortenerError != nil {
@@ -281,7 +281,7 @@ func (chatView *ChatView) ClearViewAndCache() {
 func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 	isBlocked := discordutil.IsBlocked(chatView.state, message.Author)
 
-	if !config.GetConfig().ShowPlaceholderForBlockedMessages && isBlocked {
+	if !config.Current.ShowPlaceholderForBlockedMessages && isBlocked {
 		return
 	}
 
@@ -433,7 +433,7 @@ func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string
 		messageAuthor = discordutil.GetUserName(message.Author)
 	}
 
-	if config.GetConfig().UseRandomUserColors {
+	if config.Current.UseRandomUserColors {
 		return "[" + discordutil.GetUserColor(message.Author) + "]" + messageAuthor
 	}
 

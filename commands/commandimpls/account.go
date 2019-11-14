@@ -98,7 +98,7 @@ func (account *Account) printAccountAddHelp(writer io.Writer) {
 
 func (account *Account) addAcount(writer io.Writer, parameters []string) {
 	newName := strings.ToLower(parameters[0])
-	for _, acc := range config.GetConfig().Accounts {
+	for _, acc := range config.Current.Accounts {
 		if acc.Name == newName {
 			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]The name '%s' is already in use.\n", acc.Name)
 			return
@@ -109,7 +109,7 @@ func (account *Account) addAcount(writer io.Writer, parameters []string) {
 		Name:  newName,
 		Token: parameters[1],
 	}
-	config.GetConfig().Accounts = append(config.GetConfig().Accounts, newAccount)
+	config.Current.Accounts = append(config.Current.Accounts, newAccount)
 	config.PersistConfig()
 
 	fmt.Fprintf(writer, "The account '%s' has been created successfully.\n", newName)
@@ -123,7 +123,7 @@ func deleteAccount(writer io.Writer, account string) {
 	var deletionSuccessful bool
 
 	newAccounts := make([]*config.Account, 0)
-	for _, acc := range config.GetConfig().Accounts {
+	for _, acc := range config.Current.Accounts {
 		if acc.Name != account {
 			newAccounts = append(newAccounts, acc)
 		} else {
@@ -133,7 +133,7 @@ func deleteAccount(writer io.Writer, account string) {
 
 	if deletionSuccessful {
 		fmt.Fprintf(writer, "Account '%s' has been deleted.\n", account)
-		config.GetConfig().Accounts = newAccounts
+		config.Current.Accounts = newAccounts
 		config.PersistConfig()
 	} else {
 		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Account '%s' could not be found.\n", account)
@@ -146,13 +146,13 @@ func (account *Account) printAccountSwitchHelp(writer io.Writer) {
 }
 
 func (account *Account) switchAccount(writer io.Writer, accountName string) {
-	for _, acc := range config.GetConfig().Accounts {
+	for _, acc := range config.Current.Accounts {
 		if acc.Name == accountName {
-			oldToken := config.GetConfig().Token
-			config.GetConfig().Token = acc.Token
+			oldToken := config.Current.Token
+			config.Current.Token = acc.Token
 			persistError := account.saveAndRestart(writer)
 			if persistError != nil {
-				config.GetConfig().Token = oldToken
+				config.Current.Token = oldToken
 				commands.PrintError(writer, "Error switching accounts", persistError.Error())
 			}
 			return
@@ -163,11 +163,11 @@ func (account *Account) switchAccount(writer io.Writer, accountName string) {
 }
 
 func (account *Account) logout(writer io.Writer) {
-	oldToken := config.GetConfig().Token
-	config.GetConfig().Token = ""
+	oldToken := config.Current.Token
+	config.Current.Token = ""
 	err := account.saveAndRestart(writer)
 	if err != nil {
-		config.GetConfig().Token = oldToken
+		config.Current.Token = oldToken
 		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error logging you out '%s'.\n", err.Error())
 	}
 }
@@ -191,7 +191,7 @@ func (account *Account) printAccountListHelp(writer io.Writer) {
 
 func (account *Account) listAccounts(writer io.Writer) {
 	fmt.Fprintln(writer, "Available accounts:")
-	for _, acc := range config.GetConfig().Accounts {
+	for _, acc := range config.Current.Accounts {
 		fmt.Fprintln(writer, "  * "+acc.Name)
 	}
 }
@@ -206,8 +206,8 @@ func (account *Account) printAccountLogoutHelp(writer io.Writer) {
 
 func (account *Account) currentAccount(writer io.Writer) {
 	var currentAccount *config.Account
-	for _, acc := range config.GetConfig().Accounts {
-		if acc.Token == config.GetConfig().Token {
+	for _, acc := range config.Current.Accounts {
+		if acc.Token == config.Current.Token {
 			currentAccount = acc
 			break
 		}
@@ -225,7 +225,7 @@ func (account *Account) printAccountAddCurrentHelp(writer io.Writer) {
 }
 
 func (account *Account) addCurrentAccount(writer io.Writer, name string) {
-	account.addAcount(writer, []string{name, config.GetConfig().Token})
+	account.addAcount(writer, []string{name, config.Current.Token})
 }
 
 func (account *Account) Name() string {

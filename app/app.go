@@ -64,7 +64,7 @@ func Run() {
 
 		discord, readyEvent := attemptLogin(loginScreen, "", configuration)
 
-		config.GetConfig().Token = discord.Token
+		config.Current.Token = discord.Token
 
 		persistError := config.PersistConfig()
 		if persistError != nil {

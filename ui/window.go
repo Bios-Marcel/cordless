@@ -188,7 +188,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		if channelLoadError != nil {
 			window.ShowErrorDialog(channelLoadError.Error())
 		} else {
-			if config.GetConfig().FocusChannelAfterGuildSelection {
+			if config.Current.FocusChannelAfterGuildSelection {
 				app.SetFocus(window.channelTree)
 			}
 		}
@@ -206,7 +206,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerGuildHandlers()
 	window.registerGuildMemberHandlers()
 
-	if config.GetConfig().MouseEnabled {
+	if config.Current.MouseEnabled {
 		switchToPrivateButton := tview.NewButton("Show PMs")
 		switchToPrivateButton.SetBorderColor(config.GetTheme().PrimitiveBackgroundColor)
 		switchToPrivateButton.SetSelectedFunc(func() {
@@ -228,7 +228,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.privateList.Load()
 	window.registerPrivateChatsHandler()
 
-	if config.GetConfig().MouseEnabled {
+	if config.Current.MouseEnabled {
 		privatePage := tview.NewFlex().SetDirection(tview.FlexRow)
 		switchToGuildButton := tview.NewButton("Show Guilds")
 		switchToGuildButton.SetBorderColor(config.GetTheme().PrimitiveBackgroundColor)
@@ -503,12 +503,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.userList = NewUserTree(window.session.State)
 
-	if config.GetConfig().OnTypeInListBehaviour == config.SearchOnTypeInList {
+	if config.Current.OnTypeInListBehaviour == config.SearchOnTypeInList {
 		guildList.SetSearchOnTypeEnabled(true)
 		channelTree.SetSearchOnTypeEnabled(true)
 		window.userList.internalTreeView.SetSearchOnTypeEnabled(true)
 		window.privateList.internalTreeView.SetSearchOnTypeEnabled(true)
-	} else if config.GetConfig().OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
+	} else if config.Current.OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
 		guildList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			window.app, window.messageInput.internalTextView))
 		channelTree.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
@@ -836,12 +836,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.currentContainer = window.rootContainer
 	app.SetInputCapture(window.handleGlobalShortcuts)
 
-	conf := config.GetConfig()
-
-	if conf.UseFixedLayout {
-		window.middleContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 0, true)
+	if config.Current.UseFixedLayout {
+		window.middleContainer.AddItem(window.leftArea, config.Current.FixedSizeLeft, 0, true)
 		window.middleContainer.AddItem(window.chatArea, 0, 1, false)
-		window.middleContainer.AddItem(window.userList.internalTreeView, conf.FixedSizeRight, 0, false)
+		window.middleContainer.AddItem(window.userList.internalTreeView, config.Current.FixedSizeRight, 0, false)
 	} else {
 		window.middleContainer.AddItem(window.leftArea, 0, 7, true)
 		window.middleContainer.AddItem(window.chatArea, 0, 20, false)
@@ -1582,7 +1580,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 			if window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID {
 				mentionsCurrentUser := discordutil.MentionsCurrentUserExplicitly(window.session.State, message)
-				if !window.userActive && config.GetConfig().DesktopNotifications {
+				if !window.userActive && config.Current.DesktopNotifications {
 					if mentionsCurrentUser ||
 						//Always show notification for private messages
 						channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
@@ -1997,10 +1995,9 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 		window.app.SetFocus(window.commandView.commandInput.internalTextView)
 	} else if shortcuts.ToggleUserContainer.Equals(event) {
-		conf := config.GetConfig()
-		conf.ShowUserContainer = !conf.ShowUserContainer
+		config.Current.ShowUserContainer = !config.Current.ShowUserContainer
 
-		if !conf.ShowUserContainer && window.app.GetFocus() == window.userList.internalTreeView {
+		if !config.Current.ShowUserContainer && window.app.GetFocus() == window.userList.internalTreeView {
 			window.app.SetFocus(window.messageInput.GetPrimitive())
 		}
 
@@ -2270,15 +2267,13 @@ func (window *Window) SwitchToPreviousChannel() error {
 //RefreshLayout removes and adds the main parts of the layout
 //so that the ones that are disabled by settings do not show up.
 func (window *Window) RefreshLayout() {
-	conf := config.GetConfig()
-
-	window.userList.internalTreeView.SetVisible(conf.ShowUserContainer && (window.selectedGuild != nil ||
+	window.userList.internalTreeView.SetVisible(config.Current.ShowUserContainer && (window.selectedGuild != nil ||
 		(window.selectedChannel != nil && window.selectedChannel.Type == discordgo.ChannelTypeGroupDM)))
 
-	if conf.UseFixedLayout {
-		window.middleContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
+	if config.Current.UseFixedLayout {
+		window.middleContainer.ResizeItem(window.leftArea, config.Current.FixedSizeLeft, 7)
 		window.middleContainer.ResizeItem(window.chatArea, 0, 1)
-		window.middleContainer.ResizeItem(window.userList.internalTreeView, conf.FixedSizeRight, 6)
+		window.middleContainer.ResizeItem(window.userList.internalTreeView, config.Current.FixedSizeRight, 6)
 	} else {
 		window.middleContainer.ResizeItem(window.leftArea, 0, 7)
 		window.middleContainer.ResizeItem(window.chatArea, 0, 20)
@@ -2344,7 +2339,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	window.exitMessageEditModeAndKeepText()
 
-	if config.GetConfig().FocusMessageInputAfterChannelSelection {
+	if config.Current.FocusMessageInputAfterChannelSelection {
 		window.app.SetFocus(window.messageInput.internalTextView)
 	}
 
@@ -2406,7 +2401,6 @@ func (window *Window) RegisterCommand(command commands.Command) {
 
 // GetRegisteredCommands returns the map of all registered commands.
 func (window *Window) GetRegisteredCommands() []commands.Command {
-	//FIXME eh, should this be a copy?
 	return window.commands
 }
 
@@ -2481,7 +2475,7 @@ func (window *Window) Run() error {
 
 // Shutdown disconnects from the discord API and stops the tview application.
 func (window *Window) Shutdown() {
-	if config.GetConfig().ShortenLinks {
+	if config.Current.ShortenLinks {
 		window.chatView.shortener.Close()
 	}
 	window.session.Close()

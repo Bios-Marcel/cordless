@@ -46,7 +46,7 @@ func NewChannelTree(state *discordgo.State) *ChannelTree {
 	}
 
 	channelTree.
-		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
+		SetVimBindingsEnabled(config.Current.OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetCycleSelection(true).
 		SetTopLevel(1).
 		SetBorder(true).
@@ -170,7 +170,7 @@ func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	}
 
 	// Adds a padlock prefix if the channel if not readable by the everyone group
-	if config.GetConfig().IndicateChannelAccessRestriction {
+	if config.Current.IndicateChannelAccessRestriction {
 		for _, permission := range channel.PermissionOverwrites {
 			if permission.Type == "role" && permission.ID == channel.GuildID && permission.Deny&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
 				prefixes += tviewutil.Escape("\U0001F512")

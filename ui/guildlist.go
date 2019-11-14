@@ -21,7 +21,7 @@ func NewGuildList(guilds []*discordgo.Guild, window *Window) *GuildList {
 	}
 
 	guildList.
-		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
+		SetVimBindingsEnabled(config.Current.OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetCycleSelection(true).
 		SetTopLevel(1).
 		SetBorder(true).
