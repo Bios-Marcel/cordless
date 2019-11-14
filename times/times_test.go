@@ -1,6 +1,7 @@
 package times
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 )
@@ -79,5 +80,29 @@ func TestAreDatesTheSameDay(t *testing.T) {
 				t.Errorf("AreDatesTheSameDay() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestMarshalDuration(t *testing.T) {
+	var duration Duration = Duration(6 * time.Second)
+	resultBytes, err := json.Marshal(duration)
+	if err != nil {
+		t.Errorf("error marshalling duration: %s", err)
+	}
+	result := string(resultBytes)
+	if result != "\"6s\"" {
+		t.Errorf("duration should've been '\"6s\"', but was '%s'", result)
+	}
+}
+
+func TestUnmarshalDuration(t *testing.T) {
+	var duration Duration
+	err := json.Unmarshal([]byte("\"6s\""), &duration)
+	if err != nil {
+		t.Errorf("error marshalling duration: %s", err)
+	}
+	expected := Duration(time.Second * 6)
+	if duration != expected {
+		t.Errorf("duration should've been '%v', but was '%v'", expected, duration)
 	}
 }
