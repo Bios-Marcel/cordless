@@ -53,6 +53,7 @@ var (
 		DontShowUpdateNotificationFor:          "",
 		ShowUpdateNotifications:                true,
 		IndicateChannelAccessRestriction:       false,
+		ShowBottomBar:                          true,
 	}
 )
 
@@ -123,6 +124,9 @@ type Config struct {
 
 	// Show a padlock prefix of the channels that have access restriction
 	IndicateChannelAccessRestriction bool
+	// ShowBottomBar decides whether an informational line is shown at the
+	// bottom of cordless or not.
+	ShowBottomBar bool
 }
 
 // Account has a name and a token. The name is just for the users recognition.

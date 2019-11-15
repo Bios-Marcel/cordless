@@ -837,21 +837,23 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.rootContainer.AddItem(window.dialogReplacement, 2, 0, false)
 
-	bottomBar := tview.NewFlex().SetDirection(tview.FlexColumn)
-	bottomBar.SetBackgroundColor(config.GetTheme().PrimitiveBackgroundColor)
+	if config.Current.ShowBottomBar {
+		bottomBar := tview.NewFlex().SetDirection(tview.FlexColumn)
+		bottomBar.SetBackgroundColor(config.GetTheme().PrimitiveBackgroundColor)
 
-	loggedInAsText := fmt.Sprintf("Logged in as: '%s'", session.State.User.String())
-	loggedInAs := tview.NewTextView().SetText(loggedInAsText)
-	loggedInAs.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
-	bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
-	bottomBar.AddItem(tview.NewBox(), 1, 0, false)
+		loggedInAsText := fmt.Sprintf("Logged in as: '%s'", session.State.User.String())
+		loggedInAs := tview.NewTextView().SetText(loggedInAsText)
+		loggedInAs.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
+		bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
+		bottomBar.AddItem(tview.NewBox(), 1, 0, false)
 
-	shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcuts.EventToString(shortcutsDialogShortcut))
-	shortcutInfo := tview.NewTextView().SetText(shortcutInfoText)
-	shortcutInfo.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
-	bottomBar.AddItem(shortcutInfo, runewidth.StringWidth(shortcutInfoText), 0, false)
+		shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcuts.EventToString(shortcutsDialogShortcut))
+		shortcutInfo := tview.NewTextView().SetText(shortcutInfoText)
+		shortcutInfo.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
+		bottomBar.AddItem(shortcutInfo, runewidth.StringWidth(shortcutInfoText), 0, false)
 
-	window.rootContainer.AddItem(bottomBar, 1, 0, false)
+		window.rootContainer.AddItem(bottomBar, 1, 0, false)
+	}
 
 	app.SetRoot(window.rootContainer, true)
 	window.currentContainer = window.rootContainer
