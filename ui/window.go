@@ -89,6 +89,8 @@ type Window struct {
 	userActiveTimer *time.Timer
 
 	doRestart chan bool
+
+	bareChat bool
 }
 
 //NewWindow constructs the whole application window and also registers all
@@ -1977,6 +1979,11 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
+	if shortcuts.ToggleBareChat.Equals(event) {
+		window.toggleBareChat()
+		return nil
+	}
+
 	// Maybe compare directly to table?
 	if window.currentContainer != window.rootContainer {
 		return event
@@ -2053,6 +2060,19 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	}
 
 	return nil
+}
+
+func (window *Window) toggleBareChat() {
+	window.bareChat = !window.bareChat
+	if window.bareChat {
+		window.chatView.internalTextView.SetBorder(false)
+		window.currentContainer = window.chatView.GetPrimitive()
+		window.app.SetRoot(window.chatView.GetPrimitive(), true)
+	} else {
+		window.chatView.internalTextView.SetBorder(true)
+		window.currentContainer = window.rootContainer
+		window.app.SetRoot(window.rootContainer, true)
+	}
 }
 
 func (window *Window) FindCommand(name string) commands.Command {

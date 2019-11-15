@@ -113,6 +113,8 @@ var (
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'U', tcell.ModAlt))
 	ToggleCommandView = addShortcut("toggle_command_view", "Toggle command view",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt))
+	ToggleBareChat = addShortcut("toggle_bare_chat", "Toggle bare chat",
+		globalScope, tcell.NewEventKey(tcell.KeyCtrlB, rune(tcell.KeyCtrlB), tcell.ModCtrl))
 
 	scopes    []*Scope
 	Shortcuts []*Shortcut
