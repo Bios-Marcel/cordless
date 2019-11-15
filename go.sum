@@ -26,6 +26,8 @@ github.com/Bios-Marcel/shortnotforlong v1.0.0 h1:K4JJ5U3+D8LXoAiH0QbfMujWuqKo+NA
 github.com/Bios-Marcel/shortnotforlong v1.0.0/go.mod h1:g6bFiwq0pq7pqENRgHiCZu7uMzeYPIXwANlaBQ47LBw=
 github.com/Bios-Marcel/tview v0.0.0-20191024171520-41147a2f8cf9 h1:QA/UeZGq+mf8WHba3wVL8UNB5juTWHPngduDlOppH2w=
 github.com/Bios-Marcel/tview v0.0.0-20191024171520-41147a2f8cf9/go.mod h1:AtXfMotMUyN+IQ7JwQyvrWr9dQN+TNRlq+slKB0fmQc=
+github.com/Bios-Marcel/tview v0.0.0-20191115224156-2003ba1cfe23 h1:woKaz9Gobcp7LAcCmBJx4gRrdUw2ZSqyTdSyntB5lBQ=
+github.com/Bios-Marcel/tview v0.0.0-20191115224156-2003ba1cfe23/go.mod h1:AtXfMotMUyN+IQ7JwQyvrWr9dQN+TNRlq+slKB0fmQc=
 github.com/DATA-DOG/go-sqlmock v1.3.3 h1:CWUqKXe0s8A2z6qCgkP4Kru7wC11YoAnoupUKFDnH08=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/GeertJohan/go.incremental v1.0.0/go.mod h1:6fAjUhbVuX1KcMD3c8TEgVUqmo4seqhv0i0kdATSkM0=
