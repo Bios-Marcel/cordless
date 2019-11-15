@@ -397,7 +397,7 @@ const navigationDocumentation = `[::b]TOPIC
 	--------------------------------------------------------------------
 
 	Some shortcuts can be changed via the shortcut dialog. The dialog can be
-	opened via Alt+Shift+S.`
+	opened via Ctrl+K.`
 
 func (manual *Manual) Name() string {
 	return "manual"

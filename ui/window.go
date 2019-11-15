@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Bios-Marcel/cordless/util/text"
+	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
 	"log"
 	"strings"
@@ -35,6 +36,10 @@ const (
 	guildPageName    = "Guilds"
 	privatePageName  = "Private"
 	userInactiveTime = 10 * time.Second
+)
+
+var (
+	shortcutsDialogShortcut = tcell.NewEventKey(tcell.KeyCtrlK, rune(tcell.KeyCtrlK), tcell.ModCtrl)
 )
 
 // Window is basically the whole application, as it contains all the
@@ -831,6 +836,22 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.dialogReplacement.SetVisible(false)
 
 	window.rootContainer.AddItem(window.dialogReplacement, 2, 0, false)
+
+	bottomBar := tview.NewFlex().SetDirection(tview.FlexColumn)
+	bottomBar.SetBackgroundColor(config.GetTheme().PrimitiveBackgroundColor)
+
+	loggedInAsText := fmt.Sprintf("Logged in as: '%s'", session.State.User.String())
+	loggedInAs := tview.NewTextView().SetText(loggedInAsText)
+	loggedInAs.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
+	bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
+	bottomBar.AddItem(tview.NewBox(), 1, 0, false)
+
+	shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcuts.EventToString(shortcutsDialogShortcut))
+	shortcutInfo := tview.NewTextView().SetText(shortcutInfoText)
+	shortcutInfo.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
+	bottomBar.AddItem(shortcutInfo, runewidth.StringWidth(shortcutInfoText), 0, false)
+
+	window.rootContainer.AddItem(bottomBar, 1, 0, false)
 
 	app.SetRoot(window.rootContainer, true)
 	window.currentContainer = window.rootContainer
@@ -1966,7 +1987,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return event
 	}
 
-	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt && event.Rune() == 'S' {
+	if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
 		shortcuts.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
 			window.currentContainer = window.rootContainer

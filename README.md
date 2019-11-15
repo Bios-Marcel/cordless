@@ -180,7 +180,7 @@ Further shortcuts / key-bindings can be found in the manual on the internal
 console with the command `manual`.
 
 If any of the default commands don't work for you, open the keyboard shortcut
-changer via <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>.
+changer via <kbd>Ctrl</kbd> + <kbd>K</kbd>.
 
 ## Extending Cordless via the scripting interface
 

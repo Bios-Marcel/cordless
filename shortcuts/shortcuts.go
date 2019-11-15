@@ -165,7 +165,7 @@ type Shortcut struct {
 
 // Equals compares the given EventKey with the Shortcuts Event.
 func (s *Shortcut) Equals(event *tcell.EventKey) bool {
-	return eventsEqual(s.Event, event)
+	return EventsEqual(s.Event, event)
 }
 
 // Scope is what describes a shortcuts scope within the application. Usually
