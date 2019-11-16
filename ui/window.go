@@ -922,6 +922,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return window, nil
 }
 
+// initExtensionEngine injections necessary functions into the engine.
+// those functions can be called by each script inside of an engine.
 func (window *Window) initExtensionEngine(engine scripting.Engine) error {
 	engine.SetErrorOutput(window.commandView.commandOutput)
 	if err := engine.LoadScripts(config.GetScriptDirectory()); err != nil {
@@ -948,6 +950,10 @@ func (window *Window) initExtensionEngine(engine scripting.Engine) error {
 		}
 		return ""
 	})
+
+	// Even though scripts might already have functions for logging, like the
+	// JS engine already has console.log, this is sadly hardcoded to print to
+	// stdout instead of a custom specified IO writer.
 
 	engine.SetPrintToConsoleFunction(func(text string) {
 		fmt.Fprint(window.commandView, text)
@@ -1262,6 +1268,14 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 	return message
 }
 
+// emojiSequenceIndexes will find all parts of a string (rune array) that
+// could potentially be emoji sequences and will return them backwards.
+// they'll be returned backwards in order to allow easily manipulating the
+// data without invalidating the following indexes accidentally.
+// Example:
+//     Hello :world:, what a :nice: day.
+// would result in
+//     []int{22,,27,6,12}
 func emojiSequenceIndexes(runes []rune) []int {
 	var sequencesBackwards []int
 	for i := len(runes) - 1; i >= 0; i-- {
@@ -1530,6 +1544,10 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 	})
 }
 
+// QueueUpdateDrawSynchronized is meant to be used by goroutines that aren't
+// the maingoroutine in order to wait for the UI-Thread to execute the given
+// If this method is ever called from the mainthread, the application will
+// deadlock.
 func (window *Window) QueueUpdateDrawSynchronized(runnable func()) {
 	blocker := make(chan bool, 1)
 	window.app.QueueUpdateDraw(func() {
@@ -2062,6 +2080,8 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	return nil
 }
 
+// toggleBareChat will display only the chatview as the fullscreen application
+// root. Calling this method again will revert the view to it's normal state.
 func (window *Window) toggleBareChat() {
 	window.bareChat = !window.bareChat
 	if window.bareChat {
@@ -2075,6 +2095,8 @@ func (window *Window) toggleBareChat() {
 	}
 }
 
+// FindCommand searches through the registered command, whether any of them
+// equals the passed name.
 func (window *Window) FindCommand(name string) commands.Command {
 	for _, cmd := range window.commands {
 		if commands.CommandEquals(cmd, name) {
@@ -2211,7 +2233,7 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 //ShowErrorDialog shows a simple error dialog that has only an Okay button,
 // a generic title and the given text.
 func (window *Window) ShowErrorDialog(text string) {
-	window.ShowDialog(config.GetTheme().ErrorColor, "An error occured - "+text, func(_ string) {}, "Okay")
+	window.ShowDialog(config.GetTheme().ErrorColor, "An error occurred - "+text, func(_ string) {}, "Okay")
 }
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
