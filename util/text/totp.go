@@ -1,12 +1,11 @@
 package text
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // ParseTFACodes takes an arbitrary string and checks whether it's a valid 6
@@ -32,16 +31,22 @@ func ParseTFACode(text string) (string, error) {
 }
 
 // GenerateBase32Key generates a 16 character key containing 2-7 and A-Z.
-func GenerateBase32Key() string {
-	tfaSecretRaw := make([]rune, 16, 16)
+// The implementation uses crypto/rand.
+func GenerateBase32Key() (string, error) {
+	randomBytes := make([]byte, 16, 16)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", err
+	}
+
 	availableCharacters := [...]rune{
 		'2', '3', '4', '5', '6', '7',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	}
-	rand.Seed(time.Now().Unix())
-	for i := 0; i < 16; i++ {
-		tfaSecretRaw[i] = availableCharacters[rand.Int31n(int32(len(availableCharacters)))]
+	tfaSecretRaw := make([]rune, 16, 16)
+	for index, randomByte := range randomBytes {
+		tfaSecretRaw[index] = availableCharacters[rune(int(randomByte)%len(availableCharacters))]
 	}
 
-	return string(tfaSecretRaw)
+	return string(tfaSecretRaw), nil
 }

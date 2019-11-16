@@ -74,3 +74,42 @@ func TestParseTFACode(t *testing.T) {
 		})
 	}
 }
+
+// TestGenerateBase32Key tests whether 100 unique keys can be generated
+// generated in a row. This is simple in order to make sure that the keys
+// aren't always the same. On top of that, keys are checked against the
+// valid base 32 characters and a length of 16.
+func TestGenerateBase32Key(t *testing.T) {
+	availableCharacters := [...]rune{
+		'2', '3', '4', '5', '6', '7',
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+	}
+
+	iterations := 50
+	generated := make(map[string]bool, iterations)
+	for i := 0; i < iterations; i++ {
+		newKey, keyError := GenerateBase32Key()
+		if keyError != nil {
+			t.Errorf("Error generating key: %s", keyError)
+		}
+		_, ok := generated[newKey]
+		if ok {
+			t.Errorf("Duplicated key: %s", newKey)
+		}
+		generated[newKey] = true
+
+		if len(newKey) != 16 {
+			t.Errorf("Keylength is invalid: %d", len(newKey))
+		}
+
+	OUTER_LOOP:
+		for _, char := range []rune(newKey) {
+			for _, validChar := range availableCharacters {
+				if validChar == char {
+					continue OUTER_LOOP
+				}
+			}
+			t.Errorf("Generated key contains invalid character: %c", char)
+		}
+	}
+}

@@ -3,18 +3,25 @@ package ui
 import (
 	"bytes"
 	"fmt"
-	"github.com/Bios-Marcel/cordless/util/text"
-	"github.com/mattn/go-runewidth"
-	"github.com/mdp/qrterminal/v3"
 	"log"
 	"strings"
 	"time"
 	"unicode"
 
+	"github.com/mattn/go-runewidth"
+	"github.com/mdp/qrterminal/v3"
+
+	"github.com/Bios-Marcel/cordless/util/text"
+
 	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/goclipimg"
 
 	"github.com/atotto/clipboard"
+
+	"github.com/Bios-Marcel/discordgo"
+	"github.com/Bios-Marcel/tview"
+	"github.com/gdamore/tcell"
+	"github.com/gen2brain/beeep"
 
 	"github.com/Bios-Marcel/cordless/commands"
 	"github.com/Bios-Marcel/cordless/config"
@@ -26,10 +33,6 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/maths"
-	"github.com/Bios-Marcel/discordgo"
-	"github.com/Bios-Marcel/tview"
-	"github.com/gdamore/tcell"
-	"github.com/gen2brain/beeep"
 )
 
 const (
@@ -2127,8 +2130,12 @@ func (window *Window) ExecuteCommand(input string) {
 // ShowTFASetup generates a new TFA-Secret and shows a QR-Code. The QR-Code can
 // be scanned and the resulting TFA-Token can be entered into cordless and used
 // to enable TFA on this account.
-func (window *Window) ShowTFASetup() {
-	tfaSecret := text.GenerateBase32Key()
+func (window *Window) ShowTFASetup() error {
+	tfaSecret, secretError := text.GenerateBase32Key()
+	if secretError != nil {
+		return secretError
+	}
+
 	qrURL := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=Discord", window.session.State.User.Email, tfaSecret)
 	qrCodeText := text.GenerateQRCode(qrURL, qrterminal.M)
 	qrCodeImage := tview.NewTextView().SetText(qrCodeText).SetTextAlign(tview.AlignCenter)
@@ -2207,6 +2214,8 @@ func (window *Window) ShowTFASetup() {
 	qrCodeView.AddItem(tviewutil.CreateCenteredComponent(tokenInput, 68), 3, 0, false)
 	window.app.SetRoot(qrCodeView, true)
 	window.app.SetFocus(tokenInput)
+
+	return nil
 }
 
 func (window *Window) startEditingMessage(message *discordgo.Message) {
