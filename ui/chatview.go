@@ -3,23 +3,25 @@ package ui
 import (
 	"bytes"
 	"fmt"
-	linkshortener "github.com/Bios-Marcel/shortnotforlong"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/Bios-Marcel/cordless/discordutil"
-	"github.com/Bios-Marcel/cordless/times"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+	linkshortener "github.com/Bios-Marcel/shortnotforlong"
 	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/config"
-	// Blank import for initializing the tview formatter
-	_ "github.com/Bios-Marcel/cordless/syntax"
+	"github.com/Bios-Marcel/cordless/discordutil"
+	"github.com/Bios-Marcel/cordless/times"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
+
+	// Blank import for initializing the tview formatter
+	_ "github.com/Bios-Marcel/cordless/syntax"
 
 	"github.com/alecthomas/chroma"
 	"github.com/alecthomas/chroma/formatters"
@@ -877,7 +879,7 @@ func (chatView *ChatView) SignalSelectionDeleted() {
 // SetMessages defines all currently displayed messages. Parsing and
 // manipulation of single message elements happens in this function.
 func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
-	chatView.data = make([]*discordgo.Message, 0)
+	chatView.data = make([]*discordgo.Message, 0, len(messages))
 	chatView.internalTextView.Clear()
 
 	chatView.AddMessages(messages)
