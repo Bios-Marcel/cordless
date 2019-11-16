@@ -204,8 +204,11 @@ func intToString(value int) string {
 }
 
 func (chatView *ChatView) refreshSelectionAndScrollToSelection() {
-	chatView.internalTextView.Highlight(intToString(chatView.selection))
-	if chatView.selection != -1 {
+	if chatView.selection == -1 {
+		//Empty basically clears the highlights
+		chatView.internalTextView.Highlight("")
+	} else {
+		chatView.internalTextView.Highlight(intToString(chatView.selection))
 		chatView.internalTextView.ScrollToHighlight()
 	}
 }
