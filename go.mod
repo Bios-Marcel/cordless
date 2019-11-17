@@ -6,7 +6,7 @@ require (
 	github.com/Bios-Marcel/discordemojimap v1.0.0
 	github.com/Bios-Marcel/discordgo v0.20.4-0.20191103003547-0699c2def4b0
 	github.com/Bios-Marcel/femto v0.0.0-20191108211110-a645bf3d3602
-	github.com/Bios-Marcel/goclipimg v0.0.0-20190417192721-b58a8831f27d
+	github.com/Bios-Marcel/goclipimg v0.0.0-20191117155744-8313f3f72ec3
 	github.com/Bios-Marcel/shortnotforlong v1.0.0
 	github.com/Bios-Marcel/tview v0.0.0-20191115224156-2003ba1cfe23
 	github.com/alecthomas/chroma v0.6.6
