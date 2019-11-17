@@ -147,7 +147,9 @@ First you have to grab the code via:
 go get -u github.com/Bios-Marcel/cordless
 ```
 
-Note: Linux users need xclip in order to copy and paste properly, there is currently no support for wayland.
+Note:
+* X11 users need `xclip` in order to copy and paste.
+* Wayland users need `wl-clipboard` in order to copy and paste.
 
 In order to execute the application, simply run the executable, which lies at
 `$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
