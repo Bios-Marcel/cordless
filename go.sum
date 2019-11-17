@@ -4,8 +4,8 @@ github.com/Bios-Marcel/discordgo v0.20.4-0.20191103003547-0699c2def4b0 h1:wnLeeQ
 github.com/Bios-Marcel/discordgo v0.20.4-0.20191103003547-0699c2def4b0/go.mod h1:bLnfQU0j/SejmPozgW5GepmKvd8CrbMIml2I0IZENVE=
 github.com/Bios-Marcel/femto v0.0.0-20191108211110-a645bf3d3602 h1:6HucH+TXFs25D2KsAkVtO0TWr5i9/7iN1B3NlbpuPdU=
 github.com/Bios-Marcel/femto v0.0.0-20191108211110-a645bf3d3602/go.mod h1:1WS6wqbby5poRu+cBtJJzXrjqrqaFHz9mDE/1+pksAA=
-github.com/Bios-Marcel/goclipimg v0.0.0-20191117155744-8313f3f72ec3 h1:nkJtA2R6nx+gq9EVIrX18EZ4TDshT+m5stAJx2GKorM=
-github.com/Bios-Marcel/goclipimg v0.0.0-20191117155744-8313f3f72ec3/go.mod h1:hiFR6fH5+uc/f2yK2syh/UfzaPfGo6F2HJSoiI4ufWU=
+github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82 h1:gspJ6CW9bhboosSISmuX2iq03pUsYHzlJN0s+z4fz4E=
+github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82/go.mod h1:hiFR6fH5+uc/f2yK2syh/UfzaPfGo6F2HJSoiI4ufWU=
 github.com/Bios-Marcel/shortnotforlong v1.0.0 h1:K4JJ5U3+D8LXoAiH0QbfMujWuqKo+NAEZKuQ2RHPqqE=
 github.com/Bios-Marcel/shortnotforlong v1.0.0/go.mod h1:g6bFiwq0pq7pqENRgHiCZu7uMzeYPIXwANlaBQ47LBw=
 github.com/Bios-Marcel/tview v0.0.0-20191024171520-41147a2f8cf9 h1:QA/UeZGq+mf8WHba3wVL8UNB5juTWHPngduDlOppH2w=
