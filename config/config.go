@@ -36,6 +36,7 @@ const (
 
 var (
 	Current = &Config{
+		Autocomplete:                           true,
 		Times:                                  HourMinuteAndSeconds,
 		UseRandomUserColors:                    false,
 		ShowUserContainer:                      true,
@@ -61,6 +62,10 @@ var (
 type Config struct {
 	//Token is the authorization token for accessing the discord API.
 	Token string
+
+	//Autocomplete decides whether the chat automatically offers autocomplete
+	//values for the currently given text.
+	Autocomplete bool
 
 	//Times decides on the time format (none, short and long).
 	Times int

@@ -1,12 +1,16 @@
 package ui
 
 import (
-	"github.com/Bios-Marcel/cordless/shortcuts"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+	"unicode"
+
 	"github.com/Bios-Marcel/femto"
 	"github.com/Bios-Marcel/tview"
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
+
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/shortcuts"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 // Editor is a simple component that wraps tview.TextView in order to gove the
@@ -16,16 +20,23 @@ type Editor struct {
 	buffer           *femto.Buffer
 	tempBuffer       *femto.Buffer
 
-	inputCapture             func(event *tcell.EventKey) *tcell.EventKey
-	mentionShowHandler       func(namePart string)
-	mentionHideHandler       func()
-	heightRequestHandler     func(requestHeight int)
-	requestedHeight          int
-	currentMentionBeginIndex int
-	currentMentionEndIndex   int
+	inputCapture                    func(event *tcell.EventKey) *tcell.EventKey
+	autocompleteValuesUpdateHandler func(values []*AutocompleteValue)
+	autocompleters                  []*Autocomplete
+
+	heightRequestHandler func(requestHeight int)
+	requestedHeight      int
+	autocompleteFrom     *femto.Loc
 }
 
 func (editor *Editor) applyBuffer() {
+	editor.applyBufferWithoutAutocompletionCheck()
+	if config.Current.Autocomplete {
+		editor.checkForAutocompletion()
+	}
+}
+
+func (editor *Editor) applyBufferWithoutAutocompletionCheck() {
 	selectionStart := editor.buffer.Cursor.CurSelection[0]
 	selectionEnd := editor.buffer.Cursor.CurSelection[1]
 
@@ -51,6 +62,51 @@ func (editor *Editor) applyBuffer() {
 	}
 
 	editor.internalTextView.SetText(editor.tempBuffer.String())
+}
+
+func (editor *Editor) checkForAutocompletion() {
+	if editor.autocompleteValuesUpdateHandler != nil {
+		cursorLoc := editor.buffer.Cursor.Loc
+		var spaceFound bool
+		for {
+			cursorLoc.X = cursorLoc.X - 1
+			if cursorLoc.X < 0 {
+				break
+			}
+
+			runeAtCursor := editor.buffer.RuneAt(cursorLoc)
+			if runeAtCursor == ' ' {
+				spaceFound = true
+			}
+
+			for _, value := range editor.autocompleters {
+				if value.firstRune == runeAtCursor {
+					if spaceFound && !value.allowSpaces {
+						break
+					}
+
+					cursorLocCopy := cursorLoc
+					cursorLocCopy.X--
+
+					if cursorLocCopy.X >= 0 && !unicode.IsSpace(editor.buffer.RuneAt(cursorLocCopy)) {
+						break
+					}
+
+					editor.autocompleteFrom = &cursorLoc
+					//We don't want the autocomplete character to be part of the search value
+					cursorLocCopy = cursorLoc
+					cursorLocCopy.X++
+					editor.autocompleteValuesUpdateHandler(value.valueSupplier(
+						editor.buffer.Substr(cursorLocCopy, editor.buffer.Cursor.Loc)))
+					return
+				}
+
+			}
+		}
+
+		editor.autocompleteFrom = nil
+		editor.autocompleteValuesUpdateHandler(nil)
+	}
 }
 
 func (editor *Editor) MoveCursorLeft() {
@@ -374,7 +430,6 @@ func NewEditor() *Editor {
 			return event
 		}
 
-		editor.UpdateMentionHandler()
 		editor.triggerHeightRequestIfNecessary()
 		editor.internalTextView.ScrollToHighlight()
 		return nil
@@ -390,33 +445,6 @@ func (editor *Editor) GetTextLeftOfSelection() string {
 		to = editor.buffer.End()
 	}
 	return editor.buffer.Substr(editor.buffer.Start(), to)
-}
-
-func (editor *Editor) UpdateMentionHandler() {
-	atSymbolIndex := editor.FindAtSymbolIndexInCurrentWord()
-	if atSymbolIndex == -1 {
-		editor.HideAndResetMentionHandler()
-	} else {
-		editor.ShowMentionHandler(atSymbolIndex)
-	}
-}
-
-func (editor *Editor) ShowMentionHandler(atSymbolIndex int) {
-	text := editor.GetTextLeftOfSelection()
-	lookupKeyword := text[atSymbolIndex+1:]
-	editor.currentMentionBeginIndex = atSymbolIndex + 1
-	editor.currentMentionEndIndex = len(lookupKeyword) + atSymbolIndex
-	if editor.mentionShowHandler != nil {
-		editor.mentionShowHandler(lookupKeyword)
-	}
-}
-
-func (editor *Editor) HideAndResetMentionHandler() {
-	editor.currentMentionBeginIndex = 0
-	editor.currentMentionEndIndex = 0
-	if editor.mentionHideHandler != nil {
-		editor.mentionHideHandler()
-	}
 }
 
 func (editor *Editor) FindAtSymbolIndexInCurrentWord() int {
@@ -445,6 +473,35 @@ func (editor *Editor) triggerHeightRequestIfNecessary() {
 	if newRequestedHeight != editor.requestedHeight {
 		editor.requestedHeight = newRequestedHeight
 		editor.heightRequestHandler(newRequestedHeight)
+	}
+}
+
+type AutocompleteValue struct {
+	RenderValue string
+	InsertValue string
+}
+
+type Autocomplete struct {
+	firstRune     rune
+	allowSpaces   bool
+	valueSupplier func(string) []*AutocompleteValue
+}
+
+func (editor *Editor) RegisterAutocomplete(firstRune rune, allowSpaces bool, valueSupplier func(string) []*AutocompleteValue) {
+	editor.autocompleters = append(editor.autocompleters, &Autocomplete{
+		firstRune:     firstRune,
+		allowSpaces:   allowSpaces,
+		valueSupplier: valueSupplier,
+	})
+}
+
+func (editor *Editor) Autocomplete(value string) {
+	if editor.autocompleteFrom != nil {
+		editor.buffer.Replace(*editor.autocompleteFrom, editor.buffer.Cursor.Loc, value)
+		editor.autocompleteFrom = nil
+		//Not necessary, since you probably don't want to autocomplete any
+		//further after you've chosen a value.
+		editor.applyBufferWithoutAutocompletionCheck()
 	}
 }
 
@@ -496,20 +553,8 @@ func (editor *Editor) SetInputCapture(captureFunc func(event *tcell.EventKey) *t
 	editor.inputCapture = captureFunc
 }
 
-// SetMentionShowHandler sets the handler for when a mention is being requested
-func (editor *Editor) SetMentionShowHandler(handlerFunc func(namePart string)) {
-	editor.mentionShowHandler = handlerFunc
-}
-
-// SetMentionHideHandler sets the handler for when a mention is no longer being requested
-func (editor *Editor) SetMentionHideHandler(handlerFunc func()) {
-	editor.mentionHideHandler = handlerFunc
-}
-
-// GetCurrentMentionIndices gets the starting and ending indices of the input box text
-// which are to be replaced
-func (editor *Editor) GetCurrentMentionIndices() (int, int) {
-	return editor.currentMentionBeginIndex, editor.currentMentionEndIndex
+func (editor *Editor) SetAutocompleteValuesUpdateHandler(handlerFunc func(values []*AutocompleteValue)) {
+	editor.autocompleteValuesUpdateHandler = handlerFunc
 }
 
 // GetText returns the text without color tags, region tags and so on.

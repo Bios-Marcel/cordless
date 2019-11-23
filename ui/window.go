@@ -11,6 +11,7 @@ import (
 	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
 
+	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/text"
 
 	"github.com/Bios-Marcel/discordemojimap"
@@ -31,7 +32,6 @@ import (
 	"github.com/Bios-Marcel/cordless/scripting/js"
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
-	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/maths"
 )
 
@@ -129,13 +129,13 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	guilds := readyEvent.Guilds
 
 	mentionWindowRootNode := tview.NewTreeNode("")
-	mentionWindow := tview.NewTreeView().
+	autocompleteView := tview.NewTreeView().
 		SetVimBindingsEnabled(false).
 		SetRoot(mentionWindowRootNode).
 		SetTopLevel(1).
 		SetCycleSelection(true)
-	mentionWindow.SetBorder(true)
-	mentionWindow.SetBorderSides(false, true, false, true)
+	autocompleteView.SetBorder(true)
+	autocompleteView.SetBorderSides(false, true, false, true)
 
 	window.leftArea = tview.NewPages()
 
@@ -369,16 +369,190 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), newHeight, 0)
 	})
 
-	window.messageInput.SetMentionShowHandler(func(namePart string) {
-		mentionWindow.GetRoot().ClearChildren()
-		window.PopulateMentionWindow(mentionWindow, namePart)
-		if !window.ShowMentionWindowChildren(mentionWindow, 10) {
-			window.HideMentionWindow(mentionWindow)
+	window.messageInput.SetAutocompleteValuesUpdateHandler(func(values []*AutocompleteValue) {
+		autocompleteView.GetRoot().ClearChildren()
+		if len(values) == 0 {
+			autocompleteView.SetVisible(false)
+			window.app.SetFocus(window.messageInput.GetPrimitive())
+		} else {
+			rootNode := autocompleteView.GetRoot()
+			for _, value := range values {
+				newNode := tview.NewTreeNode(value.RenderValue)
+				newNode.SetReference(value)
+				rootNode.AddChild(newNode)
+			}
+			autocompleteView.SetCurrentNode(rootNode)
+			autocompleteView.SetVisible(true)
+			window.app.SetFocus(autocompleteView)
+			window.chatArea.ResizeItem(autocompleteView, maths.Min(10, len(values)), 0)
 		}
 	})
 
-	window.messageInput.SetMentionHideHandler(func() {
-		window.HideMentionWindow(mentionWindow)
+	autocompleteView.SetSelectedFunc(func(node *tview.TreeNode) {
+		value := node.GetReference().(*AutocompleteValue)
+		window.messageInput.Autocomplete(value.InsertValue)
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+		autocompleteView.SetVisible(false)
+	})
+
+	window.messageInput.RegisterAutocomplete('#', false, func(value string) []*AutocompleteValue {
+		if window.selectedChannel != nil && window.selectedChannel.GuildID != "" {
+			guild, stateError := session.State.Guild(window.selectedChannel.GuildID)
+			if stateError != nil {
+				return nil
+			}
+
+			filtered := fuzzy.ScoreAndSortChannels(value, guild.Channels)
+			var autocompleteValues []*AutocompleteValue
+			for _, channel := range filtered {
+				if channel.Type != discordgo.ChannelTypeGuildText {
+					continue
+				}
+
+				autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+					RenderValue: channel.Name,
+					InsertValue: "<#" + channel.ID + ">",
+				})
+			}
+
+			return autocompleteValues
+		}
+
+		return nil
+	})
+
+	window.messageInput.RegisterAutocomplete('@', true, func(value string) []*AutocompleteValue {
+		if window.selectedChannel != nil {
+			guildID := window.selectedChannel.GuildID
+			var autocompleteValues []*AutocompleteValue
+			if guildID != "" {
+				guild, stateError := session.State.Guild(guildID)
+				if stateError == nil {
+					filteredRoles := fuzzy.ScoreAndSortRoles(value, guild.Roles)
+					for _, role := range filteredRoles {
+						autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+							RenderValue: role.Name,
+							//FIXME Inconsistent, we should change this.
+							InsertValue: "<@&" + role.ID + ">",
+						})
+					}
+
+					filteredMembers := fuzzy.ScoreAndSortMembers(value, guild.Members)
+					for _, member := range filteredMembers {
+						insertValue := member.User.Username + "#" + member.User.Discriminator
+						var renderValue string
+						if member.Nick != "" {
+							renderValue = insertValue + " | " + member.Nick
+						} else {
+							renderValue = insertValue
+						}
+						autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+							RenderValue: renderValue,
+							InsertValue: "@" + insertValue,
+						})
+					}
+
+					return autocompleteValues
+				}
+			}
+
+			filtered := fuzzy.ScoreAndSortUsers(value, window.selectedChannel.Recipients)
+			for _, user := range filtered {
+				insertValue := user.Username + "#" + user.Discriminator
+				autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+					RenderValue: insertValue,
+					InsertValue: "@" + insertValue,
+				})
+			}
+
+			return autocompleteValues
+		}
+
+		return nil
+	})
+
+	emojisAsArray := make([]string, 0, len(discordemojimap.EmojiMap))
+	for emoji, _ := range discordemojimap.EmojiMap {
+		emojisAsArray = append(emojisAsArray, emoji)
+	}
+
+	var globallyUsableCustomEmoji []*discordgo.Emoji
+	if window.session.State.User.PremiumType == discordgo.UserPremiumTypeNone {
+		for _, guild := range window.session.State.Guilds {
+			for _, emoji := range guild.Emojis {
+				if emoji.Animated {
+					continue
+				}
+
+				if !strings.HasPrefix(emoji.Name, "GW") {
+					continue
+				}
+
+				globallyUsableCustomEmoji = append(globallyUsableCustomEmoji, emoji)
+			}
+		}
+	} else {
+		for _, guild := range window.session.State.Guilds {
+			for _, emoji := range guild.Emojis {
+				globallyUsableCustomEmoji = append(globallyUsableCustomEmoji, emoji)
+			}
+		}
+	}
+
+	emojisByGuild := make(map[string][]*discordgo.Emoji)
+
+	window.messageInput.RegisterAutocomplete(':', false, func(value string) []*AutocompleteValue {
+		var autocompleteValues []*AutocompleteValue
+
+		var filteredCustomEmoji []*discordgo.Emoji
+		if window.session.State.User.PremiumType == discordgo.UserPremiumTypeNone {
+			if window.selectedChannel != nil && window.selectedChannel.GuildID != "" {
+				guildID := window.selectedChannel.GuildID
+				var cached bool
+				filteredCustomEmoji, cached = emojisByGuild[guildID]
+				if cached {
+					goto EVALUATE_EMOJIS
+				}
+
+				guild, stateError := window.session.State.Guild(guildID)
+				if stateError == nil {
+					for _, emoji := range guild.Emojis {
+						if emoji.Animated {
+							continue
+						}
+
+						filteredCustomEmoji = append(filteredCustomEmoji, emoji)
+					}
+
+					filteredCustomEmoji = append(filteredCustomEmoji, globallyUsableCustomEmoji...)
+					emojisByGuild[window.selectedChannel.GuildID] = filteredCustomEmoji
+
+					goto EVALUATE_EMOJIS
+				}
+			}
+		}
+
+	EVALUATE_EMOJIS:
+		filteredEmoji := fuzzy.ScoreAndSortEmoji(value, emojisAsArray, filteredCustomEmoji)
+		for _, emoji := range filteredEmoji {
+			unicodeSymbol := discordemojimap.GetEmoji(emoji)
+			var renderValue string
+			var insertValue string
+			if unicodeSymbol != "" {
+				renderValue = unicodeSymbol + " | " + emoji
+				insertValue = unicodeSymbol
+			} else {
+				trimmed := emoji[1:]
+				renderValue = "? | " + trimmed + " (custom emoji)"
+				insertValue = ":!" + trimmed + ":"
+			}
+			autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+				RenderValue: renderValue,
+				InsertValue: insertValue,
+			})
+		}
+
+		return autocompleteValues
 	})
 
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -874,8 +1048,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.middleContainer.AddItem(window.userList.internalTreeView, 0, 6, false)
 	}
 
-	mentionWindow.SetVisible(false)
-	mentionWindow.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	autocompleteView.SetVisible(false)
+	autocompleteView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch key := event.Key(); key {
 		case tcell.KeyRune, tcell.KeyDelete, tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyLeft, tcell.KeyRight, tcell.KeyCtrlA, tcell.KeyCtrlV:
 			window.messageInput.internalTextView.GetInputCapture()(event)
@@ -884,30 +1058,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		return event
 	})
 
-	// Invoked when enter is pressed
-	mentionWindow.SetSelectedFunc(func(node *tview.TreeNode) {
-		beginIndex, endIndex := window.messageInput.GetCurrentMentionIndices()
-		var mentionInsertion string
-		oldText := window.messageInput.GetText()
-		reference := node.GetReference()
-		switch reference.(type) {
-		case string:
-			data := reference.(string)
-			mentionInsertion = strings.TrimSpace(data)
-		case *discordgo.Role:
-			role := reference.(*discordgo.Role)
-			mentionInsertion = "<@&" + strings.TrimSpace(role.ID) + ">"
-		default:
-			panic(fmt.Sprintf("Invalid data type in mention handler: %t:%v", reference, reference))
-		}
-
-		newMessageText := oldText[:beginIndex] + mentionInsertion + " " + oldText[endIndex+1:]
-		window.messageInput.SetText(newMessageText)
-		window.messageInput.mentionHideHandler()
-	})
-
 	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
-	window.chatArea.AddItem(mentionWindow, 2, 2, true)
+	window.chatArea.AddItem(autocompleteView, 2, 2, true)
 	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.messageInput.GetRequestedHeight(), 0, false)
 
 	window.commandView.commandOutput.SetVisible(false)
@@ -1098,117 +1250,6 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 				}, retry, edit, cancel)
 		})
 	}
-}
-
-func (window *Window) HideMentionWindow(mentionWindow *tview.TreeView) {
-	mentionWindow.SetVisible(false)
-	window.app.SetFocus(window.messageInput.internalTextView)
-}
-
-func (window *Window) ShowMentionWindowChildren(mentionWindow *tview.TreeView, maxChildren int) bool {
-	children := mentionWindow.GetRoot().GetChildren()
-	if children == nil {
-		return false
-	}
-	numChildren := maths.Min(len(children), 10)
-	window.chatArea.ResizeItem(mentionWindow, numChildren, 0)
-	if numChildren > 0 {
-		mentionWindow.SetCurrentNode(children[0])
-	}
-	mentionWindow.SetVisible(true)
-	window.app.SetFocus(mentionWindow)
-	return true
-}
-
-func (window *Window) PopulateMentionWindow(mentionWindow *tview.TreeView, namePart string) {
-	if window.selectedChannel == nil {
-		return
-	}
-
-	if window.selectedChannel.GuildID != "" {
-		window.PopulateMentionWindowFromCurrentGuild(mentionWindow, namePart)
-	} else {
-		window.PopulateMentionWindowFromCurrentChannel(mentionWindow, namePart)
-	}
-}
-
-func (window *Window) PopulateMentionWindowFromCurrentGuild(mentionWindow *tview.TreeView, namePart string) {
-	guild, discordError := window.session.State.Guild(window.selectedChannel.GuildID)
-	if discordError != nil {
-		return
-	}
-
-	nameMap := make(map[string]string)
-	var memberNames []string
-	for _, user := range guild.Members {
-		userName := user.User.Username + "#" + user.User.Discriminator
-		if len(user.Nick) > 0 {
-			combined := "\t" + userName + " | " + user.Nick
-			nameMap[userName] = combined
-			nameMap[user.Nick] = combined
-			nameMap[combined] = userName
-			memberNames = append(memberNames, userName, user.Nick)
-		} else {
-			memberNames = append(memberNames, userName)
-		}
-	}
-
-	roleMap := make(map[string]*discordgo.Role)
-	for _, role := range guild.Roles {
-		roleMap[role.Name] = role
-		memberNames = append(memberNames, role.Name)
-	}
-
-	searchResults := fuzzy.ScoreSearch(namePart, memberNames)
-	sortedResults := fuzzy.SortSearchResults(searchResults)
-
-	userWithNickSet := make(map[string]struct{})
-	for _, result := range sortedResults {
-		// Check if result was a role.
-		if role, ok := roleMap[result.Key]; ok {
-			window.addNodeToMentionWindow(mentionWindow, role.Name, role)
-			continue
-		}
-
-		var displayName string = result.Key
-		var userMentionReference string = result.Key
-		if combinedUserAndNickName, ok := nameMap[result.Key]; ok {
-			// If the combined string has been added, skip this entry.
-			if _, containsStr := userWithNickSet[combinedUserAndNickName]; containsStr {
-				continue
-			}
-			userWithNickSet[combinedUserAndNickName] = struct{}{}
-			displayName = combinedUserAndNickName
-			userMentionReference = nameMap[combinedUserAndNickName]
-		}
-		window.addNodeToMentionWindow(mentionWindow, displayName, userMentionReference)
-	}
-}
-
-func (window *Window) addNodeToMentionWindow(mentionWindow *tview.TreeView, name string, reference interface{}) {
-	userNode := tview.NewTreeNode(name)
-	userNode.SetReference(reference)
-	mentionWindow.GetRoot().AddChild(userNode)
-}
-
-func (window *Window) PopulateMentionWindowFromCurrentChannel(mentionWindow *tview.TreeView, namePart string) {
-	memberNames := make([]string, 0, len(window.selectedChannel.Recipients))
-	for _, user := range window.selectedChannel.Recipients {
-		userName := user.Username + "#" + user.Discriminator
-		memberNames = append(memberNames, userName)
-	}
-
-	searchResults := fuzzy.ScoreSearch(namePart, memberNames)
-	sortedResults := fuzzy.SortSearchResults(searchResults)
-
-	for _, result := range sortedResults {
-		userName := result.Key
-		userNodeText := "\t" + userName
-		userNode := tview.NewTreeNode(userNodeText)
-		userNode.SetReference(userName)
-		mentionWindow.GetRoot().AddChild(userNode)
-	}
-
 }
 
 func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.TreeNode, isSelected bool) {
