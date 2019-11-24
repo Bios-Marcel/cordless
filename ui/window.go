@@ -349,7 +349,25 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if shortcuts.CopySelectedMessage.Equals(event) {
-			copyError := clipboard.WriteAll(message.ContentWithMentionsReplaced())
+			content := message.ContentWithMentionsReplaced()
+			if len(message.Attachments) == 1 {
+				if content == "" {
+					content = message.Attachments[0].URL
+				} else {
+					content += "\n" + message.Attachments[0].URL
+				}
+			} else if len(message.Attachments) > 1 {
+				links := make([]string, 0, len(message.Attachments))
+				for _, file := range message.Attachments {
+					links = append(links, file.URL)
+				}
+				if content == "" {
+					content = strings.Join(links, "\n")
+				} else {
+					content += "\n" + strings.Join(links, "\n")
+				}
+			}
+			copyError := clipboard.WriteAll(content)
 			if copyError != nil {
 				window.ShowErrorDialog(fmt.Sprintf("Error copying message: %s", copyError.Error()))
 			}
