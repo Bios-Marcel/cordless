@@ -497,7 +497,7 @@ func (editor *Editor) RegisterAutocomplete(firstRune rune, allowSpaces bool, val
 
 func (editor *Editor) Autocomplete(value string) {
 	if editor.autocompleteFrom != nil {
-		editor.buffer.Replace(*editor.autocompleteFrom, editor.buffer.Cursor.Loc, value)
+		editor.buffer.Replace(*editor.autocompleteFrom, editor.buffer.Cursor.Loc, value+" ")
 		editor.autocompleteFrom = nil
 		//Not necessary, since you probably don't want to autocomplete any
 		//further after you've chosen a value.
