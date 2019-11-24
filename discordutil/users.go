@@ -4,10 +4,11 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/Bios-Marcel/cordless/config"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
+
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 var (
@@ -39,7 +40,7 @@ func GetUserColor(user *discordgo.User) string {
 func getRandomColorString() string {
 	randColorLength := len(config.GetTheme().RandomUserColors)
 	if randColorLength == 0 {
-		return "[" + tviewutil.ColorToHex(config.GetTheme().DefaultUserColor) + "]"
+		return tviewutil.ColorToHex(config.GetTheme().DefaultUserColor)
 	} else if randColorLength == 1 {
 		return tviewutil.ColorToHex(config.GetTheme().RandomUserColors[0])
 	}
