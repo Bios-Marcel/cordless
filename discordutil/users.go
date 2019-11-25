@@ -18,6 +18,7 @@ var (
 	userColorCache = make(map[string]string)
 
 	lastRandomNumber = -1
+	randColorLength  = len(config.GetTheme().RandomUserColors)
 )
 
 // GetUserColor gets the users color for this session. If no color can be found
@@ -25,6 +26,13 @@ var (
 func GetUserColor(user *discordgo.User) string {
 	if user.Bot {
 		return tviewutil.ColorToHex(config.GetTheme().BotColor)
+	}
+
+	//Avoid unnecessarily retrieving and caching colors
+	if !config.Current.UseRandomUserColors || randColorLength == 0 {
+		return tviewutil.ColorToHex(config.GetTheme().DefaultUserColor)
+	} else if randColorLength == 1 {
+		return tviewutil.ColorToHex(config.GetTheme().RandomUserColors[0])
 	}
 
 	color, ok := userColorCache[user.ID]
@@ -38,13 +46,6 @@ func GetUserColor(user *discordgo.User) string {
 }
 
 func getRandomColorString() string {
-	randColorLength := len(config.GetTheme().RandomUserColors)
-	if randColorLength == 0 {
-		return tviewutil.ColorToHex(config.GetTheme().DefaultUserColor)
-	} else if randColorLength == 1 {
-		return tviewutil.ColorToHex(config.GetTheme().RandomUserColors[0])
-	}
-
 	randIndex := rand.Intn(randColorLength)
 	if randIndex == lastRandomNumber {
 		return getRandomColorString()

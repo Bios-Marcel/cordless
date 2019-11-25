@@ -6,11 +6,13 @@ import (
 
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
-	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/discordgo"
+
+	"github.com/Bios-Marcel/cordless/config"
 )
 
 func TestGetUserColor(t *testing.T) {
+	config.Current.UseRandomUserColors = true
 	tests := []struct {
 		name        string
 		user        *discordgo.User
