@@ -164,11 +164,10 @@ func GetConfigFile() (string, error) {
 //GetScriptDirectory returns the path at which all the external scripts should
 //lie.
 func GetScriptDirectory() string {
-	if cachedScriptDir == "" {
-		//We'll just make the assumption, that the config dir has already been
-		//initialized at that point and time in the application.
-		cachedScriptDir = filepath.Join(cachedConfigDir, "scripts")
+	if cachedScriptDir != "" {
+		return cachedScriptDir
 	}
+	cachedScriptDir = filepath.Join(cachedConfigDir, "scripts")
 	return cachedScriptDir
 }
 
