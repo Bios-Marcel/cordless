@@ -1,8 +1,12 @@
+// This package is the Engine implementation for a javascript scripting
+// interface. All callbacks are optional and the overhead for checking
+// callback-existence is rather low, as it happens on script initialisation.
+// All invocations of callbacks perform locking on the instance that they
+// are being called on. Each instance has their own lock.
 package js
 
 import (
 	"fmt"
-	"github.com/Bios-Marcel/discordgo"
 	"io"
 	"io/ioutil"
 	"log"
@@ -11,14 +15,24 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Bios-Marcel/cordless/scripting"
+	"github.com/Bios-Marcel/discordgo"
+
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
+
+	"github.com/Bios-Marcel/cordless/scripting"
 )
 
-// This declaration makes sure that JavaScriptEngine complies with the
-// Engine interface.
-var _ scripting.Engine = &JavaScriptEngine{}
+var (
+	// This declaration makes sure that JavaScriptEngine complies with the
+	// Engine interface.
+	_ scripting.Engine = &JavaScriptEngine{}
+
+	// We cache the null and undefined value, since it's wasteful to keep
+	// reallocating those.
+	nullValue      = otto.NullValue()
+	undefinedValue = otto.UndefinedValue()
+)
 
 // JavaScriptEngine stores scripting engine state
 type JavaScriptEngine struct {
@@ -106,6 +120,19 @@ func (engine *JavaScriptEngine) readScriptsRecursively(dirname string) error {
 			lock: sync.Mutex{},
 		}
 
+		initFunction, resolveError := vm.Get("init")
+		if !initFunction.IsUndefined() {
+			initFunction.Call(nullValue)
+
+			// We attempt clearing the init function, as it's not supposed to
+			// be called again after initialisation and therefore only wastes
+			// precious memory.
+			clearError := vm.Set("init", undefinedValue)
+			if clearError != nil {
+				return errors.Wrap(resolveError, "error clearing init function from VM.")
+			}
+		}
+
 		onMessageSendJS, resolveError := vm.Get("onMessageSend")
 		if !onMessageSendJS.IsUndefined() {
 			instance.onMessageSend = &onMessageSendJS
@@ -161,9 +188,9 @@ func (engine *JavaScriptEngine) OnMessageSend(oldText string) (newText string) {
 			if instance.onMessageSend != nil {
 				defer instance.lock.Unlock()
 				instance.lock.Lock()
-				jsValue, jsError := instance.onMessageSend.Call(otto.NullValue(), newText)
+				jsValue, jsError := instance.onMessageSend.Call(nullValue, newText)
 				if jsError != nil {
-					if engine.errorOutput != nil && !jsValue.IsUndefined() {
+					if engine.errorOutput != nil {
 						fmt.Fprintf(engine.errorOutput, "Error occurred during execution of javascript: %s\n", jsError.Error())
 					}
 					//This script failed, go to next one
@@ -195,7 +222,7 @@ func (engine *JavaScriptEngine) OnMessageReceive(message *discordgo.Message) {
 				instance.lock.Lock()
 				defer instance.lock.Unlock()
 
-				_, callError := instance.onMessageReceive.Call(otto.NullValue(), messageToJS)
+				_, callError := instance.onMessageReceive.Call(nullValue, messageToJS)
 				if callError != nil {
 					log.Printf("Error calling onMessageReceive: %s\n", callError)
 				}
@@ -222,7 +249,7 @@ func (engine *JavaScriptEngine) OnMessageEdit(message *discordgo.Message) {
 				instance.lock.Lock()
 				defer instance.lock.Unlock()
 
-				_, callError := instance.onMessageEdit.Call(otto.NullValue(), messageToJS)
+				_, callError := instance.onMessageEdit.Call(nullValue, messageToJS)
 				if callError != nil {
 					log.Printf("Error calling onMessageEdit: %s\n", callError)
 				}
@@ -248,7 +275,7 @@ func (engine *JavaScriptEngine) OnMessageDelete(message *discordgo.Message) {
 			if instance.onMessageDelete != nil {
 				instance.lock.Lock()
 				defer instance.lock.Unlock()
-				_, callError := instance.onMessageDelete.Call(otto.NullValue(), messageToJS)
+				_, callError := instance.onMessageDelete.Call(nullValue, messageToJS)
 				if callError != nil {
 					log.Printf("Error calling onMessageDelete: %s\n", callError)
 				}
@@ -263,15 +290,15 @@ func (engine *JavaScriptEngine) SetTriggerNotificationFunction(function func(tit
 		title, argError := call.Argument(0).ToString()
 		if argError != nil {
 			log.Printf("Error invoking triggerNotification in JS engine: %s\n", argError)
-			return otto.NullValue()
+			return nullValue
 		}
 		text, argError := call.Argument(1).ToString()
 		if argError != nil {
 			log.Printf("Error invoking triggerNotification in JS engine: %s\n", argError)
-			return otto.NullValue()
+			return nullValue
 		}
 		function(title, text)
-		return otto.NullValue()
+		return nullValue
 	}
 	engine.setFunctionOnVMs("triggerNotification", triggerNotification)
 }
@@ -285,7 +312,7 @@ func (engine *JavaScriptEngine) SetPrintToConsoleFunction(function func(text str
 		} else {
 			function(text)
 		}
-		return otto.UndefinedValue()
+		return undefinedValue
 	}
 	engine.setFunctionOnVMs("printToConsole", printToConsole)
 }
@@ -299,7 +326,7 @@ func (engine *JavaScriptEngine) SetPrintLineToConsoleFunction(function func(text
 		} else {
 			function(text)
 		}
-		return otto.UndefinedValue()
+		return undefinedValue
 	}
 	engine.setFunctionOnVMs("printLineToConsole", printLineToConsole)
 }
@@ -310,7 +337,7 @@ func (engine *JavaScriptEngine) SetGetCurrentGuildFunction(function func() strin
 		guildID, callError := call.Otto.ToValue(function())
 		if callError != nil {
 			log.Printf("Error calling getCurrentGuild: %s\n", callError)
-			return otto.NullValue()
+			return nullValue
 		} else {
 			return guildID
 		}
@@ -324,7 +351,7 @@ func (engine *JavaScriptEngine) SetGetCurrentChannelFunction(function func() str
 		guildID, callError := call.Otto.ToValue(function())
 		if callError != nil {
 			log.Printf("Error calling getCurrentChannel: %s\n", callError)
-			return otto.NullValue()
+			return nullValue
 		} else {
 			return guildID
 		}

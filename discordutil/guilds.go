@@ -1,7 +1,9 @@
 package discordutil
 
 import (
+	"log"
 	"sort"
+	"strings"
 
 	"github.com/Bios-Marcel/discordgo"
 )
@@ -53,4 +55,44 @@ func SortGuilds(settings *discordgo.Settings, guilds []*discordgo.Guild) {
 
 		return false
 	})
+}
+
+// FindEmojiInGuild searches for a fitting emoji. Fitting means the correct name
+// (caseinsensitive), not animated and the correct permissions. If the result
+// is an empty string, it means no result was found.
+func FindEmojiInGuild(session *discordgo.Session, guild *discordgo.Guild, omitGWCheck bool, emojiSequence string) string {
+	for _, emoji := range guild.Emojis {
+		if emoji.Animated {
+			continue
+		}
+
+		if strings.ToLower(emoji.Name) == emojiSequence && (omitGWCheck || strings.HasPrefix(emoji.Name, "GW")) {
+			if len(emoji.Roles) != 0 {
+				selfMember, cacheError := session.State.Member(guild.ID, session.State.User.ID)
+				if cacheError != nil {
+					selfMember, discordError := session.GuildMember(guild.ID, session.State.User.ID)
+					if discordError != nil {
+						log.Println(discordError)
+						continue
+					}
+
+					session.State.MemberAdd(selfMember)
+				}
+
+				if selfMember != nil {
+					for _, emojiRole := range emoji.Roles {
+						for _, selfRole := range selfMember.Roles {
+							if selfRole == emojiRole {
+								return "<:" + emoji.Name + ":" + emoji.ID + ">"
+							}
+						}
+					}
+				}
+			}
+
+			return "<:" + emoji.Name + ":" + emoji.ID + ">"
+		}
+	}
+
+	return ""
 }

@@ -16,7 +16,7 @@
   - [Arch based Linux distributions](#arch-based-linux-distributions)
 - [Installing on Windows](#installing-on-windows)
 - [Installing on macOS](#installing-on-macos)
-- [Building it from source](#building-it-from-source)
+- [Building from source](#building-from-source)
 - [Login](#login)
 - [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
 - [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
@@ -37,6 +37,9 @@ develop any further.
 The application only uses the official Discord API and doesn't send data to
 any third party. However, this application is not a official product
 by Discord Inc.
+
+For those who don't want to use paypal but still donate, here's my ETH wallet public key:
+0x49939106563a9de8a777Cf5394149423b1dFd970
 
 ![Demo Screenshot](.github/images/chat-demo.png)
 
@@ -83,6 +86,7 @@ or
 ```shell
 $ yay -S cordless-git
 ```
+
 ###### trizen:
 ```shell
 $ trizen -S cordless-git
@@ -131,24 +135,43 @@ brew install cordless
 If you don't install via homebrew, then you should get `pngpaste`, since it's
 what allows you to paste images.
 
-### Building it from source
+### Building from source
 
-In order to execute this command
+In order to execute the following commands
 [you need to have go 1.12 or a more recent version installed](https://golang.org/doc/install).
 
 **UPDATES HAVE TO BE INSTALLED MANUALLY**
 
-First you have to grab the code via:
+You can either install the binary into your `$GOPATH/bin` by running:
 
 ```shell
 go get -u github.com/Bios-Marcel/cordless
 ```
 
-Note: Linux users need xclip in order to copy and paste properly, there is currently no support for wayland.
-
-In order to execute the application, simply run the executable, which lies at
+Which you can then execute by running the executable, which lies at
 `$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
-`$GOPATH/bin` has to be in your `PATH` variable.
+`$GOPATH/bin` has to be in your `PATH` variable. The very same command can
+be used for updating.
+
+or you manually grab the source:
+
+```shell
+git clone https://github.com/Bios-Marcel/cordless
+cd cordless
+go build .
+```
+
+If done this way, updates have to be installed via:
+
+```shell
+cd cordless
+git pull
+go build .
+```
+
+Note:
+* X11 users need `xclip` in order to copy and paste.
+* Wayland users need `wl-clipboard` in order to copy and paste.
 
 ### Login
 
@@ -177,7 +200,7 @@ Further shortcuts / key-bindings can be found in the manual on the internal
 console with the command `manual`.
 
 If any of the default commands don't work for you, open the keyboard shortcut
-changer via <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>.
+changer via <kbd>Ctrl</kbd> + <kbd>K</kbd>.
 
 ## Extending Cordless via the scripting interface
 

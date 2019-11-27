@@ -1,250 +1,324 @@
 package ui
 
 import (
-	"fmt"
-	"regexp"
-	"strings"
+	"unicode"
 
-	"github.com/Bios-Marcel/cordless/shortcuts"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
-
+	"github.com/Bios-Marcel/femto"
 	"github.com/Bios-Marcel/tview"
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
-)
 
-var (
-	// Temporary solution, so not every function has to handle the selection
-	// character placement.
-	multiSelectionCharWithSelectionToLeftPattern = regexp.MustCompile(selectionChar + "*" + regexp.QuoteMeta(selRegion) + selectionChar + "*" + regexp.QuoteMeta(endRegion))
-)
-
-const (
-	selectionChar = string('\u205F')
-	emptyText     = "[\"selection\"]\u205F[\"\"]"
-	leftRegion    = "[\"left\"]"
-	rightRegion   = "[\"right\"]"
-	selRegion     = "[\"selection\"]"
-	endRegion     = "[\"\"]"
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/shortcuts"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 // Editor is a simple component that wraps tview.TextView in order to gove the
 // user minimal text edit functionality.
 type Editor struct {
 	internalTextView *tview.TextView
+	buffer           *femto.Buffer
+	tempBuffer       *femto.Buffer
 
-	inputCapture             func(event *tcell.EventKey) *tcell.EventKey
-	mentionShowHandler       func(namePart string)
-	mentionHideHandler       func()
-	heightRequestHandler     func(requestHeight int)
-	requestedHeight          int
-	currentMentionBeginIndex int
-	currentMentionEndIndex   int
+	inputCapture                    func(event *tcell.EventKey) *tcell.EventKey
+	autocompleteValuesUpdateHandler func(values []*AutocompleteValue)
+	autocompleters                  []*Autocomplete
+
+	heightRequestHandler func(requestHeight int)
+	requestedHeight      int
+	autocompleteFrom     *femto.Loc
 }
 
-func (e *Editor) ExpandSelectionToLeft(left, right, selection []rune) {
-	if len(left) > 0 {
-		newText := leftRegion + string(left[:len(left)-1]) + selRegion
-
-		currentSelection := string(selection)
-		if currentSelection == selectionChar {
-			currentSelection = ""
-		}
-
-		newText = newText + string(left[len(left)-1]) + currentSelection + rightRegion + string(right) + endRegion
-		e.internalTextView.SetText(newText)
+func (editor *Editor) applyBuffer() {
+	editor.applyBufferWithoutAutocompletionCheck()
+	if config.Current.Autocomplete {
+		editor.checkForAutocompletion()
 	}
 }
 
-func (e *Editor) ExpandSelectionToRight(left, right, selection []rune) {
-	newText := leftRegion + string(left)
-	if len(right) > 0 {
-		newText = newText + selRegion + string(selection) + string(right[0]) + rightRegion + string(right[1:])
+func (editor *Editor) applyBufferWithoutAutocompletionCheck() {
+	selectionStart := editor.buffer.Cursor.CurSelection[0]
+	selectionEnd := editor.buffer.Cursor.CurSelection[1]
+
+	//Copy relevant buffer-state over to temporary buffer
+	editor.tempBuffer.Replace(editor.tempBuffer.Start(), editor.tempBuffer.End(), tviewutil.Escape(editor.buffer.String()))
+	editor.tempBuffer.Cursor.GotoLoc(editor.buffer.Cursor.Loc)
+	editor.tempBuffer.Cursor.SetSelectionStart(selectionStart)
+	editor.tempBuffer.Cursor.SetSelectionEnd(selectionEnd)
+
+	//The \x04 is a non-printable character, this is used in order to prevent
+	//weird behaviour of tview in combinations that have selection and newlines
+	//or whitespace.
+	if editor.buffer.Cursor.HasSelection() {
+		editor.tempBuffer.Insert(selectionEnd, "[\"\"]\x04")
+		editor.tempBuffer.Insert(selectionStart, "[\"selection\"]\x04")
 	} else {
-		endsWithSelectionChar := strings.HasSuffix(string(selection), selectionChar)
-		newText = newText + selRegion + string(selection)
-		if !endsWithSelectionChar {
-			newText = newText + selectionChar
-		}
-	}
-
-	newText = newText + endRegion
-	e.setAndFixText(newText)
-}
-
-func (e *Editor) MoveCursorLeft(left, right, selection []rune) {
-	var newText string
-	if len(left) > 0 {
-		newText = leftRegion + string(left[:len(left)-1]) + selRegion
-
-		currentSelection := string(selection)
-		if currentSelection == selectionChar {
-			currentSelection = ""
-		}
-
-		newText = newText + string(left[len(left)-1]) + rightRegion + currentSelection + string(right) + endRegion
-
-		e.internalTextView.SetText(newText)
-	} else if len(selection) > 0 {
-		if len(right) > 0 {
-			newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + string(right) + endRegion
+		if editor.tempBuffer.Cursor.RuneUnder(editor.tempBuffer.Cursor.Loc.X) == '\n' {
+			editor.tempBuffer.Insert(editor.tempBuffer.Cursor.Loc, "[\"selection\"]\x04 [\"\"]\x04")
 		} else {
-			newText = selRegion + string(selection[0]) + rightRegion + string(selection[1:]) + endRegion
+			editor.tempBuffer.Insert(editor.tempBuffer.Cursor.Loc.Move(1, editor.tempBuffer), "[\"\"]\x04")
+			editor.tempBuffer.Insert(editor.tempBuffer.Cursor.Loc, "[\"selection\"]\x04")
 		}
-		e.setAndFixText(newText)
+	}
+
+	editor.internalTextView.SetText(editor.tempBuffer.String())
+}
+
+func (editor *Editor) checkForAutocompletion() {
+	if editor.autocompleteValuesUpdateHandler != nil {
+		cursorLoc := editor.buffer.Cursor.Loc
+		var spaceFound bool
+		for {
+			cursorLoc.X = cursorLoc.X - 1
+			if cursorLoc.X < 0 {
+				break
+			}
+
+			runeAtCursor := editor.buffer.RuneAt(cursorLoc)
+			if runeAtCursor == ' ' {
+				spaceFound = true
+			}
+
+			for _, value := range editor.autocompleters {
+				if value.firstRune == runeAtCursor {
+					if spaceFound && !value.allowSpaces {
+						break
+					}
+
+					cursorLocCopy := cursorLoc
+					cursorLocCopy.X--
+
+					if cursorLocCopy.X >= 0 && !unicode.IsSpace(editor.buffer.RuneAt(cursorLocCopy)) {
+						break
+					}
+
+					editor.autocompleteFrom = &cursorLoc
+					//We don't want the autocomplete character to be part of the search value
+					cursorLocCopy = cursorLoc
+					cursorLocCopy.X++
+					editor.autocompleteValuesUpdateHandler(value.valueSupplier(
+						editor.buffer.Substr(cursorLocCopy, editor.buffer.Cursor.Loc)))
+					return
+				}
+
+			}
+		}
+
+		editor.autocompleteFrom = nil
+		editor.autocompleteValuesUpdateHandler(nil)
 	}
 }
 
-func (e *Editor) MoveCursorRight(left, right, selection []rune) {
-	newText := leftRegion + string(left)
-	if len(right) > 0 {
-		newText = newText + string(selection) + selRegion + string(right[0]) + rightRegion + string(right[1:])
+func (editor *Editor) MoveCursorLeft() {
+	if editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Cursor.GotoLoc(editor.buffer.Cursor.CurSelection[0])
+		editor.buffer.Cursor.ResetSelection()
 	} else {
-		endsWithSelectionChar := strings.HasSuffix(string(selection), selectionChar)
-		if !endsWithSelectionChar {
-			newText = newText + string(selection) + selRegion + selectionChar
-		} else {
-			newText = newText + string(selection[:len(selection)-1]) + selRegion + selectionChar
-		}
+		editor.buffer.Cursor.Left()
 	}
 
-	newText = newText + endRegion
-	e.setAndFixText(newText)
+	editor.applyBuffer()
 }
 
-func (e *Editor) MoveCursorToIndex(text string, index int) {
-	// Bound the index to the string length
-	if index < 0 {
-		index = 0
-	} else if index >= len(text) {
-		index = len(text) - 1
-	}
-
-	left := string(text[:index])
-	var right string
-	if index == len(text)-1 {
-		right = selectionChar
-		e.setAndFixText(leftRegion + left + selRegion + right + endRegion)
+func (editor *Editor) MoveCursorRight() {
+	if editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Cursor.GotoLoc(editor.buffer.Cursor.CurSelection[1])
+		editor.buffer.Cursor.ResetSelection()
 	} else {
-		right = string(text[index:])
-		e.setAndFixText(leftRegion + left + selRegion + string(right[0]) + rightRegion + right[1:] + endRegion)
+		editor.buffer.Cursor.Right()
 	}
+
+	editor.applyBuffer()
 }
 
-func (e *Editor) SelectWordLeft(left, right, selection []rune) {
-	if len(left) > 0 {
-		selectionFrom := 0
-		for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
-			if left[i] == ' ' || left[i] == '\n' {
-				selectionFrom = i
-				break
-			}
-		}
+func (editor *Editor) SelectionToLeft() {
+	editor.selectLeft(false)
+}
 
-		var newText string
-		if selectionFrom != 0 {
-			newText = leftRegion + string(left[:selectionFrom+1]) + selRegion + string(left[selectionFrom+1:]) + string(string(selection)) + rightRegion + string(right) + endRegion
+func (editor *Editor) SelectWordLeft() {
+	editor.selectLeft(true)
+}
+
+func (editor *Editor) selectLeft(word bool) {
+	oldCursor := editor.buffer.Cursor.Loc
+	selectionStart := editor.buffer.Cursor.CurSelection[0]
+	selectionEnd := editor.buffer.Cursor.CurSelection[1]
+
+	if word {
+		editor.buffer.Cursor.WordLeft()
+	} else {
+		editor.buffer.Cursor.Left()
+	}
+	newCursor := editor.buffer.Cursor.Loc
+	if !editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Cursor.SetSelectionStart(newCursor)
+		editor.buffer.Cursor.SetSelectionEnd(oldCursor)
+	} else if oldCursor.GreaterEqual(selectionStart) {
+		if newCursor.GreaterEqual(selectionStart) {
+			editor.buffer.Cursor.SetSelectionStart(selectionStart)
+			editor.buffer.Cursor.SetSelectionEnd(newCursor)
 		} else {
-			newText = selRegion + string(left) + string(string(selection)) + rightRegion + string(right) + endRegion
+			editor.buffer.Cursor.SetSelectionStart(newCursor)
+			editor.buffer.Cursor.SetSelectionEnd(selectionEnd)
 		}
-		e.setAndFixText(newText)
+	} else {
+		editor.buffer.Cursor.SetSelectionStart(newCursor)
+		editor.buffer.Cursor.SetSelectionEnd(selectionEnd)
+	}
+
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectionToRight() {
+	editor.selectRight(false)
+}
+
+func (editor *Editor) SelectWordRight() {
+	editor.selectRight(true)
+}
+
+func (editor *Editor) selectRight(word bool) {
+	oldCursor := editor.buffer.Cursor.Loc
+	selectionStart := editor.buffer.Cursor.CurSelection[0]
+	selectionEnd := editor.buffer.Cursor.CurSelection[1]
+
+	if word {
+		editor.buffer.Cursor.WordRight()
+	} else {
+		editor.buffer.Cursor.Right()
+	}
+	newCursor := editor.buffer.Cursor.Loc
+	if !editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Cursor.SetSelectionStart(oldCursor)
+		editor.buffer.Cursor.SetSelectionEnd(newCursor)
+	} else if newCursor.LessThan(selectionEnd) {
+		editor.buffer.Cursor.SetSelectionStart(newCursor)
+		editor.buffer.Cursor.SetSelectionEnd(selectionEnd)
+	} else {
+		editor.buffer.Cursor.SetSelectionStart(selectionStart)
+		editor.buffer.Cursor.SetSelectionEnd(newCursor)
+	}
+
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectAll() {
+	start := editor.buffer.Start()
+	editor.buffer.Cursor.SetSelectionStart(start)
+	end := editor.buffer.End()
+	editor.buffer.Cursor.SetSelectionEnd(end)
+	editor.buffer.Cursor.GotoLoc(end)
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectToStartOfLine() {
+	oldCursor := editor.buffer.Cursor.Loc
+	editor.buffer.Cursor.StartOfText()
+	newCursor := editor.buffer.Cursor.Loc
+	if !oldCursor.GreaterThan(newCursor) {
+		editor.buffer.Cursor.Start()
+		newCursor = editor.buffer.Cursor.Loc
+	}
+	editor.buffer.Cursor.SetSelectionStart(newCursor)
+	editor.buffer.Cursor.SetSelectionEnd(oldCursor)
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectToEndOfLine() {
+	oldCursor := editor.buffer.Cursor.Loc
+	editor.buffer.Cursor.End()
+	editor.buffer.Cursor.SetSelectionStart(oldCursor)
+	editor.buffer.Cursor.SetSelectionEnd(editor.buffer.Cursor.Loc)
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectToStartOfText() {
+	oldCursor := editor.buffer.Cursor.Loc
+	textStart := editor.buffer.Start()
+	editor.buffer.Cursor.GotoLoc(textStart)
+	editor.buffer.Cursor.SetSelectionStart(textStart)
+	editor.buffer.Cursor.SetSelectionEnd(oldCursor)
+	editor.applyBuffer()
+}
+
+func (editor *Editor) SelectToEndOfText() {
+	oldCursor := editor.buffer.Cursor.Loc
+	textEnd := editor.buffer.End()
+	editor.buffer.Cursor.GotoLoc(textEnd)
+	editor.buffer.Cursor.SetSelectionStart(oldCursor)
+	editor.buffer.Cursor.SetSelectionEnd(textEnd)
+	editor.applyBuffer()
+}
+
+func (editor *Editor) MoveCursorWordLeft() {
+	if editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Cursor.GotoLoc(editor.buffer.Cursor.CurSelection[0])
+	}
+	editor.buffer.Cursor.WordLeft()
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
+}
+
+func (editor *Editor) MoveCursorWordRight() {
+	if editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Cursor.GotoLoc(editor.buffer.Cursor.CurSelection[1])
+	}
+	editor.buffer.Cursor.WordRight()
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
+}
+
+func (editor *Editor) MoveCursorStartOfLine() {
+	oldCursor := editor.buffer.Cursor.Loc
+	editor.buffer.Cursor.StartOfText()
+	if !oldCursor.GreaterThan(editor.buffer.Cursor.Loc) {
+		editor.buffer.Cursor.Start()
+	}
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
+}
+
+func (editor *Editor) MoveCursorEndOfLine() {
+	editor.buffer.Cursor.End()
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
+}
+
+func (editor *Editor) MoveCursorStartOfText() {
+	editor.buffer.Cursor.GotoLoc(editor.buffer.Start())
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
+}
+
+func (editor *Editor) MoveCursorEndOfText() {
+	editor.buffer.Cursor.GotoLoc(editor.buffer.End())
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
+}
+
+func (editor *Editor) Backspace() {
+	if editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Remove(editor.buffer.Cursor.CurSelection[0], editor.buffer.Cursor.CurSelection[1])
+		editor.applyBuffer()
+	} else if editor.buffer.Cursor.Loc.X > 0 || editor.buffer.Cursor.Loc.Y > 0 {
+		editor.buffer.Remove(editor.buffer.Cursor.Loc.Move(-1, editor.buffer), editor.buffer.Cursor.Loc)
+		editor.applyBuffer()
 	}
 }
 
-func (e *Editor) SelectWordRight(left, right, selection []rune) {
-	if len(right) > 0 {
-		selectionFrom := len(right) - 1
-		for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
-			if right[i] == ' ' || right[i] == '\n' {
-				selectionFrom = i
-				break
-			}
-		}
-
-		var newText string
-		if selectionFrom != len(right)-1 {
-			newText = leftRegion + string(left) + selRegion + string(string(selection)) + string(right[:selectionFrom]) + rightRegion + string(right[selectionFrom:]) + endRegion
-		} else {
-			newText = leftRegion + string(left) + selRegion + string(string(selection)) + string(right) + endRegion
-		}
-		e.setAndFixText(newText)
+func (editor *Editor) DeleteRight() {
+	if editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Remove(editor.buffer.Cursor.CurSelection[0], editor.buffer.Cursor.CurSelection[1])
+	} else {
+		editor.buffer.Remove(editor.buffer.Cursor.Loc, editor.buffer.Cursor.Loc.Move(1, editor.buffer))
 	}
+
+	editor.applyBuffer()
 }
 
-func (e *Editor) MoveCursorWordLeft(left, right, selection []rune) {
-	if len(left) > 0 {
-		selectionAt := 0
-		for i := len(left) - 2; /*Skip space left to selection*/ i >= 0; i-- {
-			if left[i] == ' ' || left[i] == '\n' {
-				selectionAt = i
-				break
-			}
-		}
-
-		var newText string
-		if selectionAt != 0 {
-			newText = leftRegion + string(left[:selectionAt]) + selRegion + string(left[selectionAt]) + rightRegion + string(left[selectionAt+1:]) + string(string(selection)) + string(right) + endRegion
-		} else {
-			if len(left) > 1 {
-				newText = selRegion + string(left[0]) + rightRegion + string(left[1:]) + string(selection) + string(right) + endRegion
-			} else {
-				newText = selRegion + string(left[0]) + rightRegion + string(selection) + string(right) + endRegion
-			}
-		}
-		e.setAndFixText(newText)
-	}
-}
-
-func (e *Editor) MoveCursorWordRight(left, right, selection []rune) {
-	if len(right) > 0 {
-		selectionAt := len(right) - 1
-		for i := 1; /*Skip space right to selection*/ i < len(right)-1; i++ {
-			if right[i] == ' ' || right[i] == '\n' {
-				selectionAt = i
-				break
-			}
-		}
-
-		var newText string
-		if selectionAt != len(right)-1 {
-			newText = leftRegion + string(left) + string(string(selection)) + string(right[:selectionAt]) + selRegion + string(right[selectionAt]) + rightRegion + string(right[selectionAt+1:]) + endRegion
-		} else {
-			newText = leftRegion + string(left) + string(selection) + string(right) + selRegion + selectionChar + endRegion
-		}
-		e.setAndFixText(newText)
-	}
-}
-
-func (e *Editor) SelectAll(left, right, selection []rune) {
-	if len(left) > 0 || len(right) > 0 {
-		e.setAndFixText(selRegion + string(left) + string(selection) + string(right) + endRegion)
-	}
-}
-
-func (e *Editor) DeleteRight(left, right, selection []rune) {
-	if len(selection) >= 1 && strings.HasSuffix(string(selection), selectionChar) {
-		e.setAndFixText(leftRegion + string(left) + selRegion + selectionChar + endRegion)
-	} else if string(selection) != selectionChar {
-		var newText string
-		newText = leftRegion + string(left) + selRegion
-		if len(right) == 0 {
-			newText = newText + selectionChar
-		} else {
-			newText = newText + string(right[0])
-		}
-
-		if len(right) > 1 {
-			newText = newText + rightRegion + string(right[1:])
-		}
-
-		newText = newText + endRegion
-		e.setAndFixText(newText)
-	}
-}
-
-func (e *Editor) Paste(left, right, selection []rune, event *tcell.EventKey) {
-	if e.inputCapture != nil {
-		result := e.inputCapture(event)
+func (editor *Editor) Paste(event *tcell.EventKey) {
+	if editor.inputCapture != nil {
+		result := editor.inputCapture(event)
 		if result == nil {
 			//Early exit, as even has been handled.
 			return
@@ -253,56 +327,34 @@ func (e *Editor) Paste(left, right, selection []rune, event *tcell.EventKey) {
 
 	clipBoardContent, clipError := clipboard.ReadAll()
 	if clipError == nil {
-		var newText string
-		if string(selection) == selectionChar {
-			newText = leftRegion + string(left) + clipBoardContent + selRegion + string(selection)
+		if editor.buffer.Cursor.HasSelection() {
+			editor.buffer.Replace(editor.buffer.Cursor.CurSelection[0], editor.buffer.Cursor.CurSelection[1], clipBoardContent)
 		} else {
-			newText = leftRegion + string(left) + clipBoardContent
-			if len(selection) == 1 {
-				newText = newText + selRegion + string(selection) + rightRegion + string(right)
-			} else {
-				newText = newText + selRegion
-				if len(right) == 0 {
-					newText = newText + selectionChar
-				} else if len(right) == 0 {
-					newText = newText + string(right[0])
-				} else {
-					newText = newText + string(right[0]) + rightRegion + string(right[1:])
-				}
-			}
+			editor.buffer.Insert(editor.buffer.Cursor.Loc, clipBoardContent)
 		}
-		e.setAndFixText(newText + endRegion)
-		e.triggerHeightRequestIfNeccessary()
+		editor.applyBuffer()
 	}
 }
 
-func (e *Editor) InsertCharacter(left, right, selection []rune, character rune) {
-	if len(right) == 0 {
-		if len(selection) == 1 {
-			if string(selection) == selectionChar {
-				e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"]", string(left), character, string(selectionChar)))
-			} else {
-				e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"]", string(left), character, string(selection)))
-			}
-		} else {
-			e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"]", string(left), character, string(selectionChar)))
-		}
+func (editor *Editor) InsertCharacter(character rune) {
+	selectionEnd := editor.buffer.Cursor.CurSelection[1]
+	selectionStart := editor.buffer.Cursor.CurSelection[0]
+	if editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Replace(selectionStart, selectionEnd, string(character))
 	} else {
-		if len(selection) == 1 {
-			e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
-				string(left), character, string(selection), string(right)))
-		} else {
-			e.setAndFixText(fmt.Sprintf("[\"left\"]%s%c[\"\"][\"selection\"]%s[\"\"][\"right\"]%s[\"\"]",
-				string(left), character, string(right[0]), string(right[1:])))
-		}
+		editor.buffer.Insert(editor.buffer.Cursor.Loc, string(character))
 	}
+	editor.buffer.Cursor.ResetSelection()
+	editor.applyBuffer()
 }
 
-// NewEditor Instanciates a ready to use text editor.
+// NewEditor instantiates a ready to use text editor.
 func NewEditor() *Editor {
 	editor := Editor{
 		internalTextView: tview.NewTextView(),
 		requestedHeight:  3,
+		buffer:           femto.NewBufferFromString("", ""),
+		tempBuffer:       femto.NewBufferFromString("", ""),
 	}
 
 	editor.internalTextView.SetWrap(true)
@@ -310,97 +362,93 @@ func NewEditor() *Editor {
 	editor.internalTextView.SetBorder(true)
 	editor.internalTextView.SetRegions(true)
 	editor.internalTextView.SetScrollable(true)
-	editor.internalTextView.SetText(emptyText)
 	editor.internalTextView.Highlight("selection")
+	editor.applyBuffer()
+
+	editor.buffer.Cursor.SetSelectionStart(editor.buffer.Start())
+	editor.buffer.Cursor.SetSelectionEnd(editor.buffer.End())
 
 	editor.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// Since characters can have different widths, we can't directly
-		// access the string, as it is basically handled like a byte array.
-		left := []rune(editor.internalTextView.GetRegionText("left"))
-		right := []rune(editor.internalTextView.GetRegionText("right"))
-		selection := []rune(editor.internalTextView.GetRegionText("selection"))
-
 		// TODO: This entire chunk could be cleaned up by assigning handlers to each event type,
 		// e.g. event.trigger()
 		if shortcuts.MoveCursorLeft.Equals(event) {
-			editor.MoveCursorLeft(left, right, selection)
+			editor.MoveCursorLeft()
 		} else if shortcuts.ExpandSelectionToLeft.Equals(event) {
-			editor.ExpandSelectionToLeft(left, right, selection)
+			editor.SelectionToLeft()
 		} else if shortcuts.MoveCursorRight.Equals(event) {
-			editor.MoveCursorRight(left, right, selection)
+			editor.MoveCursorRight()
 		} else if shortcuts.ExpandSelectionToRight.Equals(event) {
-			editor.ExpandSelectionToRight(left, right, selection)
+			editor.SelectionToRight()
 		} else if shortcuts.SelectWordLeft.Equals(event) {
-			editor.SelectWordLeft(left, right, selection)
+			editor.SelectWordLeft()
 		} else if shortcuts.SelectWordRight.Equals(event) {
-			editor.SelectWordRight(left, right, selection)
-		} else if shortcuts.MoveCursorWordLeft.Equals(event) {
-			editor.MoveCursorWordLeft(left, right, selection)
-		} else if shortcuts.MoveCursorWordRight.Equals(event) {
-			editor.MoveCursorWordRight(left, right, selection)
+			editor.SelectWordRight()
+		} else if shortcuts.SelectToStartOfLine.Equals(event) {
+			editor.SelectToStartOfLine()
+		} else if shortcuts.SelectToEndOfLine.Equals(event) {
+			editor.SelectToEndOfLine()
+		} else if shortcuts.SelectToStartOfText.Equals(event) {
+			editor.SelectToStartOfText()
+		} else if shortcuts.SelectToEndOfText.Equals(event) {
+			editor.SelectToEndOfText()
 		} else if shortcuts.SelectAll.Equals(event) {
-			editor.SelectAll(left, right, selection)
+			editor.SelectAll()
+		} else if shortcuts.MoveCursorWordLeft.Equals(event) {
+			editor.MoveCursorWordLeft()
+		} else if shortcuts.MoveCursorWordRight.Equals(event) {
+			editor.MoveCursorWordRight()
+		} else if shortcuts.MoveCursorStartOfLine.Equals(event) {
+			editor.MoveCursorStartOfLine()
+		} else if shortcuts.MoveCursorEndOfLine.Equals(event) {
+			editor.MoveCursorEndOfLine()
+		} else if shortcuts.MoveCursorStartOfText.Equals(event) {
+			editor.MoveCursorStartOfText()
+		} else if shortcuts.MoveCursorEndOfText.Equals(event) {
+			editor.MoveCursorEndOfText()
 		} else if shortcuts.DeleteRight.Equals(event) {
-			editor.DeleteRight(left, right, selection)
+			editor.DeleteRight()
 		} else if event.Key() == tcell.KeyBackspace2 ||
 			event.Key() == tcell.KeyBackspace {
 			// FIXME Legacy, has to be replaced when there is N-1 Keybind-Mapping.
-			editor.Backspace(left, right, selection)
+			editor.Backspace()
 		} else if shortcuts.CopySelection.Equals(event) {
-			clipboard.WriteAll(string(selection))
+			clipboard.WriteAll(editor.buffer.Cursor.GetSelection())
 			//Returning nil, as copying won't do anything than filling the
 			//clipboard buffer.
 			return nil
 		} else if shortcuts.PasteAtSelection.Equals(event) {
-			editor.Paste(left, right, selection, event)
+			editor.Paste(event)
+			editor.triggerHeightRequestIfNecessary()
 			return nil
 		} else if shortcuts.InputNewLine.Equals(event) {
-			editor.InsertCharacter(left, right, selection, '\n')
-		} else if shortcuts.SendMessage.Equals(event) {
+			editor.InsertCharacter('\n')
+		} else if shortcuts.SendMessage.Equals(event) && editor.inputCapture != nil {
 			return editor.inputCapture(event)
 		} else if (editor.inputCapture == nil || editor.inputCapture(event) != nil) && event.Rune() != 0 {
-			editor.InsertCharacter(left, right, selection, event.Rune())
+			editor.InsertCharacter(event.Rune())
 		} else {
 			return event
 		}
 
-		editor.UpdateMentionHandler()
-		editor.triggerHeightRequestIfNeccessary()
+		editor.triggerHeightRequestIfNecessary()
 		editor.internalTextView.ScrollToHighlight()
 		return nil
 	})
 	return &editor
 }
 
-func (editor *Editor) UpdateMentionHandler() {
-	atSymbolIndex := editor.FindAtSymbolIndexInCurrentWord()
-	if atSymbolIndex == -1 {
-		editor.HideAndResetMentionHandler()
+func (editor *Editor) GetTextLeftOfSelection() string {
+	var to femto.Loc
+	if editor.buffer.Cursor.HasSelection() {
+		to = editor.buffer.Cursor.CurSelection[1]
 	} else {
-		editor.ShowMentionHandler(atSymbolIndex)
+		to = editor.buffer.End()
 	}
-}
-
-func (editor *Editor) ShowMentionHandler(atSymbolIndex int) {
-	text := editor.internalTextView.GetRegionText("left")
-	lookupKeyword := text[atSymbolIndex+1:]
-	editor.currentMentionBeginIndex = atSymbolIndex + 1
-	editor.currentMentionEndIndex = len(lookupKeyword) + atSymbolIndex
-	if editor.mentionShowHandler != nil {
-		editor.mentionShowHandler(lookupKeyword)
-	}
-}
-
-func (editor *Editor) HideAndResetMentionHandler() {
-	editor.currentMentionBeginIndex = 0
-	editor.currentMentionEndIndex = 0
-	if editor.mentionHideHandler != nil {
-		editor.mentionHideHandler()
-	}
+	return editor.buffer.Substr(editor.buffer.Start(), to)
 }
 
 func (editor *Editor) FindAtSymbolIndexInCurrentWord() int {
-	newLeft := editor.internalTextView.GetRegionText("left")
+	newLeft := editor.GetTextLeftOfSelection()
 	for i := len(newLeft) - 1; i >= 0; i-- {
 		if newLeft[i] == '@' && (i == 0 || newLeft[i-1] == ' ' || newLeft[i-1] == '\n') {
 			return i
@@ -409,35 +457,12 @@ func (editor *Editor) FindAtSymbolIndexInCurrentWord() int {
 	return -1
 }
 
-func (editor *Editor) Backspace(left, right, selection []rune) {
-	var newText string
-
-	if len(selection) == 1 && len(left) >= 1 {
-		newText = leftRegion + string(left[:len(left)-1]) + selRegion + string(selection) + rightRegion + string(right) + endRegion
-		editor.internalTextView.SetText(newText)
-	} else if len(selection) > 1 {
-		newText = leftRegion + string(left) + selRegion
-		if len(right) > 0 {
-			newText = newText + string(right[0]) + rightRegion + string(right[1:])
-		} else {
-			newText = newText + selectionChar
-		}
-		newText = newText + endRegion
-		editor.setAndFixText(newText)
-	}
-}
-
-func (editor *Editor) setAndFixText(text string) {
-	newText := multiSelectionCharWithSelectionToLeftPattern.ReplaceAllString(text, selRegion+selectionChar+endRegion)
-	editor.internalTextView.SetText(newText)
-}
-
 func (editor *Editor) countRows(text string) int {
 	_, _, width, _ := editor.internalTextView.GetInnerRect()
 	return tviewutil.CalculateNeccessaryHeight(width, text)
 }
 
-func (editor *Editor) triggerHeightRequestIfNeccessary() {
+func (editor *Editor) triggerHeightRequestIfNecessary() {
 	if editor.heightRequestHandler == nil {
 		return
 	}
@@ -448,6 +473,35 @@ func (editor *Editor) triggerHeightRequestIfNeccessary() {
 	if newRequestedHeight != editor.requestedHeight {
 		editor.requestedHeight = newRequestedHeight
 		editor.heightRequestHandler(newRequestedHeight)
+	}
+}
+
+type AutocompleteValue struct {
+	RenderValue string
+	InsertValue string
+}
+
+type Autocomplete struct {
+	firstRune     rune
+	allowSpaces   bool
+	valueSupplier func(string) []*AutocompleteValue
+}
+
+func (editor *Editor) RegisterAutocomplete(firstRune rune, allowSpaces bool, valueSupplier func(string) []*AutocompleteValue) {
+	editor.autocompleters = append(editor.autocompleters, &Autocomplete{
+		firstRune:     firstRune,
+		allowSpaces:   allowSpaces,
+		valueSupplier: valueSupplier,
+	})
+}
+
+func (editor *Editor) Autocomplete(value string) {
+	if editor.autocompleteFrom != nil {
+		editor.buffer.Replace(*editor.autocompleteFrom, editor.buffer.Cursor.Loc, value+" ")
+		editor.autocompleteFrom = nil
+		//Not necessary, since you probably don't want to autocomplete any
+		//further after you've chosen a value.
+		editor.applyBufferWithoutAutocompletionCheck()
 	}
 }
 
@@ -471,12 +525,14 @@ func (editor *Editor) SetBackgroundColor(color tcell.Color) {
 // and necessary groups for the navigation behaviour.
 func (editor *Editor) SetText(text string) {
 	if text == "" {
-		editor.internalTextView.SetText(emptyText)
+		editor.buffer.Remove(editor.buffer.Start(), editor.buffer.End())
 	} else {
-		editor.internalTextView.SetText(fmt.Sprintf("[\"left\"]%s[\"\"][\"selection\"]%s[\"\"]", text, string(selectionChar)))
+		editor.buffer.Replace(editor.buffer.Start(), editor.buffer.End(), text)
 	}
-
-	editor.triggerHeightRequestIfNeccessary()
+	editor.buffer.Cursor.ResetSelection()
+	editor.buffer.Cursor.GotoLoc(editor.buffer.End())
+	editor.applyBuffer()
+	editor.triggerHeightRequestIfNecessary()
 }
 
 // SetBorderFocusColor delegates to the underlying components
@@ -497,33 +553,13 @@ func (editor *Editor) SetInputCapture(captureFunc func(event *tcell.EventKey) *t
 	editor.inputCapture = captureFunc
 }
 
-// SetMentionShowHandler sets the handler for when a mention is being requested
-func (editor *Editor) SetMentionShowHandler(handlerFunc func(namePart string)) {
-	editor.mentionShowHandler = handlerFunc
-}
-
-// SetMentionHideHandler sets the handler for when a mention is no longer being requested
-func (editor *Editor) SetMentionHideHandler(handlerFunc func()) {
-	editor.mentionHideHandler = handlerFunc
-}
-
-// GetCurrentMentionIndices gets the starting and ending indices of the input box text
-// which are to be replaced
-func (editor *Editor) GetCurrentMentionIndices() (int, int) {
-	return editor.currentMentionBeginIndex, editor.currentMentionEndIndex
+func (editor *Editor) SetAutocompleteValuesUpdateHandler(handlerFunc func(values []*AutocompleteValue)) {
+	editor.autocompleteValuesUpdateHandler = handlerFunc
 }
 
 // GetText returns the text without color tags, region tags and so on.
 func (editor *Editor) GetText() string {
-	left := editor.internalTextView.GetRegionText("left")
-	right := editor.internalTextView.GetRegionText("right")
-	selection := editor.internalTextView.GetRegionText("selection")
-
-	if right == "" && selection == string(selectionChar) {
-		return left
-	}
-
-	return left + selection + right
+	return editor.buffer.String()
 }
 
 // GetPrimitive returnbs the internal component that can be added to a layout

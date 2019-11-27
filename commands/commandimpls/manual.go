@@ -136,7 +136,7 @@ const commandsDocumentation = `[::b]TOPIC
 	command may have zero or more subcommands and zero or more settings.
 	There may also be settings that do not require you passing a value.
 	If a value contains spaces it needs to be quoted beforehand, otherwise
-	the input will be seperated at each given space. Some commands require
+	the input will be separated at each given space. Some commands require
 	some main value, which is basically the non-optional input for that
 	command. That value doesn't require a setting-name to be prepended in
 	front of it.
@@ -397,7 +397,7 @@ const navigationDocumentation = `[::b]TOPIC
 	--------------------------------------------------------------------
 
 	Some shortcuts can be changed via the shortcut dialog. The dialog can be
-	opened via Alt+Shift+S.`
+	opened via Ctrl+K.`
 
 func (manual *Manual) Name() string {
 	return "manual"

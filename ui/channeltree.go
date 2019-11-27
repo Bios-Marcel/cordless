@@ -46,7 +46,7 @@ func NewChannelTree(state *discordgo.State) *ChannelTree {
 	}
 
 	channelTree.
-		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
+		SetVimBindingsEnabled(config.Current.OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetCycleSelection(true).
 		SetTopLevel(1).
 		SetBorder(true).
@@ -95,12 +95,29 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 		createTopLevelChannelNodes(channelTree, channel)
 	}
 	// Categories
+CATEGORY_LOOP:
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildCategory || channel.ParentID != "" ||
-			!discordutil.HasReadMessagesPermission(channel.ID, state) {
+		if channel.Type != discordgo.ChannelTypeGuildCategory || channel.ParentID != "" {
 			continue
 		}
-		createChannelCategoryNodes(channelTree, channel)
+
+		childless := true
+		for _, potentialChild := range channels {
+			if potentialChild.ParentID == channel.ID {
+				if discordutil.HasReadMessagesPermission(potentialChild.ID, state) {
+					//We have at least one child with read-permissions,
+					// therefore we add the category and jump to the next
+					createChannelCategoryNode(channelTree, channel)
+					continue CATEGORY_LOOP
+				}
+				childless = false
+			}
+		}
+
+		//If the category is childless, we want to add it anyway.
+		if childless {
+			createChannelCategoryNode(channelTree, channel)
+		}
 	}
 	// Second level channel
 	for _, channel := range channels {
@@ -123,7 +140,7 @@ func createTopLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Cha
 	channelTree.GetRoot().AddChild(channelNode)
 }
 
-func createChannelCategoryNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
+func createChannelCategoryNode(channelTree *ChannelTree, channel *discordgo.Channel) {
 	channelNode := createChannelNode(channel)
 	channelNode.SetSelectable(false)
 	channelTree.GetRoot().AddChild(channelNode)
@@ -153,7 +170,7 @@ func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	}
 
 	// Adds a padlock prefix if the channel if not readable by the everyone group
-	if config.GetConfig().IndicateChannelAccessRestriction {
+	if config.Current.IndicateChannelAccessRestriction {
 		for _, permission := range channel.PermissionOverwrites {
 			if permission.Type == "role" && permission.ID == channel.GuildID && permission.Deny&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
 				prefixes += tviewutil.Escape("\U0001F512")

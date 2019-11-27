@@ -43,7 +43,7 @@ func (fixLayout *FixLayout) Execute(writer io.Writer, parameters []string) {
 			return
 		}
 
-		config.GetConfig().UseFixedLayout = choice
+		config.Current.UseFixedLayout = choice
 		fixLayout.window.RefreshLayout()
 
 		persistError := config.PersistConfig()
@@ -74,10 +74,10 @@ func (fixLayout *FixLayout) Execute(writer io.Writer, parameters []string) {
 		var successOutput string
 		subCommand := parameters[0]
 		if subCommand == "left" {
-			config.GetConfig().FixedSizeLeft = int(size)
+			config.Current.FixedSizeLeft = int(size)
 			successOutput = fmt.Sprintf("The left side of the layout was set to %d", int(size))
 		} else if subCommand == "right" {
-			config.GetConfig().FixedSizeRight = int(size)
+			config.Current.FixedSizeRight = int(size)
 			successOutput = fmt.Sprintf("The right side of the layout was set to %d", int(size))
 		} else {
 			fmt.Fprintf(writer, "The subcommand '%s' does not exist\n", subCommand)

@@ -71,7 +71,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 		tokenInputMasked:        true,
 		tokenInputMaskRune:      '*',
 		loginTypeTokenButton:    tview.NewButton("Login via Authentication-Token"),
-		loginTypePasswordButton: tview.NewButton("Login via E-Mail and password (Optinally Supports 2FA)"),
+		loginTypePasswordButton: tview.NewButton("Login via E-Mail and password (Optionally Supports 2FA)"),
 		messageText:             tview.NewTextView(),
 	}
 
@@ -265,13 +265,7 @@ func (login *Login) attemptLogin() {
 		panic("Was in state loginType=None during login attempt.")
 	case Token:
 		session, loginError := discordgo.NewWithToken(userAgent, login.tokenInput.GetText())
-		if loginError != nil || session == nil {
-			login.sessionChannel <- &loginAttempt{session, loginError}
-		} else {
-			//Dummy lookup for validating the token.
-			_, loginError = session.UserGuilds(0, "", "")
-			login.sessionChannel <- &loginAttempt{session, loginError}
-		}
+		login.sessionChannel <- &loginAttempt{session, loginError}
 	case Password:
 		// Even if the login is supposed to be without two-factor-authentication, we
 		// attempt parsing a 2fa code, since the underlying rest-call can also handle
@@ -319,7 +313,7 @@ func (login *Login) RequestLogin(additionalMessage string) (*discordgo.Session, 
 func (login *Login) showLoginTypeChoice() {
 	login.showView(login.loginChoiceView, 5)
 	login.app.SetFocus(login.loginTypeTokenButton)
-	login.messageText.SetText("Please decide for a login method.\n\nLogging in as a Bot will only work using a Authentication-Token.")
+	login.messageText.SetText("Please choose a login method.\n\nLogging in as a Bot will only work using a Authentication-Token.")
 }
 
 func (login *Login) showPasswordLogin() {

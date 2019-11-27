@@ -42,6 +42,14 @@ var (
 		multilineTextInput, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModCtrl|tcell.ModShift))
 	SelectWordRight = addShortcut("select_word_to_right", "Select word to right",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModCtrl|tcell.ModShift))
+	SelectToStartOfLine = addShortcut("select_to_start_of_line", "Select to start of line",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyHome, 0, tcell.ModShift))
+	SelectToEndOfLine = addShortcut("select_to_end_of_line", "Select to end of line",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyEnd, 0, tcell.ModShift))
+	SelectToStartOfText = addShortcut("select_to_start_of_text", "Select to start of text",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyHome, 0, tcell.ModCtrl|tcell.ModShift))
+	SelectToEndOfText = addShortcut("select_to_end_of_text", "Select to end of text",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyEnd, 0, tcell.ModCtrl|tcell.ModShift))
 
 	MoveCursorLeft = addShortcut("move_cursor_to_left", "Move cursor to left",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone))
@@ -51,6 +59,14 @@ var (
 		multilineTextInput, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModCtrl))
 	MoveCursorWordRight = addShortcut("move_cursor_to_word_right", "Move cursor to word right",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModCtrl))
+	MoveCursorStartOfLine = addShortcut("move_cursor_to_start_of_line", "Move cursor to start of line",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyHome, 0, tcell.ModNone))
+	MoveCursorEndOfLine = addShortcut("move_cursor_to_end_of_line", "Move cursor to end of line",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyEnd, 0, tcell.ModNone))
+	MoveCursorStartOfText = addShortcut("move_cursor_to_start_of_text", "Move cursor to start of text",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyHome, 0, tcell.ModCtrl))
+	MoveCursorEndOfText = addShortcut("move_cursor_to_end_of_text", "Move cursor to end of text",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyEnd, 0, tcell.ModCtrl))
 
 	// FIXME Gotta add this later, as there is Backspace and Backspace and those differ on linux.
 	// DeleteLeft = addShortcut("delete_left","Delete left",multilineTextInput,tcell.NewEventKey(tcell.KeyBackspace2, rune(tcell.KeyBackspace2), tcell.ModNone))
@@ -89,7 +105,7 @@ var (
 	FocusMessageContainer = addShortcut("focus_message_container", "Focus message container",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 't', tcell.ModAlt))
 	FocusCommandInput = addShortcut("focus_command_input", "Focus command input",
-		globalScope, tcell.NewEventKey(tcell.KeyCtrlI, rune(tcell.KeyCtrlI), tcell.ModNone))
+		globalScope, tcell.NewEventKey(tcell.KeyCtrlT, rune(tcell.KeyCtrlT), tcell.ModCtrl))
 	FocusCommandOutput = addShortcut("focus_command_output", "Focus command output",
 		globalScope, tcell.NewEventKey(tcell.KeyCtrlO, rune(tcell.KeyCtrlO), tcell.ModCtrl))
 
@@ -97,6 +113,8 @@ var (
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'U', tcell.ModAlt))
 	ToggleCommandView = addShortcut("toggle_command_view", "Toggle command view",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt))
+	ToggleBareChat = addShortcut("toggle_bare_chat", "Toggle bare chat",
+		globalScope, tcell.NewEventKey(tcell.KeyCtrlB, rune(tcell.KeyCtrlB), tcell.ModCtrl))
 
 	scopes    []*Scope
 	Shortcuts []*Shortcut
@@ -149,7 +167,7 @@ type Shortcut struct {
 
 // Equals compares the given EventKey with the Shortcuts Event.
 func (s *Shortcut) Equals(event *tcell.EventKey) bool {
-	return eventsEqual(s.Event, event)
+	return EventsEqual(s.Event, event)
 }
 
 // Scope is what describes a shortcuts scope within the application. Usually

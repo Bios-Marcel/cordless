@@ -2,13 +2,15 @@ package commandimpls
 
 import (
 	"fmt"
+	"io"
+
+	"github.com/Bios-Marcel/discordgo"
+
 	"github.com/Bios-Marcel/cordless/commands"
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/text"
-	"github.com/Bios-Marcel/discordgo"
-	"io"
 )
 
 const tfaHelpPage = `[::b]NAME
@@ -139,7 +141,10 @@ func (cmd *TFAEnableCmd) Execute(writer io.Writer, parameters []string) {
 	if cmd.session.MFA {
 		fmt.Fprintln(writer, "TFA is already enabled on this account.")
 	} else {
-		cmd.window.ShowTFASetup()
+		tfaError := cmd.window.ShowTFASetup()
+		if tfaError != nil {
+			commands.PrintError(writer, "error showing tfa gui", tfaError.Error())
+		}
 	}
 }
 

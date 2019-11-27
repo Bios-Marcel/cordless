@@ -187,9 +187,9 @@ func (shortcutTable *ShortcutTable) SetOnClose(onClose func()) {
 	shortcutTable.onClose = onClose
 }
 
-// eventsEqual compares the given events, respecting everything except for the
+// EventsEqual compares the given events, respecting everything except for the
 // When field.
-func eventsEqual(eventOne, eventTwo *tcell.EventKey) bool {
+func EventsEqual(eventOne, eventTwo *tcell.EventKey) bool {
 	if (eventOne == nil && eventTwo != nil) || (eventOne != nil && eventTwo == nil) {
 		return false
 	}

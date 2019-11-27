@@ -499,7 +499,7 @@ func TestIsBlocked1(t *testing.T) {
 				},
 			},
 			want: true,
-		},  {
+		}, {
 			name: "Relation with multiple different IDs and users and one user match with wrong type",
 			args: args{
 				user: &discordgo.User{ID: "1"},

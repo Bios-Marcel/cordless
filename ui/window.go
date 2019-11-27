@@ -3,16 +3,26 @@ package ui
 import (
 	"bytes"
 	"fmt"
-	"github.com/Bios-Marcel/cordless/util/text"
-	"github.com/mdp/qrterminal/v3"
 	"log"
 	"strings"
 	"time"
+	"unicode"
+
+	"github.com/mattn/go-runewidth"
+	"github.com/mdp/qrterminal/v3"
+
+	"github.com/Bios-Marcel/cordless/util/fuzzy"
+	"github.com/Bios-Marcel/cordless/util/text"
 
 	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/goclipimg"
 
 	"github.com/atotto/clipboard"
+
+	"github.com/Bios-Marcel/discordgo"
+	"github.com/Bios-Marcel/tview"
+	"github.com/gdamore/tcell"
+	"github.com/gen2brain/beeep"
 
 	"github.com/Bios-Marcel/cordless/commands"
 	"github.com/Bios-Marcel/cordless/config"
@@ -22,18 +32,17 @@ import (
 	"github.com/Bios-Marcel/cordless/scripting/js"
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
-	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/maths"
-	"github.com/Bios-Marcel/discordgo"
-	"github.com/Bios-Marcel/tview"
-	"github.com/gdamore/tcell"
-	"github.com/gen2brain/beeep"
 )
 
 const (
 	guildPageName    = "Guilds"
 	privatePageName  = "Private"
 	userInactiveTime = 10 * time.Second
+)
+
+var (
+	shortcutsDialogShortcut = tcell.NewEventKey(tcell.KeyCtrlK, rune(tcell.KeyCtrlK), tcell.ModCtrl)
 )
 
 // Window is basically the whole application, as it contains all the
@@ -73,7 +82,7 @@ type Window struct {
 	selectedChannel     *discordgo.Channel
 	previousChannel     *discordgo.Channel
 
-	jsEngine scripting.Engine
+	extensionEngines []scripting.Engine
 
 	commandMode bool
 	commandView *CommandView
@@ -83,6 +92,8 @@ type Window struct {
 	userActiveTimer *time.Timer
 
 	doRestart chan bool
+
+	bareChat bool
 }
 
 //NewWindow constructs the whole application window and also registers all
@@ -90,12 +101,12 @@ type Window struct {
 //start the application.
 func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.Session, readyEvent *discordgo.Ready) (*Window, error) {
 	window := &Window{
-		doRestart:       doRestart,
-		session:         session,
-		app:             app,
-		jsEngine:        js.New(),
-		userActiveTimer: time.NewTimer(userInactiveTime),
-		messageLoader:   discordutil.CreateMessageLoader(session),
+		doRestart:        doRestart,
+		session:          session,
+		app:              app,
+		extensionEngines: []scripting.Engine{js.New()},
+		userActiveTimer:  time.NewTimer(userInactiveTime),
+		messageLoader:    discordutil.CreateMessageLoader(session),
 	}
 
 	go func() {
@@ -107,21 +118,24 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.commandView = NewCommandView(window.ExecuteCommand)
 	log.SetOutput(window.commandView)
-	initError := window.initJSEngine()
-	if initError != nil {
-		return nil, initError
+
+	for _, engine := range window.extensionEngines {
+		initError := window.initExtensionEngine(engine)
+		if initError != nil {
+			return nil, initError
+		}
 	}
 
 	guilds := readyEvent.Guilds
 
 	mentionWindowRootNode := tview.NewTreeNode("")
-	mentionWindow := tview.NewTreeView().
+	autocompleteView := tview.NewTreeView().
 		SetVimBindingsEnabled(false).
 		SetRoot(mentionWindowRootNode).
 		SetTopLevel(1).
 		SetCycleSelection(true)
-	mentionWindow.SetBorder(true)
-	mentionWindow.SetBorderSides(false, true, false, true)
+	autocompleteView.SetBorder(true)
+	autocompleteView.SetBorderSides(false, true, false, true)
 
 	window.leftArea = tview.NewPages()
 
@@ -184,7 +198,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		if channelLoadError != nil {
 			window.ShowErrorDialog(channelLoadError.Error())
 		} else {
-			if config.GetConfig().FocusChannelAfterGuildSelection {
+			if config.Current.FocusChannelAfterGuildSelection {
 				app.SetFocus(window.channelTree)
 			}
 		}
@@ -202,7 +216,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerGuildHandlers()
 	window.registerGuildMemberHandlers()
 
-	if config.GetConfig().MouseEnabled {
+	if config.Current.MouseEnabled {
 		switchToPrivateButton := tview.NewButton("Show PMs")
 		switchToPrivateButton.SetBorderColor(config.GetTheme().PrimitiveBackgroundColor)
 		switchToPrivateButton.SetSelectedFunc(func() {
@@ -224,7 +238,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.privateList.Load()
 	window.registerPrivateChatsHandler()
 
-	if config.GetConfig().MouseEnabled {
+	if config.Current.MouseEnabled {
 		privatePage := tview.NewFlex().SetDirection(tview.FlexRow)
 		switchToGuildButton := tview.NewButton("Show Guilds")
 		switchToGuildButton.SetBorderColor(config.GetTheme().PrimitiveBackgroundColor)
@@ -335,7 +349,25 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if shortcuts.CopySelectedMessage.Equals(event) {
-			copyError := clipboard.WriteAll(message.ContentWithMentionsReplaced())
+			content := message.ContentWithMentionsReplaced()
+			if len(message.Attachments) == 1 {
+				if content == "" {
+					content = message.Attachments[0].URL
+				} else {
+					content += "\n" + message.Attachments[0].URL
+				}
+			} else if len(message.Attachments) > 1 {
+				links := make([]string, 0, len(message.Attachments))
+				for _, file := range message.Attachments {
+					links = append(links, file.URL)
+				}
+				if content == "" {
+					content = strings.Join(links, "\n")
+				} else {
+					content += "\n" + strings.Join(links, "\n")
+				}
+			}
+			copyError := clipboard.WriteAll(content)
 			if copyError != nil {
 				window.ShowErrorDialog(fmt.Sprintf("Error copying message: %s", copyError.Error()))
 			}
@@ -355,18 +387,190 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), newHeight, 0)
 	})
 
-	window.messageInput.SetMentionShowHandler(func(namePart string) {
-		mentionWindow.GetRoot().ClearChildren()
-		window.commandView.commandOutput.Clear()
-
-		window.PopulateMentionWindow(mentionWindow, namePart)
-		if !window.ShowMentionWindowChildren(mentionWindow, 10) {
-			window.HideMentionWindow(mentionWindow)
+	window.messageInput.SetAutocompleteValuesUpdateHandler(func(values []*AutocompleteValue) {
+		autocompleteView.GetRoot().ClearChildren()
+		if len(values) == 0 {
+			autocompleteView.SetVisible(false)
+			window.app.SetFocus(window.messageInput.GetPrimitive())
+		} else {
+			rootNode := autocompleteView.GetRoot()
+			for _, value := range values {
+				newNode := tview.NewTreeNode(value.RenderValue)
+				newNode.SetReference(value)
+				rootNode.AddChild(newNode)
+			}
+			autocompleteView.SetCurrentNode(rootNode)
+			autocompleteView.SetVisible(true)
+			window.app.SetFocus(autocompleteView)
+			window.chatArea.ResizeItem(autocompleteView, maths.Min(10, len(values)), 0)
 		}
 	})
 
-	window.messageInput.SetMentionHideHandler(func() {
-		window.HideMentionWindow(mentionWindow)
+	autocompleteView.SetSelectedFunc(func(node *tview.TreeNode) {
+		value := node.GetReference().(*AutocompleteValue)
+		window.messageInput.Autocomplete(value.InsertValue)
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+		autocompleteView.SetVisible(false)
+	})
+
+	window.messageInput.RegisterAutocomplete('#', false, func(value string) []*AutocompleteValue {
+		if window.selectedChannel != nil && window.selectedChannel.GuildID != "" {
+			guild, stateError := session.State.Guild(window.selectedChannel.GuildID)
+			if stateError != nil {
+				return nil
+			}
+
+			filtered := fuzzy.ScoreAndSortChannels(value, guild.Channels)
+			var autocompleteValues []*AutocompleteValue
+			for _, channel := range filtered {
+				if channel.Type != discordgo.ChannelTypeGuildText {
+					continue
+				}
+
+				autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+					RenderValue: channel.Name,
+					InsertValue: "<#" + channel.ID + ">",
+				})
+			}
+
+			return autocompleteValues
+		}
+
+		return nil
+	})
+
+	window.messageInput.RegisterAutocomplete('@', true, func(value string) []*AutocompleteValue {
+		if window.selectedChannel != nil {
+			guildID := window.selectedChannel.GuildID
+			var autocompleteValues []*AutocompleteValue
+			if guildID != "" {
+				guild, stateError := session.State.Guild(guildID)
+				if stateError == nil {
+					filteredRoles := fuzzy.ScoreAndSortRoles(value, guild.Roles)
+					for _, role := range filteredRoles {
+						autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+							RenderValue: role.Name,
+							//FIXME Inconsistent, we should change this.
+							InsertValue: "<@&" + role.ID + ">",
+						})
+					}
+
+					filteredMembers := fuzzy.ScoreAndSortMembers(value, guild.Members)
+					for _, member := range filteredMembers {
+						insertValue := member.User.Username + "#" + member.User.Discriminator
+						var renderValue string
+						if member.Nick != "" {
+							renderValue = insertValue + " | " + member.Nick
+						} else {
+							renderValue = insertValue
+						}
+						autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+							RenderValue: renderValue,
+							InsertValue: "@" + insertValue,
+						})
+					}
+
+					return autocompleteValues
+				}
+			}
+
+			filtered := fuzzy.ScoreAndSortUsers(value, window.selectedChannel.Recipients)
+			for _, user := range filtered {
+				insertValue := user.Username + "#" + user.Discriminator
+				autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+					RenderValue: insertValue,
+					InsertValue: "@" + insertValue,
+				})
+			}
+
+			return autocompleteValues
+		}
+
+		return nil
+	})
+
+	emojisAsArray := make([]string, 0, len(discordemojimap.EmojiMap))
+	for emoji, _ := range discordemojimap.EmojiMap {
+		emojisAsArray = append(emojisAsArray, emoji)
+	}
+
+	var globallyUsableCustomEmoji []*discordgo.Emoji
+	if window.session.State.User.PremiumType == discordgo.UserPremiumTypeNone {
+		for _, guild := range window.session.State.Guilds {
+			for _, emoji := range guild.Emojis {
+				if emoji.Animated {
+					continue
+				}
+
+				if !strings.HasPrefix(emoji.Name, "GW") {
+					continue
+				}
+
+				globallyUsableCustomEmoji = append(globallyUsableCustomEmoji, emoji)
+			}
+		}
+	} else {
+		for _, guild := range window.session.State.Guilds {
+			for _, emoji := range guild.Emojis {
+				globallyUsableCustomEmoji = append(globallyUsableCustomEmoji, emoji)
+			}
+		}
+	}
+
+	emojisByGuild := make(map[string][]*discordgo.Emoji)
+
+	window.messageInput.RegisterAutocomplete(':', false, func(value string) []*AutocompleteValue {
+		var autocompleteValues []*AutocompleteValue
+
+		var filteredCustomEmoji []*discordgo.Emoji
+		if window.session.State.User.PremiumType == discordgo.UserPremiumTypeNone {
+			if window.selectedChannel != nil && window.selectedChannel.GuildID != "" {
+				guildID := window.selectedChannel.GuildID
+				var cached bool
+				filteredCustomEmoji, cached = emojisByGuild[guildID]
+				if cached {
+					goto EVALUATE_EMOJIS
+				}
+
+				guild, stateError := window.session.State.Guild(guildID)
+				if stateError == nil {
+					for _, emoji := range guild.Emojis {
+						if emoji.Animated {
+							continue
+						}
+
+						filteredCustomEmoji = append(filteredCustomEmoji, emoji)
+					}
+
+					filteredCustomEmoji = append(filteredCustomEmoji, globallyUsableCustomEmoji...)
+					emojisByGuild[window.selectedChannel.GuildID] = filteredCustomEmoji
+
+					goto EVALUATE_EMOJIS
+				}
+			}
+		}
+
+	EVALUATE_EMOJIS:
+		filteredEmoji := fuzzy.ScoreAndSortEmoji(value, emojisAsArray, filteredCustomEmoji)
+		for _, emoji := range filteredEmoji {
+			unicodeSymbol := discordemojimap.GetEmoji(emoji)
+			var renderValue string
+			var insertValue string
+			if unicodeSymbol != "" {
+				renderValue = unicodeSymbol + " | " + emoji
+				insertValue = unicodeSymbol
+			} else {
+				trimmed := emoji[1:]
+				renderValue = "? | " + trimmed + " (custom emoji)"
+				insertValue = ":!" + trimmed + ":"
+			}
+			autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+				RenderValue: renderValue,
+				InsertValue: insertValue,
+			})
+		}
+
+		return autocompleteValues
 	})
 
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -501,12 +705,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.userList = NewUserTree(window.session.State)
 
-	if config.GetConfig().OnTypeInListBehaviour == config.SearchOnTypeInList {
+	if config.Current.OnTypeInListBehaviour == config.SearchOnTypeInList {
 		guildList.SetSearchOnTypeEnabled(true)
 		channelTree.SetSearchOnTypeEnabled(true)
 		window.userList.internalTreeView.SetSearchOnTypeEnabled(true)
 		window.privateList.internalTreeView.SetSearchOnTypeEnabled(true)
-	} else if config.GetConfig().OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
+	} else if config.Current.OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
 		guildList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
 			window.app, window.messageInput.internalTextView))
 		channelTree.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
@@ -830,24 +1034,40 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.rootContainer.AddItem(window.dialogReplacement, 2, 0, false)
 
+	if config.Current.ShowBottomBar {
+		bottomBar := tview.NewFlex().SetDirection(tview.FlexColumn)
+		bottomBar.SetBackgroundColor(config.GetTheme().PrimitiveBackgroundColor)
+
+		loggedInAsText := fmt.Sprintf("Logged in as: '%s'", session.State.User.String())
+		loggedInAs := tview.NewTextView().SetText(loggedInAsText)
+		loggedInAs.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
+		bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
+		bottomBar.AddItem(tview.NewBox(), 1, 0, false)
+
+		shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcuts.EventToString(shortcutsDialogShortcut))
+		shortcutInfo := tview.NewTextView().SetText(shortcutInfoText)
+		shortcutInfo.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
+		bottomBar.AddItem(shortcutInfo, runewidth.StringWidth(shortcutInfoText), 0, false)
+
+		window.rootContainer.AddItem(bottomBar, 1, 0, false)
+	}
+
 	app.SetRoot(window.rootContainer, true)
 	window.currentContainer = window.rootContainer
 	app.SetInputCapture(window.handleGlobalShortcuts)
 
-	conf := config.GetConfig()
-
-	if conf.UseFixedLayout {
-		window.middleContainer.AddItem(window.leftArea, conf.FixedSizeLeft, 0, true)
+	if config.Current.UseFixedLayout {
+		window.middleContainer.AddItem(window.leftArea, config.Current.FixedSizeLeft, 0, true)
 		window.middleContainer.AddItem(window.chatArea, 0, 1, false)
-		window.middleContainer.AddItem(window.userList.internalTreeView, conf.FixedSizeRight, 0, false)
+		window.middleContainer.AddItem(window.userList.internalTreeView, config.Current.FixedSizeRight, 0, false)
 	} else {
 		window.middleContainer.AddItem(window.leftArea, 0, 7, true)
 		window.middleContainer.AddItem(window.chatArea, 0, 20, false)
 		window.middleContainer.AddItem(window.userList.internalTreeView, 0, 6, false)
 	}
 
-	mentionWindow.SetVisible(false)
-	mentionWindow.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	autocompleteView.SetVisible(false)
+	autocompleteView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch key := event.Key(); key {
 		case tcell.KeyRune, tcell.KeyDelete, tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyLeft, tcell.KeyRight, tcell.KeyCtrlA, tcell.KeyCtrlV:
 			window.messageInput.internalTextView.GetInputCapture()(event)
@@ -856,42 +1076,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		return event
 	})
 
-	// Invoked when enter is pressed
-	mentionWindow.SetSelectedFunc(func(node *tview.TreeNode) {
-		beginIndex, endIndex := window.messageInput.GetCurrentMentionIndices()
-		data, ok := node.GetReference().(string)
-		oldText := window.messageInput.GetText()
-		if ok {
-			left := oldText[:beginIndex] + strings.TrimSpace(data) + " "
-			right := oldText[endIndex+1:]
-			var text string
-			if len(right) == 0 {
-				text = left + " "
-			} else {
-				text = left + right
-			}
-			window.messageInput.SetText(text)
-			window.messageInput.MoveCursorToIndex(text, len(left))
-		} else {
-			role, ok := node.GetReference().(*discordgo.Role)
-			if ok {
-				left := "<@&" + strings.TrimSpace(role.ID) + "> "
-				right := oldText[endIndex+1:]
-				var text string
-				if len(right) == 0 {
-					text = left + " "
-				} else {
-					text = left + right
-				}
-				window.messageInput.SetText(text)
-				window.messageInput.MoveCursorToIndex(text, len(left))
-			}
-		}
-		window.messageInput.mentionHideHandler()
-	})
-
 	window.chatArea.AddItem(window.messageContainer, 0, 1, false)
-	window.chatArea.AddItem(mentionWindow, 2, 2, true)
+	window.chatArea.AddItem(autocompleteView, 2, 2, true)
 	window.chatArea.AddItem(window.messageInput.GetPrimitive(), window.messageInput.GetRequestedHeight(), 0, false)
 
 	window.commandView.commandOutput.SetVisible(false)
@@ -909,38 +1095,44 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	return window, nil
 }
 
-func (window *Window) initJSEngine() error {
-	window.jsEngine.SetErrorOutput(window.commandView.commandOutput)
-	if err := window.jsEngine.LoadScripts(config.GetScriptDirectory()); err != nil {
+// initExtensionEngine injections necessary functions into the engine.
+// those functions can be called by each script inside of an engine.
+func (window *Window) initExtensionEngine(engine scripting.Engine) error {
+	engine.SetErrorOutput(window.commandView.commandOutput)
+	if err := engine.LoadScripts(config.GetScriptDirectory()); err != nil {
 		return err
 	}
 
-	window.jsEngine.SetTriggerNotificationFunction(func(title, text string) {
+	engine.SetTriggerNotificationFunction(func(title, text string) {
 		notifyError := beeep.Notify("Cordless - "+title, text, "assets/information.png")
 		if notifyError != nil {
 			log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
 		}
 	})
 
-	window.jsEngine.SetGetCurrentGuildFunction(func() string {
+	engine.SetGetCurrentGuildFunction(func() string {
 		if window.selectedGuild != nil {
 			return window.selectedGuild.ID
 		}
 		return ""
 	})
 
-	window.jsEngine.SetGetCurrentChannelFunction(func() string {
+	engine.SetGetCurrentChannelFunction(func() string {
 		if window.selectedChannel != nil {
 			return window.selectedChannel.ID
 		}
 		return ""
 	})
 
-	window.jsEngine.SetPrintToConsoleFunction(func(text string) {
+	// Even though scripts might already have functions for logging, like the
+	// JS engine already has console.log, this is sadly hardcoded to print to
+	// stdout instead of a custom specified IO writer.
+
+	engine.SetPrintToConsoleFunction(func(text string) {
 		fmt.Fprint(window.commandView, text)
 	})
 
-	window.jsEngine.SetPrintLineToConsoleFunction(func(text string) {
+	engine.SetPrintLineToConsoleFunction(func(text string) {
 		fmt.Fprintln(window.commandView, text)
 	})
 
@@ -953,18 +1145,15 @@ func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
 }
 
 func (window *Window) insertNewLineAtCursor() {
-	left := window.messageInput.internalTextView.GetRegionText("left")
-	right := window.messageInput.internalTextView.GetRegionText("right")
-	selection := window.messageInput.internalTextView.GetRegionText("selection")
-	window.messageInput.InsertCharacter([]rune(left), []rune(right), []rune(selection), '\n')
+	window.messageInput.InsertCharacter('\n')
 	window.app.QueueUpdateDraw(func() {
-		window.messageInput.triggerHeightRequestIfNeccessary()
+		window.messageInput.triggerHeightRequestIfNecessary()
 		window.messageInput.internalTextView.ScrollToHighlight()
 	})
 }
 
 func (window *Window) IsCursorInsideCodeBlock() bool {
-	left := window.messageInput.internalTextView.GetRegionText("left")
+	left := window.messageInput.GetTextLeftOfSelection()
 	leftSplit := strings.Split(left, "```")
 	return len(leftSplit)%2 == 0
 }
@@ -1081,117 +1270,6 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 	}
 }
 
-func (window *Window) HideMentionWindow(mentionWindow *tview.TreeView) {
-	mentionWindow.SetVisible(false)
-	window.app.SetFocus(window.messageInput.internalTextView)
-}
-
-func (window *Window) ShowMentionWindowChildren(mentionWindow *tview.TreeView, maxChildren int) bool {
-	children := mentionWindow.GetRoot().GetChildren()
-	if children == nil {
-		return false
-	}
-	numChildren := maths.Min(len(children), 10)
-	window.chatArea.ResizeItem(mentionWindow, numChildren, 0)
-	if numChildren > 0 {
-		mentionWindow.SetCurrentNode(children[0])
-	}
-	mentionWindow.SetVisible(true)
-	window.app.SetFocus(mentionWindow)
-	return true
-}
-
-func (window *Window) PopulateMentionWindow(mentionWindow *tview.TreeView, namePart string) {
-	if window.selectedChannel == nil {
-		return
-	}
-
-	if window.selectedChannel.GuildID != "" {
-		window.PopulateMentionWindowFromCurrentGuild(mentionWindow, namePart)
-	} else {
-		window.PopulateMentionWindowFromCurrentChannel(mentionWindow, namePart)
-	}
-}
-
-func (window *Window) PopulateMentionWindowFromCurrentGuild(mentionWindow *tview.TreeView, namePart string) {
-	guild, discordError := window.session.State.Guild(window.selectedChannel.GuildID)
-	if discordError != nil {
-		return
-	}
-
-	nameMap := make(map[string]string)
-	var memberNames []string
-	for _, user := range guild.Members {
-		userName := user.User.Username + "#" + user.User.Discriminator
-		if len(user.Nick) > 0 {
-			combined := "\t" + userName + " | " + user.Nick
-			nameMap[userName] = combined
-			nameMap[user.Nick] = combined
-			nameMap[combined] = userName
-			memberNames = append(memberNames, userName, user.Nick)
-		} else {
-			memberNames = append(memberNames, userName)
-		}
-	}
-
-	roleMap := make(map[string]*discordgo.Role)
-	for _, role := range guild.Roles {
-		roleMap[role.Name] = role
-		memberNames = append(memberNames, role.Name)
-	}
-
-	searchResults := fuzzy.ScoreSearch(namePart, memberNames)
-	sortedResults := fuzzy.SortSearchResults(searchResults)
-
-	userWithNickSet := make(map[string]struct{})
-	for _, result := range sortedResults {
-		// Check if result was a role.
-		if role, ok := roleMap[result.Key]; ok {
-			window.addNodeToMentionWindow(mentionWindow, role.Name, role)
-			continue
-		}
-
-		var displayName string = result.Key
-		var userMentionReference string = result.Key
-		if combinedUserAndNickName, ok := nameMap[result.Key]; ok {
-			// If the combined string has been added, skip this entry.
-			if _, containsStr := userWithNickSet[combinedUserAndNickName]; containsStr {
-				continue
-			}
-			userWithNickSet[combinedUserAndNickName] = struct{}{}
-			displayName = combinedUserAndNickName
-			userMentionReference = nameMap[combinedUserAndNickName]
-		}
-		window.addNodeToMentionWindow(mentionWindow, displayName, userMentionReference)
-	}
-}
-
-func (window *Window) addNodeToMentionWindow(mentionWindow *tview.TreeView, name string, reference interface{}) {
-	userNode := tview.NewTreeNode(name)
-	userNode.SetReference(reference)
-	mentionWindow.GetRoot().AddChild(userNode)
-}
-
-func (window *Window) PopulateMentionWindowFromCurrentChannel(mentionWindow *tview.TreeView, namePart string) {
-	memberNames := make([]string, 0, len(window.selectedChannel.Recipients))
-	for _, user := range window.selectedChannel.Recipients {
-		userName := user.Username + "#" + user.Discriminator
-		memberNames = append(memberNames, userName)
-	}
-
-	searchResults := fuzzy.ScoreSearch(namePart, memberNames)
-	sortedResults := fuzzy.SortSearchResults(searchResults)
-
-	for _, result := range sortedResults {
-		userName := result.Key
-		userNodeText := "\t" + userName
-		userNode := tview.NewTreeNode(userNodeText)
-		userNode.SetReference(userName)
-		mentionWindow.GetRoot().AddChild(userNode)
-	}
-
-}
-
 func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.TreeNode, isSelected bool) {
 	if isSelected {
 		guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
@@ -1214,7 +1292,9 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 		return strings.ReplaceAll(input, ":", "\\:")
 	})
 
-	message = window.jsEngine.OnMessageSend(message)
+	for _, engine := range window.extensionEngines {
+		message = engine.OnMessageSend(message)
+	}
 
 	if targetChannel.GuildID != "" {
 		channelGuild, discordError := window.session.State.Guild(targetChannel.GuildID)
@@ -1250,8 +1330,15 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 	return message
 }
 
+// emojiSequenceIndexes will find all parts of a string (rune array) that
+// could potentially be emoji sequences and will return them backwards.
+// they'll be returned backwards in order to allow easily manipulating the
+// data without invalidating the following indexes accidentally.
+// Example:
+//     Hello :world:, what a :nice: day.
+// would result in
+//     []int{22,,27,6,12}
 func emojiSequenceIndexes(runes []rune) []int {
-	//TODO Exclamation mark
 	var sequencesBackwards []int
 	for i := len(runes) - 1; i >= 0; i-- {
 		if runes[i] == ':' {
@@ -1266,16 +1353,9 @@ func emojiSequenceIndexes(runes []rune) []int {
 					} else {
 						break
 					}
-				} else {
-					//Valid chars for emoji names
-					if !((char >= 'A' && char <= 'Z') || (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
-						//If invalid, jump out of loop
-						//Exception for exclamation marks
-						if !(char == '!' && j != 0 && runes[j-1] == ':') {
-							i = j
-							break
-						}
-					}
+				} else if unicode.IsSpace(char) {
+					i = j
+					break
 				}
 			}
 		}
@@ -1305,7 +1385,6 @@ func (window *Window) replaceEmojiSequences(channelGuild *discordgo.Guild, messa
 	indexes := emojiSequenceIndexes(asRunes)
 INDEX_LOOP:
 	for i := 0; i < len(indexes); i += 2 {
-		log.Println(i)
 		startIndex := indexes[i]
 		endIndex := indexes[i+1]
 		emojiSequence := strings.ToLower(string(asRunes[startIndex+1 : endIndex]))
@@ -1338,7 +1417,7 @@ INDEX_LOOP:
 		} else {
 			//Local guild emoji take priority
 			if channelGuild != nil {
-				emoji := window.findMatchInGuild(channelGuild, true, emojiSequence)
+				emoji := discordutil.FindEmojiInGuild(window.session, channelGuild, true, emojiSequence)
 				if emoji != "" {
 					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
 					continue INDEX_LOOP
@@ -1347,7 +1426,7 @@ INDEX_LOOP:
 
 			//Check for global emotes
 			for _, guild := range window.session.State.Guilds {
-				emoji := window.findMatchInGuild(guild, false, emojiSequence)
+				emoji := discordutil.FindEmojiInGuild(window.session, guild, false, emojiSequence)
 				if emoji != "" {
 					asRunes = *mergeRuneSlices(asRunes[:startIndex], []rune(emoji), asRunes[endIndex+1:])
 					continue INDEX_LOOP
@@ -1357,46 +1436,6 @@ INDEX_LOOP:
 	}
 
 	return string(asRunes)
-}
-
-// findMatchInGuild searches for a fitting emoji. Fitting means the correct name
-// (caseinsensitive), not animated and the correct permissions. If the result
-// is an empty string, it means no result was found.
-func (window *Window) findMatchInGuild(guild *discordgo.Guild, omitGWCheck bool, emojiSequence string) string {
-	for _, emoji := range guild.Emojis {
-		if emoji.Animated {
-			continue
-		}
-
-		if strings.ToLower(emoji.Name) == emojiSequence && (omitGWCheck || strings.HasPrefix(emoji.Name, "GW")) {
-			if len(emoji.Roles) != 0 {
-				selfMember, cacheError := window.session.State.Member(guild.ID, window.session.State.User.ID)
-				if cacheError != nil {
-					selfMember, discordError := window.session.GuildMember(guild.ID, window.session.State.User.ID)
-					if discordError != nil {
-						log.Println(discordError)
-						continue
-					}
-
-					window.session.State.MemberAdd(selfMember)
-				}
-
-				if selfMember != nil {
-					for _, emojiRole := range emoji.Roles {
-						for _, selfRole := range selfMember.Roles {
-							if selfRole == emojiRole {
-								return "<:" + emoji.Name + ":" + emoji.ID + ">"
-							}
-						}
-					}
-				}
-			}
-
-			return "<:" + emoji.Name + ":" + emoji.ID + ">"
-		}
-	}
-
-	return ""
 }
 
 // ShowDialog shows a dialog at the bottom of the window. It doesn't surrender
@@ -1567,6 +1606,10 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 	})
 }
 
+// QueueUpdateDrawSynchronized is meant to be used by goroutines that aren't
+// the maingoroutine in order to wait for the UI-Thread to execute the given
+// If this method is ever called from the mainthread, the application will
+// deadlock.
 func (window *Window) QueueUpdateDrawSynchronized(runnable func()) {
 	blocker := make(chan bool, 1)
 	window.app.QueueUpdateDraw(func() {
@@ -1583,7 +1626,11 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for tempMessage := range input {
 			message := tempMessage
-			go window.jsEngine.OnMessageReceive(message)
+			go func() {
+				for _, engine := range window.extensionEngines {
+					engine.OnMessageReceive(message)
+				}
+			}()
 
 			channel, stateError := window.session.State.Channel(message.ChannelID)
 			if stateError != nil {
@@ -1638,7 +1685,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 			if window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID {
 				mentionsCurrentUser := discordutil.MentionsCurrentUserExplicitly(window.session.State, message)
-				if !window.userActive && config.GetConfig().DesktopNotifications {
+				if !window.userActive && config.Current.DesktopNotifications {
 					if mentionsCurrentUser ||
 						//Always show notification for private messages
 						channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
@@ -1699,7 +1746,12 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for messageDeleted := range delete {
 			tempMessageDeleted := messageDeleted
-			go window.jsEngine.OnMessageDelete(tempMessageDeleted)
+
+			go func() {
+				for _, engine := range window.extensionEngines {
+					engine.OnMessageDelete(tempMessageDeleted)
+				}
+			}()
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageDeleted.ChannelID {
 				window.QueueUpdateDrawSynchronized(func() {
@@ -1726,7 +1778,11 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for messageEdited := range edit {
 			tempMessageEdited := messageEdited
-			go window.jsEngine.OnMessageEdit(tempMessageEdited)
+			go func() {
+				for _, engine := range window.extensionEngines {
+					engine.OnMessageEdit(tempMessageEdited)
+				}
+			}()
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
 				for _, message := range window.chatView.data {
@@ -2003,6 +2059,11 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
+	if shortcuts.ToggleBareChat.Equals(event) {
+		window.toggleBareChat()
+		return nil
+	}
+
 	// Maybe compare directly to table?
 	if window.currentContainer != window.rootContainer {
 		return event
@@ -2015,7 +2076,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return event
 	}
 
-	if event.Modifiers()&tcell.ModAlt == tcell.ModAlt && event.Rune() == 'S' {
+	if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
 		shortcuts.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
 			window.currentContainer = window.rootContainer
@@ -2044,10 +2105,9 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 		window.app.SetFocus(window.commandView.commandInput.internalTextView)
 	} else if shortcuts.ToggleUserContainer.Equals(event) {
-		conf := config.GetConfig()
-		conf.ShowUserContainer = !conf.ShowUserContainer
+		config.Current.ShowUserContainer = !config.Current.ShowUserContainer
 
-		if !conf.ShowUserContainer && window.app.GetFocus() == window.userList.internalTreeView {
+		if !config.Current.ShowUserContainer && window.app.GetFocus() == window.userList.internalTreeView {
 			window.app.SetFocus(window.messageInput.GetPrimitive())
 		}
 
@@ -2082,6 +2142,23 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	return nil
 }
 
+// toggleBareChat will display only the chatview as the fullscreen application
+// root. Calling this method again will revert the view to it's normal state.
+func (window *Window) toggleBareChat() {
+	window.bareChat = !window.bareChat
+	if window.bareChat {
+		window.chatView.internalTextView.SetBorder(false)
+		window.currentContainer = window.chatView.GetPrimitive()
+		window.app.SetRoot(window.chatView.GetPrimitive(), true)
+	} else {
+		window.chatView.internalTextView.SetBorder(true)
+		window.currentContainer = window.rootContainer
+		window.app.SetRoot(window.rootContainer, true)
+	}
+}
+
+// FindCommand searches through the registered command, whether any of them
+// equals the passed name.
 func (window *Window) FindCommand(name string) commands.Command {
 	for _, cmd := range window.commands {
 		if commands.CommandEquals(cmd, name) {
@@ -2112,8 +2189,12 @@ func (window *Window) ExecuteCommand(input string) {
 // ShowTFASetup generates a new TFA-Secret and shows a QR-Code. The QR-Code can
 // be scanned and the resulting TFA-Token can be entered into cordless and used
 // to enable TFA on this account.
-func (window *Window) ShowTFASetup() {
-	tfaSecret := text.GenerateBase32Key()
+func (window *Window) ShowTFASetup() error {
+	tfaSecret, secretError := text.GenerateBase32Key()
+	if secretError != nil {
+		return secretError
+	}
+
 	qrURL := fmt.Sprintf("otpauth://totp/%s?secret=%s&issuer=Discord", window.session.State.User.Email, tfaSecret)
 	qrCodeText := text.GenerateQRCode(qrURL, qrterminal.M)
 	qrCodeImage := tview.NewTextView().SetText(qrCodeText).SetTextAlign(tview.AlignCenter)
@@ -2192,6 +2273,8 @@ func (window *Window) ShowTFASetup() {
 	qrCodeView.AddItem(tviewutil.CreateCenteredComponent(tokenInput, 68), 3, 0, false)
 	window.app.SetRoot(qrCodeView, true)
 	window.app.SetFocus(tokenInput)
+
+	return nil
 }
 
 func (window *Window) startEditingMessage(message *discordgo.Message) {
@@ -2218,7 +2301,7 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 //ShowErrorDialog shows a simple error dialog that has only an Okay button,
 // a generic title and the given text.
 func (window *Window) ShowErrorDialog(text string) {
-	window.ShowDialog(config.GetTheme().ErrorColor, "An error occured - "+text, func(_ string) {}, "Okay")
+	window.ShowDialog(config.GetTheme().ErrorColor, "An error occurred - "+text, func(_ string) {}, "Okay")
 }
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
@@ -2317,15 +2400,13 @@ func (window *Window) SwitchToPreviousChannel() error {
 //RefreshLayout removes and adds the main parts of the layout
 //so that the ones that are disabled by settings do not show up.
 func (window *Window) RefreshLayout() {
-	conf := config.GetConfig()
-
-	window.userList.internalTreeView.SetVisible(conf.ShowUserContainer && (window.selectedGuild != nil ||
+	window.userList.internalTreeView.SetVisible(config.Current.ShowUserContainer && (window.selectedGuild != nil ||
 		(window.selectedChannel != nil && window.selectedChannel.Type == discordgo.ChannelTypeGroupDM)))
 
-	if conf.UseFixedLayout {
-		window.middleContainer.ResizeItem(window.leftArea, conf.FixedSizeLeft, 7)
+	if config.Current.UseFixedLayout {
+		window.middleContainer.ResizeItem(window.leftArea, config.Current.FixedSizeLeft, 7)
 		window.middleContainer.ResizeItem(window.chatArea, 0, 1)
-		window.middleContainer.ResizeItem(window.userList.internalTreeView, conf.FixedSizeRight, 6)
+		window.middleContainer.ResizeItem(window.userList.internalTreeView, config.Current.FixedSizeRight, 6)
 	} else {
 		window.middleContainer.ResizeItem(window.leftArea, 0, 7)
 		window.middleContainer.ResizeItem(window.chatArea, 0, 20)
@@ -2391,7 +2472,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	window.exitMessageEditModeAndKeepText()
 
-	if config.GetConfig().FocusMessageInputAfterChannelSelection {
+	if config.Current.FocusMessageInputAfterChannelSelection {
 		window.app.SetFocus(window.messageInput.internalTextView)
 	}
 
@@ -2453,7 +2534,6 @@ func (window *Window) RegisterCommand(command commands.Command) {
 
 // GetRegisteredCommands returns the map of all registered commands.
 func (window *Window) GetRegisteredCommands() []commands.Command {
-	//FIXME eh, should this be a copy?
 	return window.commands
 }
 
@@ -2528,7 +2608,7 @@ func (window *Window) Run() error {
 
 // Shutdown disconnects from the discord API and stops the tview application.
 func (window *Window) Shutdown() {
-	if config.GetConfig().ShortenLinks {
+	if config.Current.ShortenLinks {
 		window.chatView.shortener.Close()
 	}
 	window.session.Close()

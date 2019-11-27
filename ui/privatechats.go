@@ -48,7 +48,7 @@ func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 	}
 
 	privateList.internalTreeView.
-		SetVimBindingsEnabled(config.GetConfig().OnTypeInListBehaviour == config.DoNothingOnTypeInList).
+		SetVimBindingsEnabled(config.Current.OnTypeInListBehaviour == config.DoNothingOnTypeInList).
 		SetRoot(tview.NewTreeNode("")).
 		SetTopLevel(1).
 		SetCycleSelection(true).

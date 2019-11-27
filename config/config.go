@@ -36,7 +36,8 @@ const (
 )
 
 var (
-	currentConfig = &Config{
+	Current = &Config{
+		Autocomplete:                           true,
 		Times:                                  HourMinuteAndSeconds,
 		UseRandomUserColors:                    false,
 		ShowUserContainer:                      true,
@@ -54,6 +55,7 @@ var (
 		DontShowUpdateNotificationFor:          "",
 		ShowUpdateNotifications:                true,
 		IndicateChannelAccessRestriction:       false,
+		ShowBottomBar:                          true,
 	}
 )
 
@@ -63,6 +65,11 @@ type Config struct {
 	Token string
 
 	// Times decides on the time format (none, short and long).
+	//Autocomplete decides whether the chat automatically offers autocomplete
+	//values for the currently given text.
+	Autocomplete bool
+
+	//Times decides on the time format (none, short and long).
 	Times int
 	// UseRandomUserColors decides whether the users get assigned a random color
 	// out of a pool for the current session.
@@ -90,7 +97,7 @@ type Config struct {
 	// OnTypeInListBehaviour defines whether the application focus the input
 	// input field on typing, searches the list or does nothing.
 	OnTypeInListBehaviour int
-	// MouseEnabled decides whether the mouse is useable or not.
+	// MouseEnabled decides whether the mouse is usable or not.
 	MouseEnabled bool
 
 	// ShortenLinks decides whether cordless starts a local webserver in order
@@ -124,6 +131,9 @@ type Config struct {
 
 	// Show a padlock prefix of the channels that have access restriction
 	IndicateChannelAccessRestriction bool
+	// ShowBottomBar decides whether an informational line is shown at the
+	// bottom of cordless or not.
+	ShowBottomBar bool
 }
 
 // Account has a name and a token. The name is just for the users recognition.
@@ -247,7 +257,7 @@ func LoadConfig() (*Config, error) {
 	configFile, openError := os.Open(configFilePath)
 
 	if os.IsNotExist(openError) {
-		return GetConfig(), nil
+		return Current, nil
 	}
 
 	if openError != nil {
@@ -256,22 +266,22 @@ func LoadConfig() (*Config, error) {
 
 	defer configFile.Close()
 	decoder := json.NewDecoder(configFile)
-	configLoadError := decoder.Decode(currentConfig)
+	configLoadError := decoder.Decode(Current)
 
 	// io.EOF would mean empty, therefore we use defaults.
 	if configLoadError != nil && configLoadError != io.EOF {
 		return nil, configLoadError
 	}
 
-	return GetConfig(), nil
+	return Current, nil
 }
 
 // UpdateCurrentToken updates the current token and all accounts where the
 // token was also used.
 func UpdateCurrentToken(newToken string) {
-	oldToken := currentConfig.Token
-	currentConfig.Token = newToken
-	for _, account := range currentConfig.Accounts {
+	oldToken := Current.Token
+	Current.Token = newToken
+	for _, account := range Current.Accounts {
 		if account.Token == oldToken {
 			account.Token = newToken
 		}
@@ -285,7 +295,7 @@ func PersistConfig() error {
 		return configError
 	}
 
-	configAsJSON, jsonError := json.MarshalIndent(currentConfig, "", "    ")
+	configAsJSON, jsonError := json.MarshalIndent(Current, "", "    ")
 	if jsonError != nil {
 		return jsonError
 	}

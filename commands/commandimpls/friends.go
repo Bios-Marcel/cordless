@@ -13,16 +13,16 @@ import (
 const friendsDocumentation = `[orange][::u]# friends[white]
 
 The friends command allows you to manage your friends on discord. You can add
-new friends by sending or accepting friendsrequests. You can also see your
-current requests, that goes for the incomming and the outgoing ones.
+new friends by sending or accepting friend-requests. You can also see your
+current requests, that goes for the incoming and the outgoing ones.
 
 The friend currently command offers the following subcommands:
-  * accept   - accept a friends-request
-  * befriend - send a friends-request
+  * accept   - accept a friend-request
+  * befriend - send a friend-request
   * requests - shows all current requests
   * search   - finds friends by name, name#discriminator or id
   * list     - shows all friends
-  * remove   - removes a friend from your friendslist
+  * remove   - removes a friend from your friend-list
 
 The following features are currently unsupported:
   * Blocking users
@@ -107,11 +107,11 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 			}
 		}
 
-		fmt.Fprintln(writer, "Incomming requests:")
+		fmt.Fprintln(writer, "Incoming requests:")
 		if incomming != "" {
 			fmt.Fprintln(writer, incomming)
 		} else {
-			fmt.Fprintln(writer, "No incomming requests.")
+			fmt.Fprintln(writer, "No incoming requests.")
 		}
 
 		fmt.Fprintln(writer, "Outgoing requests:")
@@ -138,10 +138,10 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 		if len(matches) == 0 {
 			fmt.Fprintf(writer, "No matches for '%s' found.\n", input)
 		} else if len(matches) == 1 {
-			fmt.Fprintln(writer, "Accepting friends request of "+matches[0].User.String())
+			fmt.Fprintln(writer, "Accepting friend request of "+matches[0].User.String())
 			acceptErr := f.session.RelationshipFriendRequestAccept(matches[0].User.ID)
 			if acceptErr != nil {
-				fmt.Fprintf(writer, "Error accepting friendsrequest (%s).\n", acceptErr.Error())
+				fmt.Fprintf(writer, "Error accepting friend-request (%s).\n", acceptErr.Error())
 			} else {
 				fmt.Fprintln(writer, matches[0].User.String()+" is now your friend.")
 			}
@@ -211,11 +211,11 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 				discriminator, _ := strconv.ParseInt(parts[1], 10, 32)
 				requestError := f.session.RelationshipFriendRequestSendByNameAndDiscriminator(parts[0], int(discriminator))
 				if requestError != nil {
-					fmt.Fprintf(writer, "Error sending friendsrequest to '%s'.\n\t%s\n", input, requestError.Error())
+					fmt.Fprintf(writer, "Error sending friend-request to '%s'.\n\t%s\n", input, requestError.Error())
 					return
 				}
 
-				fmt.Fprintf(writer, "A friends-request has been sent to '%s'.\n", input)
+				fmt.Fprintf(writer, "A friend-request has been sent to '%s'.\n", input)
 				return
 			}
 
@@ -231,16 +231,16 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 			if requestError != nil {
 				fmt.Fprintf(writer, "Error sending friends-request (%s).\n", requestError)
 			} else {
-				fmt.Fprintln(writer, "Friends-request has been sent.")
+				fmt.Fprintln(writer, "Friend-request has been sent.")
 			}
 		} else if len(matches) == 1 {
 			user := matches[0]
 
 			requestError := f.session.RelationshipFriendRequestSend(user.ID)
 			if requestError != nil {
-				fmt.Fprintf(writer, "Error sending friends-request (%s).\n", requestError)
+				fmt.Fprintf(writer, "Error sending friend-request (%s).\n", requestError)
 			} else {
-				fmt.Fprintf(writer, "A friends-request has been sent to '%s'.\n", user.String())
+				fmt.Fprintf(writer, "A friend-request has been sent to '%s'.\n", user.String())
 			}
 		} else {
 			fmt.Fprintf(writer, "Multiple matches were found for '%s'. Please be more precise.\n", input)
