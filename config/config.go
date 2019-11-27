@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"github.com/Bios-Marcel/cordless/util/files"
 	"io"
 	"io/ioutil"
 	"os"
@@ -148,16 +149,21 @@ var cachedScriptDir string
 // SetConfigFile sets the config file path cache to the
 // entered value
 func SetConfigFile(configFilePath string) error {
-	//get parent directory of config file
+	// get parent directory of config file
 	parent := filepath.Dir(configFilePath)
-	//ensure parent exists
 	err := ensureDirectory(parent)
-	//if parent exists and doesn't given an error
-	//set cache
 	if err == nil {
 		cachedConfigFile = configFilePath
+	} else {
+		absolute, err := getAbsolutePath(parent)
+		if err != nil {
+			return err
+		}
+		err = ensureDirectory(absolute)
+		if err == nil {
+			cachedConfigFile = configFilePath
+		}
 	}
-
 	return err
 }
 
@@ -183,6 +189,15 @@ func SetScriptDirectory(directoryPath string) error {
 	err := ensureDirectory(directoryPath)
 	if err == nil {
 		cachedScriptDir = directoryPath
+	} else {
+		absolute, err := getAbsolutePath(directoryPath)
+		if err != nil {
+			return err
+		}
+		err = ensureDirectory(absolute)
+		if err == nil {
+			cachedConfigFile = absolute
+		}
 	}
 	return err
 }
@@ -202,6 +217,15 @@ func SetConfigDirectory(directoryPath string) error {
 	err := ensureDirectory(directoryPath)
 	if err == nil {
 		cachedConfigDir = directoryPath
+	} else {
+		absolute, err := getAbsolutePath(directoryPath)
+		if err != nil {
+			return err
+		}
+		err = ensureDirectory(absolute)
+		if err == nil {
+			cachedConfigFile = absolute
+		}
 	}
 	return err
 }
@@ -238,6 +262,14 @@ func ensureDirectory(directoryPath string) error {
 		}
 	}
 	return statError
+}
+
+func getAbsolutePath(directoryPath string) (string, error) {
+	absolutePath, resolveError := files.ToAbsolutePath(directoryPath)
+	if resolveError != nil {
+		return "", resolveError
+	}
+	return absolutePath, resolveError
 }
 
 //LoadConfig loads the configuration initially and returns it.
