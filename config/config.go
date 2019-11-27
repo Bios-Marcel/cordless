@@ -142,18 +142,23 @@ type Account struct {
 }
 
 var cachedConfigDir string
+var cachedConfigFile string
 var cachedScriptDir string
 
-//GetConfigFile returns the absolute path to the configuration file or an error
-//in case of failure.
+// GetConfigFile retrieves the config file path from cache
+// or sets it to the default config file location
 func GetConfigFile() (string, error) {
-	configDir, configError := GetConfigDirectory()
+	if cachedConfigFile != "" {
+		return cachedConfigFile, nil
+	}
 
+	configDir, configError := GetConfigDirectory()
 	if configError != nil {
 		return "", configError
 	}
 
-	return filepath.Join(configDir, "config.json"), nil
+	cachedConfigFile = filepath.Join(configDir, "config.json")
+	return cachedConfigFile, nil
 }
 
 //GetScriptDirectory returns the path at which all the external scripts should
