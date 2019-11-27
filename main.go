@@ -14,8 +14,9 @@ import (
 func main() {
 	showVersion := flag.Bool("version", false, "Show the version instead of starting cordless")
 	showShortcutsDialog := flag.Bool("shortcut-dialog", false, "Shows the shortcuts dialog instead of launching cordless")
-	setConfigDirectory := flag.String("config-dir", "", "Set cordless' application directory")
-	setConfigFile := flag.String("config-file", "", "Sets the exact location of the configuration file")
+	setConfigDirectory := flag.String("config-dir", "", "Sets the configuration directory")
+	setScriptDirectory := flag.String("script-dir", "", "Sets the script directory")
+	setConfigFilePath := flag.String("config-file", "", "Sets exact path of the configuration file")
 	flag.Parse()
 
 	if showShortcutsDialog != nil && *showShortcutsDialog {
@@ -26,8 +27,11 @@ func main() {
 		if setConfigDirectory != nil {
 			config.SetConfigDirectory(*setConfigDirectory)
 		}
-		if setConfigFile != nil {
-			config.SetConfigFile(*setConfigFile)
+		if setScriptDirectory != nil {
+			config.SetScriptDirectory(*setScriptDirectory)
+		}
+		if setConfigFilePath != nil {
+			config.SetConfigFile(*setConfigFilePath)
 		}
 		app.Run()
 	}

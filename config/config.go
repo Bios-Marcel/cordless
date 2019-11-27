@@ -10,17 +10,17 @@ import (
 )
 
 const (
-	// AppName is the name representing the application.
+	//AppName is the name representing the application.
 	AppName = "Cordless"
-	// AppNameLowercase is the representative name, but lowercase.
-	// It us used for filepaths and such.
+	//AppNameLowercase is the representative name, but lowercase.
+	//It us used for filepaths and such.
 	AppNameLowercase = "cordless"
 
-	// HourMinuteAndSeconds is the time format HH:MM:SS.
+	//HourMinuteAndSeconds is the time format HH:MM:SS.
 	HourMinuteAndSeconds = 0
-	// HourAndMinute is the time format HH:MM.
+	//HourAndMinute is the time format HH:MM.
 	HourAndMinute = 1
-	// NoTime means that not time at all will be displayed.
+	//NoTime means that not time at all will be displayed.
 	NoTime = 2
 
 	// DoNothingOnTypeInList means that when typing in a list (treeview) simply
@@ -59,39 +59,38 @@ var (
 	}
 )
 
-// Config contains all possible configuration for the application.
+//Config contains all possible configuration for the application.
 type Config struct {
-	// Token is the authorization token for accessing the discord API.
+	//Token is the authorization token for accessing the discord API.
 	Token string
 
-	// Times decides on the time format (none, short and long).
 	//Autocomplete decides whether the chat automatically offers autocomplete
 	//values for the currently given text.
 	Autocomplete bool
 
 	//Times decides on the time format (none, short and long).
 	Times int
-	// UseRandomUserColors decides whether the users get assigned a random color
-	// out of a pool for the current session.
+	//UseRandomUserColors decides whether the users get assigned a random color
+	//out of a pool for the current session.
 	UseRandomUserColors bool
 
-	// FocusChannelAfterGuildSelection will cause the widget focus to move over
-	// to the channel tree after selecting a guild.
+	//FocusChannelAfterGuildSelection will cause the widget focus to move over
+	//to the channel tree after selecting a guild.
 	FocusChannelAfterGuildSelection bool
-	// FocusMessageInputAfterChannelSelection will cause the widget focus to
-	// move over to the message input widget after channel selection
+	//FocusMessageInputAfterChannelSelection will cause the widget focus to
+	//move over to the message input widget after channel selection
 	FocusMessageInputAfterChannelSelection bool
 
-	// ShowUserContainer decides whether the user container is part of the
-	// layout or not.
+	//ShowUserContainer decides whether the user container is part of the
+	//layout or not.
 	ShowUserContainer bool
-	// UseFixedLayout defines whether the FixedSizeLeft and FixedSizeRight
-	// values will be applied or not.
+	//UseFixedLayout defines whether the FixedSizeLeft and FixedSizeRight
+	//values will be applied or not.
 	UseFixedLayout bool
-	// FixedSizeLeft determines the size of the guilds/channels/friends
-	// container on the left side of the layout.
+	//FixedSizeLeft determines the size of the guilds/channels/friends
+	//container on the left side of the layout.
 	FixedSizeLeft int
-	// FixedSizeRight defines the size of the users container on the right.
+	//FixedSizeRight defines the size of the users container on the right.
 	FixedSizeRight int
 
 	// OnTypeInListBehaviour defines whether the application focus the input
@@ -144,65 +143,96 @@ type Account struct {
 }
 
 var cachedConfigDir string
+var cachedConfigFile string
 var cachedScriptDir string
-var cachedConfigFilePath string
 
-// SetConfigFile sets the configFileName cache to the entered value,
-// otherwise cordless assumes default directory
-func SetConfigFile(configFilePath string) (string, error) {
-	parentDirectory := filepath.Dir(configFilePath)
-	absolutePath, checkConfig := checkConfigDirectory(parentDirectory)
-	if checkConfig != nil {
-		return "", checkConfig
+// SetConfigFile sets the config file path cache to the
+// entered value
+func SetConfigFile(configFilePath string) error {
+	// get parent directory of config file
+	parent := filepath.Dir(configFilePath)
+	err := ensureDirectory(parent)
+	if err == nil {
+		cachedConfigFile = configFilePath
+	} else {
+		absolute, err := getAbsolutePath(parent)
+		if err != nil {
+			return err
+		}
+		err = ensureDirectory(absolute)
+		if err == nil {
+			cachedConfigFile = configFilePath
+		}
 	}
-	cachedConfigFilePath = absolutePath
-	return cachedConfigFilePath, nil
+	return err
 }
 
-//GetConfigFile returns the absolute path to the configuration file or an error
-//in case of failure.
+// GetConfigFile retrieves the config file path from cache
+// or sets it to the default config file location
 func GetConfigFile() (string, error) {
-	// Prevents unnecessary overrides to
-	// cachedConfigFilePath
-	if cachedConfigFilePath != "" {
-		return cachedConfigFilePath, nil
+	if cachedConfigFile != "" {
+		return cachedConfigFile, nil
 	}
-	// Default behavior of configuration file under
-	// app dir
+
 	configDir, configError := GetConfigDirectory()
 	if configError != nil {
 		return "", configError
 	}
-	// Default config file is config.json
-	return filepath.Join(configDir, "config.json"), nil
+
+	cachedConfigFile = filepath.Join(configDir, "config.json")
+	return cachedConfigFile, nil
 }
 
-// GetScriptDirectory returns the path at which all the external scripts should
-// lie.
-func GetScriptDirectory() string {
-	if cachedScriptDir == "" {
-		cachedScriptDir = filepath.Join(cachedConfigDir, "scripts")
+// SetScriptDirectory sets the script directory cache
+// to the specified value
+func SetScriptDirectory(directoryPath string) error {
+	err := ensureDirectory(directoryPath)
+	if err == nil {
+		cachedScriptDir = directoryPath
+	} else {
+		absolute, err := getAbsolutePath(directoryPath)
+		if err != nil {
+			return err
+		}
+		err = ensureDirectory(absolute)
+		if err == nil {
+			cachedConfigFile = absolute
+		}
 	}
+	return err
+}
+
+// GetScriptDirectory retrieves the script path from cache
+// or sets it to the default script directory location
+func GetScriptDirectory() string {
+	if cachedScriptDir != "" {
+		return cachedScriptDir
+	}
+	cachedScriptDir = filepath.Join(cachedConfigDir, "scripts")
 	return cachedScriptDir
 }
 
-// SetConfigFile sets the configDirectory cache to the entered value,
-// bypassing how cordless sets defaults.
-func SetConfigDirectory(configPath string) (string, error) {
-	absolutePath, checkConfig := checkConfigDirectory(configPath)
-	if checkConfig != nil {
-		return "", checkConfig
+// SetConfigDirectory sets the directory cache
+func SetConfigDirectory(directoryPath string) error {
+	err := ensureDirectory(directoryPath)
+	if err == nil {
+		cachedConfigDir = directoryPath
+	} else {
+		absolute, err := getAbsolutePath(directoryPath)
+		if err != nil {
+			return err
+		}
+		err = ensureDirectory(absolute)
+		if err == nil {
+			cachedConfigFile = absolute
+		}
 	}
-	cachedConfigDir = absolutePath
-	return cachedConfigDir, nil
+	return err
 }
-
-// GetConfigDirectory is the parent directory in the os, that contains the
-// settings for the application. If no directory is specified in cachedConfig
-// it will assume cordless default parent directory
+// GetConfigDirectory retrieves the directory that stores
+// cordless' settings from cache or sets it to the default
+// location
 func GetConfigDirectory() (string, error) {
-	// We don't want it overriding cache if there's been a directory
-	// specified.
 	if cachedConfigDir != "" {
 		return cachedConfigDir, nil
 	}
@@ -212,42 +242,37 @@ func GetConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	absolutePath, checkConfig := checkConfigDirectory(directory)
-	if checkConfig != nil {
-		return "", checkConfig
+	statError := ensureDirectory(directory)
+	if statError != nil {
+		return "", statError
 	}
 
-	// Set cache so that this doesn't run over again
-	cachedConfigDir = absolutePath
+	//After first retrieval, we will save this, as we needn't redo all that
+	//stuff over and over again.
+	cachedConfigDir = directory
 	return cachedConfigDir, nil
 }
 
-// checkConfig handles making new directories and ensuring absolute path
-// is returned
-func checkConfigDirectory(directoryPath string) (string,error) {
+func ensureDirectory(directoryPath string) error {
+	_, statError := os.Stat(directoryPath)
+	if os.IsNotExist(statError) {
+		createDirsError := os.MkdirAll(directoryPath, 0766)
+		if createDirsError != nil {
+			return createDirsError
+		}
+	}
+	return statError
+}
+
+func getAbsolutePath(directoryPath string) (string, error) {
 	absolutePath, resolveError := files.ToAbsolutePath(directoryPath)
 	if resolveError != nil {
 		return "", resolveError
 	}
-	_, statError := os.Stat(absolutePath)
-	if os.IsNotExist(statError) {
-		// Folders have to be executable, hence 766 instead of 666.
-		createDirsError := os.MkdirAll(absolutePath, 0766)
-		if createDirsError != nil {
-			return "", createDirsError
-		}
-	} else if statError != nil {
-		return "", statError
-	}
-	return absolutePath, statError
+	return absolutePath, resolveError
 }
 
-// GetConfig returns the currently loaded config object
-func GetConfig() *Config {
-	return currentConfig
-}
-
-// LoadConfig loads the configuration initially and returns it.
+//LoadConfig loads the configuration initially and returns it.
 func LoadConfig() (*Config, error) {
 	configFilePath, configError := GetConfigFile()
 	if configError != nil {
@@ -268,7 +293,7 @@ func LoadConfig() (*Config, error) {
 	decoder := json.NewDecoder(configFile)
 	configLoadError := decoder.Decode(Current)
 
-	// io.EOF would mean empty, therefore we use defaults.
+	//io.EOF would mean empty, therefore we use defaults.
 	if configLoadError != nil && configLoadError != io.EOF {
 		return nil, configLoadError
 	}
@@ -288,7 +313,7 @@ func UpdateCurrentToken(newToken string) {
 	}
 }
 
-// PersistConfig saves the current configuration onto the filesystem.
+//PersistConfig saves the current configuration onto the filesystem.
 func PersistConfig() error {
 	configFilePath, configError := GetConfigFile()
 	if configError != nil {
