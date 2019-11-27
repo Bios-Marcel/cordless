@@ -145,6 +145,22 @@ var cachedConfigDir string
 var cachedConfigFile string
 var cachedScriptDir string
 
+// SetConfigFile sets the config file path cache to the
+// entered value
+func SetConfigFile(configFilePath string) error {
+	//get parent directory of config file
+	parent := filepath.Dir(configFilePath)
+	//ensure parent exists
+	err := ensureDirectory(parent)
+	//if parent exists and doesn't given an error
+	//set cache
+	if err == nil {
+		cachedConfigFile = configFilePath
+	}
+
+	return err
+}
+
 // GetConfigFile retrieves the config file path from cache
 // or sets it to the default config file location
 func GetConfigFile() (string, error) {
@@ -161,8 +177,18 @@ func GetConfigFile() (string, error) {
 	return cachedConfigFile, nil
 }
 
-//GetScriptDirectory returns the path at which all the external scripts should
-//lie.
+// SetScriptDirectory sets the script directory cache
+// to the specified value
+func SetScriptDirectory(directoryPath string) error {
+	err := ensureDirectory(directoryPath)
+	if err == nil {
+		cachedScriptDir = directoryPath
+	}
+	return err
+}
+
+// GetScriptDirectory retrieves the script path from cache
+// or sets it to the default script directory location
 func GetScriptDirectory() string {
 	if cachedScriptDir != "" {
 		return cachedScriptDir
@@ -171,8 +197,17 @@ func GetScriptDirectory() string {
 	return cachedScriptDir
 }
 
-//GetConfigDirectory is the parent directory in the os, that contains the
-//settings for the application.
+// SetConfigDirectory sets the directory cache
+func SetConfigDirectory(directoryPath string) error {
+	err := ensureDirectory(directoryPath)
+	if err == nil {
+		cachedConfigDir = directoryPath
+	}
+	return err
+}
+// GetConfigDirectory retrieves the directory that stores
+// cordless' settings from cache or sets it to the default
+// location
 func GetConfigDirectory() (string, error) {
 	if cachedConfigDir != "" {
 		return cachedConfigDir, nil
@@ -183,22 +218,26 @@ func GetConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	_, statError := os.Stat(directory)
-	if os.IsNotExist(statError) {
-		//Folders have to be executable for some reason, therefore 766 instead of 666.
-		createDirsError := os.MkdirAll(directory, 0766)
-		if createDirsError != nil {
-			return "", createDirsError
-		}
-	} else if statError != nil {
+	statError := ensureDirectory(directory)
+	if statError != nil {
 		return "", statError
 	}
 
 	//After first retrieval, we will save this, as we needn't redo all that
 	//stuff over and over again.
 	cachedConfigDir = directory
-
 	return cachedConfigDir, nil
+}
+
+func ensureDirectory(directoryPath string) error {
+	_, statError := os.Stat(directoryPath)
+	if os.IsNotExist(statError) {
+		createDirsError := os.MkdirAll(directoryPath, 0766)
+		if createDirsError != nil {
+			return createDirsError
+		}
+	}
+	return statError
 }
 
 //LoadConfig loads the configuration initially and returns it.
