@@ -5,6 +5,8 @@ import (
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
@@ -128,7 +130,7 @@ func (userTree *UserTree) loadGuildRoles(guildID string) ([]*discordgo.Role, err
 
 	for _, role := range guildRoles {
 		if role.Hoist {
-			roleNode := tview.NewTreeNode(role.Name)
+			roleNode := tview.NewTreeNode(tviewutil.Escape(role.Name))
 			roleNode.SetSelectable(false)
 			userTree.roleNodes[role.ID] = roleNode
 			userTree.rootNode.AddChild(roleNode)

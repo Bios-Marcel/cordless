@@ -1038,7 +1038,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		bottomBar := tview.NewFlex().SetDirection(tview.FlexColumn)
 		bottomBar.SetBackgroundColor(config.GetTheme().PrimitiveBackgroundColor)
 
-		loggedInAsText := fmt.Sprintf("Logged in as: '%s'", session.State.User.String())
+		loggedInAsText := fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.String()))
 		loggedInAs := tview.NewTextView().SetText(loggedInAsText)
 		loggedInAs.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
 		bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
