@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"github.com/Bios-Marcel/cordless/util/files"
 	"io"
 	"io/ioutil"
 	"os"
@@ -142,59 +143,133 @@ type Account struct {
 }
 
 var cachedConfigDir string
+var cachedConfigFile string
 var cachedScriptDir string
 
-//GetConfigFile returns the absolute path to the configuration file or an error
-//in case of failure.
-func GetConfigFile() (string, error) {
-	configDir, configError := GetConfigDirectory()
+// SetConfigFile sets the config file path cache to the
+// entered value
+func SetConfigFile(configFilePath string) error {
+	// get parent directory of config file
+	parent := filepath.Dir(configFilePath)
+	err := ensureDirectory(parent)
+	if err == nil {
+		cachedConfigFile = configFilePath
+	} else {
+		absolute, err := getAbsolutePath(parent)
+		if err != nil {
+			return err
+		}
+		err = ensureDirectory(absolute)
+		if err == nil {
+			cachedConfigFile = configFilePath
+		}
+	}
+	return err
+}
 
+// GetConfigFile retrieves the config file path from cache
+// or sets it to the default config file location
+func GetConfigFile() (string, error) {
+	if cachedConfigFile != "" {
+		return cachedConfigFile, nil
+	}
+
+	configDir, configError := GetConfigDirectory()
 	if configError != nil {
 		return "", configError
 	}
 
-	return filepath.Join(configDir, "config.json"), nil
+	cachedConfigFile = filepath.Join(configDir, "config.json")
+	return cachedConfigFile, nil
 }
 
-//GetScriptDirectory returns the path at which all the external scripts should
-//lie.
-func GetScriptDirectory() string {
-	if cachedScriptDir == "" {
-		//We'll just make the assumption, that the config dir has already been
-		//initialized at that point and time in the application.
-		cachedScriptDir = filepath.Join(cachedConfigDir, "scripts")
+// SetScriptDirectory sets the script directory cache
+// to the specified value
+func SetScriptDirectory(directoryPath string) error {
+	err := ensureDirectory(directoryPath)
+	if err == nil {
+		cachedScriptDir = directoryPath
+	} else {
+		absolute, err := getAbsolutePath(directoryPath)
+		if err != nil {
+			return err
+		}
+		err = ensureDirectory(absolute)
+		if err == nil {
+			cachedConfigFile = absolute
+		}
 	}
+	return err
+}
+
+// GetScriptDirectory retrieves the script path from cache
+// or sets it to the default script directory location
+func GetScriptDirectory() string {
+	if cachedScriptDir != "" {
+		return cachedScriptDir
+	}
+	cachedScriptDir = filepath.Join(cachedConfigDir, "scripts")
 	return cachedScriptDir
 }
 
-//GetConfigDirectory is the parent directory in the os, that contains the
-//settings for the application.
+// SetConfigDirectory sets the directory cache
+func SetConfigDirectory(directoryPath string) error {
+	err := ensureDirectory(directoryPath)
+	if err == nil {
+		cachedConfigDir = directoryPath
+	} else {
+		absolute, err := getAbsolutePath(directoryPath)
+		if err != nil {
+			return err
+		}
+		err = ensureDirectory(absolute)
+		if err == nil {
+			cachedConfigFile = absolute
+		}
+	}
+	return err
+}
+// GetConfigDirectory retrieves the directory that stores
+// cordless' settings from cache or sets it to the default
+// location
 func GetConfigDirectory() (string, error) {
 	if cachedConfigDir != "" {
 		return cachedConfigDir, nil
 	}
 
-	directory, err := getConfigDirectory()
+	directory, err := getDefaultConfigDirectory()
 	if err != nil {
 		return "", err
 	}
 
-	_, statError := os.Stat(directory)
-	if os.IsNotExist(statError) {
-		//Folders have to be executable for some reason, therefore 766 instead of 666.
-		createDirsError := os.MkdirAll(directory, 0766)
-		if createDirsError != nil {
-			return "", createDirsError
-		}
-	} else if statError != nil {
+	statError := ensureDirectory(directory)
+	if statError != nil {
 		return "", statError
 	}
 
 	//After first retrieval, we will save this, as we needn't redo all that
 	//stuff over and over again.
 	cachedConfigDir = directory
-
 	return cachedConfigDir, nil
+}
+
+func ensureDirectory(directoryPath string) error {
+	_, statError := os.Stat(directoryPath)
+	if os.IsNotExist(statError) {
+		createDirsError := os.MkdirAll(directoryPath, 0766)
+		if createDirsError != nil {
+			return createDirsError
+		}
+	}
+	return statError
+}
+
+func getAbsolutePath(directoryPath string) (string, error) {
+	absolutePath, resolveError := files.ToAbsolutePath(directoryPath)
+	if resolveError != nil {
+		return "", resolveError
+	}
+	return absolutePath, resolveError
 }
 
 //LoadConfig loads the configuration initially and returns it.

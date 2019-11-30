@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-func getConfigDirectory() (string, error) {
+func getDefaultConfigDirectory() (string, error) {
 	// TODO Gotta research this
 
 	currentUser, userError := user.Current()
