@@ -1,11 +1,25 @@
-# Cordless
+<h1 align="center">Cordless</h1>
 
-| OS | linux | darwin | windows | freebsd |
-| - | - | - | - | - |
-| Build-Status | [![CircleCI](https://circleci.com/gh/Bios-Marcel/cordless.svg?style=svg)](https://circleci.com/gh/Bios-Marcel/cordless) | [![Build Status](https://travis-ci.org/Bios-Marcel/cordless.svg?branch=master)](https://travis-ci.org/Bios-Marcel/cordless) | [![Build status](https://ci.appveyor.com/api/projects/status/svv866htsr33hdoh/branch/master?svg=true)](https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master) | [![builds.sr.ht status](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml.svg)](https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml?) |
-
-[![codecov](https://codecov.io/gh/Bios-Marcel/cordless/branch/master/graph/badge.svg)](https://codecov.io/gh/Bios-Marcel/cordless)
-[![Discord](https://img.shields.io/discord/600329866558308373.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/fxFqszu)
+<p align="center">
+  <a href="https://circleci.com/gh/Bios-Marcel/cordless">
+    <img src="https://img.shields.io/circleci/build/gh/Bios-Marcel/cordless?label=linux&logo=linux&logoColor=white">
+  </a>
+  <a href="https://travis-ci.org/Bios-Marcel/cordless">
+    <img src="https://img.shields.io/travis/Bios-Marcel/cordless?label=darwin&logo=apple&logoColor=white">
+  </a>
+  <a href="https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master">
+    <img src=https://img.shields.io/appveyor/ci/Bios-Marcel/cordless?label=windows&logo=windows&logoColor=white">
+  </a>
+  <a href="https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml?">
+    <img src="https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml.svg">
+  </a>
+  <a href="https://codecov.io/gh/Bios-Marcel/cordless">
+     <img src="https://codecov.io/gh/Bios-Marcel/cordless/branch/master/graph/badge.svg">
+  </a>
+  <a href="https://discord.gg/fxFqszu">
+     <img src="https://img.shields.io/discord/600329866558308373.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2">
+  </a>
+</p>
 
 ## Overview
 
