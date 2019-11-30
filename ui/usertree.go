@@ -2,6 +2,7 @@ package ui
 
 import (
 	"sort"
+	"sync"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
@@ -10,6 +11,7 @@ import (
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
+
 )
 
 // UserTree represents the visual list of users in a guild.
@@ -20,20 +22,21 @@ type UserTree struct {
 	state *discordgo.State
 
 	userNodes map[string]*tview.TreeNode
-
 	roleNodes map[string]*tview.TreeNode
 	roles     []*discordgo.Role
+
+	lock   *sync.Mutex
+	loaded bool
 }
 
 // NewUserTree creates a new pre-configured UserTree that is empty.
 func NewUserTree(state *discordgo.State) *UserTree {
 	userTree := &UserTree{
 		state:            state,
-		userNodes:        make(map[string]*tview.TreeNode),
-		roleNodes:        make(map[string]*tview.TreeNode),
-		roles:            make([]*discordgo.Role, 0),
 		rootNode:         tview.NewTreeNode(""),
 		internalTreeView: tview.NewTreeView(),
+		loaded:           false,
+		lock:             &sync.Mutex{},
 	}
 
 	userTree.internalTreeView.
@@ -48,28 +51,42 @@ func NewUserTree(state *discordgo.State) *UserTree {
 
 // Clear removes all nodes and data out of the view.
 func (userTree *UserTree) Clear() {
+	userTree.lock.Lock()
+	defer userTree.lock.Unlock()
+	userTree.clear()
+}
+
+func (userTree *UserTree) clear() {
 	for _, roleNode := range userTree.roleNodes {
 		roleNode.ClearChildren()
 	}
-
-	userTree.userNodes = make(map[string]*tview.TreeNode)
-	userTree.roleNodes = make(map[string]*tview.TreeNode)
-	userTree.roles = make([]*discordgo.Role, 0)
-
 	userTree.rootNode.ClearChildren()
+	userTree.loaded = false
+
+	// After clearing, we don't reallocate anything, since we don't know
+	// whether we actually want to repopulate the tree.
+	userTree.userNodes = nil
+	userTree.roleNodes = nil
+	userTree.roles = nil
 }
 
 // LoadGroup loads all users for a group-channel.
 func (userTree *UserTree) LoadGroup(channelID string) error {
-	userTree.Clear()
+	userTree.lock.Lock()
+	defer userTree.lock.Unlock()
+	userTree.clear()
+
+	userTree.userNodes = make(map[string]*tview.TreeNode)
+	userTree.roleNodes = make(map[string]*tview.TreeNode)
 
 	channel, stateError := userTree.state.PrivateChannel(channelID)
 	if stateError != nil {
 		return stateError
 	}
 
-	userTree.AddOrUpdateUsers(channel.Recipients)
+	userTree.addOrUpdateUsers(channel.Recipients)
 
+	userTree.loaded = true
 	userTree.selectFirstNode()
 
 	return nil
@@ -78,7 +95,12 @@ func (userTree *UserTree) LoadGroup(channelID string) error {
 // LoadGuild will load all available roles of the guild and then load all
 // available members. Afterwards the first available node will be selected.
 func (userTree *UserTree) LoadGuild(guildID string) error {
-	userTree.Clear()
+	userTree.lock.Lock()
+	defer userTree.lock.Unlock()
+	userTree.clear()
+
+	userTree.userNodes = make(map[string]*tview.TreeNode)
+	userTree.roleNodes = make(map[string]*tview.TreeNode)
 
 	guildRoles, roleLoadError := userTree.loadGuildRoles(guildID)
 	if roleLoadError != nil {
@@ -91,6 +113,7 @@ func (userTree *UserTree) LoadGuild(guildID string) error {
 		return userLoadError
 	}
 
+	userTree.loaded = true
 	userTree.selectFirstNode()
 
 	return nil
@@ -111,7 +134,7 @@ func (userTree *UserTree) loadGuildMembers(guildID string) error {
 		return stateError
 	}
 
-	userTree.AddOrUpdateMembers(members)
+	userTree.addOrUpdateMembers(members)
 
 	return nil
 }
@@ -143,6 +166,15 @@ func (userTree *UserTree) loadGuildRoles(guildID string) ([]*discordgo.Role, err
 // AddOrUpdateMember adds the passed member to the tree, unless it is
 // already part of the tree, in that case the nodes name is updated.
 func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
+	userTree.lock.Lock()
+	defer userTree.lock.Unlock()
+	if !userTree.loaded {
+		return
+	}
+	userTree.addOrUpdateMember(member)
+}
+
+func (userTree *UserTree) addOrUpdateMember(member *discordgo.Member) {
 	nameToUse := discordutil.GetMemberName(member)
 	if config.Current.UseRandomUserColors {
 		nameToUse = "[" + discordutil.GetUserColor(member.User) + "]" + nameToUse
@@ -173,6 +205,15 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 // AddOrUpdateUser adds a user to the tree, unless the user already exists,
 // in that case the users node gets updated.
 func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
+	userTree.lock.Lock()
+	defer userTree.lock.Unlock()
+	if !userTree.loaded {
+		return
+	}
+	userTree.addOrUpdateUser(user)
+}
+
+func (userTree *UserTree) addOrUpdateUser(user *discordgo.User) {
 	nameToUse := discordutil.GetUserName(user)
 	if config.Current.UseRandomUserColors {
 		nameToUse = "[" + discordutil.GetUserColor(user) + "]" + nameToUse
@@ -192,21 +233,48 @@ func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
 // AddOrUpdateUsers adds users to the tree, unless they already exists, in that
 // case the users nodes gets updated.
 func (userTree *UserTree) AddOrUpdateUsers(users []*discordgo.User) {
+	userTree.lock.Lock()
+	defer userTree.lock.Unlock()
+	if !userTree.loaded {
+		return
+	}
+	userTree.addOrUpdateUsers(users)
+}
+
+func (userTree *UserTree) addOrUpdateUsers(users []*discordgo.User) {
 	for _, user := range users {
-		userTree.AddOrUpdateUser(user)
+		userTree.addOrUpdateUser(user)
 	}
 }
 
 // AddOrUpdateMembers adds the all passed members to the tree, unless a node is
 // already part of the tree, in that case the nodes name is updated.
 func (userTree *UserTree) AddOrUpdateMembers(members []*discordgo.Member) {
+	userTree.lock.Lock()
+	defer userTree.lock.Unlock()
+	if !userTree.loaded {
+		return
+	}
+	userTree.addOrUpdateMembers(members)
+}
+
+func (userTree *UserTree) addOrUpdateMembers(members []*discordgo.Member) {
 	for _, member := range members {
-		userTree.AddOrUpdateMember(member)
+		userTree.addOrUpdateMember(member)
 	}
 }
 
 // RemoveMember finds and removes a node from the tree.
 func (userTree *UserTree) RemoveMember(member *discordgo.Member) {
+	userTree.lock.Lock()
+	defer userTree.lock.Unlock()
+	if !userTree.loaded {
+		return
+	}
+	userTree.removeMember(member)
+}
+
+func (userTree *UserTree) removeMember(member *discordgo.Member) {
 	userNode, contains := userTree.userNodes[member.User.ID]
 	if contains {
 		userTree.rootNode.Walk(func(node, parent *tview.TreeNode) bool {
@@ -242,12 +310,21 @@ func (userTree *UserTree) RemoveMember(member *discordgo.Member) {
 
 // RemoveMembers finds and removes all passed members from the tree.
 func (userTree *UserTree) RemoveMembers(members []*discordgo.Member) {
+	userTree.lock.Lock()
+	defer userTree.lock.Unlock()
+	if !userTree.loaded {
+		return
+	}
 	for _, member := range members {
-		userTree.RemoveMember(member)
+		userTree.removeMember(member)
 	}
 }
 
 //SetInputCapture delegates to tviews SetInputCapture
 func (userTree *UserTree) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventKey) {
 	userTree.internalTreeView.SetInputCapture(capture)
+}
+
+func (userTree *UserTree) IsLoaded() bool {
+	return userTree.loaded
 }

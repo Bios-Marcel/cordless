@@ -203,12 +203,17 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			}
 		}
 
-		userLoadError := window.userList.LoadGuild(guildID)
-		if userLoadError != nil {
-			window.ShowErrorDialog(userLoadError.Error())
+		//Currently has to happen before userlist loading, as it might not load otherwise
+		window.RefreshLayout()
+
+		window.userList.Clear()
+		if window.userList.internalTreeView.IsVisible() {
+			userLoadError := window.userList.LoadGuild(guildID)
+			if userLoadError != nil {
+				window.ShowErrorDialog(userLoadError.Error())
+			}
 		}
 
-		window.RefreshLayout()
 	})
 
 	window.guildList = guildList
@@ -268,16 +273,22 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			window.chatView.Lock()
 			defer window.chatView.Unlock()
 			window.QueueUpdateDrawSynchronized(func() {
-				window.LoadChannel(channel)
+				window.userList.Clear()
+				window.RefreshLayout()
 
 				if channel.Type == discordgo.ChannelTypeGroupDM {
-					loadError := window.userList.LoadGroup(channel.ID)
-					if loadError != nil {
-						fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
+
+					if window.userList.internalTreeView.IsVisible() {
+						loadError := window.userList.LoadGroup(channel.ID)
+						if loadError != nil {
+							fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
+						}
 					}
 				}
 
-				window.RefreshLayout()
+			})
+			window.QueueUpdateDrawSynchronized(func() {
+				window.LoadChannel(channel)
 			})
 		}()
 	})
@@ -288,8 +299,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			defer window.chatView.Unlock()
 			userChannels, _ := window.session.UserChannels()
 			for _, userChannel := range userChannels {
-				if userChannel.Type == discordgo.ChannelTypeDM &&
-					(userChannel.Recipients[0].ID == userID) {
+				if userChannel.Type == discordgo.ChannelTypeDM && userChannel.Recipients[0].ID == userID {
 					window.QueueUpdateDrawSynchronized(func() {
 						window.loadPrivateChannel(userChannel)
 					})
@@ -2105,14 +2115,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 		window.app.SetFocus(window.commandView.commandInput.internalTextView)
 	} else if shortcuts.ToggleUserContainer.Equals(event) {
-		config.Current.ShowUserContainer = !config.Current.ShowUserContainer
-
-		if !config.Current.ShowUserContainer && window.app.GetFocus() == window.userList.internalTreeView {
-			window.app.SetFocus(window.messageInput.GetPrimitive())
-		}
-
-		config.PersistConfig()
-		window.RefreshLayout()
+		window.toggleUserContainer()
 	} else if shortcuts.FocusChannelContainer.Equals(event) {
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.channelTree)
@@ -2140,6 +2143,29 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	}
 
 	return nil
+}
+
+func (window *Window) toggleUserContainer() {
+	config.Current.ShowUserContainer = !config.Current.ShowUserContainer
+
+	if !config.Current.ShowUserContainer && window.app.GetFocus() == window.userList.internalTreeView {
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+	}
+
+	if config.Current.ShowUserContainer {
+		if !window.userList.IsLoaded() {
+			if window.selectedChannel != nil && window.selectedChannel.GuildID == "" {
+				window.userList.LoadGroup(window.selectedChannel.ID)
+			} else if window.selectedGuild != nil {
+				window.userList.LoadGuild(window.selectedGuild.ID)
+			}
+		}
+	} else {
+		window.userList.Clear()
+	}
+
+	config.PersistConfig()
+	window.RefreshLayout()
 }
 
 // toggleBareChat will display only the chatview as the fullscreen application
