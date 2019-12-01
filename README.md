@@ -8,7 +8,7 @@
     <img src="https://img.shields.io/travis/Bios-Marcel/cordless?label=darwin&logo=apple&logoColor=white">
   </a>
   <a href="https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master">
-    <img src=https://img.shields.io/appveyor/ci/Bios-Marcel/cordless?label=windows&logo=windows&logoColor=white">
+    <img src="https://img.shields.io/appveyor/ci/Bios-Marcel/cordless?label=windows&logo=windows&logoColor=white">
   </a>
   <a href="https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml?">
     <img src="https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml.svg">
