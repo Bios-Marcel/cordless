@@ -24,92 +24,95 @@
 ## Overview
 
 - [Credits](#credits)
-- [How to install it](#how-to-install-it)
-- [Installing on Linux](#installing-on-linux)
-  - [Snap](#snap)
-  - [Arch based Linux distributions](#arch-based-linux-distributions)
-- [Installing on Windows](#installing-on-windows)
-- [Installing on macOS](#installing-on-macos)
-- [Building from source](#building-from-source)
+- [Introduction](#introduction)
+- [Installing](#installing)
+  - [Linux](#linux)
+  - [Windows](#installing-on-windows)
+  - [macOS](#installing-on-macos)
+  - [Building from source](#building-from-source)
 - [Login](#login)
 - [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
-- [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
 - [Contributing](#contributing)
-- [Why should or shouldn't you use this project](#why-should-or-shouldnt-you-use-this-project)
 - [Similar projects](#similar-projects)
 - [Troubleshooting](#troubleshooting)
 
-Cordless is supposed to be a custom [Discord](https://discordapp.com) client
-that aims to have a low memory footprint and be aimed at power-users.
+## Credits
+**Special thanks to**
+- [JetBrains](https://www.jetbrains.com/?from=cordless) for providing the cordless project with free licenses.
+- [Southclaws](https://github.com/Southclaws) for inspiring the project with [Cordless](https://github.com/Southclaws/cordless-old).
 
-**WARNING: Self-bots are discouraged and against Discords TOS.**
+## Introduction
 
-This project was mainly inspired by [Southclaws](https://github.com/Southclaws)
-[Cordless](https://github.com/Southclaws/cordless-old), which he sadly didn't
-develop any further.
+Cordless is a custom third-party [Discord](https://discordapp.com) client
+aimed towards a low memory footprint and power-users.
 
-The application only uses the official Discord API and doesn't send data to
-any third party. However, this application is not a official product
-by Discord Inc.
+**WARNING: Self-bots are discouraged and against Discords TOS. The application only uses the official Discord API and doesn't send data to any third party. However, this application is not a official product by Discord Inc.**
+ 
+Cordless is:  
+- Lightweight (can reduce usage of battery and bandwidth)
+- Tweakable (comes with [scripting](https://github.com/Bios-Marcel/cordless/wiki/Extending-Cordless-via-the-scripting-interface) and [theming](https://github.com/Bios-Marcel/cordless/wiki/Themes) (coming soon) out of the box)
+- An interesting TUI
 
-For those who don't want to use paypal but still donate, here's my ETH wallet public key:
-0x49939106563a9de8a777Cf5394149423b1dFd970
+However, cordless doesn't have:
+- A fancy GUI (no image or video playback support)
+- Voice/video calling features (This might soon change!)
+- Server Administration features (This might soon change!)
 
 ![Demo Screenshot](.github/images/chat-demo.png)
 
-## Credits
+## Installing
 
-Big thanks to [JetBrains](https://www.jetbrains.com/?from=cordless) for providing the
-cordless project with free licenses!
+### Linux
 
-## How to install it
+<details>
+  <summary>Snap (Recommended)</summary>
+  
+   Simply run (Might require sudo):
+   ```shell
+   snap install cordless
+   ```
+   Snap will automatically install updates.  
+  
+</details>
 
-### Installing on Linux
+<details>
+  <summary>AUR</summary>
+  
+  On arch based distributions, you can use the AUR package to install cordless
+  
+  <details>
+    <summary>Manually</summary>
+  
+   ```shell
+   $ git clone https://aur.archlinux.org/cordless-git.git
+   $ cd cordless-git
+   $ makepkg -sric
+   ```
+    
+  </details>
+  <details>
+    <summary>AUR Helpers</summary>
+    
+   ###### yay:
+   ```shell
+   $ yay -Syu cordless-git
+   ```
+   ```shell
+   $ yay -S cordless-git
+   ```
 
-#### Snap
+   ###### trizen:
+   ```shell
+   $ trizen -S cordless-git
+   ```
 
-On linux the recommended way of installation is the snap.
-
-Simply run (Might require sudo):
-
-```shell
-snap install cordless
-```
-
-Snap will automatically install updates.
-
-#### Arch based Linux distributions
-
-On Arch based distributions, you can use the AUR package to install cordless:
-
-##### Manually:
-
-```shell
-$ git clone https://aur.archlinux.org/cordless-git.git
-$ cd cordless-git
-$ makepkg -sric
-```
-
-##### With AUR Helpers:
-
-###### yay:
-```shell
-$ yay -Syu cordless-git
-```
-or
-```shell
-$ yay -S cordless-git
-```
-
-###### trizen:
-```shell
-$ trizen -S cordless-git
-```
-
-###### pacaur
-```shell
-$ pacuar -S cordless-git
-```
+   ###### pacaur
+   ```shell
+   $ pacuar -S cordless-git
+   ```
+    
+  </details>
+</details>
 
 ### Installing on Windows
 
@@ -216,10 +219,6 @@ console with the command `manual`.
 If any of the default commands don't work for you, open the keyboard shortcut
 changer via <kbd>Ctrl</kbd> + <kbd>K</kbd>.
 
-## Extending Cordless via the scripting interface
-
-[Check the wiki](https://github.com/Bios-Marcel/cordless/wiki/Extending-Cordless-via-the-scripting-interface)
-
 ## Contributing
 
 All kinds of contributions are welcome. Whether it's correcting typos, fixing
@@ -237,25 +236,10 @@ The full 100% of the bounty goes to whoever solves the issue, no matter
 whether that's me or someone else.
 
 If none of those ways of contributing are your kind of thing, feel free to
-donate something via [Liberapay](https://liberapay.com/biosmarcel/donate).
+donate something via [Liberapay](https://liberapay.com/biosmarcel/donate) or use 
+my ETH public key 0x49939106563a9de8a777Cf5394149423b1dFd970.
 It may not directly have an impact on the project, but it will surely motivate
 me to keep working on this project, as it shows that people care about it.
-
-## Why should or shouldn't you use this project
-
-Reasons to use it:
-
-- Your PC is not very powerful
-- You're on a mobile device and value your battery life
-- You want to reduce your bandwidth usage
-- You just like terminal applications
-
-Reasons not to use it:
-
-- You like fancy GUI
-- You want to see images, videos and whatnot inside of the application itself
-- You need the voice/video calling features (This might soon change!)
-- You need to administrate a server (no administration features yet)
 
 ## Similar projects
 
