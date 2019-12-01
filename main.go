@@ -5,8 +5,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
-	_ "net/http/pprof"
 
 	"github.com/Bios-Marcel/cordless/app"
 	"github.com/Bios-Marcel/cordless/config"
@@ -15,7 +13,6 @@ import (
 )
 
 func main() {
-	go http.ListenAndServe("localhost:8080", nil)
 	showVersion := flag.Bool("version", false, "Show the version instead of starting cordless")
 	showShortcutsDialog := flag.Bool("shortcut-dialog", false, "Shows the shortcuts dialog instead of launching cordless")
 	setConfigDirectory := flag.String("config-dir", "", "Sets the configuration directory")
