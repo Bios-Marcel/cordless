@@ -26,11 +26,7 @@
 - [Credits](#credits)
 - [Introduction](#introduction)
 - [Installing](#installing)
-  - [Linux](#linux)
-  - [Windows](#installing-on-windows)
-  - [macOS](#installing-on-macos)
-  - [Building from source](#building-from-source)
-- [Login](#login)
+- [Logging In](#login)
 - [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
 - [Contributing](#contributing)
 - [Similar projects](#similar-projects)
@@ -80,65 +76,65 @@ However, cordless doesn't have:
   
   On arch based distributions, you can use the AUR package to install cordless
   
-  <details>
-    <summary>Manually</summary>
+  #### Manually
   
-   ```shell
-   $ git clone https://aur.archlinux.org/cordless-git.git
-   $ cd cordless-git
-   $ makepkg -sric
-   ```
+  ```shell
+  $ git clone https://aur.archlinux.org/cordless-git.git
+  $ cd cordless-git
+  $ makepkg -sric
+  ```
     
-  </details>
-  <details>
-    <summary>AUR Helpers</summary>
+  #### AUR Helpers
     
-   ###### yay:
-   ```shell
-   $ yay -Syu cordless-git
-   ```
-   ```shell
-   $ yay -S cordless-git
-   ```
+  ###### yay:
+  ```shell
+  $ yay -Syu cordless-git
+  ```
+  ```shell
+  $ yay -S cordless-git
+  ```
 
-   ###### trizen:
-   ```shell
-   $ trizen -S cordless-git
-   ```
+  ###### trizen:
+  ```shell
+  $ trizen -S cordless-git
+  ```
 
-   ###### pacaur
-   ```shell
-   $ pacuar -S cordless-git
-   ```
+  ###### pacaur
+  ```shell
+  $ pacuar -S cordless-git
+  ```
     
   </details>
 </details>
 
 ### Installing on Windows
 
-In order to install the latest version on Windows, you first need
-[scoop](https://scoop.sh/#installs-in-seconds).
+<details>
+  <summary>Scoop (Recommended)</summary>
+  
+  In order to install the latest version on Windows, you first need [scoop](https://scoop.sh/#installs-in-seconds).
 
-After installing scoop, run the following:
+  After installing scoop, run the following:
 
-```ps1
-scoop bucket add biosmarcel https://github.com/Bios-Marcel/scoopbucket.git
-```
+  ```ps1
+  scoop bucket add biosmarcel https://github.com/Bios-Marcel/scoopbucket.git
+  ```
 
-This adds the bucket (repository) to your local index, allowing you to
-install any package from that bucket.
+  This adds the bucket (repository) to your local index, allowing you to
+  install any package from that bucket.
 
-Install cordless via
+  Install cordless via
 
-```ps1
-scoop install cordless
-```
+  ```ps1
+  scoop install cordless
+  ```
 
-In order to install updates, run:
+  In order to install updates, run:
 
-```ps1
-scoop update cordless
-```
+  ```ps1
+  scoop update cordless
+  ```
+</details>
 
 ### Installing on macOS
 
