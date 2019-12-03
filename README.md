@@ -21,28 +21,18 @@
   </a>
 </p>
 
-## Overview
+## Wiki: \[[Credits](https://github.com/Bios-Marcel/cordless/wiki/Credits-and-Similar-Projects)\] \[[Installing]()\] \[[Using]()\] \[[Troubleshooting]()\] 
 
-- [Credits](#credits)
-- [Introduction](#introduction)
-- [Installing](#installing)
-- [Logging In](#login)
-- [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
-- [Contributing](#contributing)
-- [Similar projects](#similar-projects)
-- [Troubleshooting](#troubleshooting)
-
-## Credits
 **Special thanks to**
 - [JetBrains](https://www.jetbrains.com/?from=cordless) for providing the cordless project with free licenses.
 - [Southclaws](https://github.com/Southclaws) for inspiring the project with [Cordless](https://github.com/Southclaws/cordless-old).
 
-## Introduction
+**Disclaimer: Use at own risk, third-party clients are risky. \[[More](https://github.com/Bios-Marcel/cordless/wiki/Discord's-Policy)]**
+
+## Introduction \[[More]()\]
 
 Cordless is a custom third-party [Discord](https://discordapp.com) client
 aimed towards a low memory footprint and power-users.
-
-**WARNING: Self-bots are discouraged and against Discords TOS. The application only uses the official Discord API and doesn't send data to any third party. However, this application is not a official product by Discord Inc.**
  
 Cordless is:  
 - Lightweight (can reduce usage of battery and bandwidth)
