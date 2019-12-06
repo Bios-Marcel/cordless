@@ -1,15 +1,17 @@
 package ui
 
 import (
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"sort"
 	"sync"
+
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+
+	"github.com/Bios-Marcel/discordgo"
+	"github.com/Bios-Marcel/tview"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/Bios-Marcel/cordless/readstate"
-	"github.com/Bios-Marcel/discordgo"
-	"github.com/Bios-Marcel/tview"
 )
 
 type channelState int
@@ -88,8 +90,8 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 	// Top level channel
 	state := channelTree.state
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID != "" ||
-			!discordutil.HasReadMessagesPermission(channel.ID, state) {
+		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews) ||
+			channel.ParentID != "" || !discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
 		createTopLevelChannelNodes(channelTree, channel)
@@ -121,8 +123,8 @@ CATEGORY_LOOP:
 	}
 	// Second level channel
 	for _, channel := range channels {
-		if channel.Type != discordgo.ChannelTypeGuildText || channel.ParentID == "" ||
-			!discordutil.HasReadMessagesPermission(channel.ID, state) {
+		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews) ||
+			channel.ParentID == "" || !discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
 		createSecondLevelChannelNodes(channelTree, channel)
