@@ -44,7 +44,8 @@ git commit version/version.go -m "Bump cordless versionnumber to version $RELEAS
 
 BIN_LINUX="cordless_linux_64"
 BIN_DARWIN="cordless_darwin"
-BIN_WINDOWS="cordless.exe"
+BIN_WINDOWS_64="cordless_64.exe"
+BIN_WINDOWS_32="cordless_32.exe"
 
 #
 # Building cordless for darwin, linux and windows.
@@ -54,7 +55,8 @@ BIN_WINDOWS="cordless.exe"
 
 GOOS=linux go build -o $BIN_LINUX -ldflags="-s -w"
 GOOS=darwin go build -o $BIN_DARWIN -ldflags="-s -w"
-GOOS=windows go build -o $BIN_WINDOWS -ldflags="-s -w"
+GOOS=windows go build -o $BIN_WINDOWS_64 -ldflags="-s -w"
+GOOS=windows GOARCH=386 go build -o $BIN_WINDOWS_32 -ldflags="-s -w"
 
 #
 # EXE_HASH is sha256 of the previously built cordless.exe and is required
@@ -64,8 +66,10 @@ GOOS=windows go build -o $BIN_WINDOWS -ldflags="-s -w"
 # and unexport them at a later point and time.
 #
 
-EXE_HASH="$(sha256sum ./$BIN_WINDOWS | cut -f 1 -d " ")"
-export EXE_HASH
+EXE_64_HASH="$(sha256sum ./$BIN_WINDOWS_64 | cut -f 1 -d " ")"
+export EXE_64_HASH
+EXE_32_HASH="$(sha256sum ./$BIN_WINDOWS_32 | cut -f 1 -d " ")"
+export EXE_32_HASH
 
 #
 # Substituting the variables in the scoop manifest tempalte into the actual
@@ -134,9 +138,9 @@ set -e
 
 if [ $RELEASE_EXISTS -eq 0 ]
 then
-    hub release edit -a "$BIN_LINUX" -a "$BIN_DARWIN" -a "$BIN_WINDOWS" -m "" -m "${RELEASE_BODY}" "$RELEASE_DATE"
+    hub release edit -a "$BIN_LINUX" -a "$BIN_DARWIN" -a "$BIN_WINDOWS_64" -a "$BIN_WINDOWS_32" -m "" -m "${RELEASE_BODY}" "$RELEASE_DATE"
 else
-    hub release create -a "$BIN_LINUX" -a "$BIN_DARWIN" -a "$BIN_WINDOWS" -m "${RELEASE_DATE}" -m "${RELEASE_BODY}" "$RELEASE_DATE"
+    hub release create -a "$BIN_LINUX" -a "$BIN_DARWIN" -a "$BIN_WINDOWS_64" -a "$BIN_WINDOWS_32" -m "${RELEASE_DATE}" -m "${RELEASE_BODY}" "$RELEASE_DATE"
 fi
 
 #
@@ -155,7 +159,8 @@ envsubst < cordless.rb_template > cordless.rb
 #
 
 unset RELEASE_DATE
-unset EXE_HASH
+unset EXE_64_HASH
+unset EXE_32_HASH
 unset TAR_HASH
 
 #
