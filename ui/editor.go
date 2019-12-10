@@ -306,6 +306,22 @@ func (editor *Editor) Backspace() {
 	}
 }
 
+func (editor *Editor) DeleteWordLeft() {
+	if editor.buffer.Cursor.HasSelection() {
+		editor.Backspace()
+	} else {
+		oldLocation := editor.buffer.Cursor.Loc
+		editor.buffer.Cursor.WordLeft()
+		newLocation := editor.buffer.Cursor.Loc
+
+		if oldLocation.X != newLocation.X || oldLocation.Y != newLocation.Y {
+			editor.buffer.Cursor.SetSelectionStart(newLocation)
+			editor.buffer.Cursor.SetSelectionEnd(oldLocation)
+			editor.Backspace()
+		}
+	}
+}
+
 func (editor *Editor) DeleteRight() {
 	if editor.buffer.Cursor.HasSelection() {
 		editor.buffer.Remove(editor.buffer.Cursor.CurSelection[0], editor.buffer.Cursor.CurSelection[1])
@@ -411,6 +427,8 @@ func NewEditor() *Editor {
 			event.Key() == tcell.KeyBackspace {
 			// FIXME Legacy, has to be replaced when there is N-1 Keybind-Mapping.
 			editor.Backspace()
+		} else if shortcuts.DeleteWordLeft.Equals(event) {
+			editor.DeleteWordLeft()
 		} else if shortcuts.CopySelection.Equals(event) {
 			clipboard.WriteAll(editor.buffer.Cursor.GetSelection())
 			//Returning nil, as copying won't do anything than filling the

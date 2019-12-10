@@ -73,6 +73,8 @@ var (
 
 	DeleteRight = addShortcut("delete_right", "Delete right",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone))
+	DeleteWordLeft = addShortcut("delete_word_left", "Delete word left",
+		multilineTextInput, tcell.NewEventKey(tcell.KeyCtrlW, rune(tcell.KeyCtrlW), tcell.ModCtrl))
 	InputNewLine = addShortcut("add_new_line_character", "Add new line character",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModAlt))
 
