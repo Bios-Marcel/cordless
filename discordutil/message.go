@@ -3,9 +3,11 @@ package discordutil
 import (
 	"bytes"
 	"fmt"
-	"github.com/Bios-Marcel/cordless/times"
-	"github.com/Bios-Marcel/discordgo"
 	"strings"
+
+	"github.com/Bios-Marcel/discordgo"
+
+	"github.com/Bios-Marcel/cordless/times"
 )
 
 // MentionsCurrentUserExplicitly checks whether the message contains any
@@ -125,7 +127,7 @@ func SendMessageAsFile(session *discordgo.Session, message string, channel strin
 
 // Generates a Quote using the given Input. The `messageAfterQuote` will be
 // appended after the quote in case it is not empty.
-func GenerateQuote(message, author string, time discordgo.Timestamp, messageAfterQuote string) (string, error) {
+func GenerateQuote(message, author string, time discordgo.Timestamp, attachments []*discordgo.MessageAttachment, messageAfterQuote string) (string, error) {
 	messageTime, parseError := time.Parse()
 	if parseError != nil {
 		return "", parseError
@@ -135,6 +137,22 @@ func GenerateQuote(message, author string, time discordgo.Timestamp, messageAfte
 	messageTimeUTC := messageTime.UTC()
 
 	quotedMessage := strings.ReplaceAll(message, "\n", "\n> ")
+	if len(attachments) > 0 {
+		var attachmentsAsText string
+		for index, attachment := range attachments {
+			if index == 0 {
+				attachmentsAsText += attachment.URL
+			} else {
+				attachmentsAsText += "\n> " + attachment.URL
+			}
+		}
+
+		if strings.HasSuffix(quotedMessage, "> ") {
+			quotedMessage = quotedMessage + attachmentsAsText
+		} else {
+			quotedMessage = quotedMessage + "\n> " + attachmentsAsText
+		}
+	}
 	quotedMessage = fmt.Sprintf("> **%s** %s UTC:\n> %s\n", author, times.TimeToString(&messageTimeUTC), quotedMessage)
 	currentContent := strings.TrimSpace(messageAfterQuote)
 	if currentContent != "" {

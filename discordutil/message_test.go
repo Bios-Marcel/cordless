@@ -1,8 +1,9 @@
 package discordutil
 
 import (
-	"github.com/Bios-Marcel/discordgo"
 	"testing"
+
+	"github.com/Bios-Marcel/discordgo"
 )
 
 func Test_MentionsCurrentUserExplicitly(t *testing.T) {
@@ -321,7 +322,7 @@ func TestGenerateQuote(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenerateQuote(tt.args.message, tt.args.author, tt.args.time, tt.args.messageAfterQuote)
+			got, err := GenerateQuote(tt.args.message, tt.args.author, tt.args.time, nil, tt.args.messageAfterQuote)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateQuote() error = %v, wantErr %v", err, tt.wantErr)
 				return

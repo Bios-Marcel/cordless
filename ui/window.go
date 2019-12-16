@@ -1182,7 +1182,7 @@ func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
 		}
 	}
 
-	quotedMessage, generateError := discordutil.GenerateQuote(message.ContentWithMentionsReplaced(), username, message.Timestamp, window.messageInput.GetText())
+	quotedMessage, generateError := discordutil.GenerateQuote(message.ContentWithMentionsReplaced(), username, message.Timestamp, message.Attachments, window.messageInput.GetText())
 	if generateError == nil {
 		window.messageInput.SetText(quotedMessage)
 		window.app.SetFocus(window.messageInput.GetPrimitive())
