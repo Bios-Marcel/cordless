@@ -278,5 +278,5 @@ For general problems faced by cordless users, check out the wiki at:
 https://github.com/Bios-Marcel/cordless/wiki/Troubleshooting
 
 If you need help or have questions that you don't want to create an issue for.
-feel free to hit me up on Discord: `Marcel#7299`. Alternatively, just join the
+feel free to hit me up on Discord: `Marcel#5587`. Alternatively, just join the
 public Cordless server linked at the top of the Readme.
