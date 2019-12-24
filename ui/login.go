@@ -2,13 +2,14 @@ package ui
 
 import (
 	"errors"
+	"os"
+
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/text"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
-	"os"
 )
 
 const splashText = `

@@ -1,12 +1,25 @@
 package shortcuts
 
 import (
+	"log"
+	"os"
+	"regexp"
+
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
-	"log"
 )
+
+func checkVT() bool {
+	VTxxx, err := regexp.MatchString("(vt)[0-9]+", os.Getenv("TERM"))
+	if err != nil {
+		panic(err)
+	}
+	return VTxxx
+}
+
+var vtxxx = checkVT()
 
 func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func(view *tview.Flex)) {
 	var table *ShortcutTable
@@ -60,11 +73,17 @@ func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func
 
 	shortcutDescription = tview.NewTextView()
 	shortcutDescription.SetDynamicColors(true)
-	shortcutDescription.SetText("[" + primaryTextColor + "][:" + primitiveBGColor + "]R [:" + primaryTextColor + "][" + primitiveBGColor + "]Reset shortcut" +
-		"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Backspace [:" + primaryTextColor + "][" + primitiveBGColor + "]Delete shortcut" +
-		"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Enter [:" + primaryTextColor + "][" + primitiveBGColor + "]Change shortcut" +
-		"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Esc [:" + primaryTextColor + "][" + primitiveBGColor + "]Close dialog")
-
+	if vtxxx {
+		shortcutDescription.SetText("R [::r]Reset shortcut[::-]" +
+			"[::-]  Backspace [::r]Delete shortcut" +
+			"[::-]  Enter [::r]Change shortcut" +
+			"[::-]  Esc [::r]Close dialog")
+	} else {
+		shortcutDescription.SetText("[" + primaryTextColor + "][:" + primitiveBGColor + "]R [:" + primaryTextColor + "][" + primitiveBGColor + "]Reset shortcut" +
+			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Backspace [:" + primaryTextColor + "][" + primitiveBGColor + "]Delete shortcut" +
+			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Enter [:" + primaryTextColor + "][" + primitiveBGColor + "]Change shortcut" +
+			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Esc [:" + primaryTextColor + "][" + primitiveBGColor + "]Close dialog")
+	}
 	table.SetFocusNext(func() { app.SetFocus(resetButton) })
 	table.SetFocusPrevious(func() { app.SetFocus(exitButton) })
 

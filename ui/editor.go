@@ -565,6 +565,18 @@ func (editor *Editor) SetBorderColor(color tcell.Color) {
 	editor.internalTextView.SetBorderColor(color)
 }
 
+// SetBorderAttributes delegates to the underlying components SetBorderAttributes
+// method.
+func (editor *Editor) SetBorderAttributes(attr tcell.AttrMask) {
+	editor.internalTextView.SetBorderAttributes(attr)
+}
+
+// SetBorderFocusAttributes delegates to the underlying components SetBorderFocusAttributes
+// method.
+func (editor *Editor) SetBorderFocusAttributes(attr tcell.AttrMask) {
+	editor.internalTextView.SetBorderFocusAttributes(attr)
+}
+
 // SetInputCapture sets the alternative input capture that will be used if the
 // components default controls aren't being triggered.
 func (editor *Editor) SetInputCapture(captureFunc func(event *tcell.EventKey) *tcell.EventKey) {
