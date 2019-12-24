@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/Bios-Marcel/discordemojimap v1.0.1
 	github.com/Bios-Marcel/discordgo v0.20.5-0.20191206185819-8703d1772aea
-	github.com/Bios-Marcel/femto v0.0.0-20191123155547-99f32baf0a56
+	github.com/Bios-Marcel/femto v0.0.0-20191224223104-a7b8ef9bdc12
 	github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82
 	github.com/Bios-Marcel/shortnotforlong v1.0.0
 	github.com/Bios-Marcel/tview v0.0.0-20191123154653-6e8b01439555
@@ -16,7 +16,7 @@ require (
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/google/go-github/v28 v28.1.1
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
-	github.com/mattn/go-runewidth v0.0.6
+	github.com/mattn/go-runewidth v0.0.7
 	github.com/mdp/qrterminal/v3 v3.0.0
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pkg/errors v0.8.1
