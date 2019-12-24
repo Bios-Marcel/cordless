@@ -502,13 +502,26 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 		}
 
 		var color string
-		if chatView.state.User.ID == user.ID {
-			color = "[" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]"
+		if vtxxx {
+			if chatView.state.User.ID == user.ID {
+				color = "[::r]"
+			} else {
+				color = "[::b]"
+			}
 		} else {
-			color = "[" + tviewutil.ColorToHex(config.GetTheme().LinkColor) + "]"
+			if chatView.state.User.ID == user.ID {
+				color = "[" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]"
+			} else {
+				color = "[" + tviewutil.ColorToHex(config.GetTheme().LinkColor) + "]"
+			}
 		}
 
-		replacement := color + "@" + userName + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
+		var replacement string
+		if vtxxx {
+			replacement = color + "@" + userName + "[::-]"
+		} else {
+			replacement = color + "@" + userName + "[" + tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor) + "]"
+		}
 		messageText = strings.NewReplacer(
 			"<@"+user.ID+">", replacement,
 			"<@!"+user.ID+">", replacement,

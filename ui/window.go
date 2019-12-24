@@ -1049,13 +1049,22 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		bottomBar.SetBackgroundColor(config.GetTheme().PrimitiveBackgroundColor)
 
 		loggedInAsText := fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.String()))
-		loggedInAs := tview.NewTextView().SetText(loggedInAsText)
+		if vtxxx {
+			// For some reason there's an offset when the tag is applied. I have no idea how to fix this.
+			// Except maybe unify the bottom bar into a single TextView rather than using two in a Flex.
+			loggedInAsText = "[::r]" + loggedInAsText
+		}
+		loggedInAs := tview.NewTextView().SetText(loggedInAsText).SetDynamicColors(true)
 		loggedInAs.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
+
 		bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
 		bottomBar.AddItem(tview.NewBox(), 1, 0, false)
 
 		shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcuts.EventToString(shortcutsDialogShortcut))
-		shortcutInfo := tview.NewTextView().SetText(shortcutInfoText)
+		if vtxxx {
+			shortcutInfoText = "[::r]" + shortcutInfoText
+		}
+		shortcutInfo := tview.NewTextView().SetText(shortcutInfoText).SetDynamicColors(true)
 		shortcutInfo.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
 		bottomBar.AddItem(shortcutInfo, runewidth.StringWidth(shortcutInfoText), 0, false)
 
@@ -1282,11 +1291,20 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 
 func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.TreeNode, isSelected bool) {
 	if isSelected {
-		guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
+		if vtxxx {
+			guildNode.SetAttributes(tcell.AttrUnderline)
+		} else {
+			guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
+		}
 	} else {
 		if !readstate.HasGuildBeenRead(guildID) {
-			guildNode.SetColor(config.GetTheme().AttentionColor)
+			if vtxxx {
+				guildNode.SetAttributes(tcell.AttrBlink)
+			} else {
+				guildNode.SetColor(config.GetTheme().AttentionColor)
+			}
 		} else {
+			guildNode.SetAttributes(tcell.AttrNone)
 			guildNode.SetColor(tview.Styles.PrimaryTextColor)
 		}
 	}
@@ -2308,6 +2326,9 @@ func (window *Window) startEditingMessage(message *discordgo.Message) {
 		window.messageInput.SetText(message.Content)
 		window.messageInput.SetBorderColor(tcell.ColorYellow)
 		window.messageInput.SetBorderFocusColor(tcell.ColorYellow)
+		if vtxxx {
+			window.messageInput.SetBorderFocusAttributes(tcell.AttrBlink | tcell.AttrBold)
+		}
 		window.editingMessageID = &message.ID
 		window.app.SetFocus(window.messageInput.GetPrimitive())
 	}
@@ -2322,6 +2343,10 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 	window.editingMessageID = nil
 	window.messageInput.SetBorderColor(tview.Styles.BorderColor)
 	window.messageInput.SetBorderFocusColor(tview.Styles.BorderFocusColor)
+	if vtxxx {
+		window.messageInput.SetBorderFocusAttributes(tcell.AttrBold)
+		window.messageInput.SetBorderAttributes(tcell.AttrNone)
+	}
 }
 
 //ShowErrorDialog shows a simple error dialog that has only an Okay button,
@@ -2516,7 +2541,11 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 					for _, guildNode := range window.guildList.GetRoot().GetChildren() {
 						if guildNode.GetReference() == channel.GuildID {
 							window.guildList.SetCurrentNode(guildNode)
-							guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
+							if vtxxx {
+								guildNode.SetAttributes(tcell.AttrUnderline)
+							} else {
+								guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
+							}
 							window.selectedGuildNode = guildNode
 							break
 						}

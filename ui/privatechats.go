@@ -117,7 +117,11 @@ func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
 	newNode := createPrivateChannelNode(channel)
 	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 		privateList.privateChannelStates[newNode] = unread
-		newNode.SetColor(config.GetTheme().AttentionColor)
+		if vtxxx {
+			newNode.SetAttributes(tcell.AttrBlink)
+		} else {
+			newNode.SetColor(config.GetTheme().AttentionColor)
+		}
 	}
 	privateList.chatsNode.AddChild(newNode)
 }
@@ -210,7 +214,11 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channel.ID {
 			privateList.privateChannelStates[node] = unread
-			node.SetColor(config.GetTheme().AttentionColor)
+			if vtxxx {
+				node.SetAttributes(tcell.AttrBlink)
+			} else {
+				node.SetColor(config.GetTheme().AttentionColor)
+			}
 			break
 		}
 	}
@@ -223,7 +231,11 @@ func (privateList *PrivateChatList) MarkChannelAsRead(channelID string) {
 		if ok && referenceChannelID == channelID {
 			if privateList.privateChannelStates[node] != loaded {
 				privateList.privateChannelStates[node] = read
-				node.SetColor(config.GetTheme().PrimaryTextColor)
+				if vtxxx {
+					node.SetAttributes(tcell.AttrNone)
+				} else {
+					node.SetColor(config.GetTheme().PrimaryTextColor)
+				}
 			}
 			break
 		}
@@ -266,7 +278,11 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 	for node, state := range privateList.privateChannelStates {
 		if state == loaded {
 			privateList.privateChannelStates[node] = read
-			node.SetColor(config.GetTheme().PrimaryTextColor)
+			if vtxxx {
+				node.SetAttributes(tcell.AttrNone)
+			} else {
+				node.SetColor(config.GetTheme().PrimaryTextColor)
+			}
 			break
 		}
 	}
@@ -275,7 +291,11 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channel.ID {
 			privateList.privateChannelStates[node] = loaded
-			node.SetColor(tview.Styles.ContrastBackgroundColor)
+			if vtxxx {
+				node.SetAttributes(tcell.AttrUnderline)
+			} else {
+				node.SetColor(tview.Styles.ContrastBackgroundColor)
+			}
 			break
 		}
 	}

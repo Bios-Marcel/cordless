@@ -1,8 +1,12 @@
 package ui
 
 import (
+	"os"
+	"regexp"
 	"sort"
 	"sync"
+
+	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
@@ -22,6 +26,16 @@ const (
 	channelMentioned
 	channelRead
 )
+
+func checkVT() bool {
+	VTxxx, err := regexp.MatchString("(vt)[0-9]+", os.Getenv("TERM"))
+	if err != nil {
+		panic(err)
+	}
+	return VTxxx
+}
+
+var vtxxx = checkVT()
 
 // ChannelTree is the component that displays the channel hierarchy of the
 // currently loaded guild and allows interactions with those channels.
@@ -137,7 +151,11 @@ func createTopLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Cha
 	channelNode := createChannelNode(channel)
 	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 		channelTree.channelStates[channelNode] = channelUnread
-		channelNode.SetColor(config.GetTheme().AttentionColor)
+		if vtxxx {
+			channelNode.SetAttributes(tcell.AttrBlink)
+		} else {
+			channelNode.SetColor(config.GetTheme().AttentionColor)
+		}
 	}
 	channelTree.GetRoot().AddChild(channelNode)
 }
@@ -155,7 +173,11 @@ func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.
 		if ok && channelID == channel.ParentID {
 			if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 				channelTree.channelStates[channelNode] = channelUnread
-				channelNode.SetColor(config.GetTheme().AttentionColor)
+				if vtxxx {
+					channelNode.SetAttributes(tcell.AttrBlink)
+				} else {
+					channelNode.SetColor(config.GetTheme().AttentionColor)
+				}
 			}
 
 			node.AddChild(channelNode)
@@ -277,8 +299,11 @@ func (channelTree *ChannelTree) MarkChannelAsUnread(channelID string) {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channelID {
 			channelTree.channelStates[node] = channelUnread
-			node.SetColor(config.GetTheme().AttentionColor)
-
+			if vtxxx {
+				node.SetAttributes(tcell.AttrBlink)
+			} else {
+				node.SetColor(config.GetTheme().AttentionColor)
+			}
 			return false
 		}
 
@@ -298,7 +323,11 @@ func (channelTree *ChannelTree) MarkChannelAsRead(channelID string) {
 
 			if channelTree.channelStates[node] != channelLoaded {
 				channelTree.channelStates[node] = channelRead
-				node.SetColor(config.GetTheme().PrimaryTextColor)
+				if vtxxx {
+					node.SetAttributes(tcell.AttrNone)
+				} else {
+					node.SetColor(config.GetTheme().PrimaryTextColor)
+				}
 			}
 
 			return false
@@ -318,7 +347,11 @@ func (channelTree *ChannelTree) MarkChannelAsMentioned(channelID string) {
 			if stateError == nil {
 				node.SetText("(@You) " + channel.Name)
 			}
-			node.SetColor(config.GetTheme().AttentionColor)
+			if vtxxx {
+				node.SetAttributes(tcell.AttrBlink)
+			} else {
+				node.SetColor(config.GetTheme().AttentionColor)
+			}
 
 			return false
 		}
@@ -333,7 +366,11 @@ func (channelTree *ChannelTree) MarkChannelAsLoaded(channelID string) {
 	for node, state := range channelTree.channelStates {
 		if state == channelLoaded {
 			channelTree.channelStates[node] = channelRead
-			node.SetColor(config.GetTheme().PrimaryTextColor)
+			if vtxxx {
+				node.SetAttributes(tcell.AttrNone)
+			} else {
+				node.SetColor(config.GetTheme().PrimaryTextColor)
+			}
 			break
 		}
 	}
@@ -346,7 +383,11 @@ func (channelTree *ChannelTree) MarkChannelAsLoaded(channelID string) {
 			if stateError == nil {
 				node.SetText(channel.Name)
 			}
-			node.SetColor(tview.Styles.ContrastBackgroundColor)
+			if vtxxx {
+				node.SetAttributes(tcell.AttrUnderline)
+			} else {
+				node.SetColor(tview.Styles.ContrastBackgroundColor)
+			}
 			return false
 		}
 
