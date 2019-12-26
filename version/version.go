@@ -1,3 +1,3 @@
 package version
 
-var Version = "2019-11-19"
+var Version = "2019-12-26"
