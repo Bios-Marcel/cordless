@@ -8,7 +8,7 @@ require (
 	github.com/Bios-Marcel/femto v0.0.0-20191224223104-a7b8ef9bdc12
 	github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82
 	github.com/Bios-Marcel/shortnotforlong v1.0.0
-	github.com/Bios-Marcel/tview v0.0.0-20191123154653-6e8b01439555
+	github.com/Bios-Marcel/tview v0.0.0-20191228174509-82f4aa41eebe
 	github.com/alecthomas/chroma v0.6.6
 	github.com/atotto/clipboard v0.1.2
 	github.com/gdamore/tcell v1.3.1-0.20191115014413-b6a97de0c118
