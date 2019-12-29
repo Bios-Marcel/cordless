@@ -1,5 +1,5 @@
 os: osx
 language: go
 go:
-  - "1.12"
+  - "1.13"
 script: go test -race ./...

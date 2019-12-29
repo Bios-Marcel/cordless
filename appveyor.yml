@@ -3,7 +3,7 @@ clone_folder: c:\gopath\src\github.com\Bios-Marcel\cordless
 environment:
   GOPATH: c:\gopath
 build: off
-stack: go 1.12
+stack: go 1.13
 
 artifacts:
   - path: cordless.exe
