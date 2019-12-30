@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/Bios-Marcel/discordemojimap v1.0.1
 	github.com/Bios-Marcel/discordgo v0.20.5-0.20191206185819-8703d1772aea
-	github.com/Bios-Marcel/femto v0.0.0-20191224223104-a7b8ef9bdc12
+	github.com/Bios-Marcel/femto v0.0.0-20191230001954-8da61fa48996
 	github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82
 	github.com/Bios-Marcel/shortnotforlong v1.0.0
 	github.com/Bios-Marcel/tview v0.0.0-20191228174509-82f4aa41eebe

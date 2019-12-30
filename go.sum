@@ -2,8 +2,8 @@ github.com/Bios-Marcel/discordemojimap v1.0.1 h1:b3UYPO7+h1+ciStkwU/KQCerOmpUNPH
 github.com/Bios-Marcel/discordemojimap v1.0.1/go.mod h1:AoHIpUwf3EVCAAUmk+keXjb9khyZcFnW84/rhJd4IkU=
 github.com/Bios-Marcel/discordgo v0.20.5-0.20191206185819-8703d1772aea h1:yRHbn86fLllPO0tOg0cyNKCrTRuZ2OE3XV4UW9qEYxs=
 github.com/Bios-Marcel/discordgo v0.20.5-0.20191206185819-8703d1772aea/go.mod h1:bLnfQU0j/SejmPozgW5GepmKvd8CrbMIml2I0IZENVE=
-github.com/Bios-Marcel/femto v0.0.0-20191224223104-a7b8ef9bdc12 h1:oj0NxFPgD3e1JbrIT0cXMde5jEEoJC43Q5u9OsHq5oo=
-github.com/Bios-Marcel/femto v0.0.0-20191224223104-a7b8ef9bdc12/go.mod h1:104X5bAcBujR7VfnCw0cqBuZ8xXs3sralcMHsjCGxic=
+github.com/Bios-Marcel/femto v0.0.0-20191230001954-8da61fa48996 h1:MwaIi6ybhpCGet9g83jrGpj1xXbeKfq04Ldo8OzVp8o=
+github.com/Bios-Marcel/femto v0.0.0-20191230001954-8da61fa48996/go.mod h1:E3X5tOxA2GYlsArLH37VE3M8zJIySFfanf3nCssuOds=
 github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82 h1:gspJ6CW9bhboosSISmuX2iq03pUsYHzlJN0s+z4fz4E=
 github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82/go.mod h1:hiFR6fH5+uc/f2yK2syh/UfzaPfGo6F2HJSoiI4ufWU=
 github.com/Bios-Marcel/shortnotforlong v1.0.0 h1:K4JJ5U3+D8LXoAiH0QbfMujWuqKo+NAEZKuQ2RHPqqE=
@@ -112,8 +112,6 @@ github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af h1:6yITBqGTE2lEeTPG0
 github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af/go.mod h1:4F09kP5F+am0jAwlQLddpoMDM+iewkxxt6nxUQ5nq5o=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.0.1/go.mod h1:UQGH1tvbgY+Nz5t2n7tXsz52dQxojPUpymEIMZ47gx8=
-github.com/zyedidia/micro v1.4.1 h1:OuszISyaEPK/8xxkklkh7dp2ragvKDEnr4RyHfJcQdo=
-github.com/zyedidia/micro v1.4.1/go.mod h1:/wcvhlXPvvvb6v176yUQE4gNzr+Erwz4pWfx7PU/cuE=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190403202508-8e1b8d32e692 h1:GRhHqDOgeDr6QDTtq9gn2O4iKvm5dsbfqD/TXb0KLX0=
 golang.org/x/crypto v0.0.0-20190403202508-8e1b8d32e692/go.mod h1:WFFai1msRO1wXaEeE5yQxYXgSfI8pQAWXbQop6sCtWE=
