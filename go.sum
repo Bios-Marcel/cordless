@@ -2,14 +2,12 @@ github.com/Bios-Marcel/discordemojimap v1.0.1 h1:b3UYPO7+h1+ciStkwU/KQCerOmpUNPH
 github.com/Bios-Marcel/discordemojimap v1.0.1/go.mod h1:AoHIpUwf3EVCAAUmk+keXjb9khyZcFnW84/rhJd4IkU=
 github.com/Bios-Marcel/discordgo v0.20.5-0.20191206185819-8703d1772aea h1:yRHbn86fLllPO0tOg0cyNKCrTRuZ2OE3XV4UW9qEYxs=
 github.com/Bios-Marcel/discordgo v0.20.5-0.20191206185819-8703d1772aea/go.mod h1:bLnfQU0j/SejmPozgW5GepmKvd8CrbMIml2I0IZENVE=
-github.com/Bios-Marcel/femto v0.0.0-20191230001954-8da61fa48996 h1:MwaIi6ybhpCGet9g83jrGpj1xXbeKfq04Ldo8OzVp8o=
-github.com/Bios-Marcel/femto v0.0.0-20191230001954-8da61fa48996/go.mod h1:E3X5tOxA2GYlsArLH37VE3M8zJIySFfanf3nCssuOds=
+github.com/Bios-Marcel/femto v0.0.0-20191230002044-a733a9347742 h1:Wz2inrn2ahZ+lTz78782MWy63TAllr/WzIxR+nDAoP8=
+github.com/Bios-Marcel/femto v0.0.0-20191230002044-a733a9347742/go.mod h1:A/NU56Hy+SDheOTrEyk6iEW0erjHf2HTySbB7z8OgeA=
 github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82 h1:gspJ6CW9bhboosSISmuX2iq03pUsYHzlJN0s+z4fz4E=
 github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82/go.mod h1:hiFR6fH5+uc/f2yK2syh/UfzaPfGo6F2HJSoiI4ufWU=
 github.com/Bios-Marcel/shortnotforlong v1.0.0 h1:K4JJ5U3+D8LXoAiH0QbfMujWuqKo+NAEZKuQ2RHPqqE=
 github.com/Bios-Marcel/shortnotforlong v1.0.0/go.mod h1:g6bFiwq0pq7pqENRgHiCZu7uMzeYPIXwANlaBQ47LBw=
-github.com/Bios-Marcel/tview v0.0.0-20191123154653-6e8b01439555 h1:JQHjos9N8Dm2ngc4SvA6L5yZkkM2PcTGNUpxQyhLXNQ=
-github.com/Bios-Marcel/tview v0.0.0-20191123154653-6e8b01439555/go.mod h1:QqcQk8R6fictXbIK3RTZmp6BImrXH7sGxo8bz9MocKU=
 github.com/Bios-Marcel/tview v0.0.0-20191228174509-82f4aa41eebe h1:ezX7NrWU0FecRcnQRyfsU9SEriGS8EpicUn3LtftEME=
 github.com/Bios-Marcel/tview v0.0.0-20191228174509-82f4aa41eebe/go.mod h1:QqcQk8R6fictXbIK3RTZmp6BImrXH7sGxo8bz9MocKU=
 github.com/GeertJohan/go.incremental v1.0.0/go.mod h1:6fAjUhbVuX1KcMD3c8TEgVUqmo4seqhv0i0kdATSkM0=
