@@ -268,7 +268,6 @@ func (cmd *StatusSetCustomCmd) Execute(writer io.Writer, parameters []string) {
 				}
 			}
 		case "-i", "--expire", "--expiry":
-			// FIXME: specifying an expire time makes status immediately disappear (only tested w/ "1m")
 			if m, _ := regexp.MatchString(`\d+(s|m|h)`, parameters[index+1]); m {
 				lastIndex := len(parameters[index+1]) - 1
 				num, err := strconv.Atoi(parameters[index+1][:lastIndex])
@@ -280,11 +279,11 @@ func (cmd *StatusSetCustomCmd) Execute(writer io.Writer, parameters []string) {
 				now := time.Now().UTC()
 				switch parameters[index+1][lastIndex] {
 				case 's':
-					now.Add(time.Second * time.Duration(num))
+					now = now.Add(time.Second * time.Duration(num))
 				case 'm':
-					now.Add(time.Minute * time.Duration(num))
+					now = now.Add(time.Minute * time.Duration(num))
 				case 'h':
-					now.Add(time.Hour * time.Duration(num))
+					now = now.Add(time.Hour * time.Duration(num))
 				default:
 					fmt.Fprintf(writer, "[%s]Invalid time character: %s != <s|m|h>\n", errorColor, parameters[index+1][lastIndex])
 					return
