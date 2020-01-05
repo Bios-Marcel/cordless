@@ -244,9 +244,7 @@ func (cmd *StatusSetCustomCmd) Execute(writer io.Writer, parameters []string) {
 	}
 
 	errorColor := tviewutil.ColorToHex(config.GetTheme().ErrorColor)
-	customStatus := map[string]string{
-		"expires_at": time.Now().UTC().Add(time.Hour * 24).Format(time.RFC3339Nano),
-	}
+	customStatus := make(map[string]string)
 	for index, param := range parameters {
 		switch param {
 		case "-s", "--status":
