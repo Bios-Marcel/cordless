@@ -288,16 +288,14 @@ func (login *Login) attemptLogin() {
 		// Even if the login is supposed to be without two-factor-authentication, we
 		// attempt parsing a 2fa code, since the underlying rest-call can also handle
 		// non-2fa login calls.
-		var mfaToken int64
-		mfaTokenText := strings.ReplaceAll(login.tfaTokenInput.GetText(), " ", "")
-		if mfaTokenText != "" {
-			var parseError error
-			mfaToken, parseError = strconv.ParseInt(mfaTokenText, 10, 32)
+		mfaToken := strings.ReplaceAll(login.tfaTokenInput.GetText(), " ", "")
+		if mfaToken != "" {
+			_, parseError := strconv.ParseInt(mfaToken, 10, 32)
 			if parseError != nil {
 				login.sessionChannel <- &loginAttempt{nil, errors.New("[red]Two-Factor-Authentication Code incorrect.\n\n[red]Correct example: 564 231")}
 			}
 		}
-		session, loginError := discordgo.NewWithPasswordAndMFA(userAgent, login.usernameInput.GetText(), login.passwordInput.GetText(), int(mfaToken))
+		session, loginError := discordgo.NewWithPasswordAndMFA(userAgent, login.usernameInput.GetText(), login.passwordInput.GetText(), mfaToken)
 		login.sessionChannel <- &loginAttempt{session, loginError}
 	}
 

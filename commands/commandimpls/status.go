@@ -1,12 +1,8 @@
 package commandimpls
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -244,12 +240,12 @@ func (cmd *StatusSetCustomCmd) Execute(writer io.Writer, parameters []string) {
 	}
 
 	errorColor := tviewutil.ColorToHex(config.GetTheme().ErrorColor)
-	customStatus := make(map[string]string)
+	var customStatus discordgo.CustomStatus
 	for index, param := range parameters {
 		switch param {
 		case "-s", "--status":
 			if index != len(parameters)-1 {
-				customStatus["text"] = parameters[index+1]
+				customStatus.Text = parameters[index+1]
 			} else {
 				fmt.Fprintf(writer, "[%s]Error, you didn't supply a status\n", errorColor)
 				return
@@ -257,9 +253,9 @@ func (cmd *StatusSetCustomCmd) Execute(writer io.Writer, parameters []string) {
 		case "-e", "--emoji":
 			if index != len(parameters)-1 {
 				if discordemojimap.ContainsEmoji(parameters[index+1]) {
-					customStatus["emoji_name"] = parameters[index+1]
+					customStatus.EmojiName = parameters[index+1]
 				} else if emoji := discordemojimap.Replace(parameters[index+1]); emoji != parameters[index+1] {
-					customStatus["emoji_name"] = emoji
+					customStatus.EmojiName = emoji
 				} else {
 					fmt.Fprintf(writer, "[%s]Invalid emoji\n", errorColor)
 					return
@@ -286,44 +282,18 @@ func (cmd *StatusSetCustomCmd) Execute(writer io.Writer, parameters []string) {
 					fmt.Fprintf(writer, "[%s]Invalid time character: %s != <s|m|h>\n", errorColor, parameters[index+1][lastIndex])
 					return
 				}
-				customStatus["expires_at"] = now.Format(time.RFC3339Nano)
+				customStatus.ExpiresAt = now.Format(time.RFC3339Nano)
 			}
 		}
 	}
 
-	// example request:
-	// {"custom_status":{"text":"snail","expires_at":"2020-01-05T08:00:00.000Z","emoji_name":"🐌"}}
-	b, err := json.Marshal(map[string]map[string]string{
-		"custom_status": customStatus,
-	})
+	settings, err := cmd.session.UserUpdateStatusCustom(customStatus)
 	if err != nil {
-		fmt.Fprintf(writer, "[%s]Error encoding status request", errorColor)
+		fmt.Fprintf(writer, "[%s]Error updating custom status:\n\t[%s]'%s'\n", errorColor, errorColor, err.Error())
 		return
+	} else if settings != nil {
+		cmd.session.State.Settings = settings
 	}
-	request, err := http.NewRequest("PATCH", "https://discordapp.com/api/v6/users/@me/settings", bytes.NewReader(b))
-	if err != nil {
-		fmt.Fprintf(writer, "[%s]Error construction custom status update request.", errorColor)
-		return
-	}
-	request.Header.Add("authorization", config.GetConfig().Token)
-	request.Header.Add("content-type", "application/json")
-
-	resp, err := cmd.session.Client.Do(request)
-	if err != nil {
-		fmt.Fprintf(writer, "[%s]Error sending status update request.\n", errorColor)
-		return
-	} else if resp.StatusCode != 200 {
-		fmt.Fprintf(writer, "[%s]Bad status return; %d != 200\n", errorColor, resp.StatusCode)
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Fprintf(writer, "[%s]Error reading response body\n", errorColor)
-			return
-		}
-		fmt.Fprintf(writer, "[%s]%s", errorColor, string(b))
-		return
-	}
-	defer resp.Body.Close()
-	fmt.Fprintln(writer, "[green]Updated custom status.")
 }
 
 func (cmd *StatusCmd) PrintHelp(writer io.Writer) {
