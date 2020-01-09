@@ -126,21 +126,38 @@ func NewStatusSetCustomCommand(session *discordgo.Session) *StatusSetCustomCmd {
 	return &StatusSetCustomCmd{session}
 }
 
-func statusToString(status discordgo.Status) string {
+func statusColor(status discordgo.Status) string {
 	switch status {
 	case discordgo.StatusOnline:
-		return "[green]Online[white]"
+		return "green"
 	case discordgo.StatusDoNotDisturb:
-		return "[" + tviewutil.ColorToHex(config.GetTheme().ErrorColor) + "]Do not disturb[white]"
+		return tviewutil.ColorToHex(config.GetTheme().ErrorColor)
 	case discordgo.StatusIdle:
-		return "[yellow]Idle[white]"
-	case discordgo.StatusInvisible:
-		return "[gray]Invisible[white]"
-	case discordgo.StatusOffline:
-		return "[gray]Offline[white]"
+		return "yellow"
+	case discordgo.StatusInvisible, discordgo.StatusOffline:
+		return "gray"
 	default:
-		return "Unknown status"
+		return "gray"
 	}
+}
+
+func statusToString(status discordgo.Status) string {
+	statusString := "[" + statusColor(status) + "]"
+	switch status {
+	case discordgo.StatusOnline:
+		statusString += "Online"
+	case discordgo.StatusDoNotDisturb:
+		statusString += "Do not disturb"
+	case discordgo.StatusIdle:
+		statusString += "Idle"
+	case discordgo.StatusInvisible:
+		statusString += "Invisible"
+	case discordgo.StatusOffline:
+		statusString += "Offline"
+	default:
+		statusString += "Unknown status"
+	}
+	return statusString
 }
 
 func (cmd *StatusGetCmd) Execute(writer io.Writer, parameters []string) {
@@ -151,7 +168,13 @@ func (cmd *StatusGetCmd) Execute(writer io.Writer, parameters []string) {
 	}
 
 	if len(parameters) == 0 {
-		fmt.Fprintln(writer, statusToString(cmd.session.State.Settings.Status))
+		fmt.Fprintf(writer, statusToString(cmd.session.State.Settings.Status))
+
+		customStatus := cmd.session.State.Settings.CustomStatus
+		if len(customStatus.Text) > 0 || len(customStatus.EmojiName) > 0 {
+			fmt.Fprintf(writer, ": %s %s", customStatus.EmojiName, customStatus.Text)
+		}
+		fmt.Fprintf(writer, "[white]\n")
 		return
 	}
 
