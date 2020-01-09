@@ -302,7 +302,7 @@ func (cmd *StatusSetCustomCmd) Execute(writer io.Writer, parameters []string) {
 				case 'h':
 					now = now.Add(time.Hour * time.Duration(num))
 				default:
-					fmt.Fprintf(writer, "[%s]Invalid time character: %s != <s|m|h>\n", errorColor, parameters[index+1][lastIndex])
+					fmt.Fprintf(writer, "[%s]Invalid time character: %c != <s|m|h>\n", errorColor, parameters[index+1][lastIndex])
 					return
 				}
 				customStatus.ExpiresAt = now.Format(time.RFC3339Nano)
