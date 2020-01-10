@@ -3,11 +3,16 @@ package commandimpls
 import (
 	"fmt"
 	"io"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
+
+	"github.com/Bios-Marcel/discordemojimap"
+	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
-	"github.com/Bios-Marcel/discordgo"
 )
 
 const (
@@ -25,7 +30,9 @@ const (
 	[::b]status-get (default)
 		prints the status of the given user or yourself
 	[::b]status-set
-		updates your current status`
+		updates your current status
+	[::b]status-set-custom
+		set your status to a custom text`
 
 	statusSetHelpPage = `[::b]NAME
 	status-set - allows updating your own status
@@ -58,12 +65,35 @@ const (
 	[yellow]idle
 
 	[gray]$ status-get Marcel#7299
-	"[" + tviewutil.ColorToHex(config.GetTheme().ErrorColor) + "]Do not disturb`
+	[red]Do not disturb`
+
+	statusSetCustomHelpPage = `[::b]NAME
+	status-set-custom - set a custom status text
+
+[::b]SYNOPSIS
+	[::b]status-set-custom[::-] [OPTION[]...
+
+[::b]DESCRIPTION
+	This command allows you to set a custom status.
+
+[::b]OPTIONS
+	[::b]-s, --status
+		status message
+	[::b]-e, --emoji
+		emoji in your status
+	[::b]-i, --expire, --expiry <s|m|h>
+		time that the status expires after
+
+[::b]EXAMPLES
+	[gray]$ status-set-custom -s "shining bright" -e :sun:
+	[gray]$ status-set-custom -s "shining bright" -e 🌞
+	[gray]$ status-set-custom -s test -i 1h`
 )
 
 type StatusCmd struct {
-	statusGetCmd *StatusGetCmd
-	statusSetCmd *StatusSetCmd
+	statusGetCmd       *StatusGetCmd
+	statusSetCmd       *StatusSetCmd
+	statusSetCustomCmd *StatusSetCustomCmd
 }
 
 type StatusGetCmd struct {
@@ -74,10 +104,15 @@ type StatusSetCmd struct {
 	session *discordgo.Session
 }
 
-func NewStatusCommand(statusGetCmd *StatusGetCmd, statusSetCmd *StatusSetCmd) *StatusCmd {
+type StatusSetCustomCmd struct {
+	session *discordgo.Session
+}
+
+func NewStatusCommand(statusGetCmd *StatusGetCmd, statusSetCmd *StatusSetCmd, statusSetCustomCmd *StatusSetCustomCmd) *StatusCmd {
 	return &StatusCmd{
-		statusGetCmd: statusGetCmd,
-		statusSetCmd: statusSetCmd,
+		statusGetCmd:       statusGetCmd,
+		statusSetCmd:       statusSetCmd,
+		statusSetCustomCmd: statusSetCustomCmd,
 	}
 }
 
@@ -89,21 +124,42 @@ func NewStatusSetCommand(session *discordgo.Session) *StatusSetCmd {
 	return &StatusSetCmd{session}
 }
 
-func statusToString(status discordgo.Status) string {
+func NewStatusSetCustomCommand(session *discordgo.Session) *StatusSetCustomCmd {
+	return &StatusSetCustomCmd{session}
+}
+
+func statusColor(status discordgo.Status) string {
 	switch status {
 	case discordgo.StatusOnline:
-		return "[green]Online[white]"
+		return "green"
 	case discordgo.StatusDoNotDisturb:
-		return "[" + tviewutil.ColorToHex(config.GetTheme().ErrorColor) + "]Do not disturb[white]"
+		return "red"
 	case discordgo.StatusIdle:
-		return "[yellow]Idle[white]"
-	case discordgo.StatusInvisible:
-		return "[gray]Invisible[white]"
-	case discordgo.StatusOffline:
-		return "[gray]Offline[white]"
+		return "yellow"
+	case discordgo.StatusInvisible, discordgo.StatusOffline:
+		return "gray"
 	default:
-		return "Unknown status"
+		return "gray"
 	}
+}
+
+func statusToString(status discordgo.Status) string {
+	statusString := "[" + statusColor(status) + "]"
+	switch status {
+	case discordgo.StatusOnline:
+		statusString += "Online"
+	case discordgo.StatusDoNotDisturb:
+		statusString += "Do not disturb"
+	case discordgo.StatusIdle:
+		statusString += "Idle"
+	case discordgo.StatusInvisible:
+		statusString += "Invisible"
+	case discordgo.StatusOffline:
+		statusString += "Offline"
+	default:
+		statusString += "Unknown status"
+	}
+	return statusString
 }
 
 func (cmd *StatusGetCmd) Execute(writer io.Writer, parameters []string) {
@@ -114,7 +170,13 @@ func (cmd *StatusGetCmd) Execute(writer io.Writer, parameters []string) {
 	}
 
 	if len(parameters) == 0 {
-		fmt.Fprintln(writer, statusToString(cmd.session.State.Settings.Status))
+		fmt.Fprintf(writer, statusToString(cmd.session.State.Settings.Status))
+
+		customStatus := cmd.session.State.Settings.CustomStatus
+		if len(customStatus.Text) > 0 || len(customStatus.EmojiName) > 0 {
+			fmt.Fprintf(writer, ": %s %s", customStatus.EmojiName, customStatus.Text)
+		}
+		fmt.Fprintf(writer, "[white]\n")
 		return
 	}
 
@@ -182,11 +244,82 @@ func (cmd *StatusCmd) Execute(writer io.Writer, parameters []string) {
 			cmd.statusSetCmd.Execute(writer, parameters[1:])
 		} else if parameters[0] == "get" {
 			cmd.statusGetCmd.Execute(writer, parameters[1:])
+		} else if parameters[0] == "set-custom" || parameters[0] == "custom-set" {
+			cmd.statusSetCustomCmd.Execute(writer, parameters[1:])
 		} else {
 			cmd.statusGetCmd.Execute(writer, parameters)
 		}
 	} else {
 		cmd.statusGetCmd.Execute(writer, parameters)
+	}
+}
+
+func (cmd *StatusSetCustomCmd) Execute(writer io.Writer, parameters []string) {
+	if cmd.session.State.User.Bot {
+		fmt.Fprintln(writer, "[red]This command can't be used by bots due to Discord API restrictions.")
+		return
+	}
+
+	if len(parameters) == 0 {
+		fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Invalid parameters")
+		cmd.PrintHelp(writer)
+		return
+	}
+
+	errorColor := tviewutil.ColorToHex(config.GetTheme().ErrorColor)
+	var customStatus discordgo.CustomStatus
+	for index, param := range parameters {
+		switch param {
+		case "-s", "--status":
+			if index != len(parameters)-1 {
+				customStatus.Text = parameters[index+1]
+			} else {
+				fmt.Fprintf(writer, "[%s]Error, you didn't supply a status\n", errorColor)
+				return
+			}
+		case "-e", "--emoji":
+			if index != len(parameters)-1 {
+				if discordemojimap.ContainsEmoji(parameters[index+1]) {
+					customStatus.EmojiName = parameters[index+1]
+				} else if emoji := discordemojimap.Replace(parameters[index+1]); emoji != parameters[index+1] {
+					customStatus.EmojiName = emoji
+				} else {
+					fmt.Fprintf(writer, "[%s]Invalid emoji\n", errorColor)
+					return
+				}
+			}
+		case "-i", "--expire", "--expiry":
+			if m, _ := regexp.MatchString(`\d+(s|m|h)`, parameters[index+1]); m {
+				lastIndex := len(parameters[index+1]) - 1
+				num, err := strconv.Atoi(parameters[index+1][:lastIndex])
+				if err != nil {
+					fmt.Fprintf(writer, "[%s]Invalid expiry\n", errorColor)
+					return
+				}
+
+				now := time.Now().UTC()
+				switch parameters[index+1][lastIndex] {
+				case 's':
+					now = now.Add(time.Second * time.Duration(num))
+				case 'm':
+					now = now.Add(time.Minute * time.Duration(num))
+				case 'h':
+					now = now.Add(time.Hour * time.Duration(num))
+				default:
+					fmt.Fprintf(writer, "[%s]Invalid time character: %c != <s|m|h>\n", errorColor, parameters[index+1][lastIndex])
+					return
+				}
+				customStatus.ExpiresAt = now.Format(time.RFC3339Nano)
+			}
+		}
+	}
+
+	settings, err := cmd.session.UserUpdateStatusCustom(customStatus)
+	if err != nil {
+		fmt.Fprintf(writer, "[%s]Error updating custom status:\n\t[%s]'%s'\n", errorColor, errorColor, err.Error())
+		return
+	} else if settings != nil {
+		cmd.session.State.Settings = settings
 	}
 }
 
@@ -202,6 +335,14 @@ func (cmd *StatusGetCmd) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, statusGetHelpPage)
 }
 
+func (cmd *StatusSetCustomCmd) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, statusSetCustomHelpPage)
+}
+
+func (cmd *StatusSetCustomCmd) Name() string {
+	return "status-set-custom"
+}
+
 func (cmd *StatusSetCmd) Name() string {
 	return "status-set"
 }
@@ -212,6 +353,10 @@ func (cmd *StatusGetCmd) Name() string {
 
 func (cmd *StatusCmd) Name() string {
 	return "status"
+}
+
+func (cmd *StatusSetCustomCmd) Aliases() []string {
+	return []string{"status-custom"}
 }
 
 func (cmd *StatusSetCmd) Aliases() []string {
