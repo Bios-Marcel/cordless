@@ -500,7 +500,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	})
 
 	emojisAsArray := make([]string, 0, len(discordemojimap.EmojiMap))
-	for emoji, _ := range discordemojimap.EmojiMap {
+	for emoji := range discordemojimap.EmojiMap {
 		emojisAsArray = append(emojisAsArray, emoji)
 	}
 
