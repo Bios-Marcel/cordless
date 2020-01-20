@@ -71,7 +71,7 @@ const (
 
 [::b]DESCRIPTION
 	This command prints your accounts user information to the
-	commandline ina human readable format. If no options were
+	commandline in a human readable format. If no options were
 	supplied, then "-n", "-e" and "-a" are chosen as the default
 	options.
 
