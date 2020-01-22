@@ -108,7 +108,7 @@ $ trizen -S cordless-git
 
 ###### pacaur
 ```shell
-$ pacuar -S cordless-git
+$ pacaur -S cordless-git
 ```
 
 ### Installing on Windows
