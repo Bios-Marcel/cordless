@@ -261,8 +261,9 @@ func ensureDirectory(directoryPath string) error {
 		if createDirsError != nil {
 			return createDirsError
 		}
+		return nil
 	}
-	return nil
+	return statError
 }
 
 func getAbsolutePath(directoryPath string) (string, error) {
