@@ -229,6 +229,7 @@ func SetConfigDirectory(directoryPath string) error {
 	}
 	return err
 }
+
 // GetConfigDirectory retrieves the directory that stores
 // cordless' settings from cache or sets it to the default
 // location
@@ -261,7 +262,7 @@ func ensureDirectory(directoryPath string) error {
 			return createDirsError
 		}
 	}
-	return statError
+	return nil
 }
 
 func getAbsolutePath(directoryPath string) (string, error) {
