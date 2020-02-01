@@ -2186,18 +2186,17 @@ func (window *Window) toggleUserContainer() {
 	window.RefreshLayout()
 }
 
-// toggleBareChat will display only the chatview as the fullscreen application
-// root. Calling this method again will revert the view to it's normal state.
+// toggleBareChat will display only the chatview and messageInput.
+// Calling this method again will revert the view to it's normal state.
 func (window *Window) toggleBareChat() {
 	window.bareChat = !window.bareChat
+	window.chatView.internalTextView.SetBorder(!window.bareChat)
+	window.leftArea.SetVisible(!window.bareChat)
+	window.userList.internalTreeView.SetVisible(!window.bareChat)
+
+	// Automatically focus the message input when bare mode is enabled.
 	if window.bareChat {
-		window.chatView.internalTextView.SetBorder(false)
-		window.currentContainer = window.chatView.GetPrimitive()
-		window.app.SetRoot(window.chatView.GetPrimitive(), true)
-	} else {
-		window.chatView.internalTextView.SetBorder(true)
-		window.currentContainer = window.rootContainer
-		window.app.SetRoot(window.rootContainer, true)
+		window.app.SetFocus(window.messageInput.GetPrimitive())
 	}
 }
 
