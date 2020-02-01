@@ -2192,7 +2192,10 @@ func (window *Window) toggleBareChat() {
 	window.bareChat = !window.bareChat
 	window.chatView.internalTextView.SetBorder(!window.bareChat)
 	window.leftArea.SetVisible(!window.bareChat)
-	window.userList.internalTreeView.SetVisible(!window.bareChat)
+
+	if config.Current.ShowUserContainer {
+		window.userList.internalTreeView.SetVisible(!window.bareChat)
+	}
 
 	// Automatically focus the message input when bare mode is enabled.
 	if window.bareChat {
