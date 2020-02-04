@@ -101,7 +101,7 @@ func (cmd *TFACmd) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 0 {
 		cmd.PrintHelp(writer)
 	} else {
-		combinedName := cmd.Name() + "-" + parameters[1]
+		combinedName := cmd.Name() + "-" + parameters[0]
 		if commands.CommandEquals(cmd.tfaEnable, combinedName) {
 			cmd.tfaEnable.Execute(writer, parameters[1:])
 		} else if commands.CommandEquals(cmd.tfaDisable, combinedName) {
