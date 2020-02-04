@@ -18,8 +18,6 @@ const (
 	userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
 )
 
-var suspended = false
-
 // Run launches the whole application and might abort in case it encounters an
 //error.
 func Run() {

@@ -373,11 +373,11 @@ func (chatView *ChatView) createDateDelimiterIfNecessary(messages []*discordgo.M
 	messageTimeLocal := messageTime.Local()
 	if index == 0 {
 		return chatView.createDateDelimiter(messageTimeLocal.Format(chatView.format))
-	} else {
-		previousMessageTime, _ := messages[index-1].Timestamp.Parse()
-		if !times.AreDatesTheSameDay(previousMessageTime.Local(), messageTimeLocal) {
-			return chatView.createDateDelimiter(messageTimeLocal.Format(chatView.format))
-		}
+	}
+
+	previousMessageTime, _ := messages[index-1].Timestamp.Parse()
+	if !times.AreDatesTheSameDay(previousMessageTime.Local(), messageTimeLocal) {
+		return chatView.createDateDelimiter(messageTimeLocal.Format(chatView.format))
 	}
 
 	return ""
