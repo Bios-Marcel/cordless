@@ -532,16 +532,17 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.messageInput.RegisterAutocomplete(':', false, func(value string) []*AutocompleteValue {
 		var autocompleteValues []*AutocompleteValue
 
-		var filteredCustomEmoji []*discordgo.Emoji
+		var customEmojiUsableInContext []*discordgo.Emoji
 		if window.session.State.User.PremiumType == discordgo.UserPremiumTypeNone {
 			if window.selectedChannel != nil && window.selectedChannel.GuildID != "" {
 				guildID := window.selectedChannel.GuildID
 				var cached bool
-				filteredCustomEmoji, cached = emojisByGuild[guildID]
+				customEmojiUsableInContext, cached = emojisByGuild[guildID]
 				if cached {
 					goto EVALUATE_EMOJIS
 				}
 
+				//Non premium users can only use the non-animated guildemojis
 				guild, stateError := window.session.State.Guild(guildID)
 				if stateError == nil {
 					for _, emoji := range guild.Emojis {
@@ -549,19 +550,23 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 							continue
 						}
 
-						filteredCustomEmoji = append(filteredCustomEmoji, emoji)
+						customEmojiUsableInContext = append(customEmojiUsableInContext, emoji)
 					}
 
-					filteredCustomEmoji = append(filteredCustomEmoji, globallyUsableCustomEmoji...)
-					emojisByGuild[window.selectedChannel.GuildID] = filteredCustomEmoji
-
-					goto EVALUATE_EMOJIS
+					customEmojiUsableInContext = append(customEmojiUsableInContext, globallyUsableCustomEmoji...)
+					emojisByGuild[window.selectedChannel.GuildID] = customEmojiUsableInContext
 				}
+			} else {
+				//If not in any guild channel, we can only use the global ones
+				customEmojiUsableInContext = globallyUsableCustomEmoji
 			}
+		} else {
+			//For non-nitro users everything's available anyway
+			customEmojiUsableInContext = globallyUsableCustomEmoji
 		}
 
 	EVALUATE_EMOJIS:
-		filteredEmoji := fuzzy.ScoreAndSortEmoji(value, emojisAsArray, filteredCustomEmoji)
+		filteredEmoji := fuzzy.ScoreAndSortEmoji(value, emojisAsArray, customEmojiUsableInContext)
 		for _, emoji := range filteredEmoji {
 			unicodeSymbol := discordemojimap.GetEmoji(emoji)
 			var renderValue string
