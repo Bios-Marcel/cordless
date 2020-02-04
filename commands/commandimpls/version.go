@@ -30,7 +30,7 @@ func (cmd VersionCmd) Execute(writer io.Writer, parameters []string) {
 }
 
 func (cmd VersionCmd) PrintHelp(writer io.Writer) {
-	fmt.Println(writer, versionDocumentation)
+	fmt.Fprintln(writer, versionDocumentation)
 }
 
 func (cmd VersionCmd) Name() string {
