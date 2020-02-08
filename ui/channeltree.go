@@ -137,9 +137,9 @@ CATEGORY_LOOP:
 	}
 	// Second level channel
 	for _, channel := range channels {
-		if (channel.Type != discordgo.ChannelTypeGuildText&& channel.Type != discordgo.ChannelTypeGuildVoice) &&
-			channel.Type != discordgo.ChannelTypeGuildNews) ||
-			channel.ParentID == "" || !discordutil.HasReadMessagesPermission(channel.ID, state) {
+		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildVoice) &&
+			channel.Type != discordgo.ChannelTypeGuildNews || channel.ParentID == "" ||
+			!discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
 		createSecondLevelChannelNodes(channelTree, channel)
