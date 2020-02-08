@@ -14,7 +14,7 @@ require (
 	github.com/gdamore/tcell v1.3.1-0.20191115014413-b6a97de0c118
 	github.com/gen2brain/beeep v0.0.0-20190317152856-aa3d7c1499fd
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
-	github.com/google/go-github/v28 v28.1.1
+	github.com/google/go-github/v29 v29.0.2
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.7
 	github.com/mdp/qrterminal/v3 v3.0.0
