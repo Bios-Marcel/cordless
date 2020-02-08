@@ -6,7 +6,9 @@ description: |
 
 confinement: strict
 grade: stable
-
+architectures: 
+  - amd64
+  - arm64
 base: core18
 
 parts:
