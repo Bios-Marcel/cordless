@@ -2,6 +2,8 @@ github.com/Bios-Marcel/discordemojimap v1.0.1 h1:b3UYPO7+h1+ciStkwU/KQCerOmpUNPH
 github.com/Bios-Marcel/discordemojimap v1.0.1/go.mod h1:AoHIpUwf3EVCAAUmk+keXjb9khyZcFnW84/rhJd4IkU=
 github.com/Bios-Marcel/discordgo v0.20.5-0.20200107213334-6da23eee3010 h1:f6LsOhETyxf3lkxZ65nrDladW85pvDQ5OVMRZFNIY7I=
 github.com/Bios-Marcel/discordgo v0.20.5-0.20200107213334-6da23eee3010/go.mod h1:bLnfQU0j/SejmPozgW5GepmKvd8CrbMIml2I0IZENVE=
+github.com/Bios-Marcel/discordgo v0.20.5-0.20200208125642-7e7ef018666e h1:gWz7W0o2CgEf2LUzjY3vVLsHCMxx+NGr6suGucg5n/s=
+github.com/Bios-Marcel/discordgo v0.20.5-0.20200208125642-7e7ef018666e/go.mod h1:bLnfQU0j/SejmPozgW5GepmKvd8CrbMIml2I0IZENVE=
 github.com/Bios-Marcel/femto v0.0.0-20191230002044-a733a9347742 h1:Wz2inrn2ahZ+lTz78782MWy63TAllr/WzIxR+nDAoP8=
 github.com/Bios-Marcel/femto v0.0.0-20191230002044-a733a9347742/go.mod h1:A/NU56Hy+SDheOTrEyk6iEW0erjHf2HTySbB7z8OgeA=
 github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82 h1:gspJ6CW9bhboosSISmuX2iq03pUsYHzlJN0s+z4fz4E=
@@ -51,6 +53,8 @@ github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c h1:16eHWuMGvCjSf
 github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/gopherjs/gopherwasm v1.1.0 h1:fA2uLoctU5+T3OhOn2vYP0DVT6pxc7xhTlBB1paATqQ=
 github.com/gopherjs/gopherwasm v1.1.0/go.mod h1:SkZ8z7CWBz5VXbhJel8TxCmAcsQqzgWGR/8nMhyhZSI=
+github.com/gordonklaus/portaudio v0.0.0-20180817120803-00e7307ccd93 h1:TSG+DyZBnazM22ZHyHLeUkzM34ClkJRjIWHTq4btvek=
+github.com/gordonklaus/portaudio v0.0.0-20180817120803-00e7307ccd93/go.mod h1:HfYnZi/ARQKG0dwH5HNDmPCHdLiFiBf+SI7DbhW7et4=
 github.com/gorilla/csrf v1.6.0/go.mod h1:7tSf8kmjNYr7IWDCYhd3U8Ck34iQ/Yw5CJu7bAkHEGI=
 github.com/gorilla/handlers v1.4.1/go.mod h1:Qkdc/uu4tH4g6mTK6auzZ766c4CA0Ng8+o/OAirnOIQ=
 github.com/gorilla/mux v1.7.3/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=
@@ -149,5 +153,7 @@ gopkg.in/yaml.v2 v2.2.4 h1:/eiJrUcujPVeJ3xlSWaiNi3uSVmDGBK1pDHUHAnao1I=
 gopkg.in/yaml.v2 v2.2.4/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.7 h1:VUgggvou5XRW9mHwD/yXxIYSMtY0zoKQf/v226p2nyo=
 gopkg.in/yaml.v2 v2.2.7/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
+layeh.com/gopus v0.0.0-20161224163843-0ebf989153aa h1:WNU4LYsgD2UHxgKgB36mL6iMAMOvr127alafSlgBbiA=
+layeh.com/gopus v0.0.0-20161224163843-0ebf989153aa/go.mod h1:AOef7vHz0+v4sWwJnr0jSyHiX/1NgsMoaxl+rEPz/I0=
 rsc.io/qr v0.2.0 h1:6vBLea5/NRMVTz8V66gipeLycZMl/+UlFmk8DvqQ6WY=
 rsc.io/qr v0.2.0/go.mod h1:IF+uZjkb9fqyeF/4tlBoynqmQxUoPfWEKh921coOuXs=
