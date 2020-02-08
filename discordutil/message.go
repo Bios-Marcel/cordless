@@ -115,7 +115,7 @@ func SendMessageAsFile(session *discordgo.Session, message string, channel strin
 	complexMessage := &discordgo.MessageSend{
 		Content: "The message was too long, therefore, you get a file:",
 		Embed:   nil,
-		Tts:     false,
+		TTS:     false,
 		Files:   nil,
 		File:    messageAsFile,
 	}
