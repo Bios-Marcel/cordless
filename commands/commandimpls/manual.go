@@ -1,6 +1,7 @@
 package commandimpls
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strings"
@@ -43,47 +44,77 @@ func NewManualCommand(window *ui.Window) *Manual {
 	return &Manual{window}
 }
 
+func (manual *Manual) getPredefinedTopicPage(name string) string {
+	switch name {
+	case "chat-view", "chatview":
+		return chatViewDocumentation
+	case "commands":
+		var commandList string
+		for _, cmd := range manual.window.GetRegisteredCommands() {
+			commandList += fmt.Sprintf("\t\t- %s\n", cmd.Name())
+		}
+		return fmt.Sprintf(commandsDocumentation, commandList)
+	case "configuration", "config", "conf":
+		return configurationDocumentation
+	case "message-editor", "messageeditor":
+		return messageEditorDocumentation
+	case "navigation":
+		return navigationDocumentation
+	}
+
+	return ""
+}
+
 // Execute runs the command piping its output into the supplied writer.
 func (manual *Manual) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 0 {
 		manual.PrintHelp(writer)
 	} else {
-		// This catches the case where users type something like:
-		//     man user set
-		// In which case it will be converted to user-set, showing
-		// the respective manpage for user-set.
-		input := strings.ToLower(strings.Join(parameters, "-"))
-		switch input {
-		case "chat-view", "chatview":
-			fmt.Fprintln(writer, chatViewDocumentation)
-		case "commands":
-			var commandList string
-			for _, cmd := range manual.window.GetRegisteredCommands() {
-				commandList += fmt.Sprintf("\t\t- %s\n", cmd.Name())
+		//All parameters will be combined into words joined with dashes. Since that's how
+		//command names are represented internally.
+		inputDashes := strings.ToLower(strings.Join(parameters, "-"))
+
+		//This handles the default pages, e.g. the ones that are unrelated to commands.
+		page := manual.getPredefinedTopicPage(inputDashes)
+		if page != "" {
+			fmt.Fprintln(writer, page)
+			return
+		}
+
+		//This will check whether the input matches either a commands name or one of it's aliases.
+		for _, cmd := range manual.window.GetRegisteredCommands() {
+			if cmd.Name() == inputDashes {
+				cmd.PrintHelp(writer)
+				return
 			}
-			fmt.Fprintf(writer, commandsDocumentation, commandList)
-		case "configuration", "config", "conf":
-			fmt.Fprintln(writer, configurationDocumentation)
-		case "message-editor", "messageeditor":
-			fmt.Fprintln(writer, messageEditorDocumentation)
-		case "navigation":
-			fmt.Fprintln(writer, navigationDocumentation)
-		default:
-			for _, cmd := range manual.window.GetRegisteredCommands() {
-				if cmd.Name() == input {
+
+			for _, alias := range cmd.Aliases() {
+				if alias == inputDashes {
 					cmd.PrintHelp(writer)
 					return
 				}
-
-				for _, alias := range cmd.Aliases() {
-					if alias == input {
-						cmd.PrintHelp(writer)
-						return
-					}
-				}
 			}
+		}
 
-			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]No manual entry for '%s' found.\n", input)
+		inputSpaces := strings.ToLower(strings.Join(parameters, " "))
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]No manual entry for '%s' found.\n", inputSpaces)
+
+		//This code checks whether any of the command pages contains the given terms.
+		var b = bytes.Buffer{}
+		var matches []string
+		for _, cmd := range manual.window.GetRegisteredCommands() {
+			cmd.PrintHelp(&b)
+			if strings.Contains(strings.ToLower(b.String()), inputSpaces) {
+				matches = append(matches, cmd.Name())
+			}
+			b.Reset()
+		}
+
+		if len(matches) > 0 {
+			fmt.Fprintln(writer, "The following pages contain the given term:")
+			for _, match := range matches {
+				fmt.Fprintf(writer, "\t%s\n", match)
+			}
 		}
 	}
 }
@@ -161,7 +192,6 @@ const commandsDocumentation = `[::b]TOPIC
 	
 	[gray]$ status set online
 	[gray]$ status get`
-
 const configurationDocumentation = `[::b]TOPIC
 	configuration - allows you to change settings and persist them between
 	sessions
