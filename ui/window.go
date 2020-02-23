@@ -13,6 +13,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/text"
+	"github.com/Bios-Marcel/cordless/version"
 
 	"github.com/Bios-Marcel/discordemojimap"
 	"github.com/Bios-Marcel/goclipimg"
@@ -1116,7 +1117,45 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.registerMouseFocusListeners()
 
+	window.chatView.internalTextView.SetText(getWelcomeText())
+
 	return window, nil
+}
+
+func getWelcomeText() string {
+	return fmt.Sprintf(splashText + `
+
+Welcome to version %s of Cordless. Below you can see the most
+important changes of the last three versions officially released.
+
+[::b]2020-01-05
+	- Features
+		- VT320 terminals are now supported
+		- quoted messages now preserve attachment URLs
+		- Cltr-W now deletes the word to the left
+		- announcement channels are now shown as well
+		- Cordless now has an amazing autocompletion
+		- support for TFA
+		- user-set command allows supplying emojis
+		- custom emojis are now rendered as links
+		- login now navigable via arrow keys
+		- Ctrl-B now toggles the so called "bare mode", giving all space to the chat
+		- configuration path is now customizable via parameters
+	- Bugfixes
+		- emoji sequences with underscores now work
+		- text channels sometimes didn't show up'
+		- Cordless doesn't crash anymore when sending a message into an empty channel
+		- attachment links are now copied as well
+	- Performance improvements
+		- the usertree will now load lazily
+		- dummycall to validate session token has been removed
+	- Changes
+		- login button has been removed ... just hit enter ;)
+		- tokeninput on login is now masked
+		- Docs have been improved
+	- JS API
+		- there's now an "init" function that gets called on script load
+`, version.Version)
 }
 
 // initExtensionEngine injections necessary functions into the engine.
