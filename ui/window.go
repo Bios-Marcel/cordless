@@ -1126,8 +1126,17 @@ func getWelcomeText() string {
 	return fmt.Sprintf(splashText + `
 
 Welcome to version %s of Cordless. Below you can see the most
-important changes of the last three versions officially released.
+important changes of the last two versions officially released.
 
+[::b]UNRELEASED
+	- Features
+		- you can now define a custom status
+	- Bugfixes
+		- the lack of the config directory would cause a crash
+		- nitro users couldn't use emojis anymore
+		- several typos have been corrected
+		- the "version" command printed it's help output to stdout
+		- the "man" command now searches through the content of pages and suggests those
 [::b]2020-01-05
 	- Features
 		- VT320 terminals are now supported
