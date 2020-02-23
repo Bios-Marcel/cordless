@@ -23,7 +23,7 @@ const serverHelpPage = `[::b]NAME
 	are already a part of. What this command can't do is administrating a
 	server in any way.
 
-[::]SUBCOMMANDS
+[::b]SUBCOMMANDS
 	[::b]server-join
 		joins the server using the given invitation
 	[::b]server-leave

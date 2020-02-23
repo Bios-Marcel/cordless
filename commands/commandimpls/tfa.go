@@ -24,7 +24,7 @@ const tfaHelpPage = `[::b]NAME
 	reset your TFA.backup codes. Some actions require you to either input a
 	valid TFA code or your current password.
 
-[::]SUBCOMMANDS
+[::b]SUBCOMMANDS
 	[::b]tfa-enable
 		enables two-factor-authentication on your account
 	[::b]tfa-disable

@@ -30,7 +30,7 @@ const (
 	This command is split into multiple subcommands. The default subcommand
 	is [::b]user-get[::-] and will be used if no other command was supplied.
 
-[::]SUBCOMMANDS
+[::b]SUBCOMMANDS
 	[::b]user-get (default)
 		prints the current user information
 	[::b]user-set

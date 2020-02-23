@@ -26,7 +26,7 @@ const (
 	This command allows to either update your status or view a users status.
 	For more information check the help pages of the subcommands.
 
-[::]SUBCOMMANDS
+[::b]SUBCOMMANDS
 	[::b]status-get (default)
 		prints the status of the given user or yourself
 	[::b]status-set
