@@ -392,7 +392,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				links = append(links, file.URL)
 			}
 			if len(links) > 0 {
-				cmd := exec.Command("feh", links...)
+				cmd := exec.Command(config.Current.ImageViewer, links...)
 				err := cmd.Start()
 				if err != nil {
 					window.ShowErrorDialog(err.Error())
