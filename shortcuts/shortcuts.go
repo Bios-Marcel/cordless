@@ -31,7 +31,7 @@ var (
 		chatview, tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModNone))
 	DeleteSelectedMessage = addShortcut("toggle_selected_message_spoilers", "Toggle spoilers in selected message",
 		chatview, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone))
-	ViewSelectedMessageImages = addShortcut("view_selected_message_images", "Open selected message's attached images in feh",
+	ViewSelectedMessageImages = addShortcut("view_selected_message_images", "View selected message's attached images",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'o', tcell.ModNone))
 
 	ExpandSelectionToLeft = addShortcut("expand_selection_word_to_left", "Expand selection word to left",

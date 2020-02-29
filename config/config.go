@@ -56,6 +56,7 @@ var (
 		ShowUpdateNotifications:                true,
 		IndicateChannelAccessRestriction:       false,
 		ShowBottomBar:                          true,
+		ImageViewer:                            "feh",
 	}
 )
 
@@ -133,6 +134,12 @@ type Config struct {
 	// ShowBottomBar decides whether an informational line is shown at the
 	// bottom of cordless or not.
 	ShowBottomBar bool
+
+	// The image viewer to open when the user uses the "view attached images"
+	// shortcut. This program will be passed a list of 1 or more image links
+	// as if it were called from the command line, so the selected program
+	// must be capable of opening image links.
+	ImageViewer string
 }
 
 // Account has a name and a token. The name is just for the users recognition.
