@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"os/exec"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
@@ -382,6 +383,22 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if copyError != nil {
 				window.ShowErrorDialog(fmt.Sprintf("Error copying message: %s", copyError.Error()))
 			}
+			return nil
+		}
+
+		if shortcuts.ViewSelectedMessageImages.Equals(event) {
+			links := make([]string, 0, len(message.Attachments))
+			for _, file := range message.Attachments {
+				links = append(links, file.URL)
+			}
+			if len(links) > 0 {
+				cmd := exec.Command("feh", links...)
+				err := cmd.Start()
+				if err != nil {
+					window.ShowErrorDialog(err.Error())
+				}
+			}
+
 			return nil
 		}
 
