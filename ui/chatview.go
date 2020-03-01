@@ -14,6 +14,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
+	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/times"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
@@ -158,7 +159,8 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 				return nil
 			}
 
-			if chatView.selection > 0 && chatView.selection < len(chatView.data) && event.Rune() == 's' {
+			if chatView.selection > 0 && chatView.selection < len(chatView.data) &&
+				shortcuts.ToggleSelectedMessageSpoilers.Equals(event) {
 				message := chatView.data[chatView.selection]
 				messageID := message.ID
 				currentValue, contains := chatView.showSpoilerContent[messageID]
