@@ -2,14 +2,16 @@ package commandimpls
 
 import (
 	"fmt"
-	"github.com/Bios-Marcel/cordless/commands"
 	"io"
 	"strings"
+
+	"github.com/Bios-Marcel/cordless/commands"
+
+	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
-	"github.com/Bios-Marcel/discordgo"
 )
 
 const serverHelpPage = `[::b]NAME
@@ -155,7 +157,13 @@ func (cmd *ServerLeaveCmd) Execute(writer io.Writer, parameters []string) {
 	}
 
 	if len(matches) == 1 {
-		err := cmd.session.GuildLeave(matches[0].ID)
+		foundGuild := matches[0]
+		if foundGuild.OwnerID == cmd.session.State.User.ID {
+			fmt.Fprintln(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]You can't leave a server you own.")
+			return
+		}
+
+		err := cmd.session.GuildLeave(foundGuild.ID)
 		if err != nil {
 			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error leaving server '%s':\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", matches[0].Name, err)
 		} else {
