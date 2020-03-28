@@ -2,16 +2,18 @@ package app
 
 import (
 	"fmt"
+	"log"
+	"os"
+
+	"github.com/Bios-Marcel/discordgo"
+	"github.com/Bios-Marcel/tview"
+
 	"github.com/Bios-Marcel/cordless/commands/commandimpls"
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/version"
-	"github.com/Bios-Marcel/discordgo"
-	"github.com/Bios-Marcel/tview"
-	"log"
-	"os"
 )
 
 const (
@@ -135,9 +137,11 @@ func Run() {
 			window.RegisterCommand(commandimpls.NewUserCommand(userSetCmd, userGetCmd))
 			serverJoinCmd := commandimpls.NewServerJoinCommand(window, discord)
 			serverLeaveCmd := commandimpls.NewServerLeaveCommand(window, discord)
+			serverCreateCmd := commandimpls.NewServerCreateCommand(discord)
 			window.RegisterCommand(serverJoinCmd)
 			window.RegisterCommand(serverLeaveCmd)
-			window.RegisterCommand(commandimpls.NewServerCommand(serverJoinCmd, serverLeaveCmd))
+			window.RegisterCommand(serverCreateCmd)
+			window.RegisterCommand(commandimpls.NewServerCommand(serverJoinCmd, serverLeaveCmd, serverCreateCmd))
 			window.RegisterCommand(commandimpls.NewNickSetCmd(discord, window))
 			tfaEnableCmd := commandimpls.NewTFAEnableCommand(window, discord)
 			tfaDisableCmd := commandimpls.NewTFADisableCommand(discord)

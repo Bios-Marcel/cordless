@@ -5,10 +5,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/Bios-Marcel/cordless/commands"
-
 	"github.com/Bios-Marcel/discordgo"
 
+	"github.com/Bios-Marcel/cordless/commands"
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
@@ -47,7 +46,7 @@ const serverJoinHelpPage = `[::b]NAME
 	[gray]$ server-join JDScUK`
 
 const serverLeaveHelpPage = `[::b]NAME
-	server-leaves - allows you to leave a server
+	server-leave - allows you to leave a server
 
 [::b]SYNOPSIS
 	[::b]server-leave[::-] <ID|Name>
@@ -60,9 +59,24 @@ const serverLeaveHelpPage = `[::b]NAME
 	[gray]$ server-leave "Discord Gophers"
 	[gray]$ server-leave Nirvana`
 
+const serverCreateHelpPage = `[::b]NAME
+	server-create - allows you to create a new server
+
+[::b]SYNOPSIS
+	[::b]server-create[::-] <Name>
+
+[::b]DESCRIPTION
+	This command will take a name and create a server using that name. You'll
+	be told the name and the ID on successful creation.
+
+[::b]EXAMPLES
+	[gray]$ server-create "Hello world"
+	[gray]$ server-create MyServerName`
+
 type ServerCmd struct {
-	serverJoinCmd  *ServerJoinCmd
-	serverLeaveCmd *ServerLeaveCmd
+	serverJoinCmd   *ServerJoinCmd
+	serverLeaveCmd  *ServerLeaveCmd
+	serverCreateCmd *ServerCreateCmd
 }
 
 type ServerJoinCmd struct {
@@ -75,8 +89,12 @@ type ServerLeaveCmd struct {
 	session *discordgo.Session
 }
 
-func NewServerCommand(serverJoinCmd *ServerJoinCmd, serverLeaveCmd *ServerLeaveCmd) *ServerCmd {
-	return &ServerCmd{serverJoinCmd, serverLeaveCmd}
+type ServerCreateCmd struct {
+	session *discordgo.Session
+}
+
+func NewServerCommand(serverJoinCmd *ServerJoinCmd, serverLeaveCmd *ServerLeaveCmd, serverCreateCmd *ServerCreateCmd) *ServerCmd {
+	return &ServerCmd{serverJoinCmd, serverLeaveCmd, serverCreateCmd}
 }
 
 func NewServerJoinCommand(window *ui.Window, session *discordgo.Session) *ServerJoinCmd {
@@ -85,6 +103,35 @@ func NewServerJoinCommand(window *ui.Window, session *discordgo.Session) *Server
 
 func NewServerLeaveCommand(window *ui.Window, session *discordgo.Session) *ServerLeaveCmd {
 	return &ServerLeaveCmd{window, session}
+}
+
+func NewServerCreateCommand(session *discordgo.Session) *ServerCreateCmd {
+	return &ServerCreateCmd{session}
+}
+func (cmd *ServerCreateCmd) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 1 {
+		cmd.PrintHelp(writer)
+		return
+	}
+
+	newGuild, createError := cmd.session.GuildCreate(parameters[0])
+	if createError != nil {
+		commands.PrintError(writer, "Couldn't create server", createError.Error())
+	} else {
+		fmt.Fprintf(writer, "New server '%s' with ID '%s' has been created.", newGuild.Name, newGuild.ID)
+	}
+}
+
+func (cmd *ServerCreateCmd) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, serverCreateHelpPage)
+}
+
+func (cmd *ServerCreateCmd) Name() string {
+	return "server-create"
+}
+
+func (cmd *ServerCreateCmd) Aliases() []string {
+	return []string{"guild-create", "guild-new", "server-new"}
 }
 
 func (cmd *ServerCmd) PrintHelp(writer io.Writer) {
@@ -100,6 +147,8 @@ func (cmd *ServerCmd) Execute(writer io.Writer, parameters []string) {
 			cmd.serverJoinCmd.Execute(writer, parameters[1:])
 		} else if commands.CommandEquals(cmd.serverLeaveCmd, combinedName) {
 			cmd.serverLeaveCmd.Execute(writer, parameters[1:])
+		} else if commands.CommandEquals(cmd.serverCreateCmd, combinedName) {
+			cmd.serverCreateCmd.Execute(writer, parameters[1:])
 		} else {
 			cmd.PrintHelp(writer)
 		}
