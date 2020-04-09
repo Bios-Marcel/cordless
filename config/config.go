@@ -122,10 +122,6 @@ type Config struct {
 	// is a string and not an array of strings.
 	DontShowUpdateNotificationFor string
 
-	// Accounts contains all saved accounts, allowing the user to dynamicly
-	// switch between the accounts.
-	Accounts []*Account
-
 	// Show a padlock prefix of the channels that have access restriction
 	IndicateChannelAccessRestriction bool
 	// ShowBottomBar decides whether an informational line is shown at the
@@ -137,13 +133,6 @@ type Config struct {
 	// as if it were called from the command line, so the selected program
 	// must be capable of opening image links.
 	ImageViewer string
-}
-
-// Account has a name and a token. The name is just for the users recognition.
-// The token is the actual token used to authenticate against the discord API.
-type Account struct {
-	Name  string
-	Token string
 }
 
 var cachedConfigDir string

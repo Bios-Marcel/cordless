@@ -2,7 +2,6 @@ package config
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -15,7 +14,7 @@ var cachedTokenFile string
 func UpdateCurrentToken(newToken string) {
 	oldToken := Token
 	Token = newToken
-	for _, account := range Current.Accounts {
+	for _, account := range Accounts {
 		if account.Token == oldToken {
 			account.Token = newToken
 		}
@@ -68,7 +67,6 @@ func LoadToken() (string, error) {
 
     if _, readError := os.Stat(tokenFilePath); os.IsNotExist(readError) {
         os.Create(tokenFilePath)
-        log.Printf("Touched token file")
 		return Token, nil
     }
 

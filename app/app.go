@@ -41,14 +41,21 @@ func Run() {
 
 	configuration, configLoadError := config.LoadConfig()
     token, tokenLoadError := config.LoadToken()
+    accounts, accountsLoadError := config.LoadAccounts()
+
+	if configLoadError != nil {
+		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
+	}
 
     if tokenLoadError != nil {
         log.Fatalf("Error loading token file (%s).\n", tokenLoadError.Error())
     }
 
-	if configLoadError != nil {
-		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
+	if accountsLoadError != nil {
+		log.Fatalf("Error loading accounts file (%s).\n", accountsLoadError.Error())
 	}
+
+    config.Accounts = accounts
 
 	updateAvailableChannel := make(chan bool, 1)
 	if configuration.ShowUpdateNotifications {

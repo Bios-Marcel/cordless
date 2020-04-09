@@ -98,7 +98,7 @@ func (account *Account) printAccountAddHelp(writer io.Writer) {
 
 func (account *Account) addAccount(writer io.Writer, parameters []string) {
 	newName := strings.ToLower(parameters[0])
-	for _, acc := range config.Current.Accounts {
+	for _, acc := range config.Accounts {
 		if acc.Name == newName {
 			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]The name '%s' is already in use.\n", acc.Name)
 			return
@@ -109,8 +109,8 @@ func (account *Account) addAccount(writer io.Writer, parameters []string) {
 		Name:  newName,
 		Token: parameters[1],
 	}
-	config.Current.Accounts = append(config.Current.Accounts, newAccount)
-	config.PersistConfig()
+	config.Accounts = append(config.Accounts, newAccount)
+    config.PersistAccounts()
 
 	fmt.Fprintf(writer, "The account '%s' has been created successfully.\n", newName)
 }
@@ -123,7 +123,7 @@ func deleteAccount(writer io.Writer, account string) {
 	var deletionSuccessful bool
 
 	newAccounts := make([]*config.Account, 0)
-	for _, acc := range config.Current.Accounts {
+	for _, acc := range config.Accounts {
 		if acc.Name != account {
 			newAccounts = append(newAccounts, acc)
 		} else {
@@ -133,7 +133,8 @@ func deleteAccount(writer io.Writer, account string) {
 
 	if deletionSuccessful {
 		fmt.Fprintf(writer, "Account '%s' has been deleted.\n", account)
-		config.Current.Accounts = newAccounts
+		config.Accounts = newAccounts
+        config.PersistAccounts()
 		config.PersistConfig()
 	} else {
 		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Account '%s' could not be found.\n", account)
@@ -146,7 +147,7 @@ func (account *Account) printAccountSwitchHelp(writer io.Writer) {
 }
 
 func (account *Account) switchAccount(writer io.Writer, accountName string) {
-	for _, acc := range config.Current.Accounts {
+	for _, acc := range config.Accounts {
 		if acc.Name == accountName {
 			oldToken := config.Token
 			config.Token = acc.Token
@@ -178,9 +179,9 @@ func (account *Account) saveAndRestart(writer io.Writer) error {
 		return persistErrorToken
 	}
 
-	persistErrorConfig := config.PersistConfig()
-	if persistErrorConfig != nil {
-		return persistErrorConfig
+	persistErrorAccount := config.PersistAccounts()
+	if persistErrorAccount!= nil {
+		return persistErrorAccount
 	}
 
 	//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
@@ -196,7 +197,7 @@ func (account *Account) printAccountListHelp(writer io.Writer) {
 
 func (account *Account) listAccounts(writer io.Writer) {
 	fmt.Fprintln(writer, "Available accounts:")
-	for _, acc := range config.Current.Accounts {
+	for _, acc := range config.Accounts {
 		fmt.Fprintln(writer, "  * "+acc.Name)
 	}
 }
@@ -211,7 +212,7 @@ func (account *Account) printAccountLogoutHelp(writer io.Writer) {
 
 func (account *Account) currentAccount(writer io.Writer) {
 	var currentAccount *config.Account
-	for _, acc := range config.Current.Accounts {
+	for _, acc := range config.Accounts {
 		if acc.Token == config.Token {
 			currentAccount = acc
 			break

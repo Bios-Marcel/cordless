@@ -217,13 +217,6 @@ const configurationDocumentation = `[::b]TOPIC
 [::b]SETTINGS
 	The following settings are available in the configuration file:
 
-	[::b]Token
-		The token is used in order to authenticate you in the discord backend.
-		This value is usually set through the user interface on startup.
-		
-		Type:    string
-		Default: EMPTY
-
 	[::b]Times
 		Determines how message timestamps are rendered in the chatview.
 
@@ -355,14 +348,7 @@ const configurationDocumentation = `[::b]TOPIC
 		users with users that aren't blocked.
 		
 		Type:    boolean
-		Default: true
-
-	[::b]Accounts
-		This settings holds an array of so called accounts, also referred to
-		as profiles. Those allow you to let cordless know of multiple discord
-		identities, allowing you to easily switch between them. This setting
-		shouldn't be changed manually, but only via the [::b]account[::-]
-		command.`
+		Default: true`
 
 const messageEditorDocumentation = `[::b]TOPIC
 	message-editor - the component that allows you to input text for a message.
