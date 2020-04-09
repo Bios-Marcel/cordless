@@ -40,22 +40,17 @@ func Run() {
 	runNext := make(chan bool, 1)
 
 	configuration, configLoadError := config.LoadConfig()
-    token, tokenLoadError := config.LoadToken()
     accounts, accountsLoadError := config.LoadAccounts()
 
 	if configLoadError != nil {
 		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
 	}
 
-    if tokenLoadError != nil {
-        log.Fatalf("Error loading token file (%s).\n", tokenLoadError.Error())
-    }
-
 	if accountsLoadError != nil {
 		log.Fatalf("Error loading accounts file (%s).\n", accountsLoadError.Error())
 	}
 
-    config.Accounts = accounts
+    config.LoadedAccountsFile = accounts
 
 	updateAvailableChannel := make(chan bool, 1)
 	if configuration.ShowUpdateNotifications {
@@ -74,7 +69,7 @@ func Run() {
 			panic(shortcutsLoadError)
 		}
 
-		discord, readyEvent := attemptLogin(loginScreen, "", token, app)
+		discord, readyEvent := attemptLogin(loginScreen, "", accounts.ActiveToken, app)
 
 		persistConfigError := config.PersistConfig()
 		if persistConfigError != nil {
@@ -82,11 +77,12 @@ func Run() {
 			log.Fatalf("Error persisting configuration (%s).\n", persistConfigError.Error())
 		}
 
-        config.Token = discord.Token
-        persistTokenError:= config.PersistToken()
-		if persistTokenError != nil {
+        config.LoadedAccountsFile.ActiveToken = discord.Token
+
+        persistAccountsError:= config.PersistAccounts()
+		if persistAccountsError != nil {
 			app.Stop()
-			log.Fatalf("Error persisting token (%s).\n", persistTokenError.Error())
+			log.Fatalf("Error persisting token (%s).\n", persistAccountsError.Error())
 		}
 
 		discord.State.MaxMessageCount = 100

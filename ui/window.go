@@ -2339,10 +2339,9 @@ func (window *Window) ShowTFASetup() error {
 			}
 
 			//The token is being updated internally, therefore we need to update our config.
-			config.UpdateCurrentToken(window.session.Token)
-			configError := config.PersistConfig()
-			if configError != nil {
-				log.Println(fmt.Sprintf("Error settings new token: %s\n\t%s", window.session.Token, configError))
+			accountsError := config.UpdateCurrentToken(window.session.Token)
+			if accountsError != nil {
+				log.Println(fmt.Sprintf("Error setting new token: %s\n\t%s", window.session.Token, accountsError))
 			}
 
 			var backupCodesAsString string

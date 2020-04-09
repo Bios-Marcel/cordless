@@ -181,8 +181,7 @@ func (cmd *TFADisableCmd) Execute(writer io.Writer, parameters []string) {
 			if disableError != nil {
 				commands.PrintError(writer, "Error disabling Two-Factor-Authentication", disableError.Error())
 			} else {
-				config.UpdateCurrentToken(cmd.session.Token)
-				configError := config.PersistConfig()
+				configError := config.UpdateCurrentToken(cmd.session.Token)
 				if configError != nil {
 					commands.PrintError(writer, "Error updating access token in configuration. You might have to log in again.", disableError.Error())
 				}

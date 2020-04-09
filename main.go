@@ -18,7 +18,6 @@ func main() {
 	setConfigDirectory := flag.String("config-dir", "", "Sets the configuration directory")
 	setScriptDirectory := flag.String("script-dir", "", "Sets the script directory")
 	setConfigFilePath := flag.String("config-file", "", "Sets exact path of the configuration file")
-	setTokenFilePath := flag.String("token-file", "", "Sets exact path of the token file")
 	setAccountsFilePath := flag.String("accounts-file", "", "Sets exact path of the account file")
 	flag.Parse()
 
@@ -35,9 +34,6 @@ func main() {
 		}
 		if setConfigFilePath != nil {
 			config.SetConfigFile(*setConfigFilePath)
-		}
-		if setTokenFilePath != nil {
-			config.SetTokenFile(*setTokenFilePath)
 		}
 		if setAccountsFilePath != nil {
 			config.SetAccountsFile(*setAccountsFilePath)

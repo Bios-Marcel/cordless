@@ -8,6 +8,11 @@ import (
 	"path/filepath"
 )
 
+type AccountsFile struct {
+    ActiveToken string
+    Accounts []*Account
+}
+
 // Account has a name and a token. The name is just for the users recognition.
 // The token is the actual token used to authenticate against the discord API.
 type Account struct {
@@ -15,8 +20,7 @@ type Account struct {
 	Token string
 }
 
-var ActiveAccount *Account
-var Accounts []*Account
+var LoadedAccountsFile *AccountsFile
 var cachedAccountsFile string
 
 // SetAccountsFile sets the accounts file path cache to the
@@ -56,23 +60,36 @@ func GetAccountsFile() (string, error) {
 	return cachedAccountsFile, nil
 }
 
+func UpdateCurrentToken(newToken string) error {
+	oldToken := LoadedAccountsFile.ActiveToken
+	LoadedAccountsFile.ActiveToken = newToken
+	for _, account := range LoadedAccountsFile.Accounts {
+		if account.Token == oldToken {
+			account.Token = newToken
+		}
+	}
+    LoadedAccountsFile.ActiveToken = newToken
+    persistError := PersistAccounts()
+    return persistError
+}
+
 // LoadConfig loads the configuration initially and returns it.
-func LoadAccounts() ([]*Account, error) {
+func LoadAccounts() (*AccountsFile, error) {
 	accountsFilePath, configError := GetAccountsFile()
 	if configError != nil {
 		return nil, configError
 	}
 
     if _, readError := os.Stat(accountsFilePath); os.IsNotExist(readError) {
-        os.Create(accountsFilePath)
-		return Accounts, nil
+        ioutil.WriteFile(accountsFilePath, []byte("{\"ActiveToken\": \"\", \"Accounts\": []}"), 0600)
+		return LoadAccounts()
     }
 
 
 	accountsFile, openError := os.Open(accountsFilePath)
 
 	if os.IsNotExist(openError) {
-		return Accounts, nil
+		return LoadedAccountsFile, nil
 	}
 
 	if openError != nil {
@@ -81,14 +98,14 @@ func LoadAccounts() ([]*Account, error) {
 
 	defer accountsFile.Close()
 	decoder := json.NewDecoder(accountsFile)
-	accountsLoadError := decoder.Decode(&Accounts)
+	accountsLoadError := decoder.Decode(&LoadedAccountsFile)
 
 	//io.EOF would mean empty, therefore we use defaults.
 	if accountsLoadError != nil && accountsLoadError != io.EOF {
 		return nil, accountsLoadError
 	}
 
-	return Accounts, nil
+	return LoadedAccountsFile, nil
 }
 
 //PersistAccounts saves the current configuration onto the filesystem.
@@ -98,7 +115,7 @@ func PersistAccounts() error {
 		return accountsError
 	}
 
-	accountsAsJSON, jsonError := json.MarshalIndent(Accounts, "", "    ")
+	accountsAsJSON, jsonError := json.MarshalIndent(LoadedAccountsFile, "", "    ")
 	if jsonError != nil {
 		return jsonError
 	}
