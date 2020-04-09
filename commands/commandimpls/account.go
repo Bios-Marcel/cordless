@@ -47,7 +47,7 @@ func (account *Account) Execute(writer io.Writer, parameters []string) {
 			if len(parameters) != 3 {
 				account.printAccountAddHelp(writer)
 			} else {
-				account.addAcount(writer, parameters[1:])
+				account.addAccount(writer, parameters[1:])
 			}
 		case "delete", "remove":
 			if len(parameters) != 2 {
@@ -96,7 +96,7 @@ func (account *Account) printAccountAddHelp(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage: account add <Name> <Token>")
 }
 
-func (account *Account) addAcount(writer io.Writer, parameters []string) {
+func (account *Account) addAccount(writer io.Writer, parameters []string) {
 	newName := strings.ToLower(parameters[0])
 	for _, acc := range config.Current.Accounts {
 		if acc.Name == newName {
@@ -230,7 +230,7 @@ func (account *Account) printAccountAddCurrentHelp(writer io.Writer) {
 }
 
 func (account *Account) addCurrentAccount(writer io.Writer, name string) {
-	account.addAcount(writer, []string{name, config.Token})
+	account.addAccount(writer, []string{name, config.Token})
 }
 
 func (account *Account) Name() string {
