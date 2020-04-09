@@ -40,6 +40,11 @@ func Run() {
 	runNext := make(chan bool, 1)
 
 	configuration, configLoadError := config.LoadConfig()
+    token, tokenLoadError := config.LoadToken()
+
+    if tokenLoadError != nil {
+        log.Fatalf("Error loading token file (%s).\n", tokenLoadError.Error())
+    }
 
 	if configLoadError != nil {
 		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
@@ -62,14 +67,19 @@ func Run() {
 			panic(shortcutsLoadError)
 		}
 
-		discord, readyEvent := attemptLogin(loginScreen, "", configuration)
+		discord, readyEvent := attemptLogin(loginScreen, "", token, app)
 
-		config.Current.Token = discord.Token
-
-		persistError := config.PersistConfig()
-		if persistError != nil {
+		persistConfigError := config.PersistConfig()
+		if persistConfigError != nil {
 			app.Stop()
-			log.Fatalf("Error persisting configuration (%s).\n", persistError.Error())
+			log.Fatalf("Error persisting configuration (%s).\n", persistConfigError.Error())
+		}
+
+        config.Token = discord.Token
+        persistTokenError:= config.PersistToken()
+		if persistTokenError != nil {
+			app.Stop()
+			log.Fatalf("Error persisting token (%s).\n", persistTokenError.Error())
 		}
 
 		discord.State.MaxMessageCount = 100
@@ -166,22 +176,23 @@ func Run() {
 	}
 }
 
-func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *config.Config) (*discordgo.Session, *discordgo.Ready) {
+func attemptLogin(loginScreen *ui.Login, loginMessage string, token string, app *tview.Application) (*discordgo.Session, *discordgo.Ready) {
 	var (
 		session      *discordgo.Session
 		readyEvent   *discordgo.Ready
 		discordError error
 	)
 
-	if configuration.Token == "" {
+	if token == "" {
 		session, discordError = loginScreen.RequestLogin(loginMessage)
 	} else {
-		session, discordError = discordgo.NewWithToken(userAgent, configuration.Token)
+		session, discordError = discordgo.NewWithToken(userAgent, token)
 	}
+    token = session.Token
 
 	if discordError != nil {
-		configuration.Token = ""
-		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
+		token = ""
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), token, app)
 	}
 
 	readyChan := make(chan *discordgo.Ready, 1)
@@ -192,8 +203,8 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *con
 	discordError = session.Open()
 
 	if discordError != nil {
-		configuration.Token = ""
-		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
+		token = ""
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), token, app)
 	}
 
 	readyEvent = <-readyChan

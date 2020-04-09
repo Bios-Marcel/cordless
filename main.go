@@ -18,6 +18,7 @@ func main() {
 	setConfigDirectory := flag.String("config-dir", "", "Sets the configuration directory")
 	setScriptDirectory := flag.String("script-dir", "", "Sets the script directory")
 	setConfigFilePath := flag.String("config-file", "", "Sets exact path of the configuration file")
+	setTokenFilePath := flag.String("token-file", "", "Sets exact path of the token file")
 	flag.Parse()
 
 	if showShortcutsDialog != nil && *showShortcutsDialog {
@@ -33,6 +34,9 @@ func main() {
 		}
 		if setConfigFilePath != nil {
 			config.SetConfigFile(*setConfigFilePath)
+		}
+		if setConfigFilePath != nil {
+			config.SetTokenFile(*setTokenFilePath)
 		}
 		app.Run()
 	}

@@ -148,11 +148,11 @@ func (account *Account) printAccountSwitchHelp(writer io.Writer) {
 func (account *Account) switchAccount(writer io.Writer, accountName string) {
 	for _, acc := range config.Current.Accounts {
 		if acc.Name == accountName {
-			oldToken := config.Current.Token
-			config.Current.Token = acc.Token
+			oldToken := config.Token
+			config.Token = acc.Token
 			persistError := account.saveAndRestart(writer)
 			if persistError != nil {
-				config.Current.Token = oldToken
+				config.Token = oldToken
 				commands.PrintError(writer, "Error switching accounts", persistError.Error())
 			}
 			return
@@ -163,19 +163,24 @@ func (account *Account) switchAccount(writer io.Writer, accountName string) {
 }
 
 func (account *Account) logout(writer io.Writer) {
-	oldToken := config.Current.Token
-	config.Current.Token = ""
+	oldToken := config.Token
+	config.Token = ""
 	err := account.saveAndRestart(writer)
 	if err != nil {
-		config.Current.Token = oldToken
+		config.Token = oldToken
 		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error logging you out '%s'.\n", err.Error())
 	}
 }
 
 func (account *Account) saveAndRestart(writer io.Writer) error {
-	persistError := config.PersistConfig()
-	if persistError != nil {
-		return persistError
+	persistErrorToken := config.PersistToken()
+	if persistErrorToken != nil {
+		return persistErrorToken
+	}
+
+	persistErrorConfig := config.PersistConfig()
+	if persistErrorConfig != nil {
+		return persistErrorConfig
 	}
 
 	//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
@@ -207,7 +212,7 @@ func (account *Account) printAccountLogoutHelp(writer io.Writer) {
 func (account *Account) currentAccount(writer io.Writer) {
 	var currentAccount *config.Account
 	for _, acc := range config.Current.Accounts {
-		if acc.Token == config.Current.Token {
+		if acc.Token == config.Token {
 			currentAccount = acc
 			break
 		}
@@ -225,7 +230,7 @@ func (account *Account) printAccountAddCurrentHelp(writer io.Writer) {
 }
 
 func (account *Account) addCurrentAccount(writer io.Writer, name string) {
-	account.addAcount(writer, []string{name, config.Current.Token})
+	account.addAcount(writer, []string{name, config.Token})
 }
 
 func (account *Account) Name() string {

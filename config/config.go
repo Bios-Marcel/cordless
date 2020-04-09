@@ -62,9 +62,6 @@ var (
 
 //Config contains all possible configuration for the application.
 type Config struct {
-	//Token is the authorization token for accessing the discord API.
-	Token string
-
 	//Autocomplete decides whether the chat automatically offers autocomplete
 	//values for the currently given text.
 	Autocomplete bool
@@ -310,17 +307,6 @@ func LoadConfig() (*Config, error) {
 	return Current, nil
 }
 
-// UpdateCurrentToken updates the current token and all accounts where the
-// token was also used.
-func UpdateCurrentToken(newToken string) {
-	oldToken := Current.Token
-	Current.Token = newToken
-	for _, account := range Current.Accounts {
-		if account.Token == oldToken {
-			account.Token = newToken
-		}
-	}
-}
 
 //PersistConfig saves the current configuration onto the filesystem.
 func PersistConfig() error {
