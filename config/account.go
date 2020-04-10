@@ -20,7 +20,10 @@ type Account struct {
 	Token string
 }
 
-var LoadedAccountsFile *AccountsFile
+var LoadedAccountsFile = &AccountsFile{
+    ActiveToken: "",
+    Accounts: []*Account{},
+}
 var cachedAccountsFile string
 
 // SetAccountsFile sets the accounts file path cache to the
@@ -73,7 +76,7 @@ func UpdateCurrentToken(newToken string) error {
 	return persistError
 }
 
-// LoadConfig loads the configuration initially and returns it.
+// LoadAccounts loads the configuration initially and returns it.
 func LoadAccounts() (*AccountsFile, error) {
 	accountsFilePath, configError := GetAccountsFile()
 	if configError != nil {

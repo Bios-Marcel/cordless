@@ -2,11 +2,12 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/Bios-Marcel/cordless/util/files"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/Bios-Marcel/cordless/util/files"
 )
 
 const (
