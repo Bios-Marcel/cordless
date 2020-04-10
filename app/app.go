@@ -193,8 +193,7 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, token string, app 
 	}
 
 	if discordError != nil {
-		token = ""
-		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), token, app)
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), "", app)
 	}
 
 	readyChan := make(chan *discordgo.Ready, 1)
