@@ -191,7 +191,6 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, token string, app 
 	} else {
 		session, discordError = discordgo.NewWithToken(userAgent, token)
 	}
-	token = session.Token
 
 	if discordError != nil {
 		token = ""
