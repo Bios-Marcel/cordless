@@ -9,8 +9,8 @@ import (
 )
 
 type AccountsFile struct {
-    ActiveToken string
-    Accounts []*Account
+	ActiveToken string
+	Accounts    []*Account
 }
 
 // Account has a name and a token. The name is just for the users recognition.
@@ -68,9 +68,9 @@ func UpdateCurrentToken(newToken string) error {
 			account.Token = newToken
 		}
 	}
-    LoadedAccountsFile.ActiveToken = newToken
-    persistError := PersistAccounts()
-    return persistError
+	LoadedAccountsFile.ActiveToken = newToken
+	persistError := PersistAccounts()
+	return persistError
 }
 
 // LoadConfig loads the configuration initially and returns it.
@@ -80,11 +80,10 @@ func LoadAccounts() (*AccountsFile, error) {
 		return nil, configError
 	}
 
-    if _, readError := os.Stat(accountsFilePath); os.IsNotExist(readError) {
-        ioutil.WriteFile(accountsFilePath, []byte("{\"ActiveToken\": \"\", \"Accounts\": []}"), 0600)
+	if _, readError := os.Stat(accountsFilePath); os.IsNotExist(readError) {
+		ioutil.WriteFile(accountsFilePath, []byte("{\"ActiveToken\": \"\", \"Accounts\": []}"), 0600)
 		return LoadAccounts()
-    }
-
+	}
 
 	accountsFile, openError := os.Open(accountsFilePath)
 

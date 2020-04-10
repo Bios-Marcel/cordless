@@ -110,7 +110,7 @@ func (account *Account) addAccount(writer io.Writer, parameters []string) {
 		Token: parameters[1],
 	}
 	config.LoadedAccountsFile.Accounts = append(config.LoadedAccountsFile.Accounts, newAccount)
-    config.PersistAccounts()
+	config.PersistAccounts()
 
 	fmt.Fprintf(writer, "The account '%s' has been created successfully.\n", newName)
 }
@@ -134,7 +134,7 @@ func deleteAccount(writer io.Writer, account string) {
 	if deletionSuccessful {
 		fmt.Fprintf(writer, "Account '%s' has been deleted.\n", account)
 		config.LoadedAccountsFile.Accounts = newAccounts
-        config.PersistAccounts()
+		config.PersistAccounts()
 	} else {
 		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Account '%s' could not be found.\n", account)
 	}
@@ -174,7 +174,7 @@ func (account *Account) logout(writer io.Writer) {
 
 func (account *Account) saveAndRestart(writer io.Writer) error {
 	persistErrorAccount := config.PersistAccounts()
-	if persistErrorAccount!= nil {
+	if persistErrorAccount != nil {
 		return persistErrorAccount
 	}
 

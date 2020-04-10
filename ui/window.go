@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os/exec"
 	"strings"
 	"time"
 	"unicode"
-	"os/exec"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
@@ -1140,7 +1140,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 }
 
 func getWelcomeText() string {
-	return fmt.Sprintf(splashText + `
+	return fmt.Sprintf(splashText+`
 
 Welcome to version %s of Cordless. Below you can see the most
 important changes of the last two versions officially released.

@@ -40,7 +40,7 @@ func Run() {
 	runNext := make(chan bool, 1)
 
 	configuration, configLoadError := config.LoadConfig()
-    accounts, accountsLoadError := config.LoadAccounts()
+	accounts, accountsLoadError := config.LoadAccounts()
 
 	if configLoadError != nil {
 		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
@@ -50,7 +50,7 @@ func Run() {
 		log.Fatalf("Error loading accounts file (%s).\n", accountsLoadError.Error())
 	}
 
-    config.LoadedAccountsFile = accounts
+	config.LoadedAccountsFile = accounts
 
 	updateAvailableChannel := make(chan bool, 1)
 	if configuration.ShowUpdateNotifications {
@@ -77,9 +77,9 @@ func Run() {
 			log.Fatalf("Error persisting configuration (%s).\n", persistConfigError.Error())
 		}
 
-        config.LoadedAccountsFile.ActiveToken = discord.Token
+		config.LoadedAccountsFile.ActiveToken = discord.Token
 
-        persistAccountsError:= config.PersistAccounts()
+		persistAccountsError := config.PersistAccounts()
 		if persistAccountsError != nil {
 			app.Stop()
 			log.Fatalf("Error persisting token (%s).\n", persistAccountsError.Error())
@@ -191,7 +191,7 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, token string, app 
 	} else {
 		session, discordError = discordgo.NewWithToken(userAgent, token)
 	}
-    token = session.Token
+	token = session.Token
 
 	if discordError != nil {
 		token = ""

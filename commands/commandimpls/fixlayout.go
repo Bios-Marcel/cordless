@@ -14,8 +14,8 @@ var fixLayoutDocumentation = `[orange]# fixlayout[white]
 
 The fixlayout command allows adjusting the layout of the application to a certain degree. By default most components take a flexible amount of space. By activating the fixlayout, those components will instead use a fixed amount of space.
 
-You can [green]enable[white] or [`+ tviewutil.ColorToHex(config.GetTheme().ErrorColor)+ `]disable[white] the fixlayout by using this:
-    [-]fixlayout <[green]true[-]/[`+ tviewutil.ColorToHex(config.GetTheme().ErrorColor)+ `]false[-]>
+You can [green]enable[white] or [` + tviewutil.ColorToHex(config.GetTheme().ErrorColor) + `]disable[white] the fixlayout by using this:
+    [-]fixlayout <[green]true[-]/[` + tviewutil.ColorToHex(config.GetTheme().ErrorColor) + `]false[-]>
 
 [white]In order to specify the width of a component, use this:
     [-]fixlayout <left/right> <[blue]N[-]>

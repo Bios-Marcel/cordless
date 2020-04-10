@@ -296,7 +296,6 @@ func LoadConfig() (*Config, error) {
 	return Current, nil
 }
 
-
 //PersistConfig saves the current configuration onto the filesystem.
 func PersistConfig() error {
 	configFilePath, configError := GetConfigFile()

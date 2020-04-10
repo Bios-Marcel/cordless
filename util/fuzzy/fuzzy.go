@@ -31,7 +31,7 @@ func ScoreAndSortRoles(searchTerm string, searchables []*discordgo.Role) []*disc
 
 	// Convert the results into an array.
 	sortedItems := make([]*discordgo.Role, 0, len(scoredItems))
-	for key, _ := range scoredItems {
+	for key := range scoredItems {
 		sortedItems = append(sortedItems, key)
 	}
 
@@ -67,7 +67,7 @@ func ScoreAndSortMembers(searchTerm string, searchables []*discordgo.Member) []*
 
 	// Convert the results into an array.
 	sortedItems := make([]*discordgo.Member, 0, len(scoredItems))
-	for key, _ := range scoredItems {
+	for key := range scoredItems {
 		sortedItems = append(sortedItems, key)
 	}
 
@@ -103,7 +103,7 @@ func ScoreAndSortUsers(searchTerm string, searchables []*discordgo.User) []*disc
 
 	// Convert the results into an array.
 	sortedItems := make([]*discordgo.User, 0, len(scoredItems))
-	for key, _ := range scoredItems {
+	for key := range scoredItems {
 		sortedItems = append(sortedItems, key)
 	}
 
@@ -144,7 +144,7 @@ func ScoreAndSortEmoji(searchTerm string, unicodeEmoji []string, customEmoji []*
 
 	// Convert the results into an array.
 	sortedItems := make([]string, 0, len(scoredItems))
-	for key, _ := range scoredItems {
+	for key := range scoredItems {
 		sortedItems = append(sortedItems, key)
 	}
 
@@ -177,7 +177,7 @@ func ScoreAndSortChannels(searchTerm string, searchables []*discordgo.Channel) [
 
 	// Convert the results into an array.
 	sortedItems := make([]*discordgo.Channel, 0, len(scoredItems))
-	for key, _ := range scoredItems {
+	for key := range scoredItems {
 		sortedItems = append(sortedItems, key)
 	}
 
