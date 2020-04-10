@@ -83,11 +83,6 @@ func LoadAccounts() (*AccountsFile, error) {
 		return nil, configError
 	}
 
-	if _, readError := os.Stat(accountsFilePath); os.IsNotExist(readError) {
-		ioutil.WriteFile(accountsFilePath, []byte("{\"ActiveToken\": \"\", \"Accounts\": []}"), 0600)
-		return LoadAccounts()
-	}
-
 	accountsFile, openError := os.Open(accountsFilePath)
 
 	if os.IsNotExist(openError) {
