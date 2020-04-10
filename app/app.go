@@ -204,8 +204,7 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, token string, app 
 	discordError = session.Open()
 
 	if discordError != nil {
-		token = ""
-		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), token, app)
+		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), "", app)
 	}
 
 	readyEvent = <-readyChan
