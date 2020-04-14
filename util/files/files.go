@@ -2,6 +2,7 @@ package files
 
 import (
 	"net/url"
+	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
@@ -40,4 +41,24 @@ func ToAbsolutePath(input string) (string, error) {
 	}
 
 	return resolvedPath, nil
+}
+
+func GetAbsolutePath(directoryPath string) (string, error) {
+	absolutePath, resolveError := ToAbsolutePath(directoryPath)
+	if resolveError != nil {
+		return "", resolveError
+	}
+	return absolutePath, resolveError
+}
+
+func EnsureDirectory(directoryPath string) error {
+	_, statError := os.Stat(directoryPath)
+	if os.IsNotExist(statError) {
+		createDirsError := os.MkdirAll(directoryPath, 0766)
+		if createDirsError != nil {
+			return createDirsError
+		}
+		return nil
+	}
+	return statError
 }

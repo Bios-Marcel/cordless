@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/Bios-Marcel/cordless/util/files"
 )
 
 type AccountsFile struct {
@@ -31,15 +33,15 @@ var cachedAccountsFile string
 func SetAccountsFile(accountsFilePath string) error {
 	// get parent directory of accounts file
 	parent := filepath.Dir(accountsFilePath)
-	err := ensureDirectory(parent)
+	err := files.EnsureDirectory(parent)
 	if err == nil {
 		cachedAccountsFile = accountsFilePath
 	} else {
-		absolute, err := getAbsolutePath(parent)
+		absolute, err := files.GetAbsolutePath(parent)
 		if err != nil {
 			return err
 		}
-		err = ensureDirectory(absolute)
+		err = files.EnsureDirectory(absolute)
 		if err == nil {
 			cachedAccountsFile = accountsFilePath
 		}
