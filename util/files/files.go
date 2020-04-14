@@ -1,6 +1,8 @@
 package files
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/user"
@@ -61,4 +63,48 @@ func EnsureDirectory(directoryPath string) error {
 		return nil
 	}
 	return statError
+}
+
+func CheckExists(path string) error {
+    _, statError := os.Stat(path)
+    return statError
+}
+
+func LoadJSON(path string, store interface{}) error {
+	existsError := CheckExists(path)
+    if existsError != nil {
+        return existsError
+    }
+
+    file, readError := ioutil.ReadFile(path)
+    if readError != nil {
+        return readError
+    }
+
+    jsonError := json.Unmarshal([]byte(file), &store)
+    if jsonError != nil {
+        return jsonError
+    }
+
+    return nil
+}
+
+func WriteJSON(path string, store interface{}) error {
+	existsError := CheckExists(path)
+    if existsError != nil {
+        return existsError
+    }
+
+    jsonContents, jsonError := json.MarshalIndent(store, "", "    ")
+	if jsonError != nil {
+		return jsonError
+	}
+
+    writeError := ioutil.WriteFile(path, jsonContents, 0666)
+	if writeError != nil {
+		return writeError
+	}
+
+	return nil
+
 }
