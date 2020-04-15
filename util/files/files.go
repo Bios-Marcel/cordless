@@ -66,36 +66,36 @@ func EnsureDirectory(directoryPath string) error {
 }
 
 func CheckExists(path string) error {
-    _, statError := os.Stat(path)
-    return statError
+	_, statError := os.Stat(path)
+	return statError
 }
 
 func LoadJSON(path string, store interface{}) error {
 	existsError := CheckExists(path)
-    if existsError != nil {
-        return existsError
-    }
+	if existsError != nil {
+		return existsError
+	}
 
-    file, readError := ioutil.ReadFile(path)
-    if readError != nil {
-        return readError
-    }
+	file, readError := ioutil.ReadFile(path)
+	if readError != nil {
+		return readError
+	}
 
-    jsonError := json.Unmarshal([]byte(file), &store)
-    if jsonError != nil {
-        return jsonError
-    }
-
-    return nil
-}
-
-func WriteJSON(path string, store interface{}) error {
-    jsonContents, jsonError := json.MarshalIndent(store, "", "    ")
+	jsonError := json.Unmarshal([]byte(file), &store)
 	if jsonError != nil {
 		return jsonError
 	}
 
-    writeError := ioutil.WriteFile(path, jsonContents, 0644)
+	return nil
+}
+
+func WriteJSON(path string, store interface{}) error {
+	jsonContents, jsonError := json.MarshalIndent(store, "", "    ")
+	if jsonError != nil {
+		return jsonError
+	}
+
+	writeError := ioutil.WriteFile(path, jsonContents, 0644)
 	if writeError != nil {
 		return writeError
 	}

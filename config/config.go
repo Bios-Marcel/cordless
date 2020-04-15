@@ -145,8 +145,8 @@ type Account struct {
 }
 
 var LoadedAccountsFile = &AccountsFile{
-    ActiveToken: "",
-    Accounts: []*Account{},
+	ActiveToken: "",
+	Accounts:    []*Account{},
 }
 
 var cachedAccountsFile string
@@ -156,32 +156,32 @@ var cachedScriptDir string
 
 // SetConfigFile sets the config file path cache to the entered value.
 func SetConfigFile(path string) error {
-    existsError := files.CheckExists(path)
-    if existsError == nil {
-	    cachedConfigFile = path
-        return nil
-    }
-    writeError := files.WriteJSON(path, Current)
-    if writeError == nil {
-        cachedConfigFile = path
-        return nil
-    }
-    return writeError
+	existsError := files.CheckExists(path)
+	if existsError == nil {
+		cachedConfigFile = path
+		return nil
+	}
+	writeError := files.WriteJSON(path, Current)
+	if writeError == nil {
+		cachedConfigFile = path
+		return nil
+	}
+	return writeError
 }
 
 // SetAccountsFile sets the accounts file path cache to the entered value.
 func SetAccountsFile(path string) error {
-    existsError := files.CheckExists(path)
-    if existsError == nil {
-	    cachedAccountsFile = path
-        return nil
-    }
-    writeError := files.WriteJSON(path, Current)
-    if writeError == nil {
-        cachedAccountsFile = path
-        return nil
-    }
-    return writeError
+	existsError := files.CheckExists(path)
+	if existsError == nil {
+		cachedAccountsFile = path
+		return nil
+	}
+	writeError := files.WriteJSON(path, Current)
+	if writeError == nil {
+		cachedAccountsFile = path
+		return nil
+	}
+	return writeError
 }
 
 func DefaultConfigTarget(targetName string) (string, error) {
@@ -190,7 +190,7 @@ func DefaultConfigTarget(targetName string) (string, error) {
 		return "", configError
 	}
 
-    absPath := filepath.Join(configDir, targetName)
+	absPath := filepath.Join(configDir, targetName)
 	return absPath, nil
 }
 
@@ -200,12 +200,12 @@ func GetConfigFile() (string, error) {
 	if cachedConfigFile != "" {
 		return cachedConfigFile, nil
 	}
-    defaultTarget, defaultTargetError := DefaultConfigTarget("config.json")
-    if defaultTargetError != nil {
-        return "", defaultTargetError
-    }
-    cachedConfigFile = defaultTarget
-    return defaultTarget, nil
+	defaultTarget, defaultTargetError := DefaultConfigTarget("config.json")
+	if defaultTargetError != nil {
+		return "", defaultTargetError
+	}
+	cachedConfigFile = defaultTarget
+	return defaultTarget, nil
 
 }
 
@@ -215,31 +215,31 @@ func GetAccountsFile() (string, error) {
 	if cachedAccountsFile != "" {
 		return cachedAccountsFile, nil
 	}
-    defaultTarget, defaultTargetError := DefaultConfigTarget("accounts.json")
-    if defaultTargetError != nil {
-        return "", defaultTargetError
-    }
-    cachedAccountsFile = defaultTarget
-    return defaultTarget, nil
+	defaultTarget, defaultTargetError := DefaultConfigTarget("accounts.json")
+	if defaultTargetError != nil {
+		return "", defaultTargetError
+	}
+	cachedAccountsFile = defaultTarget
+	return defaultTarget, nil
 
 }
 
 // SetScriptDirectory sets the script directory cache to the specified value.
 func SetScriptDirectory(path string) error {
-    existsError := files.CheckExists(path)
-    if existsError == nil {
-	    cachedScriptDir = path
-        return nil
-    }
-    return existsError
+	existsError := files.CheckExists(path)
+	if existsError == nil {
+		cachedScriptDir = path
+		return nil
+	}
+	return existsError
 }
 
 // GetScriptDirectory retrieves the script path from cache or sets it to the
 // default script directory location.
 func GetScriptDirectory() string {
-    // TODO This function is not implemented with error checking anywhere. Until
-    // then this function will not return an error, unlike the simmilar
-    // functions.
+	// TODO This function is not implemented with error checking anywhere. Until
+	// then this function will not return an error, unlike the simmilar
+	// functions.
 	if cachedScriptDir != "" {
 		return cachedScriptDir
 	}
@@ -250,11 +250,11 @@ func GetScriptDirectory() string {
 // SetScriptDirectory sets the config directory cache to the specified value.
 func SetConfigDirectory(path string) error {
 	existsError := files.CheckExists(path)
-    if existsError == nil {
-	    cachedConfigDir = path
-        return nil
-    }
-    return existsError
+	if existsError == nil {
+		cachedConfigDir = path
+		return nil
+	}
+	return existsError
 }
 
 // GetConfigDirectory retrieves the directory that stores cordless' settings
@@ -280,44 +280,43 @@ func GetConfigDirectory() (string, error) {
 	return cachedConfigDir, nil
 }
 
-
 // LoadConfig loads the configuration initially and returns it.
 func LoadConfig() (*Config, error) {
 	configFilePath, configError := GetConfigFile()
 	if configError != nil {
 		return nil, configError
 	}
-    if files.CheckExists(configFilePath) != nil {
-        persistsError := PersistConfig()
-        if persistsError != nil {
-            return nil, persistsError
-        }
-        return LoadConfig()
-    }
-    jsonError := files.LoadJSON(configFilePath, Current)
-    if jsonError != nil {
-        return nil, jsonError
-    }
-    return Current, nil
+	if files.CheckExists(configFilePath) != nil {
+		persistsError := PersistConfig()
+		if persistsError != nil {
+			return nil, persistsError
+		}
+		return LoadConfig()
+	}
+	jsonError := files.LoadJSON(configFilePath, Current)
+	if jsonError != nil {
+		return nil, jsonError
+	}
+	return Current, nil
 }
 
 func LoadAccounts() (*AccountsFile, error) {
 	accountsFilePath, accountsError := GetAccountsFile()
-	if accountsError!= nil {
+	if accountsError != nil {
 		return nil, accountsError
 	}
-    if files.CheckExists(accountsFilePath) != nil {
-        persistsError := PersistConfig()
-        if persistsError != nil {
-            return nil, persistsError
-        }
-        return LoadAccounts()
-    }
-    jsonError := files.LoadJSON(accountsFilePath, LoadedAccountsFile)
-    if jsonError != nil {
-        return nil, jsonError
-    }
-    return LoadedAccountsFile, nil
+	if files.CheckExists(accountsFilePath) != nil {
+		persistsError := PersistConfig()
+		if persistsError != nil {
+			return nil, persistsError
+		}
+		return LoadAccounts()
+	}
+	jsonError := files.LoadJSON(accountsFilePath, LoadedAccountsFile)
+	if jsonError != nil {
+		return nil, jsonError
+	}
+	return LoadedAccountsFile, nil
 }
 
 // PersistConfig saves the current configuration onto the filesystem.
@@ -326,17 +325,17 @@ func PersistConfig() error {
 	if configError != nil {
 		return configError
 	}
-    return files.WriteJSON(configFilePath, Current)
+	return files.WriteJSON(configFilePath, Current)
 }
 
 // PersistConfig saves the current account configuration onto the
 // filesystem.
 func PersistAccounts() error {
 	accountsFilePath, accountsError := GetAccountsFile()
-	if accountsError!= nil {
+	if accountsError != nil {
 		return accountsError
 	}
-    return files.WriteJSON(accountsFilePath, LoadedAccountsFile)
+	return files.WriteJSON(accountsFilePath, LoadedAccountsFile)
 }
 
 func UpdateCurrentToken(newToken string) error {
@@ -351,4 +350,3 @@ func UpdateCurrentToken(newToken string) error {
 	persistError := PersistAccounts()
 	return persistError
 }
-
