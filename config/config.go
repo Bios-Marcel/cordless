@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/Bios-Marcel/cordless/util/files"
@@ -162,7 +161,12 @@ func SetConfigFile(path string) error {
 	    cachedConfigFile = path
         return nil
     }
-    return existsError
+    writeError := files.WriteJSON(path, Current)
+    if writeError == nil {
+        cachedConfigFile = path
+        return nil
+    }
+    return writeError
 }
 
 // SetAccountsFile sets the accounts file path cache to the entered value.
@@ -172,7 +176,12 @@ func SetAccountsFile(path string) error {
 	    cachedAccountsFile = path
         return nil
     }
-    return existsError
+    writeError := files.WriteJSON(path, Current)
+    if writeError == nil {
+        cachedAccountsFile = path
+        return nil
+    }
+    return writeError
 }
 
 func DefaultConfigTarget(targetName string) (string, error) {
@@ -278,7 +287,6 @@ func LoadConfig() (*Config, error) {
 	if configError != nil {
 		return nil, configError
 	}
-    fmt.Printf(configFilePath)
     if files.CheckExists(configFilePath) != nil {
         persistsError := PersistConfig()
         if persistsError != nil {

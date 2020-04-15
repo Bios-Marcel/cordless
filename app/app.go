@@ -41,6 +41,7 @@ func Run() {
 
 	configuration, configLoadError := config.LoadConfig()
 	accounts, accountsLoadError := config.LoadAccounts()
+    config.PersistConfig()
 
 	if configLoadError != nil {
 		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())

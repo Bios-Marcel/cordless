@@ -90,17 +90,12 @@ func LoadJSON(path string, store interface{}) error {
 }
 
 func WriteJSON(path string, store interface{}) error {
-	existsError := CheckExists(path)
-    if existsError != nil {
-        return existsError
-    }
-
     jsonContents, jsonError := json.MarshalIndent(store, "", "    ")
 	if jsonError != nil {
 		return jsonError
 	}
 
-    writeError := ioutil.WriteFile(path, jsonContents, 0666)
+    writeError := ioutil.WriteFile(path, jsonContents, 0644)
 	if writeError != nil {
 		return writeError
 	}
