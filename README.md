@@ -128,53 +128,60 @@ However, cordless doesn't have:
 
 ### Installing on macOS
 
-Use [Homebrew](https://brew.sh) to install `cordless` on macOS:
+<details>
+  <summary>Homebrew (Recommended)</summary>
+  
+  Use [Homebrew](https://brew.sh) to install `cordless` on macOS:
 
-```shell
-brew tap Bios-Marcel/cordless
-brew install cordless
-```
+  ```shell
+  brew tap Bios-Marcel/cordless
+  brew install cordless
+  ```
 
-If you don't install via homebrew, then you should get `pngpaste`, since it's
-what allows you to paste images.
+  If you don't install via homebrew, then you should get `pngpaste`, since it's
+  what allows you to paste images.
+</details>
 
 ### Building from source
+<details>
+  <summary>Installation </summary>
+  
+  In order to execute the following commands
+  [you need to have go 1.12 or a more recent version installed](https://golang.org/doc/install).
 
-In order to execute the following commands
-[you need to have go 1.12 or a more recent version installed](https://golang.org/doc/install).
+  **UPDATES HAVE TO BE INSTALLED MANUALLY**
 
-**UPDATES HAVE TO BE INSTALLED MANUALLY**
+  You can either install the binary into your `$GOPATH/bin` by running:
 
-You can either install the binary into your `$GOPATH/bin` by running:
+  ```shell
+  go get -u github.com/Bios-Marcel/cordless
+  ```
 
-```shell
-go get -u github.com/Bios-Marcel/cordless
-```
+  Which you can then execute by running the executable, which lies at
+  `$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
+  `$GOPATH/bin` has to be in your `PATH` variable. The very same command can
+  be used for updating.
 
-Which you can then execute by running the executable, which lies at
-`$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
-`$GOPATH/bin` has to be in your `PATH` variable. The very same command can
-be used for updating.
+  or you manually grab the source:
 
-or you manually grab the source:
+  ```shell
+  git clone https://github.com/Bios-Marcel/cordless
+  cd cordless
+  go build .
+  ```
 
-```shell
-git clone https://github.com/Bios-Marcel/cordless
-cd cordless
-go build .
-```
+  If done this way, updates have to be installed via:
 
-If done this way, updates have to be installed via:
+  ```shell
+  cd cordless
+  git pull
+  go build .
+  ```
 
-```shell
-cd cordless
-git pull
-go build .
-```
-
-Note:
-* X11 users need `xclip` in order to copy and paste.
-* Wayland users need `wl-clipboard` in order to copy and paste.
+  Note:
+  * X11 users need `xclip` in order to copy and paste.
+  * Wayland users need `wl-clipboard` in order to copy and paste.
+</details>
 
 ### Login
 
