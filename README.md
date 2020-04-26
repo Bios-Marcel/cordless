@@ -48,7 +48,7 @@ However, cordless doesn't have:
 
 ## Installing
 
-### Linux
+### Installing on Linux
 
 <details>
   <summary>Snap (Recommended)</summary>
@@ -142,9 +142,9 @@ However, cordless doesn't have:
   what allows you to paste images.
 </details>
 
-### Building from source
+### Installing from source (All Operating Systems)
 <details>
-  <summary>Installation </summary>
+  <summary>GO 1.12</summary>
   
   In order to execute the following commands
   [you need to have go 1.12 or a more recent version installed](https://golang.org/doc/install).
