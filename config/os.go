@@ -9,7 +9,7 @@ import (
 )
 
 func getDefaultConfigDirectory() (string, error) {
-	configDir := os.Getenv("XDG_CONFIG_DIR")
+	configDir := os.Getenv("XDG_CONFIG_HOME")
 
 	if configDir != "" {
 		return configDir, nil
