@@ -49,6 +49,7 @@ var (
 		OnTypeInListBehaviour:                  SearchOnTypeInList,
 		MouseEnabled:                           true,
 		ShortenLinks:                           false,
+		ShortenWithExtension:                   false,
 		ShortenerPort:                          63212,
 		DesktopNotifications:                   true,
 		ShowPlaceholderForBlockedMessages:      true,
@@ -103,6 +104,9 @@ type Config struct {
 	// ShortenLinks decides whether cordless starts a local webserver in order
 	// to be able to shorten links
 	ShortenLinks bool
+	// ShortenWithExtension defines wether the suffix is added to the shortened
+	// url
+	ShortenWithExtension bool
 	// ShortenerPort defines the port, that the webserver for the linkshortener
 	// will be using.
 	ShortenerPort int

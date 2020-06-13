@@ -57,7 +57,8 @@ type ChatView struct {
 	ownUserID  string
 	format     string
 
-	shortenLinks bool
+	shortenLinks         bool
+	shortenWithExtension bool
 
 	selection     int
 	selectionMode bool
@@ -79,14 +80,15 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 		//Magic date which defines the format in which all dates will be formatted.
 		//While it isn't obvious which one is month and which one is day, this is
 		//is still "correctly" inferred as "year-month-day".
-		format:             "2006-01-02",
-		selection:          -1,
-		bufferSize:         100,
-		selectionMode:      false,
-		showSpoilerContent: make(map[string]bool),
-		shortenLinks:       config.Current.ShortenLinks,
-		formattedMessages:  make(map[string]string),
-		mutex:              &sync.Mutex{},
+		format:               "2006-01-02",
+		selection:            -1,
+		bufferSize:           100,
+		selectionMode:        false,
+		showSpoilerContent:   make(map[string]bool),
+		shortenLinks:         config.Current.ShortenLinks,
+		shortenWithExtension: config.Current.ShortenWithExtension,
+		formattedMessages:    make(map[string]string),
+		mutex:                &sync.Mutex{},
 	}
 
 	if chatView.shortenLinks {
@@ -566,7 +568,13 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 				newURL = newURL + urlMatch[3]
 			}
 			if (len(urlMatch[2]) + 35) < len(newURL) {
-				newURL = fmt.Sprintf("(%s) %s", urlMatch[2], chatView.shortener.Shorten(newURL))
+				url, suffix := chatView.shortener.Shorten(newURL)
+				if chatView.shortenWithExtension {
+					newURL = fmt.Sprintf("(%s) %s%s", urlMatch[2], url, suffix)
+				} else {
+					newURL = fmt.Sprintf("(%s) %s", urlMatch[2], url)
+				}
+
 			}
 			if len(urlMatch) == 5 {
 				newURL = newURL + strings.TrimSuffix(urlMatch[4], ">")
