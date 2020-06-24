@@ -1149,7 +1149,10 @@ important changes of the last two versions officially released.
 [::b]UNRELEASED
 	- Features
 		- you can now define a custom status
+		- shortened URLs optionally can display a file suffix (extension)
 	- Bugfixes
+		- config directory path now read from "XDF_CONFIG_HOME" instead of "XDG_CONFIG_DIR"
+		- the delete message shortcut was pointing to the same value as "show spoilered message"
 		- the lack of the config directory would cause a crash
 		- nitro users couldn't use emojis anymore
 		- several typos have been corrected
