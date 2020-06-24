@@ -335,6 +335,13 @@ const configurationDocumentation = `[::b]TOPIC
 		
 		Type:    boolean
 		Default: false
+
+	[::b]ShortenWithExtension
+		Determines wether the suffix is added to the shortened url. This
+		setting only matters if [::b]ShortenLinks[::-] is set to [::b]true[::-]
+
+		Type:    boolean
+		Default: false
 		
 	[::b]ShortenerPort
 		Determines which port the link-shortener uses in your system. This
