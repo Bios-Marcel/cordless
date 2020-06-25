@@ -563,22 +563,33 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 		urlMatches := urlRegex.FindAllStringSubmatch(messageText, 1000)
 
 		for _, urlMatch := range urlMatches {
-			newURL := urlMatch[1] + urlMatch[2]
+			//Protocol+domain
+			domain := urlMatch[2]
+			newURL := urlMatch[1] + domain
+
 			if len(urlMatch) == 5 || (len(urlMatch) == 4 && len(urlMatch[3]) > 1) {
 				newURL = newURL + urlMatch[3]
 			}
-			if (len(urlMatch[2]) + 35) < len(newURL) {
-				url, suffix := chatView.shortener.Shorten(newURL)
-				if chatView.shortenWithExtension {
-					newURL = fmt.Sprintf("(%s) %s%s", urlMatch[2], url, suffix)
-				} else {
-					newURL = fmt.Sprintf("(%s) %s", urlMatch[2], url)
-				}
 
+			// We only actually shorten the link if it would turn out shorter
+			lengthURL, lengthSuffix := chatView.shortener.CalculateShortenedLength(newURL)
+			if chatView.shortenWithExtension && (len(domain)+3+lengthURL+lengthSuffix) < len(newURL) {
+				url, suffix := chatView.shortener.Shorten(newURL)
+				newURL = fmt.Sprintf("(%s) %s%s", domain, url, suffix)
+			} else if (len(domain) + 3 + lengthURL) < len(newURL) {
+				url, _ := chatView.shortener.Shorten(newURL)
+				newURL = fmt.Sprintf("(%s) %s", domain, url)
 			}
+
+			//Fifth group is either newline embed or a greater than sign. We don't want
+			//to remove the spaces, but the greater sign is part of a non-embed-link, so
+			//we don't really care about that one.
 			if len(urlMatch) == 5 {
 				newURL = newURL + strings.TrimSuffix(urlMatch[4], ">")
 			}
+
+			//Replace whole url match with the shortened version or at least the one without
+			//the useless non-embed-link markers.
 			messageText = strings.Replace(messageText, urlMatch[0], newURL, 1)
 		}
 	}
