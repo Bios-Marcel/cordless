@@ -6,15 +6,16 @@ description: |
 
 confinement: strict
 grade: stable
-architectures: 
+architectures:
   - amd64
   - arm64
+  - armhf
 base: core18
 
 parts:
   cordless:
     plugin: go
-    go-channel: 1.12/stable
+    go-channel: 1.14/stable
     go-importpath: github.com/Bios-Marcel/cordless
     source: .
     source-type: git
@@ -23,7 +24,8 @@ parts:
       - libnotify-bin
     build-packages:
       - gcc
-    
+      - libc6-dev
+
 apps:
   cordless:
     command: bin/cordless
