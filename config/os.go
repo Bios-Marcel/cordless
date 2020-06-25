@@ -12,7 +12,7 @@ func getDefaultConfigDirectory() (string, error) {
 	configDir := os.Getenv("XDG_CONFIG_HOME")
 
 	if configDir != "" {
-		return configDir, nil
+		return filepath.Join(configDir, AppNameLowercase), nil
 	}
 
 	currentUser, userError := user.Current()
