@@ -607,7 +607,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		return autocompleteValues
 	})
 
-	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	captureFunc := func(event *tcell.EventKey) *tcell.EventKey {
 		messageToSend := window.messageInput.GetText()
 
 		if event.Modifiers() == tcell.ModAlt {
@@ -675,13 +675,46 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			return nil
 		}
 
-		if event.Key() == tcell.KeyUp && messageToSend == "" {
-			for i := len(window.chatView.data) - 1; i >= 0; i-- {
+		chooseNextMessageToEdit := func(loopStart, loopEnd int, iterNext func(int) int) *discordgo.Message {
+			if len(window.chatView.data) == 0 {
+				return nil
+			}
+
+			window.chatView.Lock()
+			defer window.chatView.Unlock()
+
+			var chooseNextMatch bool
+			for i := loopStart; i != loopEnd; i = iterNext(i) {
 				message := window.chatView.data[i]
 				if message.Author.ID == window.session.State.User.ID {
-					window.startEditingMessage(message)
-					break
+					if !chooseNextMatch && window.editingMessageID != nil && *window.editingMessageID == message.ID {
+						chooseNextMatch = true
+						continue
+					}
+
+					if window.editingMessageID == nil || chooseNextMatch {
+						return message
+					}
 				}
+			}
+
+			return nil
+		}
+
+		//When you are already typing a message, you probably don't want to risk loosing it.
+		if event.Key() == tcell.KeyUp && (messageToSend == "" || window.editingMessageID != nil) {
+			messageToEdit := chooseNextMessageToEdit(len(window.chatView.data)-1, -1, func(i int) int { return i - 1 })
+			if messageToEdit != nil {
+				window.startEditingMessage(messageToEdit)
+			}
+
+			return nil
+		}
+
+		if event.Key() == tcell.KeyDown && window.editingMessageID != nil {
+			messageToEdit := chooseNextMessageToEdit(0, len(window.chatView.data), func(i int) int { return i + 1 })
+			if messageToEdit != nil {
+				window.startEditingMessage(messageToEdit)
 			}
 
 			return nil
@@ -727,7 +760,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		return event
-	})
+	}
+	window.messageInput.SetInputCapture(captureFunc)
 
 	messageInputChan := make(chan *discordgo.Message, 200)
 	messageDeleteChan := make(chan *discordgo.Message, 50)
@@ -1150,6 +1184,7 @@ important changes of the last two versions officially released.
 	- Features
 		- you can now define a custom status
 		- shortened URLs optionally can display a file suffix (extension)
+		- You can now cycle through message in edit-mode by repeatedly hitting KeyUp/Down
 	- Bugfixes
 		- config directory path now read from "XDF_CONFIG_HOME" instead of "XDG_CONFIG_DIR"
 		- the delete message shortcut was pointing to the same value as "show spoilered message"
