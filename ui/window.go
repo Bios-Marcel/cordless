@@ -1180,7 +1180,11 @@ func getWelcomeText() string {
 Welcome to version %s of Cordless. Below you can see the most
 important changes of the last two versions officially released.
 
-[::b]UNRELEASED
+[::b]THIS VERSION
+	- Changes
+		- Token input now ingores surrounding spaces
+		- Bot token syntax is more lenient now
+[::b]20-06-26
 	- Features
 		- you can now define a custom status
 		- shortened URLs optionally can display a file suffix (extension)
