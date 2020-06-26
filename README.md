@@ -184,7 +184,7 @@ pasting shortcut.
 
 **YOUR PASSWORD IS NEVER SAVED LOCALLY.**
 
-If you need to find out how to retrieve your token, [check the wiki at](https://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token).
+If you need to find out how to retrieve your token, check [the wiki](https://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token).
 
 **Currently captcha-code login isn't supported.**
 
