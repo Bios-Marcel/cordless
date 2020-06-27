@@ -109,9 +109,9 @@ var (
 	FocusMessageContainer = addShortcut("focus_message_container", "Focus message container",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 't', tcell.ModAlt))
 	FocusCommandInput = addShortcut("focus_command_input", "Focus command input",
-		globalScope, tcell.NewEventKey(tcell.KeyCtrlT, rune(tcell.KeyCtrlT), tcell.ModCtrl))
+		globalScope, nil)
 	FocusCommandOutput = addShortcut("focus_command_output", "Focus command output",
-		globalScope, tcell.NewEventKey(tcell.KeyCtrlO, rune(tcell.KeyCtrlO), tcell.ModCtrl))
+		globalScope, nil)
 
 	ToggleUserContainer = addShortcut("toggle_user_container", "Toggle user container",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'U', tcell.ModAlt))
