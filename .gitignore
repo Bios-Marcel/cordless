@@ -2,7 +2,8 @@ cordless.rb
 cordless_darwin
 cordless_linux_64
 cordless
-cordless.exe
+cordless_64.exe
+cordless_32.exe
 *.snap
 *.xdelta*
 stage/
