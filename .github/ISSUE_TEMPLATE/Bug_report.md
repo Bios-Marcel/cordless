@@ -34,4 +34,4 @@ about: Tell us what went wrong
 | - | - |
 | OS | **TODO** |
 | Architecture | **TODO** |
-| Go version | <!-- Only applied if self-compiled via "go get" or "go build". --> |
+| Go version | <!-- Only apply if self-compiled via "go get" or "go build". Retrieve via terminal with "go version". --> |
