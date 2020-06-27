@@ -141,6 +141,9 @@ If you don't install via cordless via brew, then you should have to get
 In order to execute the following commands
 [you need to have go 1.12 or a more recent version installed](https://golang.org/doc/install).
 
+**If you have a go version lower than 1.13, you need make sure to set the
+environment variable `GO111MODULE` to `on`.**
+
 **UPDATES HAVE TO BE INSTALLED MANUALLY**
 
 You can either install the binary into your `$GOPATH/bin` by running:
