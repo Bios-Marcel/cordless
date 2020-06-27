@@ -1,7 +1,6 @@
 ---
 name: Bug report
 about: Tell us what went wrong
-
 ---
 
 ## How have you installed cordless
@@ -11,6 +10,7 @@ about: Tell us what went wrong
 - [ ] scoop
 - [ ] brew
 - [ ] go get
+- [ ] git clone & go build .
 
 ## What happened
 
@@ -24,7 +24,7 @@ about: Tell us what went wrong
 
 <!-- If there was any output, enter it here please -->
 
-## How to fix
+## Hints on what could've happened
 
 <!-- If you know how to solve this problem, tell others how -->
 
@@ -33,4 +33,5 @@ about: Tell us what went wrong
 | Key | Value |
 | - | - |
 | OS | **TODO** |
-| Architechture | **TODO** |
+| Architecture | **TODO** |
+| Go version | <!-- Only applied if self-compiled via "go get" or "go build". --> |
