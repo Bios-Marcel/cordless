@@ -118,7 +118,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 	}()
 
-	window.commandView = NewCommandView(window.ExecuteCommand)
+	window.commandView = NewCommandView(window.ExecuteCommand, window.CompleteCommand)
 	log.SetOutput(window.commandView)
 
 	for _, engine := range window.extensionEngines {
@@ -2320,6 +2320,46 @@ func (window *Window) FindCommand(name string) commands.Command {
 	}
 
 	return nil
+}
+
+//CompleteCommand take a potentially incomplet command and return the possible
+// completions for it. If a complete command is given, it will try to complete
+// with possible parametres
+func (window *Window) CompleteCommand(input string) []string {
+	parts := commands.ParseCommand(input)
+	var completions []string
+
+	if len(parts) == 1 {
+		var cmdNames []string
+		for _, cmd := range(window.commands) {
+			cmdNames = append(cmdNames, cmd.Name())
+			cmdNames = append(cmdNames, cmd.Aliases()...)
+		}
+		results := fuzzy.ScoreSearch(parts[0], cmdNames)
+		completions = append(completions, rankMap(results)...)
+	}
+	return completions
+}
+
+func rankMap(values map[string]float64) []string {
+    type Pair struct {
+        Key   string
+        Value float64
+    }
+    var strs []Pair
+    for k, v := range values {
+		if v > 0 {
+			strs = append(strs, Pair{k, v})
+		}
+    }
+    sort.Slice(strs, func(i, j int) bool {
+        return strs[i].Value > strs[j].Value
+    })
+    ranked := make([]string, len(strs))
+    for i, pair := range strs {
+        ranked[i] = pair.Key
+    }
+    return ranked
 }
 
 //ExecuteCommand tries to execute the given input as a command. The first word

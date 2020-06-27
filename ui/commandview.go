@@ -23,11 +23,12 @@ type CommandView struct {
 	commandHistory []string
 
 	onExecuteCommand func(command string)
+	onCompleteCommand func(command string)[]string
 }
 
 // NewCommandView creates a new struct containing the components necessary
 // for a command view. It also contains the state for those components.
-func NewCommandView(onExecuteCommand func(command string)) *CommandView {
+func NewCommandView(onExecuteCommand func(command string), onCompleteCommand func(command string)[]string) *CommandView {
 	commandOutput := tview.NewTextView()
 	commandOutput.SetDynamicColors(true).
 		SetWordWrap(true).
@@ -49,6 +50,7 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 		commandHistory:      make([]string, 0),
 
 		onExecuteCommand: onExecuteCommand,
+		onCompleteCommand: onCompleteCommand,
 	}
 
 	commandInput.SetInputCapture(cmdView.handleInput)
@@ -89,6 +91,21 @@ func (cmdView *CommandView) handleInput(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyPgDn {
 			handler := cmdView.commandOutput.InputHandler()
 			handler(tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone), nil)
+			return nil
+		}
+
+		if event.Key() == tcell.KeyTab {
+			command := cmdView.commandInput.GetText()
+			results := cmdView.onCompleteCommand(strings.TrimSpace(command))
+			if len(results) == 1 {
+				cmdView.commandInput.SetText(results[0] + " ")
+			} else if len(results) > 0 {
+				for _, r := range results {
+					cmds := strings.Split(r, " ")
+					cmdView.Write([]byte( cmds[len(cmds)-1] + " "))
+				}
+				cmdView.Write([]byte("\n\n"))
+			}
 			return nil
 		}
 
