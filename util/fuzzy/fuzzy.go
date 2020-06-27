@@ -221,6 +221,27 @@ func SortSearchResults(results map[string]float64) []SearchResult {
 	return arr
 }
 
+func RankMap(values map[string]float64) []string {
+    type Pair struct {
+        Key   string
+        Value float64
+    }
+    var strs []Pair
+    for k, v := range values {
+		if v > 0 {
+			strs = append(strs, Pair{k, v})
+		}
+    }
+    sort.Slice(strs, func(i, j int) bool {
+        return strs[i].Value > strs[j].Value
+    })
+    ranked := make([]string, len(strs))
+    for i, pair := range strs {
+        ranked[i] = pair.Key
+    }
+    return ranked
+}
+
 // Returns:
 // -1 if the needle contains letters the haystack does not contain,
 // or if the needle length exceeds the haystack length.

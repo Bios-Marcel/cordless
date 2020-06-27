@@ -24,6 +24,12 @@ type Command interface {
 	Aliases() []string
 }
 
+// Temporary interface while not every command is completable
+type Completable interface {
+	// Complete complete the parametres for the command
+	Complete([]string) []string
+}
+
 // ParseCommand takes an arbitrary input string and splits it into parameters.
 // The first parameter (index 0) will always be the command itself.
 func ParseCommand(input string) []string {

@@ -2328,38 +2328,25 @@ func (window *Window) FindCommand(name string) commands.Command {
 func (window *Window) CompleteCommand(input string) []string {
 	parts := commands.ParseCommand(input)
 	var completions []string
+	command := window.FindCommand(parts[0])
 
-	if len(parts) == 1 {
+	if command == nil {
 		var cmdNames []string
-		for _, cmd := range(window.commands) {
+		for _, cmd := range window.commands {
 			cmdNames = append(cmdNames, cmd.Name())
 			cmdNames = append(cmdNames, cmd.Aliases()...)
 		}
 		results := fuzzy.ScoreSearch(parts[0], cmdNames)
-		completions = append(completions, rankMap(results)...)
+		completions = append(completions, fuzzy.RankMap(results)...)
+	} else {
+		// TODO remove cast after implementing completion for all commands
+		if command, ok := command.(commands.Completable); ok {
+			for _, c := range command.Complete(parts[1:]) {
+				completions = append(completions, parts[0] + " " + c)
+			}
+		}
 	}
 	return completions
-}
-
-func rankMap(values map[string]float64) []string {
-    type Pair struct {
-        Key   string
-        Value float64
-    }
-    var strs []Pair
-    for k, v := range values {
-		if v > 0 {
-			strs = append(strs, Pair{k, v})
-		}
-    }
-    sort.Slice(strs, func(i, j int) bool {
-        return strs[i].Value > strs[j].Value
-    })
-    ranked := make([]string, len(strs))
-    for i, pair := range strs {
-        ranked[i] = pair.Key
-    }
-    return ranked
 }
 
 //ExecuteCommand tries to execute the given input as a command. The first word

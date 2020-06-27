@@ -9,6 +9,7 @@ import (
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+	"github.com/Bios-Marcel/cordless/util/fuzzy"
 )
 
 const accountDocumentation = `[orange][::u]# account command[white]
@@ -30,11 +31,42 @@ Subcommands:
 type Account struct {
 	window  *ui.Window
 	runNext chan bool
+	subcommands map[string]commands.Command
+}
+
+type add_account struct {}
+type add_current_account struct {
+	account *Account
+}
+type current_account struct {}
+type delete_account struct {}
+type list_account struct {}
+type logout_account struct {
+	account *Account
+}
+type switch_account struct {
+	account *Account
 }
 
 // NewAccount creates a ready-to-use Account command.
 func NewAccount(runNext chan bool, window *ui.Window) *Account {
-	return &Account{window: window, runNext: runNext}
+	a := &Account{window: window, runNext: runNext}
+	a.subcommands = make(map[string]commands.Command)
+	a.subcommands["add"] = &add_account{}
+	a.subcommands["add-current"] = &add_current_account{account: a}
+	a.subcommands["current"] = &current_account{}
+	a.subcommands["delete"] = &delete_account{}
+	a.subcommands["list"] = &list_account{}
+	a.subcommands["logout"] = &logout_account{account: a}
+	a.subcommands["switch"] = &switch_account{account: a}
+
+	for _, cmd := range a.subcommands {
+		for _, alias := range cmd.Aliases() {
+			a.subcommands[alias] = a.subcommands[cmd.Name()]
+		}
+	}
+
+	return a
 }
 
 // Execute runs the command piping its output into the supplied writer.
@@ -42,61 +74,37 @@ func (account *Account) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) == 0 {
 		account.PrintHelp(writer)
 	} else {
-		switch parameters[0] {
-		case "add", "create", "new":
-			if len(parameters) != 3 {
-				account.printAccountAddHelp(writer)
+		subcommand := account.subcommands[parameters[0]]
+		if subcommand != nil {
+			if len(parameters) > 1 {
+				parameters = parameters[1:]
 			} else {
-				account.addAcount(writer, parameters[1:])
+				parameters = []string{}
 			}
-		case "delete", "remove":
-			if len(parameters) != 2 {
-				account.printAccountDeleteHelp(writer)
-			} else {
-				deleteAccount(writer, parameters[1])
-			}
-		case "switch", "change":
-			if len(parameters) != 2 {
-				account.printAccountSwitchHelp(writer)
-			} else {
-				account.switchAccount(writer, parameters[1])
-			}
-		case "list":
-			if len(parameters) != 1 {
-				account.printAccountListHelp(writer)
-			} else {
-				account.listAccounts(writer)
-			}
-		case "current":
-			if len(parameters) != 1 {
-				account.printAccountCurrentHelp(writer)
-			} else {
-				account.currentAccount(writer)
-			}
-		case "add-current":
-			if len(parameters) != 2 {
-				account.printAccountAddCurrentHelp(writer)
-			} else {
-				account.addCurrentAccount(writer, parameters[1])
-			}
-		case "logout", "sign-out", "signout", "logoff":
-			if len(parameters) != 1 {
-				account.printAccountLogoutHelp(writer)
-			} else {
-				account.logout(writer)
-			}
-		default:
+			subcommand.Execute(writer, parameters)
+		} else {
 			account.PrintHelp(writer)
 		}
-
 	}
 }
 
-func (account *Account) printAccountAddHelp(writer io.Writer) {
+func (_ add_account) Name() string{
+	return "add"
+}
+
+func (_ add_account) Aliases() []string{
+	return []string{"create", "new"}
+}
+
+func (_ add_account) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage: account add <Name> <Token>")
 }
 
-func (account *Account) addAcount(writer io.Writer, parameters []string) {
+func (cmd *add_account) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 2 {
+		cmd.PrintHelp(writer)
+		return
+	}
 	newName := strings.ToLower(parameters[0])
 	for _, acc := range config.Current.Accounts {
 		if acc.Name == newName {
@@ -115,12 +123,30 @@ func (account *Account) addAcount(writer io.Writer, parameters []string) {
 	fmt.Fprintf(writer, "The account '%s' has been created successfully.\n", newName)
 }
 
-func (account *Account) printAccountDeleteHelp(writer io.Writer) {
+func (_ add_account) Complete(cmdline []string) []string {
+	return []string{}
+}
+
+func (_ delete_account) Name() string{
+	return "delete"
+}
+
+func (_ delete_account) Aliases() []string {
+	return []string{"delete", "remove"}
+}
+
+func (_ delete_account) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage `account delete <Name>`")
 }
 
-func deleteAccount(writer io.Writer, account string) {
+func (cmd delete_account) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 1 {
+		cmd.PrintHelp(writer)
+		return
+	}
+
 	var deletionSuccessful bool
+	account := parameters[0]
 
 	newAccounts := make([]*config.Account, 0)
 	for _, acc := range config.Current.Accounts {
@@ -141,16 +167,43 @@ func deleteAccount(writer io.Writer, account string) {
 
 }
 
-func (account *Account) printAccountSwitchHelp(writer io.Writer) {
+func (_ delete_account) Complete(args []string) []string {
+	var accountNames []string
+	for _, acc := range config.Current.Accounts {
+		accountNames = append(accountNames, acc.Name)
+	}
+	if len(args) == 0 {
+		return accountNames
+	} else if len(args) > 1 {
+		return []string{}
+	}
+	results := fuzzy.ScoreSearch(args[0], accountNames)
+	return fuzzy.RankMap(results)
+}
+
+func (_ switch_account) Name() string{
+	return "switch"
+}
+
+func (_ switch_account) Aliases() []string{
+	return []string{"change"}
+}
+
+func (_ switch_account) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage: account switch <Name>")
 }
 
-func (account *Account) switchAccount(writer io.Writer, accountName string) {
+func (cmd *switch_account) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 1 {
+		cmd.PrintHelp(writer)
+		return
+	}
+	accountName := parameters[0]
 	for _, acc := range config.Current.Accounts {
 		if acc.Name == accountName {
 			oldToken := config.Current.Token
 			config.Current.Token = acc.Token
-			persistError := account.saveAndRestart(writer)
+			persistError := cmd.account.saveAndRestart(writer)
 			if persistError != nil {
 				config.Current.Token = oldToken
 				commands.PrintError(writer, "Error switching accounts", persistError.Error())
@@ -162,14 +215,51 @@ func (account *Account) switchAccount(writer io.Writer, accountName string) {
 	commands.PrintError(writer, "Error switching accounts", fmt.Sprintf("No account named '%s' was found", accountName))
 }
 
-func (account *Account) logout(writer io.Writer) {
+func (cmd switch_account) Complete(args []string) []string {
+	var accountNames []string
+	for _, acc := range config.Current.Accounts {
+		if acc.Token != config.Current.Token {
+			accountNames = append(accountNames, acc.Name)
+		}
+	}
+	if len(args) == 0 {
+		return accountNames
+	} else if len(args) > 1 {
+		return []string{}
+	}
+	results := fuzzy.ScoreSearch(args[0], accountNames)
+	return fuzzy.RankMap(results)
+}
+
+
+func (_ logout_account) Name() string {
+	return "logout"
+}
+
+func (_ logout_account) Aliases() []string {
+	return []string{"logout", "sign-out", "signout", "logoff"}
+}
+
+func (_ logout_account) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, "Usage: account logout")
+}
+
+func (cmd *logout_account) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 0 {
+		cmd.PrintHelp(writer)
+		return
+	}
 	oldToken := config.Current.Token
 	config.Current.Token = ""
-	err := account.saveAndRestart(writer)
+	err := cmd.account.saveAndRestart(writer)
 	if err != nil {
 		config.Current.Token = oldToken
 		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error logging you out '%s'.\n", err.Error())
 	}
+}
+
+func (_ logout_account) Complet(_ []string) []string {
+	return []string{}
 }
 
 func (account *Account) saveAndRestart(writer io.Writer) error {
@@ -185,26 +275,51 @@ func (account *Account) saveAndRestart(writer io.Writer) error {
 	return nil
 }
 
-func (account *Account) printAccountListHelp(writer io.Writer) {
+func (_ list_account) Name() string {
+	return "list"
+}
+
+func (_ list_account) Aliases() []string {
+	return []string{}
+}
+
+func (_ list_account) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage: account list")
 }
 
-func (account *Account) listAccounts(writer io.Writer) {
+func (cmd list_account) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) > 0 {
+		cmd.PrintHelp(writer)
+		return
+	}
+
 	fmt.Fprintln(writer, "Available accounts:")
 	for _, acc := range config.Current.Accounts {
 		fmt.Fprintln(writer, "  * "+acc.Name)
 	}
 }
 
-func (account *Account) printAccountCurrentHelp(writer io.Writer) {
+func (_ list_account) Complete(_ []string) []string {
+	return []string{}
+}
+
+func (_ current_account) Name() string {
+	return "current"
+}
+
+func (_ current_account) Aliases() []string {
+	return []string{}
+}
+
+func (_ current_account) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage: account current")
 }
 
-func (account *Account) printAccountLogoutHelp(writer io.Writer) {
-	fmt.Fprintln(writer, "Usage: account logout")
-}
-
-func (account *Account) currentAccount(writer io.Writer) {
+func (cmd current_account) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 0 {
+		cmd.PrintHelp(writer)
+		return
+	}
 	var currentAccount *config.Account
 	for _, acc := range config.Current.Accounts {
 		if acc.Token == config.Current.Token {
@@ -220,12 +335,32 @@ func (account *Account) currentAccount(writer io.Writer) {
 	}
 }
 
-func (account *Account) printAccountAddCurrentHelp(writer io.Writer) {
+func (_ current_account) Complete(_ []string) []string {
+	return []string{}
+}
+
+func (_ add_current_account) Name() string {
+	return "add-current"
+}
+
+func (_ add_current_account) Aliases() []string {
+	return []string{}
+}
+
+func (_ add_current_account) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage: account add-current <Name>")
 }
 
-func (account *Account) addCurrentAccount(writer io.Writer, name string) {
-	account.addAcount(writer, []string{name, config.Current.Token})
+func (cmd *add_current_account) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 1 {
+		cmd.PrintHelp(writer)
+		return
+	}
+	cmd.account.subcommands["add"].Execute(writer, []string{parameters[0], config.Current.Token})
+}
+
+func (_ add_current_account) Complete(_ []string) []string {
+	return []string{}
 }
 
 func (account *Account) Name() string {
@@ -239,4 +374,40 @@ func (account *Account) Aliases() []string {
 // PrintHelp prints a static help page for this command
 func (account *Account) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, accountDocumentation)
+}
+
+func (account *Account) Complete(args []string) []string {
+	var subcommands []string
+	for name, _ := range account.subcommands {
+		subcommands = append(subcommands, name)
+	}
+
+	if len(args) == 0 {
+		return subcommands
+	}
+
+	name := args[0]
+	if len(args) > 1 {
+		args = args[1:]
+	} else {
+		args = []string{}
+	}
+
+	cmd := account.subcommands[name]
+	if cmd != nil {
+		// TODO remove after implementing completion for all commands
+		cmd, ok := cmd.(commands.Completable)
+		if ! ok {
+			return []string{}
+		}
+
+		var results []string
+		for _, c := range cmd.Complete(args) {
+			results = append(results, name + " " + c)
+		}
+		return results
+	} else {
+		results := fuzzy.ScoreSearch(name, subcommands)
+		return fuzzy.RankMap(results)
+	}
 }
