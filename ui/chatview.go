@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"math"
 	"regexp"
 	"strconv"
@@ -31,6 +32,7 @@ import (
 )
 
 const dashCharacter = "\u2500"
+const EMBED_TIMESTAMP_FORMAT = "2006-01-02 15:04"
 
 var (
 	successiveCustomEmojiRegex = regexp.MustCompile("<a?:.+?:\\d+(><)a?:.+?:\\d+>")
@@ -689,7 +691,105 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 	}
 	messageText = strings.Replace(messageText, "\\|", "|", -1)
 
-	return messageText
+	var hasRichEmbed bool
+	for _, embed := range message.Embeds {
+		if embed.Type == "rich" {
+			hasRichEmbed = true
+			break
+		}
+	}
+
+	if !hasRichEmbed {
+		return messageText
+	}
+
+	var messageBuffer strings.Builder
+	messageBuffer.WriteString(messageText)
+	messageBuffer.WriteRune('\n')
+
+	for _, embed := range message.Embeds {
+		if embed.Type != "rich" {
+			continue
+		}
+
+		var embedBuffer strings.Builder
+		embedBuffer.WriteString("▐ ")
+
+		var hasHeading bool
+
+		if embed.Author != nil {
+			hasHeading = true
+			embedBuffer.WriteString("**")
+			embedBuffer.WriteString(embed.Author.Name)
+			embedBuffer.WriteString("**")
+		}
+
+		if embed.Title != "" {
+			hasHeading = true
+			if embed.Author != nil {
+				embedBuffer.WriteString(" - __")
+				embedBuffer.WriteString(embed.Title)
+				embedBuffer.WriteString("__")
+			} else {
+				embedBuffer.WriteString("__")
+				embedBuffer.WriteString(embed.Title)
+				embedBuffer.WriteString("__")
+			}
+		}
+
+		if embed.Description != "" {
+			if hasHeading {
+				embedBuffer.WriteString("\n\n")
+			}
+			embedBuffer.WriteString(embed.Description)
+		}
+
+		//FIXME Might be able to improve this in order to use horizontal space more efficiently.
+		if len(embed.Fields) > 0 {
+			if hasHeading || embed.Description != "" {
+				embedBuffer.WriteRune('\n')
+			}
+
+			for index, field := range embed.Fields {
+				embedBuffer.WriteString("__")
+				embedBuffer.WriteString(field.Name)
+				embedBuffer.WriteString("__")
+				embedBuffer.WriteRune('\n')
+				embedBuffer.WriteString(field.Value)
+
+				if index != len(embed.Fields)-1 {
+					embedBuffer.WriteString("\n\n")
+				}
+			}
+		}
+
+		hasFooter := embed.Footer != nil && embed.Footer.Text != ""
+		if hasFooter {
+			//Since there's always either fields or description, we always want newlines.
+			embedBuffer.WriteString("\n\n")
+			embedBuffer.WriteString(embed.Footer.Text)
+		}
+
+		if embed.Timestamp != "" {
+			parsedTimestamp, err := discordgo.Timestamp(embed.Timestamp).Parse()
+			if err == nil {
+				if hasFooter {
+					embedBuffer.WriteString(" - ")
+				}
+				localTime := parsedTimestamp.Local()
+				embedBuffer.WriteString(localTime.Format(EMBED_TIMESTAMP_FORMAT))
+			} else {
+				log.Println("Error parsing time: " + err.Error())
+			}
+		}
+
+		messageBuffer.WriteString(strings.Replace(parseBoldAndUnderline(embedBuffer.String()), "\n", "\n▐ ", -1))
+		embedBuffer.WriteRune('\n')
+
+		//TODO embed.Timestamp
+	}
+
+	return messageBuffer.String()
 }
 
 func parseCustomEmojis(text string) string {
@@ -786,14 +886,14 @@ func (chatView *ChatView) messagePartsToColouredString(timestamp discordgo.Times
 }
 
 func parseBoldAndUnderline(messageText string) string {
-	messageTextTemp := make([]rune, 0)
+	runes := []rune(messageText)
+	messageTextTemp := make([]rune, 0, len(runes)+20)
 
 	firstBoldFound := false
 	boldOpen := false
 	firstUnderlineFound := false
 	underlineOpen := false
 
-	runes := []rune(messageText)
 	lastIndex := len(runes) - 1
 	for index, character := range runes {
 		messageTextTemp = append(messageTextTemp, character)
@@ -810,10 +910,12 @@ func parseBoldAndUnderline(messageText string) string {
 				firstBoldFound = false
 				if boldOpen {
 					boldOpen = false
+					messageTextTemp[len(messageTextTemp)-2] = '['
+					messageTextTemp[len(messageTextTemp)-1] = ':'
 					if underlineOpen {
-						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':', 'u', ']')
+						messageTextTemp = append(messageTextTemp, ':', 'u', ']')
 					} else {
-						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':', '-', ']')
+						messageTextTemp = append(messageTextTemp, ':', '-', ']')
 					}
 				} else if index != lastIndex {
 					doesClosingOneExist := false
@@ -835,7 +937,9 @@ func parseBoldAndUnderline(messageText string) string {
 						}
 
 						boldOpen = true
-						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':')
+						messageTextTemp[len(messageTextTemp)-2] = '['
+						messageTextTemp[len(messageTextTemp)-1] = ':'
+						messageTextTemp = append(messageTextTemp, ':')
 						if underlineOpen {
 							messageTextTemp = append(messageTextTemp, 'u')
 						}
@@ -850,10 +954,12 @@ func parseBoldAndUnderline(messageText string) string {
 				firstUnderlineFound = false
 				if underlineOpen {
 					underlineOpen = false
+					messageTextTemp[len(messageTextTemp)-2] = '['
+					messageTextTemp[len(messageTextTemp)-1] = ':'
 					if boldOpen {
-						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':', 'b', ']')
+						messageTextTemp = append(messageTextTemp, ':', 'b', ']')
 					} else {
-						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':', '-', ']')
+						messageTextTemp = append(messageTextTemp, ':', '-', ']')
 					}
 				} else if index != lastIndex {
 					doesClosingOneExist := false
@@ -875,7 +981,9 @@ func parseBoldAndUnderline(messageText string) string {
 						}
 
 						underlineOpen = true
-						messageTextTemp = append(messageTextTemp[:len(messageTextTemp)-2], '[', ':', ':')
+						messageTextTemp[len(messageTextTemp)-2] = '['
+						messageTextTemp[len(messageTextTemp)-1] = ':'
+						messageTextTemp = append(messageTextTemp, ':')
 						if boldOpen {
 							messageTextTemp = append(messageTextTemp, 'b')
 						}
