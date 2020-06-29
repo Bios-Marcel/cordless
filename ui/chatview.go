@@ -299,17 +299,16 @@ func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 		return
 	}
 
-	var reprint bool
-	if len(chatView.data) >= chatView.bufferSize {
+	chatFull := len(chatView.data) >= chatView.bufferSize
+	if chatFull {
 		idToDrop := chatView.data[0].ID
 		delete(chatView.showSpoilerContent, idToDrop)
 		delete(chatView.formattedMessages, idToDrop)
 		chatView.data = append(chatView.data[1:], message)
-		reprint = true
 
 		//Moving up the selection, since we have removed the first message. If
 		//the previously selected message was the first message, then no
-		// message will be selected.
+		//message will be selected.
 		if chatView.selection > -1 {
 			chatView.selection--
 		}
@@ -319,39 +318,35 @@ func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 		chatView.data = append(chatView.data, message)
 	}
 
-	var newText string
 	formattedMessage, messageAlreadyFormatted := chatView.formattedMessages[message.ID]
-	if messageAlreadyFormatted {
-		newText = formattedMessage
-	} else {
+	if !messageAlreadyFormatted {
 		if isBlocked {
-			newText = chatView.messagePartsToColouredString(message.Timestamp, "Blocked user", "Blocked message")
+			formattedMessage = chatView.messagePartsToColouredString(message.Timestamp, "Blocked user", "Blocked message")
 		} else {
-			newText = chatView.formatMessage(message)
+			formattedMessage = chatView.formatMessage(message)
 		}
-		chatView.formattedMessages[message.ID] = newText
+		chatView.formattedMessages[message.ID] = formattedMessage
 	}
 
-	if reprint {
+	if chatFull {
 		chatView.Reprint()
 	} else {
-		fmt.Fprint(chatView.internalTextView, "\n[\""+intToString(len(chatView.data)-1)+"\"]"+newText)
+		fmt.Fprint(chatView.internalTextView, "\n[\""+intToString(len(chatView.data)-1)+"\"]"+formattedMessage)
 	}
 }
 
 //AddMessage add an additional message to the ChatView.
 func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
+
+	newMessageTime, _ := message.Timestamp.Parse()
+	newMessageTimeLocal := newMessageTime.Local()
 	if len(chatView.data) > 0 {
 		previousMessageTime, _ := chatView.data[len(chatView.data)-1].Timestamp.Parse()
-		newMessageTime, _ := message.Timestamp.Parse()
-		newMessageTimeLocal := newMessageTime.Local()
 		if !times.AreDatesTheSameDay(previousMessageTime.Local(), newMessageTimeLocal) {
 			fmt.Fprint(chatView.internalTextView, chatView.createDateDelimiter(newMessageTimeLocal.Format(chatView.format)))
 		}
 	} else {
-		newMessageTime, _ := message.Timestamp.Parse()
-		newMessageTimeLocal := newMessageTime.Local()
 		fmt.Fprint(chatView.internalTextView, chatView.createDateDelimiter(newMessageTimeLocal.Format(chatView.format)))
 	}
 
