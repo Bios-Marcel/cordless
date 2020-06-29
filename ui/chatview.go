@@ -459,7 +459,12 @@ func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 	} else if message.Type == discordgo.MessageTypeRecipientRemove {
 		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]removed " + message.Mentions[0].Username + " from the group."
 	} else if message.Type == discordgo.MessageTypeChannelFollowAdd {
-		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]has added '" + message.Content + "' to this channel"
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]has added '" + message.Content + "' to this channel."
+	} else if message.Type == discordgo.MessageTypeUserPremiumGuildSubscription ||
+		message.Type == discordgo.MessageTypeUserPremiumGuildSubscriptionTierOne ||
+		message.Type == discordgo.MessageTypeUserPremiumGuildSubscriptionTierThree ||
+		message.Type == discordgo.MessageTypeUserPremiumGuildSubscriptionTierTwo {
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]has boosted this server."
 	}
 
 	//TODO Support boost messages; Would be handy to see what they look like first.
