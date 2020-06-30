@@ -707,13 +707,19 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 	messageBuffer.WriteString(messageText)
 	messageBuffer.WriteRune('\n')
 
+	defaultColor := tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)
+
 	for _, embed := range message.Embeds {
 		if embed.Type != "rich" {
 			continue
 		}
 
 		var embedBuffer strings.Builder
-		embedBuffer.WriteString("▐ ")
+		color := fmt.Sprintf("[#%06x]", embed.Color)
+		embedBuffer.WriteString(color)
+		embedBuffer.WriteString("▐ [")
+		embedBuffer.WriteString(defaultColor)
+		embedBuffer.WriteRune(']')
 
 		var hasHeading bool
 
@@ -723,6 +729,8 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 			embedBuffer.WriteString(embed.Author.Name)
 			embedBuffer.WriteString("**")
 		}
+
+		log.Printf("%d %d %d", embed.Color&255, embed.Color>>8&255, embed.Color>>16&255)
 
 		if embed.Title != "" {
 			hasHeading = true
@@ -783,7 +791,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 			}
 		}
 
-		messageBuffer.WriteString(strings.Replace(parseBoldAndUnderline(embedBuffer.String()), "\n", "\n▐ ", -1))
+		messageBuffer.WriteString(strings.Replace(parseBoldAndUnderline(embedBuffer.String()), "\n", "\n"+color+"▐["+defaultColor+"] ", -1))
 		embedBuffer.WriteRune('\n')
 
 		//TODO embed.Timestamp
