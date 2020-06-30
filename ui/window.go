@@ -1181,6 +1181,8 @@ Welcome to version %s of Cordless. Below you can see the most
 important changes of the last two versions officially released.
 
 [::b]THIS VERSION
+	- Features
+		- Embeds can now be rendered
 	- Changes
 		- Token input now ingores surrounding spaces
 		- Bot token syntax is more lenient now
