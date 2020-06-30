@@ -29,7 +29,7 @@ RELEASE_DATE="$(date +%Y-%m-%d)"
 export RELEASE_DATE
 
 #
-# Setting the cordless versionnumber to the current release date.
+# Setting the cordless version-number to the current release date.
 # This number can be requested on startup and is only used for that purpose.
 #
 # This has to happen before building, since version numbers are incorrect otherwise.
@@ -72,7 +72,7 @@ EXE_32_HASH="$(sha256sum ./$BIN_WINDOWS_32 | cut -f 1 -d " ")"
 export EXE_32_HASH
 
 #
-# Substituting the variables in the scoop manifest tempalte into the actual
+# Substituting the variables in the scoop manifest template into the actual
 # manifest.
 #
 
@@ -95,7 +95,7 @@ git push --tags
 #
 # Build and push the snap package.
 #
-# It is important that this happens after pusing the tag, because otherwise
+# It is important that this happens after pushing the tag, because otherwise
 # the version of the built snap package will end up being `DATE_dirty`.
 #
 
@@ -111,7 +111,7 @@ snapcraft upload "cordless_${RELEASE_DATE}_amd64.snap" --release stable
 RELEASE_BODY="$(git log --pretty=oneline --abbrev-commit "$(git describe --abbrev=0 "$(git describe --abbrev=0)"^)".."$(git describe --abbrev=0)")"
 
 #
-# Temprarily disable that the script exists on subcommand failure.
+# Temporarily disable that the script exists on subcommand failure.
 #
 
 set +e
