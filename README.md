@@ -10,9 +10,6 @@
   <a href="https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master">
     <img src=https://img.shields.io/appveyor/ci/Bios-Marcel/cordless?label=windows&logo=windows&logoColor=white">
   </a>
-  <a href="https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml?">
-    <img src="https://builds.sr.ht/~biosmarcel/cordless/freebsd.yml.svg">
-  </a>
   <a href="https://codecov.io/gh/Bios-Marcel/cordless">
      <img src="https://codecov.io/gh/Bios-Marcel/cordless/branch/master/graph/badge.svg">
   </a>
@@ -25,40 +22,58 @@
 
 - [Credits](#credits)
 - [How to install it](#installation)
-- [Installing on Linux](#installing-on-linux)
-  - [Snap](#snap)
-  - [Arch based Linux distributions](#arch-based-linux-distributions)
-- [Installing on Windows](#installing-on-windows)
-- [Installing on macOS](#installing-on-macos)
-- [Building from source](#building-from-source)
+  - [Building from source](#building-from-source)
+  - [Installing on Linux](#installing-on-linux)
+  - [Installing on Windows](#installing-on-windows)
+  - [Installing on macOS](#installing-on-macos)
 - [Login](#login)
 - [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
 - [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
 - [Contributing](#contributing)
-- [Why should or shouldn't you use this project](#why-should-or-shouldnt-you-use-this-project)
+- [This project isn't for you, if](#this-project-isnt-for-you-if)
 - [Similar projects](#similar-projects)
 - [Troubleshooting](#troubleshooting)
 
 **WARNING: Third party clients are discouraged and against the Discord TOS.**
 
-Cordless is supposed to be a custom [Discord](https://discordapp.com) client
-that aims to have a low memory footprint and be aimed at power-users.
+Cordless is a a custom [Discord](https://discordapp.com) client that aims to
+have a low memory footprint and be aimed at power-users.
 
 The application only uses the official Discord API and doesn't send data to
-any third party. However, this application is not a official product
-by Discord Inc.
+third parties. However, this application is not a official product by Discord Inc.
 
 ![Demo Screenshot](.github/images/chat-demo.png)
 
 ## Installation
 
+### Building from source
+
+In order to execute the following command, you need to install go 1.13 or higher.
+You can find golang packages at (https://golang.org/doc/install).
+
+**UPDATES HAVE TO BE INSTALLED MANUALLY**
+
+Make sure `$GOPATH/bin` is in your systems `PATH` variable, since the
+binary will be put into that folder. Afterwards install or update cordless
+via the command:
+
+```shell
+go get -u github.com/Bios-Marcel/cordless
+```
+
+Note:
+
+* X11 users need `xclip` in order to copy and paste.
+* Wayland users need `wl-clipboard` in order to copy and paste.
+* Mac OS users probably want `pngpaste` in order to copy and paste.
+
 ### Installing on Linux
 
 #### Snap
 
-On linux the recommended way of installation is the snap.
+**Currently I can't release new snap versions due to a bug!**
 
-Simply run (Might require sudo):
+Run (Might require sudo):
 
 ```shell
 snap install cordless
@@ -70,37 +85,13 @@ Snap will automatically install updates.
 
 On Arch based distributions, you can use the AUR package to install cordless:
 
-##### Manually:
-
 ```shell
 $ git clone https://aur.archlinux.org/cordless-git.git
 $ cd cordless-git
 $ makepkg -sric
 ```
 
-##### With AUR Helpers:
-
-###### yay:
-
-```shell
-$ yay -Syu cordless-git
-```
-or
-```shell
-$ yay -S cordless-git
-```
-
-###### trizen:
-
-```shell
-$ trizen -S cordless-git
-```
-
-###### pacaur
-
-```shell
-$ pacaur -S cordless-git
-```
+or use your favourite AUR helper.
 
 ### Installing on Windows
 
@@ -135,47 +126,6 @@ brew install cordless
 
 If you don't install via cordless via brew, then you should have to get
 `pngpaste` in order to be able to paste image data.
-
-### Building from source
-
-In order to execute the following commands
-[you need to have go 1.12 or a more recent version installed](https://golang.org/doc/install).
-
-**If you have a go version lower than 1.13, you need make sure to set the
-environment variable `GO111MODULE` to `on`.**
-
-**UPDATES HAVE TO BE INSTALLED MANUALLY**
-
-You can either install the binary into your `$GOPATH/bin` by running:
-
-```shell
-go get -u github.com/Bios-Marcel/cordless
-```
-
-Which you can then execute by running the executable, which lies at
-`$GOPATH/bin/cordless`. In order to be able to run this from your terminal,
-`$GOPATH/bin` has to be in your `PATH` variable. The very same command can
-be used for updating.
-
-or you manually grab the source:
-
-```shell
-git clone https://github.com/Bios-Marcel/cordless
-cd cordless
-go build .
-```
-
-If done this way, updates have to be installed via:
-
-```shell
-cd cordless
-git pull
-go build .
-```
-
-Note:
-* X11 users need `xclip` in order to copy and paste.
-* Wayland users need `wl-clipboard` in order to copy and paste.
 
 ### Login
 
@@ -231,21 +181,12 @@ In order to find answers to common questions, check out the FAQ in the wiki:
 
 https://github.com/Bios-Marcel/cordless/wiki/FAQ
 
-## Why should or shouldn't you use this project
-
-Reasons to use it:
-
-- Your PC is not very powerful
-- You're on a mobile device and value your battery life
-- You want to reduce your bandwidth usage
-- You just like terminal applications
-
-Reasons not to use it:
+## This project isn't for you, if
 
 - You like fancy GUI
 - You want to see images, videos and whatnot inside of the application itself
-- You need the voice/video calling features (This might soon change!)
-- You need to administrate a server (no administration features yet)
+- You need the voice/video calling features
+- You need to manage or moderate server
 
 ## Contributing
 
