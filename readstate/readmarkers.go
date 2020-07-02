@@ -5,8 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/Bios-Marcel/discordgo"
+
+	"github.com/Bios-Marcel/cordless/discordutil"
 )
 
 var (
@@ -208,8 +209,12 @@ func HasBeenRead(channel *discordgo.Channel, lastMessageID string) bool {
 
 	// If there was no message, lastMessageID would've been empty, therefore
 	// this check only makes sense if the cache is filled already.
-	if len(channel.Messages) > 0 && channel.Messages[len(channel.Messages)-1].Author.ID == state.User.ID {
-		return true
+	if len(channel.Messages) > 0 {
+		lastMessage := channel.Messages[len(channel.Messages)-1]
+		//I once had a crash here running into a nil-dereference, so I assume the author must've been null.
+		if lastMessage != nil && lastMessage.Author != nil && lastMessage.Author.ID == state.User.ID {
+			return true
+		}
 	}
 
 	data, present := data[channel.ID]

@@ -1,15 +1,19 @@
 package ui
 
 import (
+	"fmt"
 	"sort"
+
+	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/Bios-Marcel/cordless/readstate"
-	"github.com/gdamore/tcell"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
-	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
+
+	"github.com/Bios-Marcel/cordless/config"
 )
 
 type privateChannelState int
@@ -54,7 +58,9 @@ func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 		SetCycleSelection(true).
 		SetSelectedFunc(privateList.onNodeSelected).
 		SetBorder(true).
-		SetIndicateOverflow(true)
+		SetIndicateOverflow(true).
+		SetTitle("DMs").
+		SetTitleAlign(tview.AlignLeft)
 
 	privateList.internalTreeView.GetRoot().AddChild(privateList.chatsNode)
 
@@ -63,6 +69,14 @@ func NewPrivateChatList(state *discordgo.State) *PrivateChatList {
 	}
 
 	return privateList
+}
+
+func (privateList *PrivateChatList) setNotificationCount(count int) {
+	if count == 0 {
+		privateList.internalTreeView.SetTitle("DMs")
+	} else {
+		privateList.internalTreeView.SetTitle(fmt.Sprintf("DMs[%s](%d)", tviewutil.ColorToHex(config.GetTheme().AttentionColor), count))
+	}
 }
 
 func (privateList *PrivateChatList) onNodeSelected(node *tview.TreeNode) {
@@ -214,6 +228,7 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channel.ID {
 			privateList.privateChannelStates[node] = unread
+			privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 			if vtxxx {
 				node.SetAttributes(tcell.AttrBlink)
 			} else {
@@ -224,12 +239,24 @@ func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Chann
 	}
 }
 
+func (privateList *PrivateChatList) amountOfUnreadChannels() int {
+	var amount int
+	for _, node := range privateList.chatsNode.GetChildren() {
+		if privateList.privateChannelStates[node] == unread {
+			amount++
+		}
+	}
+
+	return amount
+}
+
 // MarkChannelAsRead marks a channel as read if it isn't loaded already
 func (privateList *PrivateChatList) MarkChannelAsRead(channelID string) {
 	for _, node := range privateList.chatsNode.GetChildren() {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channelID {
 			if privateList.privateChannelStates[node] != loaded {
+				privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 				privateList.privateChannelStates[node] = read
 				if vtxxx {
 					node.SetAttributes(tcell.AttrNone)
@@ -278,6 +305,7 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 	for node, state := range privateList.privateChannelStates {
 		if state == loaded {
 			privateList.privateChannelStates[node] = read
+			privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 			if vtxxx {
 				node.SetAttributes(tcell.AttrNone)
 			} else {
@@ -344,6 +372,7 @@ FRIEND_LOOP:
 	}
 
 	privateList.internalTreeView.SetCurrentNode(privateList.chatsNode)
+	privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 }
 
 // GetComponent returns the TreeView component that is used.

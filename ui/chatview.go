@@ -730,8 +730,6 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 			embedBuffer.WriteString("**")
 		}
 
-		log.Printf("%d %d %d", embed.Color&255, embed.Color>>8&255, embed.Color>>16&255)
-
 		if embed.Title != "" {
 			hasHeading = true
 			if embed.Author != nil {

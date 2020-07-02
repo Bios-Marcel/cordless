@@ -37,11 +37,7 @@ import (
 	"github.com/Bios-Marcel/cordless/util/maths"
 )
 
-const (
-	guildPageName    = "Guilds"
-	privatePageName  = "Private"
-	userInactiveTime = 10 * time.Second
-)
+const userInactiveTime = 10 * time.Second
 
 var (
 	shortcutsDialogShortcut = tcell.NewEventKey(tcell.KeyCtrlK, rune(tcell.KeyCtrlK), tcell.ModCtrl)
@@ -58,8 +54,9 @@ type Window struct {
 	dialogTextView    *tview.TextView
 	currentContainer  tview.Primitive
 
-	leftArea    *tview.Pages
+	leftArea    *tview.Flex
 	guildList   *GuildList
+	guildPage   *tview.Flex
 	channelTree *ChannelTree
 	privateList *PrivateChatList
 
@@ -95,8 +92,14 @@ type Window struct {
 
 	doRestart chan bool
 
-	bareChat bool
+	bareChat   bool
+	activeView ActiveView
 }
+
+type ActiveView bool
+
+const Guilds ActiveView = true
+const Dms ActiveView = false
 
 //NewWindow constructs the whole application window and also registers all
 //necessary handlers and functions. If this function returns an error, we can't
@@ -106,6 +109,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		doRestart:        doRestart,
 		session:          session,
 		app:              app,
+		activeView:       Guilds,
 		extensionEngines: []scripting.Engine{js.New()},
 		userActiveTimer:  time.NewTimer(userInactiveTime),
 		messageLoader:    discordutil.CreateMessageLoader(session),
@@ -139,10 +143,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	autocompleteView.SetBorder(true)
 	autocompleteView.SetBorderSides(false, true, false, true)
 
-	window.leftArea = tview.NewPages()
+	window.leftArea = tview.NewFlex().SetDirection(tview.FlexRow)
 
-	guildPage := tview.NewFlex()
-	guildPage.SetDirection(tview.FlexRow)
+	window.guildPage = tview.NewFlex()
+	window.guildPage.SetDirection(tview.FlexRow)
 
 	channelTree := NewChannelTree(window.session.State)
 	window.channelTree = channelTree
@@ -165,6 +169,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	discordutil.SortGuilds(window.session.State.Settings, guilds)
 	guildList := NewGuildList(guilds, window)
+	window.guildList = guildList
+	window.updateUnreadGuildAmount(guildList.GetRoot())
 	guildList.SetOnGuildSelect(func(node *tview.TreeNode, guildID string) {
 		if window.selectedGuild != nil && window.selectedGuildNode != nil {
 			window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
@@ -219,51 +225,18 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	})
 
-	window.guildList = guildList
-
 	window.registerGuildHandlers()
 	window.registerGuildMemberHandlers()
 
-	if config.Current.MouseEnabled {
-		switchToPrivateButton := tview.NewButton("Show PMs")
-		switchToPrivateButton.SetBorderColor(config.GetTheme().PrimitiveBackgroundColor)
-		switchToPrivateButton.SetSelectedFunc(func() {
-			window.SwitchToFriendsPage()
-		})
-		switchToPrivateButtonInsets := tview.NewFlex().SetDirection(tview.FlexColumn)
-		switchToPrivateButtonInsets.AddItem(tview.NewBox(), 1, 0, false)
-		switchToPrivateButtonInsets.AddItem(switchToPrivateButton, 0, 1, false)
-		switchToPrivateButtonInsets.AddItem(tview.NewBox(), 1, 0, false)
-
-		guildPage.AddItem(switchToPrivateButtonInsets, 1, 0, false)
-	}
-	guildPage.AddItem(guildList, 0, 1, true)
-	guildPage.AddItem(channelTree, 0, 2, false)
-
-	window.leftArea.AddPage(guildPageName, guildPage, true, false)
+	window.guildPage.AddItem(guildList, 0, 1, true)
+	window.guildPage.AddItem(channelTree, 0, 2, false)
 
 	window.privateList = NewPrivateChatList(window.session.State)
 	window.privateList.Load()
 	window.registerPrivateChatsHandler()
 
-	if config.Current.MouseEnabled {
-		privatePage := tview.NewFlex().SetDirection(tview.FlexRow)
-		switchToGuildButton := tview.NewButton("Show Guilds")
-		switchToGuildButton.SetBorderColor(config.GetTheme().PrimitiveBackgroundColor)
-		switchToGuildButton.SetSelectedFunc(func() {
-			window.SwitchToGuildsPage()
-		})
-		switchToGuildButtonInsets := tview.NewFlex().SetDirection(tview.FlexColumn)
-		switchToGuildButtonInsets.AddItem(tview.NewBox(), 1, 0, false)
-		switchToGuildButtonInsets.AddItem(switchToGuildButton, 0, 1, false)
-		switchToGuildButtonInsets.AddItem(tview.NewBox(), 1, 0, false)
-		privatePage.AddItem(switchToGuildButtonInsets, 1, 0, false)
-		privatePage.AddItem(window.privateList.GetComponent(), 0, 1, false)
-
-		window.leftArea.AddPage(privatePageName, privatePage, true, false)
-	} else {
-		window.leftArea.AddPage(privatePageName, window.privateList.GetComponent(), true, false)
-	}
+	window.leftArea.AddItem(window.privateList.GetComponent(), 1, 0, false)
+	window.leftArea.AddItem(window.guildPage, 0, 1, false)
 
 	window.privateList.SetOnChannelSelect(func(node *tview.TreeNode, channelID string) {
 		channel, stateError := window.session.State.Channel(channelID)
@@ -629,10 +602,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				if window.userList.internalTreeView.IsVisible() {
 					window.app.SetFocus(window.userList.internalTreeView)
 				} else {
-					if window.leftArea.GetCurrentPage() == guildPageName {
+					if window.activeView == Guilds {
 						window.app.SetFocus(window.channelTree)
 						return nil
-					} else if window.leftArea.GetCurrentPage() == privatePageName {
+					} else if window.activeView == Dms {
 						window.app.SetFocus(window.privateList.internalTreeView)
 						return nil
 					}
@@ -641,10 +614,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			}
 
 			if event.Key() == tcell.KeyLeft {
-				if window.leftArea.GetCurrentPage() == guildPageName {
+				if window.activeView == Guilds {
 					window.app.SetFocus(window.channelTree)
 					return nil
-				} else if window.leftArea.GetCurrentPage() == privatePageName {
+				} else if window.activeView == Dms {
 					window.app.SetFocus(window.privateList.internalTreeView)
 					return nil
 				}
@@ -898,10 +871,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			}
 
 			if event.Key() == tcell.KeyLeft {
-				if window.leftArea.GetCurrentPage() == guildPageName {
+				if window.activeView == Guilds {
 					window.app.SetFocus(window.guildList)
 					return nil
-				} else if window.leftArea.GetCurrentPage() == guildPageName {
+				} else if window.activeView == Guilds {
 					window.app.SetFocus(window.privateList.internalTreeView)
 					return nil
 				}
@@ -911,10 +884,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				if window.userList.internalTreeView.IsVisible() {
 					window.app.SetFocus(window.userList.internalTreeView)
 				} else {
-					if window.leftArea.GetCurrentPage() == guildPageName {
+					if window.activeView == Guilds {
 						window.app.SetFocus(window.guildList)
 						return nil
-					} else if window.leftArea.GetCurrentPage() == guildPageName {
+					} else if window.activeView == Guilds {
 						window.app.SetFocus(window.privateList.internalTreeView)
 						return nil
 					}
@@ -944,10 +917,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	newUserListHandler := func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers() == tcell.ModAlt {
 			if event.Key() == tcell.KeyRight {
-				if window.leftArea.GetCurrentPage() == guildPageName {
+				if window.activeView == Guilds {
 					window.app.SetFocus(window.guildList)
 					return nil
-				} else if window.leftArea.GetCurrentPage() == guildPageName {
+				} else if window.activeView == Guilds {
 					window.app.SetFocus(window.privateList.internalTreeView)
 					return nil
 				}
@@ -1182,8 +1155,11 @@ important changes of the last two versions officially released.
 
 [::b]THIS VERSION
 	- Features
+		- Notifications for servers and DMs are now displayed in the containers header row 
 		- Embeds can now be rendered
 	- Changes
+		- The button to switch between DMs and servers is gone. Instead you can
+		  click the containers, since the header row is always visible now
 		- Token input now ingores surrounding spaces
 		- Bot token syntax is more lenient now
 [::b]20-06-26
@@ -1423,6 +1399,26 @@ func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.Tr
 			guildNode.SetColor(tview.Styles.PrimaryTextColor)
 		}
 	}
+
+	//FIXME Lazy and dumb way to do this.
+	window.updateUnreadGuildAmount(guildNode.GetParent())
+}
+
+func (window *Window) updateUnreadGuildAmount(rootNode *tview.TreeNode) {
+	if rootNode != nil {
+		var notificationAmount int
+		for _, child := range rootNode.GetChildren() {
+			if !readstate.HasGuildBeenRead((child.GetReference()).(string)) {
+				notificationAmount++
+			}
+		}
+
+		if notificationAmount == 0 {
+			window.guildList.SetTitle("Servers")
+		} else {
+			window.guildList.SetTitle(fmt.Sprintf("Servers[%s](%d)", tviewutil.ColorToHex(config.GetTheme().AttentionColor), notificationAmount))
+		}
+	}
 }
 
 // prepareMessage prepares a message for being sent to the discord API.
@@ -1658,6 +1654,9 @@ func (window *Window) registerMouseFocusListeners() {
 
 	window.guildList.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
+			if window.activeView != Guilds {
+				window.SwitchToGuildsPage()
+			}
 			window.app.SetFocus(window.guildList)
 			return true
 		}
@@ -1686,8 +1685,10 @@ func (window *Window) registerMouseFocusListeners() {
 
 	window.privateList.internalTreeView.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
-			window.app.SetFocus(window.privateList.internalTreeView)
-
+			if window.activeView != Dms {
+				window.SwitchToFriendsPage()
+				window.app.SetFocus(window.privateList.internalTreeView)
+			}
 			return true
 		}
 
@@ -1812,7 +1813,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 				//Avoid unnecessary drawing if the updates wouldn't be visible either way.
 				//FIXME Useful to use locking here?
-				if window.leftArea.GetCurrentPage() == privatePageName {
+				if window.activeView == Dms {
 					window.app.QueueUpdateDraw(func() {
 						window.privateList.ReorderChannelList()
 					})
@@ -2266,7 +2267,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	} else if shortcuts.FocusMessageContainer.Equals(event) {
 		window.app.SetFocus(window.chatView.internalTextView)
 	} else if shortcuts.FocusUserContainer.Equals(event) {
-		if window.leftArea.GetCurrentPage() == guildPageName && window.userList.internalTreeView.IsVisible() {
+		if window.activeView == Guilds && window.userList.internalTreeView.IsVisible() {
 			window.app.SetFocus(window.userList.internalTreeView)
 		}
 	} else if shortcuts.FocusMessageInput.Equals(event) {
@@ -2501,20 +2502,21 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 //see the servers and their channels. In additional to that, it also shows the
 //user list in case the user didn't explicitly hide it.
 func (window *Window) SwitchToGuildsPage() {
-	if window.leftArea.GetCurrentPage() != guildPageName {
-		window.leftArea.SwitchToPage(guildPageName)
-		window.RefreshLayout()
-	}
+	window.leftArea.RemoveAllItems()
+	window.leftArea.AddItem(window.privateList.GetComponent(), 1, 0, false)
+	window.leftArea.AddItem(window.guildPage, 0, 1, false)
+	window.activeView = Guilds
+
 }
 
 //SwitchToFriendsPage switches the left side of the layout over to the view
 //where you can see your private chats and groups. In addition to that it
 //hides the user list.
 func (window *Window) SwitchToFriendsPage() {
-	if window.leftArea.GetCurrentPage() != privatePageName {
-		window.leftArea.SwitchToPage(privatePageName)
-		window.RefreshLayout()
-	}
+	window.leftArea.RemoveAllItems()
+	window.leftArea.AddItem(window.guildList, 1, 0, false)
+	window.leftArea.AddItem(window.privateList.GetComponent(), 0, 1, false)
+	window.activeView = Dms
 }
 
 // Switches to the previous channel and layout.
@@ -2534,9 +2536,8 @@ func (window *Window) SwitchToPreviousChannel() error {
 	// Switch to appropriate layout.
 	switch window.previousChannel.Type {
 	case discordgo.ChannelTypeDM, discordgo.ChannelTypeGroupDM:
-		if window.leftArea.GetCurrentPage() != privatePageName {
-			window.leftArea.SwitchToPage(privatePageName)
-		}
+		window.SwitchToFriendsPage()
+
 		window.privateList.onChannelSelect(window.previousChannelNode, window.previousChannel.ID)
 	case discordgo.ChannelTypeGuildText:
 		_, err := window.session.State.Guild(window.previousGuild.ID)
@@ -2548,10 +2549,7 @@ func (window *Window) SwitchToPreviousChannel() error {
 		if !discordutil.HasReadMessagesPermission(window.previousChannel.ID, window.session.State) {
 			return fmt.Errorf("No read permissions for channel: %s", window.previousChannel.Name)
 		}
-		// Select guild.
-		if window.leftArea.GetCurrentPage() != guildPageName {
-			window.leftArea.SwitchToPage(guildPageName)
-		}
+		window.SwitchToGuildsPage()
 		window.guildList.SetCurrentNode(window.previousGuildNode)
 		window.guildList.onGuildSelect(window.previousGuildNode, window.previousGuild.ID)
 		window.channelTree.SetCurrentNode(window.previousChannelNode)
@@ -2644,7 +2642,6 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	go func() {
 		readstate.UpdateRead(window.session, channel, channel.LastMessageID)
-
 		// Here we make the assumption that the channel we are loading must be part
 		// of the currently loaded guild, since we don't allow loading a channel of
 		// a guilder otherwise.

@@ -1,10 +1,11 @@
 package ui
 
 import (
-	"github.com/Bios-Marcel/cordless/config"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/tview"
+
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 // GuildList is the UI component to hold all user guilds and allow loading
@@ -29,6 +30,7 @@ func NewGuildList(guilds []*discordgo.Guild, window *Window) *GuildList {
 
 	root := tview.NewTreeNode("")
 	guildList.SetRoot(root)
+	guildList.SetTitle("Servers").SetTitleAlign(tview.AlignLeft)
 	guildList.SetSelectedFunc(func(node *tview.TreeNode) {
 		guildID, ok := node.GetReference().(string)
 		if ok && guildList.onGuildSelect != nil {
