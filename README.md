@@ -36,7 +36,7 @@
 
 **WARNING: Third party clients are discouraged and against the Discord TOS.**
 
-Cordless is a a custom [Discord](https://discordapp.com) client that aims to
+Cordless is a custom [Discord](https://discordapp.com) client that aims to
 have a low memory footprint and be aimed at power-users.
 
 The application only uses the official Discord API and doesn't send data to
