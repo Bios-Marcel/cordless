@@ -2203,18 +2203,18 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
+	// Maybe compare directly to table?
+	window.userActive = true
+	window.userActiveTimer.Reset(userInactiveTime)
+
 	if shortcuts.ToggleBareChat.Equals(event) {
 		window.toggleBareChat()
 		return nil
 	}
 
-	// Maybe compare directly to table?
 	if window.currentContainer != window.rootContainer {
 		return event
 	}
-
-	window.userActive = true
-	window.userActiveTimer.Reset(userInactiveTime)
 
 	if window.dialogReplacement.IsVisible() {
 		return event
