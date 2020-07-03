@@ -2,11 +2,12 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/Bios-Marcel/cordless/util/files"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/Bios-Marcel/cordless/util/files"
 )
 
 const (
@@ -52,12 +53,14 @@ var (
 		ShortenWithExtension:                   false,
 		ShortenerPort:                          63212,
 		DesktopNotifications:                   true,
-		ShowPlaceholderForBlockedMessages:      true,
-		DontShowUpdateNotificationFor:          "",
-		ShowUpdateNotifications:                true,
-		IndicateChannelAccessRestriction:       false,
-		ShowBottomBar:                          true,
-		ImageViewer:                            "feh",
+		DesktopNotificationsUserInactivityThreshold: 10,
+		DesktopNotificationsForLoadedChannel:        true,
+		ShowPlaceholderForBlockedMessages:           true,
+		DontShowUpdateNotificationFor:               "",
+		ShowUpdateNotifications:                     true,
+		IndicateChannelAccessRestriction:            false,
+		ShowBottomBar:                               true,
+		ImageViewer:                                 "feh",
 	}
 )
 
@@ -114,6 +117,15 @@ type Config struct {
 	// DesktopNotifications decides whether a popup will be shown in the users
 	// system when a notification needs to be sent.
 	DesktopNotifications bool
+
+	// DesktopNotificationsUserInactivityThreshold defines how many seconds
+	// have to pass between now and the last user input (key stroke) in order
+	// for a notification to be sent.
+	DesktopNotificationsUserInactivityThreshold int
+
+	// DesktopNotificationsForLoadedChannel Defines whether notifications are
+	// also sent for the currently selected (loaded) channel.
+	DesktopNotificationsForLoadedChannel bool
 
 	// ShowPlaceholderForBlockedMessages will cause blocked message to shown
 	// as a placeholder message, replacing user and message with generic text.

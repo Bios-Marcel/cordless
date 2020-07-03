@@ -37,8 +37,6 @@ import (
 	"github.com/Bios-Marcel/cordless/util/maths"
 )
 
-const userInactiveTime = 10 * time.Second
-
 var (
 	shortcutsDialogShortcut = tcell.NewEventKey(tcell.KeyCtrlK, rune(tcell.KeyCtrlK), tcell.ModCtrl)
 )
@@ -111,16 +109,18 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		app:              app,
 		activeView:       Guilds,
 		extensionEngines: []scripting.Engine{js.New()},
-		userActiveTimer:  time.NewTimer(userInactiveTime),
 		messageLoader:    discordutil.CreateMessageLoader(session),
 	}
 
-	go func() {
-		for {
-			<-window.userActiveTimer.C
-			window.userActive = false
-		}
-	}()
+	if config.Current.DesktopNotificationsUserInactivityThreshold > 0 {
+		window.userActiveTimer = time.NewTimer(time.Duration(config.Current.DesktopNotificationsUserInactivityThreshold) * time.Second)
+		go func() {
+			for {
+				<-window.userActiveTimer.C
+				window.userActive = false
+			}
+		}()
+	}
 
 	window.commandView = NewCommandView(window.ExecuteCommand)
 	log.SetOutput(window.commandView)
@@ -1827,45 +1827,47 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				continue
 			}
 
-			if window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID {
-				mentionsCurrentUser := discordutil.MentionsCurrentUserExplicitly(window.session.State, message)
-				if !window.userActive && config.Current.DesktopNotifications {
-					if mentionsCurrentUser ||
-						//Always show notification for private messages
-						channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
+			isCurrentChannel := window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID
+			mentionsCurrentUser := discordutil.MentionsCurrentUserExplicitly(window.session.State, message)
+			if config.Current.DesktopNotifications &&
+				(mentionsCurrentUser ||
+					//Always show notification for private messages
+					channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM) &&
+				(!isCurrentChannel ||
+					(config.Current.DesktopNotificationsForLoadedChannel && !window.userActive)) {
 
-						var notificationLocation string
-						if channel.Type == discordgo.ChannelTypeDM {
-							notificationLocation = message.Author.Username
-						} else if channel.Type == discordgo.ChannelTypeGroupDM {
-							notificationLocation = channel.Name
-							if notificationLocation == "" {
-								for index, recipient := range channel.Recipients {
-									if index == 0 {
-										notificationLocation = recipient.Username
-									} else {
-										notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
-									}
-								}
-							}
-
-							notificationLocation = message.Author.Username + " - " + notificationLocation
-						} else if channel.Type == discordgo.ChannelTypeGuildText {
-							guild, cacheError := window.session.State.Guild(message.GuildID)
-							if guild != nil && cacheError == nil {
-								notificationLocation = fmt.Sprintf("%s - %s - %s", guild.Name, channel.Name, message.Author.Username)
+				var notificationLocation string
+				if channel.Type == discordgo.ChannelTypeDM {
+					notificationLocation = message.Author.Username
+				} else if channel.Type == discordgo.ChannelTypeGroupDM {
+					notificationLocation = channel.Name
+					if notificationLocation == "" {
+						for index, recipient := range channel.Recipients {
+							if index == 0 {
+								notificationLocation = recipient.Username
 							} else {
-								notificationLocation = fmt.Sprintf("%s - %s", message.Author.Username, channel.Name)
+								notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
 							}
 						}
+					}
 
-						notifyError := beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
-						if notifyError != nil {
-							log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
-						}
+					notificationLocation = message.Author.Username + " - " + notificationLocation
+				} else if channel.Type == discordgo.ChannelTypeGuildText {
+					guild, cacheError := window.session.State.Guild(message.GuildID)
+					if guild != nil && cacheError == nil {
+						notificationLocation = fmt.Sprintf("%s - %s - %s", guild.Name, channel.Name, message.Author.Username)
+					} else {
+						notificationLocation = fmt.Sprintf("%s - %s", message.Author.Username, channel.Name)
 					}
 				}
 
+				notifyError := beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
+				if notifyError != nil {
+					log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
+				}
+			}
+
+			if isCurrentChannel {
 				if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 					if !readstate.IsPrivateChannelMuted(channel) {
 						window.app.QueueUpdateDraw(func() {
@@ -2204,8 +2206,10 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	}
 
 	// Maybe compare directly to table?
-	window.userActive = true
-	window.userActiveTimer.Reset(userInactiveTime)
+	if config.Current.DesktopNotificationsUserInactivityThreshold > 0 {
+		window.userActive = true
+		window.userActiveTimer.Reset(time.Duration(config.Current.DesktopNotificationsUserInactivityThreshold) * time.Second)
+	}
 
 	if shortcuts.ToggleBareChat.Equals(event) {
 		window.toggleBareChat()
