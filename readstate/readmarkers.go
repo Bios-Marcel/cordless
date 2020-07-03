@@ -219,7 +219,8 @@ func HasBeenRead(channel *discordgo.Channel, lastMessageID string) bool {
 
 	data, present := data[channel.ID]
 	if !present {
-		return false
+		//We return true as there are too many false-positive otherwise and damn, that shit is annoying.
+		return true
 	}
 
 	parsed, parseError := strconv.ParseUint(lastMessageID, 10, 64)
