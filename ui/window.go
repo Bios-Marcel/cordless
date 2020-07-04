@@ -1555,7 +1555,7 @@ INDEX_LOOP:
 			window.session.State.User.PremiumType == discordgo.UserPremiumTypeNitro {
 			for _, guild := range window.session.State.Guilds {
 				for _, emoji := range guild.Emojis {
-					if strings.ToLower(emoji.Name) == emojiSequence {
+					if strings.EqualFold(emoji.Name, emojiSequence) {
 						var emojiRunes []rune
 						if emoji.Animated {
 							emojiRunes = []rune("<a:" + emoji.Name + ":" + emoji.ID + ">")
