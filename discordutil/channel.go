@@ -2,11 +2,12 @@ package discordutil
 
 import (
 	"fmt"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"sort"
 	"strconv"
 
 	"github.com/Bios-Marcel/discordgo"
+
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 // SortMessagesByTimestamp sorts all messages in the given array according to
@@ -84,5 +85,5 @@ func HasReadMessagesPermission(channelID string, state *discordgo.State) bool {
 		// Unable to access channel permissions.
 		return false
 	}
-	return (userPermissions & discordgo.PermissionReadMessages) > 0
+	return (userPermissions & discordgo.PermissionViewChannel) > 0
 }
