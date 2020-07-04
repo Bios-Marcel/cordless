@@ -5,10 +5,11 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/Bios-Marcel/cordless/config"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
+
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 func checkVT() bool {

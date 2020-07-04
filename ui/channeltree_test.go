@@ -33,7 +33,7 @@ func TestChannelTree(t *testing.T) {
 			{
 				ID:   "R1",
 				Type: "role",
-				Deny: discordgo.PermissionReadMessages,
+				Deny: discordgo.PermissionViewChannel,
 			},
 		},
 	}
@@ -71,7 +71,7 @@ func TestChannelTree(t *testing.T) {
 	r1 := &discordgo.Role{
 		ID:          "R1",
 		Name:        "Rollo",
-		Permissions: discordgo.PermissionReadMessages,
+		Permissions: discordgo.PermissionViewChannel,
 	}
 	state.RoleAdd("G1", r1)
 

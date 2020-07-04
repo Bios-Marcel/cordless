@@ -3,6 +3,7 @@ package version
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/go-github/v29/github"
 )
 

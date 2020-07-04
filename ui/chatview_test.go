@@ -3,10 +3,11 @@ package ui
 import (
 	"testing"
 
+	"github.com/Bios-Marcel/discordgo"
+
 	"github.com/Bios-Marcel/cordless/config"
 	_ "github.com/Bios-Marcel/cordless/syntax"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
-	"github.com/Bios-Marcel/discordgo"
 )
 
 func TestParseBoldAndUnderline(t *testing.T) {

@@ -2,10 +2,10 @@ package commandimpls
 
 import (
 	"fmt"
-	"github.com/Bios-Marcel/cordless/commands"
 	"io"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/commands"
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"

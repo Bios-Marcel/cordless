@@ -2,10 +2,11 @@ package commands
 
 import (
 	"fmt"
-	"github.com/Bios-Marcel/cordless/config"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"io"
 	"strings"
+
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 // Command represents a command that is executable by the user.

@@ -69,9 +69,6 @@ func generateGuilds(start, amount int) []*discordgo.UserGuild {
 }
 
 func TestLoadGuilds(t *testing.T) {
-	type args struct {
-		guildLoader GuildLoader
-	}
 	tests := []struct {
 		name        string
 		guildLoader GuildLoader

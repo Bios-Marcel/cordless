@@ -712,7 +712,15 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				if currentText == "" {
 					go window.session.ChannelFileSend(targetChannel.ID, "img.png", dataChannel)
 				} else {
-					go window.session.ChannelFileSendWithMessage(targetChannel.ID, currentText, "img.png", dataChannel)
+					messageData := &discordgo.MessageSend{
+						Content: currentText,
+						File: &discordgo.File{
+							Name:        "img.png",
+							ContentType: "image/png",
+							Reader:      dataChannel,
+						},
+					}
+					go window.session.ChannelMessageSendComplex(targetChannel.ID, messageData)
 					window.messageInput.SetText("")
 				}
 			} else {

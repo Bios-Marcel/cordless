@@ -3,14 +3,16 @@ package commandimpls
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"path"
+
+	"github.com/Bios-Marcel/discordgo"
+
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/files"
-	"github.com/Bios-Marcel/discordgo"
-	"io"
-	"io/ioutil"
-	"path"
 )
 
 const fileSendDocumentation = `[::b]NAME
@@ -18,7 +20,7 @@ const fileSendDocumentation = `[::b]NAME
 
 [::b]SYNOPSIS
 	[::b]file-send <FILE_PATH>...
-
+ 
 [::b]DESCRIPTION
 	The file-send command allows you to send multiple files to your current channel.
 

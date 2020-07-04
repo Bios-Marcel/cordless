@@ -84,7 +84,7 @@ func TestAreDatesTheSameDay(t *testing.T) {
 }
 
 func TestMarshalDuration(t *testing.T) {
-	var duration Duration = Duration(6 * time.Second)
+	duration := Duration(6 * time.Second)
 	resultBytes, err := json.Marshal(duration)
 	if err != nil {
 		t.Errorf("error marshalling duration: %s", err)

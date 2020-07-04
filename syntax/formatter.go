@@ -43,7 +43,7 @@ func entryToEscapeSequence(table *ttyTable, entry chroma.StyleEntry) string {
 
 func findClosest(table *ttyTable, seeking chroma.Colour) chroma.Colour {
 	closestColour := chroma.Colour(0)
-	closest := float64(math.MaxFloat64)
+	closest := math.MaxFloat64
 	for colour := range table.foreground {
 		distance := colour.Distance(seeking)
 		if distance < closest {

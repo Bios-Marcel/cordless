@@ -2,8 +2,9 @@ package commandimpls
 
 import (
 	"fmt"
-	"github.com/Bios-Marcel/cordless/version"
 	"io"
+
+	"github.com/Bios-Marcel/cordless/version"
 )
 
 const versionDocumentation = `[::b]NAME

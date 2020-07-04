@@ -208,7 +208,7 @@ func EventToString(event *tcell.EventKey) string {
 		return ""
 	}
 
-	m := []string{}
+	var m []string
 	if event.Modifiers()&tcell.ModCtrl != 0 {
 		m = append(m, "Ctrl")
 	}

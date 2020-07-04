@@ -2,6 +2,7 @@ package text
 
 import (
 	"bytes"
+
 	"github.com/mdp/qrterminal/v3"
 	"rsc.io/qr"
 )

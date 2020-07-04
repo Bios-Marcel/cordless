@@ -1,8 +1,9 @@
 package scripting
 
 import (
-	"github.com/Bios-Marcel/discordgo"
 	"io"
+
+	"github.com/Bios-Marcel/discordgo"
 )
 
 // Engine describes a type that is capable of handling events from the main

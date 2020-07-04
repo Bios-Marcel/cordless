@@ -183,7 +183,7 @@ func (cmd *TFADisableCmd) Execute(writer io.Writer, parameters []string) {
 				config.UpdateCurrentToken(cmd.session.Token)
 				configError := config.PersistConfig()
 				if configError != nil {
-					commands.PrintError(writer, "Error updating access token in configuration. You might have to log in again.", disableError.Error())
+					commands.PrintError(writer, "Error updating access token in configuration. You might have to log in again.", configError.Error())
 				}
 			}
 		}

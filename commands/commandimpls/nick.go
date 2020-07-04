@@ -2,11 +2,13 @@ package commandimpls
 
 import (
 	"fmt"
-	"github.com/Bios-Marcel/cordless/commands"
-	"github.com/Bios-Marcel/discordemojimap"
-	"github.com/Bios-Marcel/discordgo"
 	"io"
 	"strings"
+
+	"github.com/Bios-Marcel/discordemojimap"
+	"github.com/Bios-Marcel/discordgo"
+
+	"github.com/Bios-Marcel/cordless/commands"
 )
 
 type NickSetCmd struct {

@@ -3,7 +3,6 @@ package commandimpls
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/Bios-Marcel/discordemojimap"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,10 +10,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Bios-Marcel/discordemojimap"
+
+	"github.com/Bios-Marcel/discordgo"
+
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
-	"github.com/Bios-Marcel/discordgo"
 )
 
 const (
