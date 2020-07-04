@@ -1667,12 +1667,20 @@ func (window *Window) registerMouseFocusListeners() {
 		return true
 	})
 
+	var lastLeftContainerSwitchTimeMillis int64
 	window.guildList.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
 			if window.activeView != Guilds {
-				window.SwitchToGuildsPage()
+				nowMillis := time.Now().UnixNano() / 1000 / 1000
+				//Avoid triggering multiple times in a row due to mouse movement during the click
+				if nowMillis-lastLeftContainerSwitchTimeMillis > 60 {
+					window.SwitchToGuildsPage()
+					window.app.SetFocus(window.guildList)
+				}
+				lastLeftContainerSwitchTimeMillis = nowMillis
+			} else {
+				window.app.SetFocus(window.guildList)
 			}
-			window.app.SetFocus(window.guildList)
 			return true
 		}
 
@@ -1701,9 +1709,16 @@ func (window *Window) registerMouseFocusListeners() {
 	window.privateList.internalTreeView.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
 			if window.activeView != Dms {
-				window.SwitchToFriendsPage()
+				nowMillis := time.Now().UnixNano() / 1000 / 1000
+				//Avoid triggering multiple times in a row due to mouse movement during the click
+				if nowMillis-lastLeftContainerSwitchTimeMillis > 60 {
+					window.SwitchToFriendsPage()
+					window.app.SetFocus(window.privateList.internalTreeView)
+				}
+				lastLeftContainerSwitchTimeMillis = nowMillis
+			} else {
+				window.app.SetFocus(window.privateList.internalTreeView)
 			}
-			window.app.SetFocus(window.privateList.internalTreeView)
 			return true
 		}
 
