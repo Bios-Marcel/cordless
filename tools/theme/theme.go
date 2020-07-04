@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Bios-Marcel/tview"
+	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/config"

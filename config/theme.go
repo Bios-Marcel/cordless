@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Bios-Marcel/tview"
+	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/gdamore/tcell"
 )
 

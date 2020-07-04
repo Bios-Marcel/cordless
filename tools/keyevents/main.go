@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/Bios-Marcel/tview"
+	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/gdamore/tcell"
 )
 

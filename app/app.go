@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/Bios-Marcel/discordgo"
-	"github.com/Bios-Marcel/tview"
+	"github.com/Bios-Marcel/cordless/tview"
 
 	"github.com/Bios-Marcel/cordless/commands/commandimpls"
 	"github.com/Bios-Marcel/cordless/config"

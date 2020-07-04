@@ -22,9 +22,10 @@ import (
 	"github.com/atotto/clipboard"
 
 	"github.com/Bios-Marcel/discordgo"
-	"github.com/Bios-Marcel/tview"
 	"github.com/gdamore/tcell"
 	"github.com/gen2brain/beeep"
+
+	"github.com/Bios-Marcel/cordless/tview"
 
 	"github.com/Bios-Marcel/cordless/commands"
 	"github.com/Bios-Marcel/cordless/config"
@@ -1701,8 +1702,8 @@ func (window *Window) registerMouseFocusListeners() {
 		if event.Buttons() == tcell.Button1 {
 			if window.activeView != Dms {
 				window.SwitchToFriendsPage()
-				window.app.SetFocus(window.privateList.internalTreeView)
 			}
+			window.app.SetFocus(window.privateList.internalTreeView)
 			return true
 		}
 

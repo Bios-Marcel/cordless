@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	"github.com/Bios-Marcel/discordgo"
-	"github.com/Bios-Marcel/tview"
+	"github.com/Bios-Marcel/cordless/tview"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"

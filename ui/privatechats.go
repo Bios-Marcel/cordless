@@ -11,7 +11,7 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
 	"github.com/Bios-Marcel/discordgo"
-	"github.com/Bios-Marcel/tview"
+	"github.com/Bios-Marcel/cordless/tview"
 
 	"github.com/Bios-Marcel/cordless/config"
 )
