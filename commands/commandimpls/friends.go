@@ -98,18 +98,18 @@ func (f *Friends) Execute(writer io.Writer, parameters []string) {
 			}
 		}
 	case "requests", "invites", "outstanding", "unanswered":
-		var incomming, outgoing string
+		var incoming, outgoing string
 		for _, rel := range f.session.State.Relationships {
 			if rel.Type == discordgo.RelationTypeIncommingRequest {
-				incomming += "  " + rel.User.String() + "\n"
+				incoming += "  " + rel.User.String() + "\n"
 			} else if rel.Type == discordgo.RelationTypeOutgoingRequest {
 				outgoing += "  " + rel.User.String() + "\n"
 			}
 		}
 
 		fmt.Fprintln(writer, "Incoming requests:")
-		if incomming != "" {
-			fmt.Fprintln(writer, incomming)
+		if incoming != "" {
+			fmt.Fprintln(writer, incoming)
 		} else {
 			fmt.Fprintln(writer, "No incoming requests.")
 		}

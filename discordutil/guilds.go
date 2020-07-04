@@ -58,7 +58,7 @@ func SortGuilds(settings *discordgo.Settings, guilds []*discordgo.Guild) {
 }
 
 // FindEmojiInGuild searches for a fitting emoji. Fitting means the correct name
-// (caseinsensitive), not animated and the correct permissions. If the result
+// (case insensitive), not animated and the correct permissions. If the result
 // is an empty string, it means no result was found.
 func FindEmojiInGuild(session *discordgo.Session, guild *discordgo.Guild, omitGWCheck bool, emojiSequence string) string {
 	for _, emoji := range guild.Emojis {

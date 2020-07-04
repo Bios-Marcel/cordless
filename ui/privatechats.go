@@ -150,9 +150,9 @@ func createPrivateChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 // already present.
 func (privateList *PrivateChatList) AddOrUpdateFriend(user *discordgo.User) {
 	for _, node := range privateList.chatsNode.GetChildren() {
-		refrenceChannelID, ok := node.GetReference().(string)
+		referenceChannelID, ok := node.GetReference().(string)
 		if ok {
-			channel, stateError := privateList.state.Channel(refrenceChannelID)
+			channel, stateError := privateList.state.Channel(referenceChannelID)
 			if stateError == nil && channel.Type == discordgo.ChannelTypeDM {
 				if channel.Recipients[0].ID == user.ID {
 					node.SetText(discordutil.GetUserName(user))

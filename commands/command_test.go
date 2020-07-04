@@ -61,7 +61,7 @@ func TestParseCommand(t *testing.T) {
 			input: "command argument argument2",
 			want:  []string{"command", "argument", "argument2"},
 		}, {
-			name:  "command with two simple arguments and more whitespace inbetween",
+			name:  "command with two simple arguments and more whitespace in between",
 			input: "command   argument  argument2  ",
 			want:  []string{"command", "argument", "argument2"},
 		}, {
@@ -77,7 +77,7 @@ func TestParseCommand(t *testing.T) {
 			input: "command argument \\\"argument2 argument3\\\"",
 			want:  []string{"command", "argument", "\"argument2", "argument3\""},
 		}, {
-			name:  "command with one simple argument and a string containg an escaped quote",
+			name:  "command with one simple argument and a string containing an escaped quote",
 			input: "command argument \"argument2 is \\\" long\"",
 			want:  []string{"command", "argument", "argument2 is \" long"},
 		},

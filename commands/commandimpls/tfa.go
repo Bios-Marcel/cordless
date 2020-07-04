@@ -41,9 +41,8 @@ const tfaEnableHelpPage = `[::b]NAME
 	[::b]tfa-enable[::-]
 
 [::b]DESCRIPTION
-	This command will open a view that shows a scannable QR-code and
-	instructions on how to proceed in order to enable TFA on your discord
-	account.`
+	This command will open a view that shows a QR-code and instructions
+    on how to proceed in order to enable TFA on your discord account.`
 
 const tfaDisableHelpPage = `[::b]NAME
 	tfa-disable - disables two-factor-authentication on your account

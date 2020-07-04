@@ -606,7 +606,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 
 		//Remove all carriage returns to prevent bugs with windows newlines.
 		code = strings.ReplaceAll(code, "\r", "")
-		//Remove last newline, as it's usually just the newline that seperates code from markdown notation.
+		//Remove last newline, as it's usually just the newline that separates code from markdown notation.
 		code = strings.TrimSuffix(code, "\n")
 		code = removeLeadingWhitespaceInCode(code)
 

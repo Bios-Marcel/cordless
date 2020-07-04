@@ -13,8 +13,8 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
-// Editor is a simple component that wraps tview.TextView in order to gove the
-// user minimal text edit functionality.
+// Editor is a simple component that wraps tview.TextView in order to give
+// the user minimal text edit functionality.
 type Editor struct {
 	internalTextView *tview.TextView
 	buffer           *femto.Buffer
@@ -477,7 +477,7 @@ func (editor *Editor) FindAtSymbolIndexInCurrentWord() int {
 
 func (editor *Editor) countRows(text string) int {
 	_, _, width, _ := editor.internalTextView.GetInnerRect()
-	return tviewutil.CalculateNeccessaryHeight(width, text)
+	return tviewutil.CalculateNecessaryHeight(width, text)
 }
 
 func (editor *Editor) triggerHeightRequestIfNecessary() {
@@ -592,7 +592,7 @@ func (editor *Editor) GetText() string {
 	return editor.buffer.String()
 }
 
-// GetPrimitive returnbs the internal component that can be added to a layout
+// GetPrimitive returns the internal component that can be added to a layout
 func (editor *Editor) GetPrimitive() tview.Primitive {
 	return editor.internalTextView
 }

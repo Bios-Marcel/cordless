@@ -1268,20 +1268,26 @@ func (window *Window) IsCursorInsideCodeBlock() bool {
 	return len(leftSplit)%2 == 0
 }
 
-func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
-	username := message.Author.Username
+func getUsernameForQuote(state *discordgo.State, message *discordgo.Message) string {
 	if message.GuildID != "" {
 		//The error handling here is rather lax, since not being able to show
-		// a nickname isn't really a gamebreaker.
-		guild, stateError := window.session.State.Guild(message.GuildID)
+		// a nickname isn't really a problem worth crashing over.
+		guild, stateError := state.Guild(message.GuildID)
 		if stateError == nil {
-			member, stateError := window.session.State.Member(guild.ID, message.Author.ID)
+			member, stateError := state.Member(guild.ID, message.Author.ID)
 			if stateError == nil && member.Nick != "" {
-				username = member.Nick
+				return member.Nick
 			}
 		}
 	}
 
+	//Fallback if no respective member can be found, the cache couldn't be
+	//accessed or we are in a private chat.
+	return message.Author.Username
+}
+
+func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
+	username := getUsernameForQuote(window.session.State, message)
 	quotedMessage, generateError := discordutil.GenerateQuote(message.ContentWithMentionsReplaced(), username, message.Timestamp, message.Attachments, window.messageInput.GetText())
 	if generateError == nil {
 		window.messageInput.SetText(quotedMessage)
@@ -1425,7 +1431,7 @@ func (window *Window) updateUnreadGuildAmount(rootNode *tview.TreeNode) {
 // This will do all necessary escaping and resolving of channel-mentions,
 // user-mentions, emojis and the likes.
 //
-// The input is expected to be a string without sorrounding whitespace.
+// The input is expected to be a string without surrounding whitespace.
 func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText string) string {
 	message := codeBlockRegex.ReplaceAllStringFunc(inputText, func(input string) string {
 		return strings.ReplaceAll(input, ":", "\\:")
@@ -1633,7 +1639,7 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 	window.app.SetFocus(buttonWidgets[0])
 
 	_, _, width, _ := window.rootContainer.GetRect()
-	height := tviewutil.CalculateNeccessaryHeight(width, window.dialogTextView.GetText(true))
+	height := tviewutil.CalculateNecessaryHeight(width, window.dialogTextView.GetText(true))
 	window.rootContainer.ResizeItem(window.dialogReplacement, height+2, 0)
 }
 
@@ -1751,8 +1757,8 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 }
 
 // QueueUpdateDrawSynchronized is meant to be used by goroutines that aren't
-// the maingoroutine in order to wait for the UI-Thread to execute the given
-// If this method is ever called from the mainthread, the application will
+// the main goroutine in order to wait for the UI-Thread to execute the given
+// If this method is ever called from the main thread, the application will
 // deadlock.
 func (window *Window) QueueUpdateDrawSynchronized(runnable func()) {
 	blocker := make(chan bool, 1)

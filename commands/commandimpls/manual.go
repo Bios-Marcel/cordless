@@ -337,7 +337,7 @@ const configurationDocumentation = `[::b]TOPIC
 		Default: false
 
 	[::b]ShortenWithExtension
-		Determines wether the suffix is added to the shortened url. This
+		Determines whether the suffix is added to the shortened url. This
 		setting only matters if [::b]ShortenLinks[::-] is set to [::b]true[::-]
 
 		Type:    boolean

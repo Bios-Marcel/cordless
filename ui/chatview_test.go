@@ -197,21 +197,21 @@ func TestChatView_formatMessageText(t *testing.T) {
 			want:     "[" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff]",
 			chatView: defaultChatView,
 		}, {
-			name: "simple spoiler inbetween",
+			name: "simple spoiler in between",
 			input: &discordgo.Message{
 				Content: "gimme ||simple|| pls",
 			},
 			want:     "gimme [" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
-			name: "formatted spoiler inbetween",
+			name: "formatted spoiler in between",
 			input: &discordgo.Message{
 				Content: "gimme ||**simple**|| pls",
 			},
 			want:     "gimme [" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff] pls",
 			chatView: defaultChatView,
 		}, {
-			name: "formatted spoiler inbetween",
+			name: "formatted spoiler in between",
 			input: &discordgo.Message{
 				Content: "gimme ||**simple**|| pls",
 			},
@@ -234,7 +234,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 			want:     "gimme [::b][" + tviewutil.ColorToHex(config.GetTheme().AttentionColor) + "]!SPOILER![#ffffff][::-] pls",
 			chatView: defaultChatView,
 		}, {
-			name: "codeblock without specified langauge",
+			name: "codeblock without specified language",
 			input: &discordgo.Message{
 				Content: "```\none\ntwo\nthree\n```",
 			},
@@ -248,7 +248,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 			want:     "test\n[#c9dddc]▐ [#ffffff]one\ntest",
 			chatView: defaultChatView,
 		}, {
-			name: "one line codeblock with text around, but without newlines inbetween",
+			name: "one line codeblock with text around, but without newlines in between",
 			input: &discordgo.Message{
 				Content: "test```\none\n```test",
 			},
@@ -526,7 +526,7 @@ func Test_removeLeadingWhitespaceInCode(t *testing.T) {
 			code: " 	1\n  	2\n 	3",
 			want: "	1\n 	2\n	3",
 		}, {
-			name: "multiple lines with an empty line inbetween",
+			name: "multiple lines with an empty line in between",
 			code: "	1\n\n	2\n	3",
 			want: "1\n\n2\n3",
 		},

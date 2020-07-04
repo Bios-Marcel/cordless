@@ -40,7 +40,8 @@ Cordless is a custom [Discord](https://discordapp.com) client that aims to
 have a low memory footprint and be aimed at power-users.
 
 The application only uses the official Discord API and doesn't send data to
-third parties. However, this application is not a official product by Discord Inc.
+third parties. However, this application is not an official product by
+Discord Inc.
 
 ![Demo Screenshot](.github/images/chat-demo.png)
 
@@ -166,8 +167,8 @@ changer via <kbd>Ctrl</kbd> + <kbd>K</kbd>.
 ## Troubleshooting
 
 If you happen to encounter a crash or a bug, please submit a bug report via
-the projects GitHub issue tracker. It's highly likely that issues messaged
-via discord will be forgotten.
+the projects GitHub issue tracker. Bugs reported via Discord will be probably
+be forgotten or overseen.
 
 For general problems faced by cordless users, check out the wiki at:
 https://github.com/Bios-Marcel/cordless/wiki/Troubleshooting
@@ -194,7 +195,7 @@ All kinds of contributions are welcome. Whether it's correcting typos, fixing
 bugs, adding features or whatever else might be good for the project. If you
 want to contribute code, please create a new branch and commit only changes
 relevant to your planned pull request onto that branch. This will help
-isolating new changes and make merging those into `master` easier.
+to isolate new changes and make merging those into `master` easier.
 
 If you encounter any issues, whether it's bugs or the lack of certain features,
 don't hesitate to create a new GitHub issue.
@@ -223,7 +224,7 @@ Here is a list of similar projects:
 - [discord-term](https://github.com/cloudrex/discord-term)
 - [6cord](https://gitlab.com/diamondburned/6cord)
 
-Hit me up if you have a similar project and I'll gladly add it to the list.
+Hit me up if you have a similar project, and I'll gladly add it to the list.
 
 ## Credits
 

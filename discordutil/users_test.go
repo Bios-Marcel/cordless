@@ -111,7 +111,7 @@ func TestGetMemberName(t *testing.T) {
 			want: "World",
 		},
 		{
-			name: "no nickname and no bot and contains tview color sequenec",
+			name: "no nickname and no bot and contains tview color sequence",
 			member: &discordgo.Member{
 				User: &discordgo.User{
 					Username: "[red]World",

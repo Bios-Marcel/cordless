@@ -15,7 +15,7 @@ type CommandView struct {
 	commandOutput *tview.TextView
 	commandInput  *Editor
 
-	// commandHistoryIndex is the current index cycling thorugh the history.
+	// commandHistoryIndex is the current index cycling through the history.
 	// -1 means that no index is selected.
 	commandHistoryIndex int
 	// commandHistory is just a flat array of text that the user has sent.
@@ -57,7 +57,7 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 }
 
 // SetInputCaptureForInput defines the input capture for the input component of
-// the command view while priorizing the predefined handler before passing the
+// the command view while prioritizing the predefined handler before passing the
 // event to the externally specified handler.
 func (cmdView *CommandView) SetInputCaptureForInput(handler func(event *tcell.EventKey) *tcell.EventKey) {
 	cmdView.commandInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -72,7 +72,7 @@ func (cmdView *CommandView) SetInputCaptureForInput(handler func(event *tcell.Ev
 }
 
 // SetInputCaptureForOutput defines the input capture for the output component
-// of the command view while priorizing the predefined handler before passing
+// of the command view while prioritizing the predefined handler before passing
 // the event to the externally specified handler.
 func (cmdView *CommandView) SetInputCaptureForOutput(handler func(event *tcell.EventKey) *tcell.EventKey) {
 	cmdView.commandOutput.SetInputCapture(handler)
@@ -94,7 +94,7 @@ func (cmdView *CommandView) handleInput(event *tcell.EventKey) *tcell.EventKey {
 
 		if event.Key() == tcell.KeyEnter {
 			//We are resetting the index whenever hitting enter, no matter
-			//whether the command itself was run sucessfully or not.
+			//whether the command itself was run successfully or not.
 			//So that when you cycle up again, you'll be at the most recent command,
 			//meaning the one that you just entered.
 			cmdView.commandHistoryIndex = noHistoryIndexSelected

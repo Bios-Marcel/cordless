@@ -145,7 +145,7 @@ fi
 
 #
 # Substitutes the manifest template for the homebrew package. We need to
-# download the latets tarball in order to get its sha256 sum.
+# download the latest tarball in order to get its sha256 sum.
 #
 
 wget https://github.com/Bios-Marcel/cordless/archive/$RELEASE_DATE.tar.gz
@@ -155,7 +155,7 @@ rm ./$RELEASE_DATE.tar.gz
 envsubst < cordless.rb_template > cordless.rb
 
 #
-# Unsetting(and unexporting) previously exported environment variables.
+# Unsetting (and unexporting) previously exported environment variables.
 #
 
 unset RELEASE_DATE

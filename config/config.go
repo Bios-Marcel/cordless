@@ -107,7 +107,7 @@ type Config struct {
 	// ShortenLinks decides whether cordless starts a local webserver in order
 	// to be able to shorten links
 	ShortenLinks bool
-	// ShortenWithExtension defines wether the suffix is added to the shortened
+	// ShortenWithExtension defines whether the suffix is added to the shortened
 	// url
 	ShortenWithExtension bool
 	// ShortenerPort defines the port, that the webserver for the linkshortener
@@ -141,7 +141,7 @@ type Config struct {
 	// is a string and not an array of strings.
 	DontShowUpdateNotificationFor string
 
-	// Accounts contains all saved accounts, allowing the user to dynamicly
+	// Accounts contains all saved accounts, allowing the user to dynamically
 	// switch between the accounts.
 	Accounts []*Account
 

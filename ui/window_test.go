@@ -45,25 +45,25 @@ func Test_emojiSequenceIndexes(t *testing.T) {
 			},
 			want: []int{0, 5},
 		}, {
-			name: "two valid emoji sequences right next to eachother",
+			name: "two valid emoji sequences right next to each other",
 			args: args{
 				runes: []rune(":test::lol:"),
 			},
 			want: []int{6, 10, 0, 5},
 		}, {
-			name: "two valid emoji sequences with single unnecessary double colons inbetween",
+			name: "two valid emoji sequences with single unnecessary double colons in between",
 			args: args{
 				runes: []rune(":test:::lol:"),
 			},
 			want: []int{7, 11, 0, 5},
 		}, {
-			name: "two valid emoji sequences with even amount of double colons inbetween",
+			name: "two valid emoji sequences with even amount of double colons in between",
 			args: args{
 				runes: []rune("::test:::lol:"),
 			},
 			want: []int{8, 12, 1, 6},
 		}, {
-			name: "two valid emoji sequences with uneven amount of double colons inbetween",
+			name: "two valid emoji sequences with uneven amount of double colons in between",
 			args: args{
 				runes: []rune("::test::::lol:"),
 			},

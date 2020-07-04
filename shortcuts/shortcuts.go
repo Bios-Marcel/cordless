@@ -8,8 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Bios-Marcel/cordless/config"
 	"github.com/gdamore/tcell"
+
+	"github.com/Bios-Marcel/cordless/config"
 )
 
 var (
@@ -82,6 +83,7 @@ var (
 
 	CopySelection = addShortcut("copy_selection", "Copy selected text",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyRune, 'C', tcell.ModAlt))
+	//Don't fix the typo, it'll break stuff ;)
 	PasteAtSelection = addShortcut("paste_at_selectiom", "Paste clipboard content",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyCtrlV, rune(tcell.KeyCtrlV), tcell.ModCtrl))
 
@@ -170,8 +172,8 @@ type Shortcut struct {
 }
 
 // Equals compares the given EventKey with the Shortcuts Event.
-func (s *Shortcut) Equals(event *tcell.EventKey) bool {
-	return EventsEqual(s.Event, event)
+func (shortcut *Shortcut) Equals(event *tcell.EventKey) bool {
+	return EventsEqual(shortcut.Event, event)
 }
 
 // Scope is what describes a shortcuts scope within the application. Usually
@@ -189,8 +191,8 @@ type Scope struct {
 	Name string
 }
 
-// ShortcutDataRepresentation represents a shortcut on the users harddrive.
-// This prevents redudancy of scopes.
+// ShortcutDataRepresentation represents a shortcut configured by the user.
+// This prevents redundancy of scopes.
 type ShortcutDataRepresentation struct {
 	Identifier      string
 	ScopeIdentifier string
@@ -255,12 +257,12 @@ func (shortcut *Shortcut) Reset() {
 }
 
 func getShortcutsPath() (string, error) {
-	configDirecotry, configError := config.GetConfigDirectory()
+	configDirectory, configError := config.GetConfigDirectory()
 	if configError != nil {
 		return "", configError
 	}
 
-	return filepath.Join(configDirecotry, "shortcuts.json"), nil
+	return filepath.Join(configDirectory, "shortcuts.json"), nil
 }
 
 // Load loads the shortcuts and copies the events to the correct shortcuts
