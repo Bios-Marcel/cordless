@@ -108,7 +108,7 @@ func (l *messageSupplier) ChannelMessages(channelID string, limit int, beforeID,
 }
 
 func Test_LoadMessages_CacheAccess(t *testing.T) {
-	t.Run("Test emtpy channel", func(t *testing.T) {
+	t.Run("Test empty channel", func(t *testing.T) {
 		channelEmpty := &discordgo.Channel{
 			ID:            "1",
 			LastMessageID: "",
