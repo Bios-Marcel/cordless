@@ -1171,6 +1171,10 @@ important changes of the last two versions officially released.
 		  click the containers, since the header row is always visible now
 		- Token input now ingores surrounding spaces
 		- Bot token syntax is more lenient now
+	-  Bugfixes
+		- Holding down your left mouse and moving it on the chatview won't
+		  cause lags anymore
+		- No more false positives for unread dm-channels
 [::b]20-06-26
 	- Features
 		- you can now define a custom status
