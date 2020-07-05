@@ -16,7 +16,7 @@ require (
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/lucasb-eyer/go-colorful v1.0.3
-	github.com/mattn/go-runewidth v0.0.7
+	github.com/mattn/go-runewidth v0.0.9
 	github.com/mdp/qrterminal/v3 v3.0.0
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pkg/errors v0.8.1
