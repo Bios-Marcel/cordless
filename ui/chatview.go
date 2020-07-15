@@ -19,8 +19,8 @@ import (
 	"github.com/Bios-Marcel/cordless/times"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
-	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
 
 	// Blank import for initializing the tview formatter
 	_ "github.com/Bios-Marcel/cordless/syntax"
@@ -426,19 +426,23 @@ func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
 }
 
 func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string {
-	var messageAuthor string
+	var member *discordgo.Member
 	if message.GuildID != "" {
-		member, cacheError := chatView.state.Member(message.GuildID, message.Author.ID)
-		if cacheError == nil {
-			messageAuthor = discordutil.GetMemberName(member)
-		}
+		member, _ = chatView.state.Member(message.GuildID, message.Author.ID)
 	}
 
+	var messageAuthor string
+	var userColor string
+	if member != nil {
+		messageAuthor = discordutil.GetMemberName(member)
+		userColor = discordutil.GetMemberColor(chatView.state, member)
+	}
 	if messageAuthor == "" {
 		messageAuthor = discordutil.GetUserName(message.Author)
+		userColor = discordutil.GetUserColor(message.Author)
 	}
 
-	return "[" + discordutil.GetUserColor(message.Author) + "]" + messageAuthor
+	return "[::b][" + userColor + "]" + messageAuthor + "[::-]"
 }
 
 func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {

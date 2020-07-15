@@ -32,13 +32,27 @@ const (
 	// FocusMessageInputOnTypeInList will automatically focus the message input
 	// component and transfer the typed character into it as well.
 	FocusMessageInputOnTypeInList = 2
+
+	NoColor UserColor = "none"
+	// SingleColor causes cordless to take the color specified in the theme
+	SingleColor UserColor = "single"
+	// RandomColor causes cordless to take a random color from the theme
+	// specified pool of usable random colors.
+	RandomColor UserColor = "random"
+	// RoleColor attempts to use the first colored role it finds for a user.
+	RoleColor UserColor = "role"
 )
 
+// UserColor represents available configurations for rendering a users color.
+type UserColor string
+
 var (
+	//Current is the currently loaded configuration. The values here are the
+	//defaults which can / will be overwritten by loading the config file.
 	Current = &Config{
 		Autocomplete:                           true,
 		Times:                                  HourMinuteAndSeconds,
-		UseRandomUserColors:                    false,
+		UserColors:                             SingleColor,
 		ShowUserContainer:                      true,
 		UseFixedLayout:                         false,
 		FixedSizeLeft:                          12,
@@ -73,9 +87,9 @@ type Config struct {
 
 	//Times decides on the time format (none, short and long).
 	Times int
-	//UseRandomUserColors decides whether the users get assigned a random color
-	//out of a pool for the current session.
-	UseRandomUserColors bool
+	//UserColors decides how cordless determines in which color it displays
+	//a user in the chat or the user tree.
+	UserColors UserColor
 
 	//FocusChannelAfterGuildSelection will cause the widget focus to move over
 	//to the channel tree after selecting a guild.

@@ -240,12 +240,18 @@ const configurationDocumentation = `[::b]TOPIC
 		Type:    int
 		Default: NoTime (2)
 		
-	[::b]UseRandomUserColors
-		Determines whether all usernames will have the same color or a color
-		randomly chosen from a pool of predefined colors.
-		
-		Type:    boolean
-		Default: false
+	[::b]UserColors
+		Determines how the color for a user is decided when rendering
+		a message author or displaying a user somewhere else.
+
+		This settings has four different possible values:
+		  * "none"
+		  * "single"
+		  * "random"
+		  * "role"
+
+		Type:    string
+		Default: "single"
 		
 	[::b]FocusChannelAfterGuildSelection
 		Determines whether the focus automatically jumps to the channeltree

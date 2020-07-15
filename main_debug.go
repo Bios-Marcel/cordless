@@ -1,4 +1,4 @@
-//+build go1.12,debug
+//+build debug
 
 package main
 

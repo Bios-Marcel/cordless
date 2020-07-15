@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/commands/commandimpls"
 	"github.com/Bios-Marcel/cordless/config"
@@ -157,7 +157,7 @@ func Run() {
 
 	runError := app.Run()
 	if runError != nil {
-		log.Fatalf("Error launching View (%s).\n", runError.Error())
+		log.Fatalf("Error launching View (%v).\n", runError)
 	}
 
 	run := <-runNext

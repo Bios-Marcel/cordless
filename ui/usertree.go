@@ -8,8 +8,8 @@ import (
 	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
-	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
 	"github.com/gdamore/tcell"
 )
 
@@ -152,7 +152,8 @@ func (userTree *UserTree) loadGuildRoles(guildID string) ([]*discordgo.Role, err
 
 	for _, role := range guildRoles {
 		if role.Hoist {
-			roleNode := tview.NewTreeNode(tviewutil.Escape(role.Name))
+			roleNode := tview.NewTreeNode("[" + discordutil.GetRoleColor(role) +
+				"]" + tviewutil.Escape(role.Name))
 			roleNode.SetSelectable(false)
 			userTree.roleNodes[role.ID] = roleNode
 			userTree.rootNode.AddChild(roleNode)
@@ -174,10 +175,8 @@ func (userTree *UserTree) AddOrUpdateMember(member *discordgo.Member) {
 }
 
 func (userTree *UserTree) addOrUpdateMember(member *discordgo.Member) {
-	nameToUse := discordutil.GetMemberName(member)
-	if config.Current.UseRandomUserColors {
-		nameToUse = "[" + discordutil.GetUserColor(member.User) + "]" + nameToUse
-	}
+	nameToUse := "[" + discordutil.GetMemberColor(userTree.state, member) +
+		"]" + discordutil.GetMemberName(member)
 
 	userNode, contains := userTree.userNodes[member.User.ID]
 	if contains && userNode != nil {
@@ -213,10 +212,8 @@ func (userTree *UserTree) AddOrUpdateUser(user *discordgo.User) {
 }
 
 func (userTree *UserTree) addOrUpdateUser(user *discordgo.User) {
-	nameToUse := discordutil.GetUserName(user)
-	if config.Current.UseRandomUserColors {
-		nameToUse = "[" + discordutil.GetUserColor(user) + "]" + nameToUse
-	}
+	nameToUse := "[" + discordutil.GetUserColor(user) +
+		"]" + discordutil.GetUserName(user)
 
 	userNode, contains := userTree.userNodes[user.ID]
 	if contains && userNode != nil {

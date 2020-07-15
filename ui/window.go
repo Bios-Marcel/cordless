@@ -745,10 +745,11 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	}
 	window.messageInput.SetInputCapture(captureFunc)
 
-	messageInputChan := make(chan *discordgo.Message, 200)
-	messageDeleteChan := make(chan *discordgo.Message, 50)
-	messageEditChan := make(chan *discordgo.Message, 50)
-	messageBulkDeleteChan := make(chan *discordgo.MessageDeleteBulk, 50)
+	//FIXME Buffering might just be retarded, as the event handlers are launched in separate routines either way.
+	messageInputChan := make(chan *discordgo.Message)
+	messageDeleteChan := make(chan *discordgo.Message)
+	messageEditChan := make(chan *discordgo.Message)
+	messageBulkDeleteChan := make(chan *discordgo.MessageDeleteBulk)
 
 	window.registerMessageEventHandler(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
 	window.startMessageHandlerRoutines(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
@@ -1166,6 +1167,11 @@ important changes of the last two versions officially released.
 	- Features
 		- Notifications for servers and DMs are now displayed in the containers header row 
 		- Embeds can now be rendered
+		- Usernames can now be rendered with their respective role color.
+		  Bots however can't have colors, to avoid confusion with real users.
+		  The default is set to "single", meaning it uses the default user
+		  color from the specified theme. The setting "UseRandomUserColors" has
+		  been removed.
 	- Changes
 		- The button to switch between DMs and servers is gone. Instead you can
 		  click the containers, since the header row is always visible now

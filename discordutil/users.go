@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"sort"
 
-	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
@@ -21,28 +21,56 @@ var (
 	randColorLength  = len(config.GetTheme().RandomUserColors)
 )
 
-// GetUserColor gets the users color for this session. If no color can be found
-// a new color will be a generated and cached.
+// GetMemberColor gets the members color according the members role.
+// If role colors aren't enabled, or the member is a bot, we fallthrough
+// to GetUserColor.
+func GetMemberColor(state *discordgo.State, member *discordgo.Member) string {
+	if len(member.Roles) > 0 && !member.User.Bot &&
+		config.Current.UserColors == config.RoleColor {
+		for _, memberRole := range member.Roles {
+			role, _ := state.Role(member.GuildID, memberRole)
+			if color := GetRoleColor(role); color != "" {
+				return color
+			}
+		}
+
+	}
+
+	return GetUserColor(member.User)
+}
+
+// GetUserColor gers a user color according to the configuration.
+// If "random" is the setting, then a new random color is retrieved
+// and cached for this session and this user.
 func GetUserColor(user *discordgo.User) string {
+	//Despite user settings, bots always get a color.
 	if user.Bot {
 		return tviewutil.ColorToHex(config.GetTheme().BotColor)
 	}
 
-	//Avoid unnecessarily retrieving and caching colors
-	if !config.Current.UseRandomUserColors || randColorLength == 0 {
+	switch config.Current.UserColors {
+	case config.RandomColor:
+		//Avoid unnecessarily retrieving and caching colors and fallthrough
+		//to using single color instead.
+		if randColorLength != 0 {
+			color, ok := userColorCache[user.ID]
+			if ok {
+				return color
+			}
+
+			newColor := getRandomColorString()
+			userColorCache[user.ID] = newColor
+			return newColor
+		}
+
+		fallthrough
+	case config.SingleColor:
 		return tviewutil.ColorToHex(config.GetTheme().DefaultUserColor)
-	} else if randColorLength == 1 {
-		return tviewutil.ColorToHex(config.GetTheme().RandomUserColors[0])
+	case config.NoColor:
+		fallthrough
+	default:
+		return tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)
 	}
-
-	color, ok := userColorCache[user.ID]
-	if ok {
-		return color
-	}
-
-	newColor := getRandomColorString()
-	userColorCache[user.ID] = newColor
-	return newColor
 }
 
 func getRandomColorString() string {

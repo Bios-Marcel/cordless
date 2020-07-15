@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetUserColor(t *testing.T) {
-	config.Current.UseRandomUserColors = true
+	config.Current.UserColors = config.RandomColor
 	tests := []struct {
 		name        string
 		user        *discordgo.User
