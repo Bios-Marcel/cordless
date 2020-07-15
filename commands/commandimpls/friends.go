@@ -16,7 +16,7 @@ The friends command allows you to manage your friends on discord. You can add
 new friends by sending or accepting friend-requests. You can also see your
 current requests, that goes for the incoming and the outgoing ones.
 
-The friend currently command offers the following subcommands:
+The friend command currently offers the following subcommands:
   * accept   - accept a friend-request
   * befriend - send a friend-request
   * requests - shows all current requests
