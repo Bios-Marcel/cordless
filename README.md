@@ -167,7 +167,7 @@ changer via <kbd>Ctrl</kbd> + <kbd>K</kbd>.
 ## Troubleshooting
 
 If you happen to encounter a crash or a bug, please submit a bug report via
-the projects GitHub issue tracker. Bugs reported via Discord will be probably
+the projects GitHub issue tracker. Bugs reported via Discord will probably
 be forgotten or overseen.
 
 For general problems faced by cordless users, check out the wiki at:
