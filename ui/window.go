@@ -1198,7 +1198,7 @@ important changes of the last two versions officially released.
 	- Features
 		- VT320 terminals are now supported
 		- quoted messages now preserve attachment URLs
-		- Cltr-W now deletes the word to the left
+		- Ctrl-W now deletes the word to the left
 		- announcement channels are now shown as well
 		- Cordless now has an amazing autocompletion
 		- support for TFA
