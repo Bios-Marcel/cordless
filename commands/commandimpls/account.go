@@ -192,7 +192,11 @@ func (account *Account) printAccountListHelp(writer io.Writer) {
 func (account *Account) listAccounts(writer io.Writer) {
 	fmt.Fprintln(writer, "Available accounts:")
 	for _, acc := range config.Current.Accounts {
-		fmt.Fprintln(writer, "  * "+acc.Name)
+		if acc.Token == config.Current.Token {
+			fmt.Fprintln(writer, "  [orange]> "+acc.Name+"[white]")
+		} else {
+			fmt.Fprintln(writer, "  * "+acc.Name)			
+		}
 	}
 }
 
