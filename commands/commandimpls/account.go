@@ -195,7 +195,7 @@ func (account *Account) listAccounts(writer io.Writer) {
 		if acc.Token == config.Current.Token {
 			fmt.Fprintln(writer, "  ["+tviewutil.ColorToHex(config.GetTheme().AttentionColor)+"]> "+acc.Name+"["+tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)+"]")
 		} else {
-			fmt.Fprintln(writer, "  * "+acc.Name)			
+			fmt.Fprintln(writer, "  * "+acc.Name)
 		}
 	}
 }
