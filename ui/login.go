@@ -4,8 +4,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
 
@@ -27,8 +27,6 @@ const (
 	None     LoginType = 0
 	Token    LoginType = 1
 	Password LoginType = 2
-
-	userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
 )
 
 type Login struct {
@@ -266,7 +264,7 @@ func (login *Login) attemptLogin() {
 	case None:
 		panic("Was in state loginType=None during login attempt.")
 	case Token:
-		session, loginError := discordgo.NewWithToken(userAgent, login.tokenInput.GetText())
+		session, loginError := discordgo.NewWithToken(login.tokenInput.GetText())
 		login.sessionChannel <- &loginAttempt{session, loginError}
 	case Password:
 		// Even if the login is supposed to be without two-factor-authentication, we
@@ -282,7 +280,7 @@ func (login *Login) attemptLogin() {
 			}
 		}
 
-		session, loginError := discordgo.NewWithPasswordAndMFA(userAgent, login.usernameInput.GetText(), login.passwordInput.GetText(), mfaTokenText)
+		session, loginError := discordgo.NewWithPasswordAndMFA(login.usernameInput.GetText(), login.passwordInput.GetText(), mfaTokenText)
 		login.sessionChannel <- &loginAttempt{session, loginError}
 	}
 

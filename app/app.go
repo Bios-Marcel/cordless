@@ -16,10 +16,6 @@ import (
 	"github.com/Bios-Marcel/cordless/version"
 )
 
-const (
-	userAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0"
-)
-
 // Run launches the whole application and might abort in case it encounters an
 //error.
 func Run() {
@@ -176,7 +172,7 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *con
 	if configuration.Token == "" {
 		session, discordError = loginScreen.RequestLogin(loginMessage)
 	} else {
-		session, discordError = discordgo.NewWithToken(userAgent, configuration.Token)
+		session, discordError = discordgo.NewWithToken(configuration.Token)
 	}
 
 	if discordError != nil {
