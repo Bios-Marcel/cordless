@@ -1178,6 +1178,7 @@ important changes of the last two versions officially released.
 		- Token input now ingores surrounding spaces
 		- Bot token syntax is more lenient now
 	-  Bugfixes
+		- Bot login works again
 		- Holding down your left mouse and moving it on the chatview won't
 		  cause lags anymore
 		- No more false positives for unread dm-channels
