@@ -205,15 +205,6 @@ bounty on those via [IssueHunt](https://issuehunt.io/r/Bios-Marcel/cordless).
 The full 100% of the bounty goes to whoever solves the issue, no matter
 whether that's me or someone else.
 
-If none of those ways of contributing are your kind of thing, feel free to
-donate something via [Liberapay](https://liberapay.com/biosmarcel/donate).
-It may not directly have an impact on the project, but it will surely motivate
-me to keep working on this project, as it shows that people care about it.
-Also, who doesn't like money???
-
-For those who don't want to use paypal, but still want to donate, here's
-my ETH wallet public key: `0x49939106563a9de8a777Cf5394149423b1dFd970`
-
 ## Similar projects
 
 Here is a list of similar projects:
