@@ -11,14 +11,20 @@ import (
 )
 
 var (
-	data       = make(map[string]uint64)
-	timerMutex = &sync.Mutex{}
-	ackTimers  = make(map[string]*time.Timer)
-	state      *discordgo.State
+	data           = make(map[string]uint64)
+	readStateMutex = &sync.Mutex{}
+	timerMutex     = &sync.Mutex{}
+	ackTimers      = make(map[string]*time.Timer)
+	state          *discordgo.State
 )
 
 // Load loads the locally saved readmarkers returning an error if this failed.
 func Load(sessionState *discordgo.State) {
+	state = sessionState
+
+	readStateMutex.Lock()
+	defer readStateMutex.Unlock()
+
 	for _, channelState := range sessionState.ReadState {
 		lastMessageID := channelState.GetLastMessageID()
 		if lastMessageID == "" {
@@ -33,15 +39,18 @@ func Load(sessionState *discordgo.State) {
 		data[channelState.ID] = parsed
 	}
 
-	state = sessionState
 }
 
 // ClearReadStateFor clears all entries for the given Channel.
 func ClearReadStateFor(channelID string) {
+	readStateMutex.Lock()
+	defer readStateMutex.Unlock()
+
 	timerMutex.Lock()
+	defer timerMutex.Unlock()
+
 	delete(data, channelID)
 	delete(ackTimers, channelID)
-	timerMutex.Unlock()
 }
 
 // UpdateReadLocal can be used to locally update the data without sending
@@ -52,6 +61,9 @@ func UpdateReadLocal(channelID string, lastMessageID string) bool {
 	if parseError != nil {
 		return false
 	}
+
+	readStateMutex.Lock()
+	defer readStateMutex.Unlock()
 
 	old, isPresent := data[channelID]
 	if !isPresent || old < parsed {
@@ -66,8 +78,11 @@ func UpdateReadLocal(channelID string, lastMessageID string) bool {
 // channel has already been read and this method was called needlessly, then
 // this will be a No-OP.
 func UpdateRead(session *discordgo.Session, channel *discordgo.Channel, lastMessageID string) error {
+	readStateMutex.Lock()
+	defer readStateMutex.Unlock()
+
 	// Avoid unnecessary traffic
-	if HasBeenRead(channel, lastMessageID) {
+	if hasBeenReadWithoutLocking(channel, lastMessageID) {
 		return nil
 	}
 
@@ -87,6 +102,8 @@ func UpdateRead(session *discordgo.Session, channel *discordgo.Channel, lastMess
 // be reset. This avoid unnecessarily many calls to the Discord servers.
 func UpdateReadBuffered(session *discordgo.Session, channel *discordgo.Channel, lastMessageID string) {
 	timerMutex.Lock()
+	timerMutex.Unlock()
+
 	ackTimer := ackTimers[channel.ID]
 	if ackTimer == nil {
 		newTimer := time.NewTimer(4 * time.Second)
@@ -99,7 +116,6 @@ func UpdateReadBuffered(session *discordgo.Session, channel *discordgo.Channel, 
 	} else {
 		ackTimer.Reset(4 * time.Second)
 	}
-	timerMutex.Unlock()
 }
 
 // IsGuildMuted returns whether the user muted the given guild.
@@ -126,12 +142,15 @@ func HasGuildBeenRead(guildID string) bool {
 
 	realGuild, cacheError := state.Guild(guildID)
 	if cacheError == nil {
+		readStateMutex.Lock()
+		defer readStateMutex.Unlock()
+
 		for _, channel := range realGuild.Channels {
 			if !discordutil.HasReadMessagesPermission(channel.ID, state) {
 				continue
 			}
 
-			if !HasBeenRead(channel, channel.LastMessageID) {
+			if !hasBeenReadWithoutLocking(channel, channel.LastMessageID) {
 				return false
 			}
 		}
@@ -199,6 +218,16 @@ func IsPrivateChannelMuted(channel *discordgo.Channel) bool {
 
 // HasBeenRead checks whether the passed channel has an unread Message or not.
 func HasBeenRead(channel *discordgo.Channel, lastMessageID string) bool {
+	readStateMutex.Lock()
+	defer readStateMutex.Unlock()
+
+	return hasBeenReadWithoutLocking(channel, lastMessageID)
+}
+
+// hasBeenReadWithoutLocking checks whether the passed channel has an unread Message or not.
+// The difference to HasBeenRead is, that no locking happens. This is inteded to be used
+// for recursive calls to this method and avoiding lock overhead and deadlocks.
+func hasBeenReadWithoutLocking(channel *discordgo.Channel, lastMessageID string) bool {
 	if lastMessageID == "" {
 		return true
 	}
