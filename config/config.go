@@ -73,6 +73,7 @@ var (
 		IndicateChannelAccessRestriction:            false,
 		ShowBottomBar:                               true,
 		ImageViewer:                                 "feh",
+		ShowNicknames:                               true,
 	}
 )
 
@@ -168,6 +169,11 @@ type Config struct {
 	// as if it were called from the command line, so the selected program
 	// must be capable of opening image links.
 	ImageViewer string
+
+	// ShowNicknames decides whether nicknames are shown throughout the
+	// application, as there are some childish goons that deem it funny
+	// to impersonate people or change their name every 5 minutes.
+	ShowNicknames bool
 }
 
 // Account has a name and a token. The name is just for the users recognition.

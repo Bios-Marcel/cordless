@@ -88,7 +88,7 @@ func getRandomColorString() string {
 // either the username or the nickname. In case the member is a bot, the bot
 // prefix will be prepended.
 func GetMemberName(member *discordgo.Member) string {
-	if member.Nick != "" {
+	if config.Current.ShowNicknames && member.Nick != "" {
 		return getUserName(member.Nick, member.User.Bot)
 	}
 
