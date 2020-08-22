@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -97,6 +98,8 @@ type Window struct {
 
 	bareChat   bool
 	activeView ActiveView
+
+	cacheClearLock *sync.Mutex
 }
 
 type ActiveView bool
@@ -115,6 +118,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		activeView:       Guilds,
 		extensionEngines: []scripting.Engine{js.New()},
 		messageLoader:    discordutil.CreateMessageLoader(session),
+		cacheClearLock:   &sync.Mutex{},
 	}
 
 	if config.Current.DesktopNotificationsUserInactivityThreshold > 0 {
@@ -382,9 +386,44 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 			if targetFolder == "" {
 				cacheDir, osError := os.UserCacheDir()
-				if osError == nil {
-					targetFolder = cacheDir
+				if osError == nil && cacheDir != "" {
+					//Own subdirectory to avoid nuking foreing files by accident.
+					targetFolder = filepath.Join(cacheDir, "cordless")
+					makeDirError := os.MkdirAll(targetFolder, 0766)
+					if makeDirError != nil {
+						window.ShowCustomErrorDialog("Couldn't open file", "Can't create cache subdirectory.")
+						return nil
+					}
+
+					//If permanent saving isn't disabled, we clear files older
+					//than one month whenever something is opened. Since this
+					//will happen in a background thread, it won't cause
+					//application blocking.
+					if !config.Current.FileOpenSaveFilesPermanently {
+						defer func() {
+							go func() {
+								window.cacheClearLock.Lock()
+								now := time.Now().Hour()
+								twoWeeks := 24 * 14
+								filepath.Walk(targetFolder, func(path string, f os.FileInfo, err error) error {
+									if now-f.ModTime().Hour() >= twoWeeks {
+										removeError := os.Remove(path)
+										if removeError != nil {
+											log.Printf("Couldn't remove file %s from cache.\n", removeError)
+										}
+									}
+
+									return nil
+								})
+								defer window.cacheClearLock.Unlock()
+							}()
+						}()
+					}
 				}
+			}
+
+			if targetFolder == "" {
+				window.ShowCustomErrorDialog("Couldn't open file", "Can't find cache directory.")
 			}
 
 			for _, link := range links {
