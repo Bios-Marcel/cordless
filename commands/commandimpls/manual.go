@@ -375,7 +375,21 @@ const configurationDocumentation = `[::b]TOPIC
 		as profiles. Those allow you to let cordless know of multiple discord
 		identities, allowing you to easily switch between them. This setting
 		shouldn't be changed manually, but only via the [::b]account[::-]
-		command.`
+		command.
+
+	[::b]IndicateChannelAccessRestriction
+		Decides whether a padlock emoji will be displayed next to the
+		channelname in the channeltree if the channel isn't accessible
+		to all users in a server.
+
+	[::b]ShowBottomBar
+		Decides whether the information bar at the bottom is displayed or not.
+		It contains information about the currently logged in account and
+		displays the shortcut to change keybindings. There might be more in
+		here at some point.
+
+	[::b]ShowNicknames
+		Decides whether a users nickname is displayed throughout cordless.`
 
 const messageEditorDocumentation = `[::b]TOPIC
 	message-editor - the component that allows you to input text for a message.
