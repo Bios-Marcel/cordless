@@ -65,18 +65,22 @@ func OpenFile(targetFolder, fileID, downloadURL string) error {
 			return nil
 		}
 
-		commandParts := commands.ParseCommand(strings.ReplaceAll(handlerTrimmed, "{$file}", targetFile))
-		command := exec.Command(commandParts[0], commandParts[1:]...)
-		startError := command.Start()
-		if startError != nil {
-			return startError
-		}
-	} else {
-		openError := open.Run(targetFile)
-		if openError != nil {
-			return openError
+		return openWithHandler(handlerTrimmed, targetFile)
+	}
+
+	defaultHandler, isDefaultHandlerSet := config.Current.FileOpenHandlers["*"]
+	if isDefaultHandlerSet {
+		defaultHandlerTrimmed := strings.TrimSpace(defaultHandler)
+		if defaultHandlerTrimmed != "" {
+			return openWithHandler(defaultHandlerTrimmed, targetFile)
 		}
 	}
 
-	return nil
+	return open.Run(targetFile)
+}
+
+func openWithHandler(handler, targetFile string) error {
+	commandParts := commands.ParseCommand(strings.ReplaceAll(handler, "{$file}", targetFile))
+	command := exec.Command(commandParts[0], commandParts[1:]...)
+	return command.Start()
 }
