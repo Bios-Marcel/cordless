@@ -4,14 +4,18 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 	"unicode"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
+	"github.com/skratchdot/open-golang/open"
 
+	"github.com/Bios-Marcel/cordless/util/files"
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/text"
 	"github.com/Bios-Marcel/cordless/version"
@@ -366,11 +370,53 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			for _, file := range message.Attachments {
 				links = append(links, file.URL)
 			}
-			if len(links) > 0 {
-				cmd := exec.Command(config.Current.ImageViewer, links...)
-				err := cmd.Start()
-				if err != nil {
-					window.ShowErrorDialog(err.Error())
+
+			var targetFolder string
+
+			if config.Current.FileOpenSaveFilesPermanently {
+				absolutePath, pathError := files.ToAbsolutePath(config.Current.FileOpenSaveFolder)
+				if pathError == nil {
+					targetFolder = absolutePath
+				}
+			}
+
+			if targetFolder == "" {
+				cacheDir, osError := os.UserCacheDir()
+				if osError == nil {
+					targetFolder = cacheDir
+				}
+			}
+
+			for _, link := range links {
+				targetFile := filepath.Join(targetFolder, filepath.Base(link))
+				downloadError := files.DownloadFile(targetFile, link)
+				if downloadError != nil {
+					window.ShowCustomErrorDialog("Couldn't open file", downloadError.Error())
+					continue
+				}
+
+				extension := strings.TrimPrefix(filepath.Ext(targetFile), ".")
+				handler, handlerSet := config.Current.FileOpenHandlers[extension]
+				if handlerSet {
+					handlerTrimmed := strings.TrimSpace(handler)
+					//Empty means to not open files with the given extension.
+					if handlerTrimmed == "" {
+						log.Printf("skip opening link %s, as the extension %s has been disabled.\n", link, extension)
+						continue
+					}
+
+					commandParts := commands.ParseCommand(strings.ReplaceAll(handlerTrimmed, "{$file}", targetFile))
+					command := exec.Command(commandParts[0], commandParts[1:]...)
+					startError := command.Start()
+					if startError != nil {
+						window.ShowCustomErrorDialog("Couldn't open file", startError.Error())
+					}
+				} else {
+					log.Println("Attempting to open file: " + targetFile)
+					openError := open.Run(targetFile)
+					if openError != nil {
+						window.ShowCustomErrorDialog("Couldn't open file", openError.Error())
+					}
 				}
 			}
 
@@ -2510,10 +2556,16 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 	}
 }
 
-//ShowErrorDialog shows a simple error dialog that has only an Okay button,
+// ShowErrorDialog shows a simple error dialog that has only an Okay button,
 // a generic title and the given text.
 func (window *Window) ShowErrorDialog(text string) {
 	window.ShowDialog(config.GetTheme().ErrorColor, "An error occurred - "+text, func(_ string) {}, "Okay")
+}
+
+// ShowCustomErrorDialog shows a simple error dialog with a custom title
+// and text. The button says "Okay" and only closes the dialog.
+func (window *Window) ShowCustomErrorDialog(title, text string) {
+	window.ShowDialog(config.GetTheme().ErrorColor, title+" - "+text, func(_ string) {}, "Okay")
 }
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {

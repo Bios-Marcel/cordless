@@ -33,6 +33,8 @@ const (
 	// component and transfer the typed character into it as well.
 	FocusMessageInputOnTypeInList = 2
 
+	// NoColor will render all usernames using the PrimaryTextColor defined in
+	// the theme that's currently loaded.
 	NoColor UserColor = "none"
 	// SingleColor causes cordless to take the color specified in the theme
 	SingleColor UserColor = "single"
@@ -47,33 +49,8 @@ const (
 type UserColor string
 
 var (
-	//Current is the currently loaded configuration. The values here are the
-	//defaults which can / will be overwritten by loading the config file.
-	Current = &Config{
-		Autocomplete:                           true,
-		Times:                                  HourMinuteAndSeconds,
-		UserColors:                             SingleColor,
-		ShowUserContainer:                      true,
-		UseFixedLayout:                         false,
-		FixedSizeLeft:                          12,
-		FixedSizeRight:                         12,
-		FocusChannelAfterGuildSelection:        true,
-		FocusMessageInputAfterChannelSelection: true,
-		OnTypeInListBehaviour:                  SearchOnTypeInList,
-		MouseEnabled:                           true,
-		ShortenLinks:                           false,
-		ShortenWithExtension:                   false,
-		ShortenerPort:                          63212,
-		DesktopNotifications:                   true,
-		DesktopNotificationsUserInactivityThreshold: 10,
-		DesktopNotificationsForLoadedChannel:        true,
-		ShowPlaceholderForBlockedMessages:           true,
-		DontShowUpdateNotificationFor:               "",
-		ShowUpdateNotifications:                     true,
-		IndicateChannelAccessRestriction:            false,
-		ShowBottomBar:                               true,
-		ImageViewer:                                 "feh",
-	}
+	//Current is the currently loaded configuration.
+	Current = createDefaultConfig()
 )
 
 //Config contains all possible configuration for the application.
@@ -163,11 +140,14 @@ type Config struct {
 	// bottom of cordless or not.
 	ShowBottomBar bool
 
-	// The image viewer to open when the user uses the "view attached images"
-	// shortcut. This program will be passed a list of 1 or more image links
-	// as if it were called from the command line, so the selected program
-	// must be capable of opening image links.
-	ImageViewer string
+	// FileHandlers allow registering specific file-handers for certain
+	FileOpenHandlers map[string]string
+	// FileOpenSaveFilesPermanently decides whether opened files are saved
+	// in the system cache (temporary) or in the user specified path.
+	FileOpenSaveFilesPermanently bool
+	// FileOpenSaveFolder defines the folder where opened files are downloaded
+	// to, if FileOpenSaveFilesPermanently is set to true.
+	FileOpenSaveFolder string
 }
 
 // Account has a name and a token. The name is just for the users recognition.
@@ -180,6 +160,39 @@ type Account struct {
 var cachedConfigDir string
 var cachedConfigFile string
 var cachedScriptDir string
+
+func createDefaultConfig() *Config {
+	// The values here are the defaults which can / will be overwritten
+	// by loading the config file. This can also be used to reset the
+	// active set of settings during runtime.
+	return &Config{
+		Autocomplete:                           true,
+		Times:                                  HourMinuteAndSeconds,
+		UserColors:                             SingleColor,
+		ShowUserContainer:                      true,
+		UseFixedLayout:                         false,
+		FixedSizeLeft:                          12,
+		FixedSizeRight:                         12,
+		FocusChannelAfterGuildSelection:        true,
+		FocusMessageInputAfterChannelSelection: true,
+		OnTypeInListBehaviour:                  SearchOnTypeInList,
+		MouseEnabled:                           true,
+		ShortenLinks:                           false,
+		ShortenWithExtension:                   false,
+		ShortenerPort:                          63212,
+		DesktopNotifications:                   true,
+		DesktopNotificationsUserInactivityThreshold: 10,
+		DesktopNotificationsForLoadedChannel:        true,
+		ShowPlaceholderForBlockedMessages:           true,
+		DontShowUpdateNotificationFor:               "",
+		ShowUpdateNotifications:                     true,
+		IndicateChannelAccessRestriction:            false,
+		ShowBottomBar:                               true,
+		FileOpenHandlers:                            make(map[string]string),
+		FileOpenSaveFilesPermanently:                false,
+		FileOpenSaveFolder:                          "~/Downloads",
+	}
+}
 
 // SetConfigFile sets the config file path cache to the
 // entered value
