@@ -5,17 +5,15 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
-	"github.com/skratchdot/open-golang/open"
 
+	"github.com/Bios-Marcel/cordless/fileopen"
 	"github.com/Bios-Marcel/cordless/util/files"
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/text"
@@ -98,8 +96,6 @@ type Window struct {
 
 	bareChat   bool
 	activeView ActiveView
-
-	cacheClearLock *sync.Mutex
 }
 
 type ActiveView bool
@@ -118,7 +114,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		activeView:       Guilds,
 		extensionEngines: []scripting.Engine{js.New()},
 		messageLoader:    discordutil.CreateMessageLoader(session),
-		cacheClearLock:   &sync.Mutex{},
 	}
 
 	if config.Current.DesktopNotificationsUserInactivityThreshold > 0 {
@@ -370,11 +365,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if shortcuts.ViewSelectedMessageImages.Equals(event) {
-			links := make([]string, 0, len(message.Attachments))
-			for _, file := range message.Attachments {
-				links = append(links, file.URL)
-			}
-
 			var targetFolder string
 
 			if config.Current.FileOpenSaveFilesPermanently {
@@ -394,43 +384,26 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 						window.ShowCustomErrorDialog("Couldn't open file", "Can't create cache subdirectory.")
 						return nil
 					}
-
-					//If permanent saving isn't disabled, we clear files older
-					//than one month whenever something is opened. Since this
-					//will happen in a background thread, it won't cause
-					//application blocking.
-					if !config.Current.FileOpenSaveFilesPermanently {
-						defer func() {
-							go func() {
-								window.cacheClearLock.Lock()
-								now := time.Now().Hour()
-								twoWeeks := 24 * 14
-								filepath.Walk(targetFolder, func(path string, f os.FileInfo, err error) error {
-									if now-f.ModTime().Hour() >= twoWeeks {
-										removeError := os.Remove(path)
-										if removeError != nil {
-											log.Printf("Couldn't remove file %s from cache.\n", removeError)
-										}
-									}
-
-									return nil
-								})
-								defer window.cacheClearLock.Unlock()
-							}()
-						}()
-					}
 				}
 			}
 
 			if targetFolder == "" {
 				window.ShowCustomErrorDialog("Couldn't open file", "Can't find cache directory.")
+			} else {
+				for _, file := range message.Attachments {
+					openError := fileopen.OpenFile(targetFolder, file.ID, file.URL)
+					if openError != nil {
+						window.ShowCustomErrorDialog("Couldn't open file", openError.Error())
+					}
+				}
 			}
 
-			for _, link := range links {
-				openError := window.openFile(targetFolder, link)
-				if openError != nil {
-					window.ShowCustomErrorDialog("Couldn't open file", openError.Error())
-				}
+			//If permanent saving isn't disabled, we clear files older
+			//than one month whenever something is opened. Since this
+			//will happen in a background thread, it won't cause
+			//application blocking.
+			if !config.Current.FileOpenSaveFilesPermanently && targetFolder != "" {
+				fileopen.LaunchCacheCleaner(targetFolder, time.Hour*(24*14))
 			}
 
 			return nil
@@ -1282,40 +1255,6 @@ important changes of the last two versions officially released.
 	- JS API
 		- there's now an "init" function that gets called on script load
 `, version.Version)
-}
-
-func (window *Window) openFile(targetFolder, link string) error {
-	targetFile := filepath.Join(targetFolder, filepath.Base(link))
-	downloadError := files.DownloadFileOrAccessCache(targetFile, link)
-	if downloadError != nil {
-		return downloadError
-	}
-
-	extension := strings.TrimPrefix(filepath.Ext(targetFile), ".")
-	handler, handlerSet := config.Current.FileOpenHandlers[extension]
-	if handlerSet {
-		handlerTrimmed := strings.TrimSpace(handler)
-		//Empty means to not open files with the given extension.
-		if handlerTrimmed == "" {
-			log.Printf("skip opening link %s, as the extension %s has been disabled.\n", link, extension)
-			return nil
-		}
-
-		commandParts := commands.ParseCommand(strings.ReplaceAll(handlerTrimmed, "{$file}", targetFile))
-		command := exec.Command(commandParts[0], commandParts[1:]...)
-		startError := command.Start()
-		if startError != nil {
-			return startError
-		}
-	} else {
-		log.Println("Attempting to open file: " + targetFile)
-		openError := open.Run(targetFile)
-		if openError != nil {
-			return openError
-		}
-	}
-
-	return nil
 }
 
 // initExtensionEngine injections necessary functions into the engine.
