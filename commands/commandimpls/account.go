@@ -28,13 +28,25 @@ Subcommands:
 
 // Account manages the users account
 type Account struct {
+	window        *ui.Window
+	accountLogout *AccountLogout
+}
+
+// AccountLogout allows logging out of cordless. This clears the token saved
+// in the users folder.
+type AccountLogout struct {
 	window  *ui.Window
 	runNext chan bool
 }
 
 // NewAccount creates a ready-to-use Account command.
-func NewAccount(runNext chan bool, window *ui.Window) *Account {
-	return &Account{window: window, runNext: runNext}
+func NewAccount(accountLogout *AccountLogout, window *ui.Window) *Account {
+	return &Account{window: window, accountLogout: accountLogout}
+}
+
+// NewAccountLogout creates a ready-to-use Logout command.
+func NewAccountLogout(runNext chan bool, window *ui.Window) *AccountLogout {
+	return &AccountLogout{window: window, runNext: runNext}
 }
 
 // Execute runs the command piping its output into the supplied writer.
@@ -80,11 +92,7 @@ func (account *Account) Execute(writer io.Writer, parameters []string) {
 				account.addCurrentAccount(writer, parameters[1])
 			}
 		case "logout", "sign-out", "signout", "logoff":
-			if len(parameters) != 1 {
-				account.printAccountLogoutHelp(writer)
-			} else {
-				account.logout(writer)
-			}
+			account.accountLogout.Execute(writer, parameters[1:])
 		default:
 			account.PrintHelp(writer)
 		}
@@ -150,7 +158,7 @@ func (account *Account) switchAccount(writer io.Writer, accountName string) {
 		if acc.Name == accountName {
 			oldToken := config.Current.Token
 			config.Current.Token = acc.Token
-			persistError := account.saveAndRestart(writer)
+			persistError := account.accountLogout.saveAndRestart(writer)
 			if persistError != nil {
 				config.Current.Token = oldToken
 				commands.PrintError(writer, "Error switching accounts", persistError.Error())
@@ -160,29 +168,6 @@ func (account *Account) switchAccount(writer io.Writer, accountName string) {
 	}
 
 	commands.PrintError(writer, "Error switching accounts", fmt.Sprintf("No account named '%s' was found", accountName))
-}
-
-func (account *Account) logout(writer io.Writer) {
-	oldToken := config.Current.Token
-	config.Current.Token = ""
-	err := account.saveAndRestart(writer)
-	if err != nil {
-		config.Current.Token = oldToken
-		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error logging you out '%s'.\n", err.Error())
-	}
-}
-
-func (account *Account) saveAndRestart(writer io.Writer) error {
-	persistError := config.PersistConfig()
-	if persistError != nil {
-		return persistError
-	}
-
-	//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
-	account.runNext <- true
-	account.window.Shutdown()
-
-	return nil
 }
 
 func (account *Account) printAccountListHelp(writer io.Writer) {
@@ -202,10 +187,6 @@ func (account *Account) listAccounts(writer io.Writer) {
 
 func (account *Account) printAccountCurrentHelp(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage: account current")
-}
-
-func (account *Account) printAccountLogoutHelp(writer io.Writer) {
-	fmt.Fprintln(writer, "Usage: account logout")
 }
 
 func (account *Account) currentAccount(writer io.Writer) {
@@ -243,4 +224,52 @@ func (account *Account) Aliases() []string {
 // PrintHelp prints a static help page for this command
 func (account *Account) PrintHelp(writer io.Writer) {
 	fmt.Fprintln(writer, accountDocumentation)
+}
+
+// Execute runs the command piping its output into the supplied writer.
+func (accountLogout *AccountLogout) Execute(writer io.Writer, parameters []string) {
+	if len(parameters) != 1 {
+		accountLogout.PrintHelp(writer)
+	} else {
+		accountLogout.logout(writer)
+	}
+}
+
+func (accountLogout *AccountLogout) logout(writer io.Writer) {
+	oldToken := config.Current.Token
+	config.Current.Token = ""
+	err := accountLogout.saveAndRestart(writer)
+	if err != nil {
+		config.Current.Token = oldToken
+		fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error logging you out '%s'.\n", err.Error())
+	}
+}
+
+func (accountLogout *AccountLogout) saveAndRestart(writer io.Writer) error {
+	persistError := config.PersistConfig()
+	if persistError != nil {
+		return persistError
+	}
+
+	//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
+	accountLogout.runNext <- true
+	accountLogout.window.Shutdown()
+
+	return nil
+}
+
+// PrintHelp prints a static help page for this command
+func (accountLogout *AccountLogout) PrintHelp(writer io.Writer) {
+	fmt.Fprintln(writer, "Usage: account logout")
+}
+
+// Name returns the primary name for this command. This name will also be
+// used for listing the command in the commandlist.
+func (accountLogout *AccountLogout) Name() string {
+	return "account-logout"
+}
+
+// Aliases are a list of aliases for this command. There might be none.
+func (accountLogout *AccountLogout) Aliases() []string {
+	return []string{"logout"}
 }
