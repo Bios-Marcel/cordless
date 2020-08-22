@@ -388,35 +388,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			}
 
 			for _, link := range links {
-				targetFile := filepath.Join(targetFolder, filepath.Base(link))
-				downloadError := files.DownloadFile(targetFile, link)
-				if downloadError != nil {
-					window.ShowCustomErrorDialog("Couldn't open file", downloadError.Error())
-					continue
-				}
-
-				extension := strings.TrimPrefix(filepath.Ext(targetFile), ".")
-				handler, handlerSet := config.Current.FileOpenHandlers[extension]
-				if handlerSet {
-					handlerTrimmed := strings.TrimSpace(handler)
-					//Empty means to not open files with the given extension.
-					if handlerTrimmed == "" {
-						log.Printf("skip opening link %s, as the extension %s has been disabled.\n", link, extension)
-						continue
-					}
-
-					commandParts := commands.ParseCommand(strings.ReplaceAll(handlerTrimmed, "{$file}", targetFile))
-					command := exec.Command(commandParts[0], commandParts[1:]...)
-					startError := command.Start()
-					if startError != nil {
-						window.ShowCustomErrorDialog("Couldn't open file", startError.Error())
-					}
-				} else {
-					log.Println("Attempting to open file: " + targetFile)
-					openError := open.Run(targetFile)
-					if openError != nil {
-						window.ShowCustomErrorDialog("Couldn't open file", openError.Error())
-					}
+				openError := window.openFile(targetFolder, link)
+				if openError != nil {
+					window.ShowCustomErrorDialog("Couldn't open file", openError.Error())
 				}
 			}
 
@@ -1269,6 +1243,40 @@ important changes of the last two versions officially released.
 	- JS API
 		- there's now an "init" function that gets called on script load
 `, version.Version)
+}
+
+func (window *Window) openFile(targetFolder, link string) error {
+	targetFile := filepath.Join(targetFolder, filepath.Base(link))
+	downloadError := files.DownloadFileOrAccessCache(targetFile, link)
+	if downloadError != nil {
+		return downloadError
+	}
+
+	extension := strings.TrimPrefix(filepath.Ext(targetFile), ".")
+	handler, handlerSet := config.Current.FileOpenHandlers[extension]
+	if handlerSet {
+		handlerTrimmed := strings.TrimSpace(handler)
+		//Empty means to not open files with the given extension.
+		if handlerTrimmed == "" {
+			log.Printf("skip opening link %s, as the extension %s has been disabled.\n", link, extension)
+			return nil
+		}
+
+		commandParts := commands.ParseCommand(strings.ReplaceAll(handlerTrimmed, "{$file}", targetFile))
+		command := exec.Command(commandParts[0], commandParts[1:]...)
+		startError := command.Start()
+		if startError != nil {
+			return startError
+		}
+	} else {
+		log.Println("Attempting to open file: " + targetFile)
+		openError := open.Run(targetFile)
+		if openError != nil {
+			return openError
+		}
+	}
+
+	return nil
 }
 
 // initExtensionEngine injections necessary functions into the engine.
