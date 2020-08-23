@@ -1286,7 +1286,7 @@ func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
 func (window *Window) insertNewLineAtCursor() {
 	window.messageInput.InsertCharacter('\n')
 	window.app.QueueUpdateDraw(func() {
-		window.messageInput.triggerHeightRequestIfNecessary()
+		window.messageInput.TriggerHeightRequestIfNecessary()
 		window.messageInput.internalTextView.ScrollToHighlight()
 	})
 }
@@ -2229,6 +2229,18 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
+	//This two have to work in baremode as well, since otherwise only the mouse
+	//can be used for focus switching, which sucks in a terminal app.
+	if shortcuts.FocusMessageInput.Equals(event) {
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+		return nil
+	}
+
+	if shortcuts.FocusMessageContainer.Equals(event) {
+		window.app.SetFocus(window.chatView.internalTextView)
+		return nil
+	}
+
 	if window.app.GetRoot() != window.rootContainer {
 		return event
 	}
@@ -2278,14 +2290,10 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	} else if shortcuts.FocusGuildContainer.Equals(event) {
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.guildList)
-	} else if shortcuts.FocusMessageContainer.Equals(event) {
-		window.app.SetFocus(window.chatView.internalTextView)
 	} else if shortcuts.FocusUserContainer.Equals(event) {
 		if window.activeView == Guilds && window.userList.internalTreeView.IsVisible() {
 			window.app.SetFocus(window.userList.internalTreeView)
 		}
-	} else if shortcuts.FocusMessageInput.Equals(event) {
-		window.app.SetFocus(window.messageInput.GetPrimitive())
 	} else {
 		return event
 	}
@@ -2321,12 +2329,22 @@ func (window *Window) toggleUserContainer() {
 func (window *Window) toggleBareChat() {
 	window.bareChat = !window.bareChat
 	if window.bareChat {
-		window.chatView.internalTextView.SetBorder(false)
-		window.app.SetRoot(window.chatView.GetPrimitive(), true)
+		window.chatView.internalTextView.SetBorderSides(true, false, true, false)
+		window.messageInput.internalTextView.SetBorderSides(false, true, false, true)
+		previousFocus := window.app.GetFocus()
+		window.app.SetRoot(window.chatArea, true)
+		window.app.SetFocus(previousFocus)
 	} else {
-		window.chatView.internalTextView.SetBorder(true)
+		window.chatView.internalTextView.SetBorderSides(true, true, true, true)
+		window.messageInput.internalTextView.SetBorderSides(true, true, true, true)
 		window.app.SetRoot(window.rootContainer, true)
+		window.app.SetFocus(window.messageInput.GetPrimitive())
 	}
+
+	window.app.QueueUpdateDraw(func() {
+		window.messageInput.TriggerHeightRequestIfNecessary()
+		window.chatView.Reprint()
+	})
 }
 
 // FindCommand searches through the registered command, whether any of them
