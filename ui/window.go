@@ -2330,13 +2330,11 @@ func (window *Window) toggleBareChat() {
 	window.bareChat = !window.bareChat
 	if window.bareChat {
 		window.chatView.internalTextView.SetBorderSides(true, false, true, false)
-		window.messageInput.internalTextView.SetBorderSides(false, true, false, true)
 		previousFocus := window.app.GetFocus()
 		window.app.SetRoot(window.chatArea, true)
 		window.app.SetFocus(previousFocus)
 	} else {
 		window.chatView.internalTextView.SetBorderSides(true, true, true, true)
-		window.messageInput.internalTextView.SetBorderSides(true, true, true, true)
 		window.app.SetRoot(window.rootContainer, true)
 		window.app.SetFocus(window.messageInput.GetPrimitive())
 	}
