@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"os/exec"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
 
+	"github.com/Bios-Marcel/cordless/fileopen"
+	"github.com/Bios-Marcel/cordless/util/files"
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/text"
 	"github.com/Bios-Marcel/cordless/version"
@@ -361,16 +364,45 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if shortcuts.ViewSelectedMessageImages.Equals(event) {
-			links := make([]string, 0, len(message.Attachments))
-			for _, file := range message.Attachments {
-				links = append(links, file.URL)
-			}
-			if len(links) > 0 {
-				cmd := exec.Command(config.Current.ImageViewer, links...)
-				err := cmd.Start()
-				if err != nil {
-					window.ShowErrorDialog(err.Error())
+			var targetFolder string
+
+			if config.Current.FileOpenSaveFilesPermanently {
+				absolutePath, pathError := files.ToAbsolutePath(config.Current.FileOpenSaveFolder)
+				if pathError == nil {
+					targetFolder = absolutePath
 				}
+			}
+
+			if targetFolder == "" {
+				cacheDir, osError := os.UserCacheDir()
+				if osError == nil && cacheDir != "" {
+					//Own subdirectory to avoid nuking foreing files by accident.
+					targetFolder = filepath.Join(cacheDir, "cordless")
+					makeDirError := os.MkdirAll(targetFolder, 0766)
+					if makeDirError != nil {
+						window.ShowCustomErrorDialog("Couldn't open file", "Can't create cache subdirectory.")
+						return nil
+					}
+				}
+			}
+
+			if targetFolder == "" {
+				window.ShowCustomErrorDialog("Couldn't open file", "Can't find cache directory.")
+			} else {
+				for _, file := range message.Attachments {
+					openError := fileopen.OpenFile(targetFolder, file.ID, file.URL)
+					if openError != nil {
+						window.ShowCustomErrorDialog("Couldn't open file", openError.Error())
+					}
+				}
+			}
+
+			//If permanent saving isn't disabled, we clear files older
+			//than one month whenever something is opened. Since this
+			//will happen in a background thread, it won't cause
+			//application blocking.
+			if !config.Current.FileOpenSaveFilesPermanently && targetFolder != "" {
+				fileopen.LaunchCacheCleaner(targetFolder, time.Hour*(24*14))
 			}
 
 			return nil
@@ -2495,10 +2527,16 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 	}
 }
 
-//ShowErrorDialog shows a simple error dialog that has only an Okay button,
+// ShowErrorDialog shows a simple error dialog that has only an Okay button,
 // a generic title and the given text.
 func (window *Window) ShowErrorDialog(text string) {
 	window.ShowDialog(config.GetTheme().ErrorColor, "An error occurred - "+text, func(_ string) {}, "Okay")
+}
+
+// ShowCustomErrorDialog shows a simple error dialog with a custom title
+// and text. The button says "Okay" and only closes the dialog.
+func (window *Window) ShowCustomErrorDialog(title, text string) {
+	window.ShowDialog(config.GetTheme().ErrorColor, title+" - "+text, func(_ string) {}, "Okay")
 }
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {

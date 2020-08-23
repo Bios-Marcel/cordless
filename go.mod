@@ -23,6 +23,7 @@ require (
 	github.com/rivo/uniseg v0.1.0
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
 	github.com/sergi/go-diff v1.1.0
+	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4 // indirect
