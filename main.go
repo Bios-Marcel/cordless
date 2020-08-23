@@ -8,7 +8,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/app"
 	"github.com/Bios-Marcel/cordless/config"
-	"github.com/Bios-Marcel/cordless/shortcuts"
+	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
 	"github.com/Bios-Marcel/cordless/version"
 )
 
@@ -21,7 +21,7 @@ func main() {
 	flag.Parse()
 
 	if showShortcutsDialog != nil && *showShortcutsDialog {
-		shortcuts.RunShortcutsDialogStandalone()
+		shortcutdialog.RunShortcutsDialogStandalone()
 	} else if showVersion != nil && *showVersion {
 		fmt.Printf("You are running cordless version %s\nKeep in mind that this version might not be correct for manually built versions, as those can contain additional commits.\n", version.Version)
 	} else {

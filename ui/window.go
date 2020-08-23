@@ -51,7 +51,6 @@ type Window struct {
 	dialogReplacement *tview.Flex
 	dialogButtonBar   *tview.Flex
 	dialogTextView    *tview.TextView
-	currentContainer  tview.Primitive
 
 	leftArea    *tview.Flex
 	guildList   *GuildList
@@ -1113,7 +1112,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	}
 
 	app.SetRoot(window.rootContainer, true)
-	window.currentContainer = window.rootContainer
 	app.SetInputCapture(window.handleGlobalShortcuts)
 
 	if config.Current.UseFixedLayout {
@@ -2232,7 +2230,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
-	if window.currentContainer != window.rootContainer {
+	if window.app.GetRoot() != window.rootContainer {
 		return event
 	}
 
@@ -2243,10 +2241,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
 		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
-			window.currentContainer = window.rootContainer
 			window.app.ForceDraw()
-		}, func(view *tview.Flex) {
-			window.currentContainer = view
 		})
 	} else if shortcuts.ToggleCommandView.Equals(event) {
 		window.SetCommandModeEnabled(!window.commandMode)
@@ -2328,11 +2323,9 @@ func (window *Window) toggleBareChat() {
 	window.bareChat = !window.bareChat
 	if window.bareChat {
 		window.chatView.internalTextView.SetBorder(false)
-		window.currentContainer = window.chatView.GetPrimitive()
 		window.app.SetRoot(window.chatView.GetPrimitive(), true)
 	} else {
 		window.chatView.internalTextView.SetBorder(true)
-		window.currentContainer = window.rootContainer
 		window.app.SetRoot(window.rootContainer, true)
 	}
 }
@@ -2539,7 +2532,8 @@ func (window *Window) SwitchToFriendsPage() {
 	window.activeView = Dms
 }
 
-// Switches to the previous channel and layout.
+// SwitchToPreviousChannel loads the previously loaded channel and focuses it
+// in it's respective UI primitive.
 func (window *Window) SwitchToPreviousChannel() error {
 	if window.previousChannel == nil || window.previousChannel == window.selectedChannel {
 		// No previous channel.
@@ -2734,12 +2728,10 @@ func (window *Window) GetSelectedChannel() *discordgo.Channel {
 	return window.selectedChannel
 }
 
-// PromptSecretInput shows an input dialog that masks the user input. The
-// returned value will either be empty or what the user has entered.
+// PromptSecretInput shows a fullscreen input dialog that masks the user input.
+// The returned value will either be empty or what the user has entered.
 func (window *Window) PromptSecretInput(title, message string) string {
-	return tviewutil.PrompSecretSingleLineInput(window.app, func(root tview.Primitive) {
-		window.currentContainer = root
-	}, title, message)
+	return tviewutil.PrompSecretSingleLineInput(window.app, title, message)
 }
 
 // ForceRedraw triggers ForceDraw on the underlying tview application, causing

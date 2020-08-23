@@ -23,7 +23,7 @@ func checkVT() bool {
 
 var vtxxx = checkVT()
 
-func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func(view *tview.Flex)) {
+func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	var table *ShortcutTable
 	var shortcutDescription *tview.TextView
 	var exitButton *tview.Button
@@ -105,9 +105,6 @@ func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func
 
 	app.SetRoot(shortcutsView, true)
 	app.SetFocus(table.GetPrimitive())
-	if beforeShow != nil {
-		beforeShow(shortcutsView)
-	}
 }
 
 func RunShortcutsDialogStandalone() {
@@ -118,7 +115,7 @@ func RunShortcutsDialogStandalone() {
 	app := tview.NewApplication()
 	ShowShortcutsDialog(app, func() {
 		app.Stop()
-	}, nil)
+	})
 	startError := app.Run()
 	if startError != nil {
 		log.Fatalf("Error launching shortcuts dialog: %s\n", startError)

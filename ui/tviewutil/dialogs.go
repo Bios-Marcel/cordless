@@ -10,20 +10,18 @@ import (
 // PrompSecretSingleLineInput shows a fullscreen input dialog that masks the
 // user input. The returned value will either be empty or what the user
 // has entered.
-func PrompSecretSingleLineInput(app *tview.Application,
-	activePrimitiveChanged func(primitive tview.Primitive), title, message string) string {
-	return promptSingleLineInput(app, '*', activePrimitiveChanged, title, message)
+func PrompSecretSingleLineInput(app *tview.Application, title, message string) string {
+	return promptSingleLineInput(app, '*', title, message)
 }
 
 // PromptSingleLineInput shows a fullscreen input dialog.
 // The returned value will either be empty or what the user has entered.
 func PromptSingleLineInput(app *tview.Application,
 	activePrimitiveChanged func(primitive tview.Primitive), title, message string) string {
-	return promptSingleLineInput(app, 0, activePrimitiveChanged, title, message)
+	return promptSingleLineInput(app, 0, title, message)
 }
 
-func promptSingleLineInput(app *tview.Application, maskCharacter rune,
-	activePrimitiveChanged func(primitive tview.Primitive), title, message string) string {
+func promptSingleLineInput(app *tview.Application, maskCharacter rune, title, message string) string {
 
 	waitChannel := make(chan struct{})
 	var output string
@@ -58,12 +56,10 @@ func promptSingleLineInput(app *tview.Application, maskCharacter rune,
 		frame.SetBorder(true)
 		frame.AddText(message, true, tview.AlignLeft, tcell.ColorDefault)
 		app.SetRoot(frame, true)
-		activePrimitiveChanged(frame)
 	})
 	<-waitChannel
 	app.QueueUpdateDraw(func() {
 		app.SetRoot(previousRoot, true)
-		activePrimitiveChanged(previousRoot)
 		app.SetFocus(previousFocus)
 		waitChannel <- struct{}{}
 	})
