@@ -60,7 +60,7 @@ var (
 		FocusChannelAfterGuildSelection:        true,
 		FocusMessageInputAfterChannelSelection: true,
 		OnTypeInListBehaviour:                  SearchOnTypeInList,
-		MouseEnabled:                           true,
+		MouseEnabled:                           false,
 		ShortenLinks:                           false,
 		ShortenWithExtension:                   false,
 		ShortenerPort:                          63212,
