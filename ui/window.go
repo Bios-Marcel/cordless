@@ -33,6 +33,7 @@ import (
 	"github.com/Bios-Marcel/cordless/scripting"
 	"github.com/Bios-Marcel/cordless/scripting/js"
 	"github.com/Bios-Marcel/cordless/shortcuts"
+	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/maths"
 )
@@ -1100,7 +1101,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
 		bottomBar.AddItem(tview.NewBox(), 1, 0, false)
 
-		shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcuts.EventToString(shortcutsDialogShortcut))
+		shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut))
 		if vtxxx {
 			shortcutInfoText = "[::r]" + shortcutInfoText
 		}
@@ -2240,7 +2241,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	}
 
 	if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
-		shortcuts.ShowShortcutsDialog(window.app, func() {
+		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
 			window.currentContainer = window.rootContainer
 			window.app.ForceDraw()
@@ -2736,49 +2737,9 @@ func (window *Window) GetSelectedChannel() *discordgo.Channel {
 // PromptSecretInput shows an input dialog that masks the user input. The
 // returned value will either be empty or what the user has entered.
 func (window *Window) PromptSecretInput(title, message string) string {
-	waitChannel := make(chan struct{})
-	var output string
-	var previousFocus tview.Primitive
-	window.app.QueueUpdateDraw(func() {
-		previousFocus = window.app.GetFocus()
-		inputField := tview.NewInputField()
-		inputField.SetMaskCharacter('*')
-		inputField.SetDoneFunc(func(key tcell.Key) {
-			if key == tcell.KeyEnter {
-				output = inputField.GetText()
-				waitChannel <- struct{}{}
-			} else if key == tcell.KeyEscape {
-				waitChannel <- struct{}{}
-			}
-		})
-		inputField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			//FIXME Use shortcut and make it proper PasteAtCursor/Selection
-			if event.Key() == tcell.KeyCtrlV {
-				content, clipError := clipboard.ReadAll()
-				if clipError == nil {
-					inputField.SetText(content)
-				}
-				return nil
-			}
-
-			return event
-		})
-		frame := tview.NewFrame(inputField)
-		frame.SetTitle(title)
-		frame.SetBorder(true)
-		frame.AddText(message, true, tview.AlignLeft, tcell.ColorDefault)
-		window.app.SetRoot(frame, true)
-		window.currentContainer = frame
-	})
-	<-waitChannel
-	window.app.QueueUpdateDraw(func() {
-		window.app.SetRoot(window.rootContainer, true)
-		window.currentContainer = window.rootContainer
-		window.app.SetFocus(previousFocus)
-		waitChannel <- struct{}{}
-	})
-	<-waitChannel
-	return output
+	return tviewutil.PrompSecretSingleLineInput(window.app, func(root tview.Primitive) {
+		window.currentContainer = root
+	}, title, message)
 }
 
 // ForceRedraw triggers ForceDraw on the underlying tview application, causing

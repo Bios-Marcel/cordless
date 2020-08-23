@@ -1,10 +1,11 @@
-package shortcuts
+package shortcutdialog
 
 import (
 	"log"
 	"os"
 	"regexp"
 
+	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/gdamore/tcell"
 
@@ -29,7 +30,7 @@ func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func
 	var resetButton *tview.Button
 
 	table = NewShortcutTable()
-	table.SetShortcuts(Shortcuts)
+	table.SetShortcuts(shortcuts.Shortcuts)
 
 	table.SetOnClose(onClose)
 
@@ -49,12 +50,12 @@ func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func
 
 	resetButton = tview.NewButton("Restore all defaults")
 	resetButton.SetSelectedFunc(func() {
-		for _, shortcut := range Shortcuts {
+		for _, shortcut := range shortcuts.Shortcuts {
 			shortcut.Reset()
 		}
-		Persist()
+		shortcuts.Persist()
 
-		table.SetShortcuts(Shortcuts)
+		table.SetShortcuts(shortcuts.Shortcuts)
 		app.ForceDraw()
 	})
 	resetButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -110,7 +111,7 @@ func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func
 }
 
 func RunShortcutsDialogStandalone() {
-	loadError := Load()
+	loadError := shortcuts.Load()
 	if loadError != nil {
 		log.Fatalf("Error loading shortcuts: %s\n", loadError)
 	}

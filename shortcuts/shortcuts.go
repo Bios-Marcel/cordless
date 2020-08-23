@@ -142,7 +142,7 @@ func addShortcut(identifier, name string, scope *Scope, event *tcell.EventKey) *
 	shortcut := &Shortcut{
 		Identifier:   identifier,
 		Name:         name,
-		scope:        scope,
+		Scope:        scope,
 		Event:        event,
 		defaultEvent: event,
 	}
@@ -161,8 +161,8 @@ type Shortcut struct {
 	// Name will be shown on the UI
 	Name string
 
-	// The scope will be omitted, as this needed be persisted anyway.
-	scope *Scope
+	// The Scope will be omitted, as this needed be persisted anyway.
+	Scope *Scope
 
 	// Event is the shortcut expressed as it's resulting tcell Event.
 	Event *tcell.EventKey
@@ -174,6 +174,18 @@ type Shortcut struct {
 // Equals compares the given EventKey with the Shortcuts Event.
 func (shortcut *Shortcut) Equals(event *tcell.EventKey) bool {
 	return EventsEqual(shortcut.Event, event)
+}
+
+// EventsEqual compares the given events, respecting everything except for the
+// When field.
+func EventsEqual(eventOne, eventTwo *tcell.EventKey) bool {
+	if (eventOne == nil && eventTwo != nil) || (eventOne != nil && eventTwo == nil) {
+		return false
+	}
+
+	return eventOne.Rune() == eventTwo.Rune() &&
+		eventOne.Modifiers() == eventTwo.Modifiers() &&
+		eventOne.Key() == eventTwo.Key()
 }
 
 // Scope is what describes a shortcuts scope within the application. Usually
@@ -208,7 +220,7 @@ func (shortcut *Shortcut) MarshalJSON() ([]byte, error) {
 	if shortcut.Event == nil {
 		return json.MarshalIndent(&ShortcutDataRepresentation{
 			Identifier:      shortcut.Identifier,
-			ScopeIdentifier: shortcut.scope.Identifier,
+			ScopeIdentifier: shortcut.Scope.Identifier,
 			EventKey:        -1,
 			EventRune:       -1,
 			EventMod:        -1,
@@ -217,7 +229,7 @@ func (shortcut *Shortcut) MarshalJSON() ([]byte, error) {
 
 	return json.MarshalIndent(&ShortcutDataRepresentation{
 		Identifier:      shortcut.Identifier,
-		ScopeIdentifier: shortcut.scope.Identifier,
+		ScopeIdentifier: shortcut.Scope.Identifier,
 		EventKey:        shortcut.Event.Key(),
 		EventRune:       shortcut.Event.Rune(),
 		EventMod:        shortcut.Event.Modifiers(),
@@ -243,7 +255,7 @@ func (shortcut *Shortcut) UnmarshalJSON(data []byte) error {
 
 	for _, scope := range scopes {
 		if scope.Identifier == temp.ScopeIdentifier {
-			shortcut.scope = scope
+			shortcut.Scope = scope
 			return nil
 		}
 	}
@@ -301,7 +313,7 @@ OUTER_LOOP:
 	for _, shortcut := range tempShortcuts {
 		for _, otherShortcut := range Shortcuts {
 			if otherShortcut.Identifier == shortcut.Identifier &&
-				otherShortcut.scope.Identifier == shortcut.scope.Identifier {
+				otherShortcut.Scope.Identifier == shortcut.Scope.Identifier {
 				otherShortcut.Event = shortcut.Event
 				continue OUTER_LOOP
 			}

@@ -1,9 +1,10 @@
-package shortcuts
+package shortcutdialog
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/gdamore/tcell"
 )
@@ -18,7 +19,7 @@ const (
 // them.
 type ShortcutTable struct {
 	table         *tview.Table
-	shortcuts     []*Shortcut
+	shortcuts     []*shortcuts.Shortcut
 	onClose       func()
 	selection     int
 	focusNext     func()
@@ -65,7 +66,7 @@ func createHeaderCell(text string) *tview.TableCell {
 }
 
 // SetShortcuts sets the shortcut data and changes the UI accordingly.
-func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*Shortcut) {
+func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*shortcuts.Shortcut) {
 	shortcutTable.shortcuts = shortcuts
 	shortcutTable.selection = -1
 
@@ -83,7 +84,7 @@ func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*Shortcut) {
 			SetMaxWidth(1)
 		shortcutTable.table.SetCell(row, actionCellIndex, nameCell)
 
-		scopeCell := tview.NewTableCell(shortcut.scope.Name).
+		scopeCell := tview.NewTableCell(shortcut.Scope.Name).
 			SetExpansion(1).
 			SetMaxWidth(1)
 		shortcutTable.table.SetCell(row, scopeCellIndex, scopeCell)
@@ -98,7 +99,7 @@ func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*Shortcut) {
 }
 
 // GetShortcuts returns the array containing the currently displayed shortcuts.
-func (shortcutTable *ShortcutTable) GetShortcuts() []*Shortcut {
+func (shortcutTable *ShortcutTable) GetShortcuts() []*shortcuts.Shortcut {
 	return shortcutTable.shortcuts
 }
 
@@ -152,7 +153,7 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 			shortcut.Reset()
 			shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText(EventToString(shortcut.Event))
 
-			persistError := Persist()
+			persistError := shortcuts.Persist()
 			if persistError != nil {
 				panic(persistError)
 			}
@@ -160,7 +161,7 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 			shortcutTable.table.GetCell(selectedRow, shortcutCellIndex).SetText("")
 			shortcutTable.shortcuts[dataIndex].Event = nil
 
-			persistError := Persist()
+			persistError := shortcuts.Persist()
 			if persistError != nil {
 				panic(persistError)
 			}
@@ -173,7 +174,7 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 			event.Rune(),
 			event.Modifiers())
 
-		persistError := Persist()
+		persistError := shortcuts.Persist()
 		if persistError != nil {
 			panic(persistError)
 		}
@@ -188,18 +189,6 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 // the shortcuts table.
 func (shortcutTable *ShortcutTable) SetOnClose(onClose func()) {
 	shortcutTable.onClose = onClose
-}
-
-// EventsEqual compares the given events, respecting everything except for the
-// When field.
-func EventsEqual(eventOne, eventTwo *tcell.EventKey) bool {
-	if (eventOne == nil && eventTwo != nil) || (eventOne != nil && eventTwo == nil) {
-		return false
-	}
-
-	return eventOne.Rune() == eventTwo.Rune() &&
-		eventOne.Modifiers() == eventTwo.Modifiers() &&
-		eventOne.Key() == eventTwo.Key()
 }
 
 // EventToString renders a tcell.EventKey as a human readable string
