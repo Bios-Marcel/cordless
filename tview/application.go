@@ -515,6 +515,12 @@ func (a *Application) SetRoot(root Primitive, fullscreen bool) *Application {
 	return a
 }
 
+// GetRoot returns the current root Primitive of the application or nil if
+// there currently is not root.
+func (a *Application) GetRoot() Primitive {
+	return a.root
+}
+
 // ResizeToFullScreen resizes the given primitive such that it fills the entire
 // screen.
 func (a *Application) ResizeToFullScreen(p Primitive) *Application {
