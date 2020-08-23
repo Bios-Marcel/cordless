@@ -2331,6 +2331,8 @@ func (window *Window) toggleBareChat() {
 	if window.bareChat {
 		window.chatView.internalTextView.SetBorderSides(true, false, true, false)
 		previousFocus := window.app.GetFocus()
+		//Initially this should be gone. Maybe we'll allow reacessing it at some point.
+		window.SetCommandModeEnabled(false)
 		window.app.SetRoot(window.chatArea, true)
 		window.app.SetFocus(previousFocus)
 	} else {
