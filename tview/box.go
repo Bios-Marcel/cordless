@@ -498,6 +498,13 @@ func (b *Box) Draw(screen tcell.Screen) bool {
 					screen.SetContent(b.x+b.width-1, b.y+b.height-1, vertical, nil, border)
 				}
 			}
+		} else if b.height == 1 && !b.borderTop && !b.borderBottom {
+			if b.borderLeft {
+				screen.SetContent(b.x, b.y, vertical, nil, border)
+			}
+			if b.borderRight {
+				screen.SetContent(b.x+b.width-1, b.y+b.height-1, vertical, nil, border)
+			}
 		}
 
 		// Draw title.
