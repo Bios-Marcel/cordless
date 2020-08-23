@@ -1168,8 +1168,10 @@ important changes of the last two versions officially released.
 		- The "friends" command now has "friend" as an alias
 		- "logout" is now a seperate command, but "account logout" still works
 		- Currently active account is now highlight in "account list" output
+		- Password input dialog now uses the configured shortcut for paste
 	- Bugfixes
 		- Fix crash due to race condition in readmarker feature
+		- Embed-Edits won't be ignored anymore
 [::b]2020-08-11 - 2020-06-30
 	- Features
 		- Notifications for servers and DMs are now displayed in the containers header row 
