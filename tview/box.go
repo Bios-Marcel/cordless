@@ -311,6 +311,35 @@ func (b *Box) SetBorderSides(top, left, bottom, right bool) *Box {
 	return b
 }
 
+// IsBorder indicates whether a border is rendered at all.
+func (b *Box) IsBorder() bool {
+	return b.border
+}
+
+// IsBorderTop indicates whether a border is rendered on the top side of
+// this primitive.
+func (b *Box) IsBorderTop() bool {
+	return b.border && b.borderTop
+}
+
+// IsBorderBottom indicates whether a border is rendered on the bottom side
+// of this primitive.
+func (b *Box) IsBorderBottom() bool {
+	return b.border && b.borderBottom
+}
+
+// IsBorderRight indicates whether a border is rendered on the right side of
+// this primitive.
+func (b *Box) IsBorderRight() bool {
+	return b.border && b.borderRight
+}
+
+// IsBorderLeft indicates whether a border is rendered on the left side of
+// this primitive.
+func (b *Box) IsBorderLeft() bool {
+	return b.border && b.borderLeft
+}
+
 func maxInt(a, b int) int {
 	if a > b {
 		return a
