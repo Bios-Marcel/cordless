@@ -1757,10 +1757,7 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
-		//Ignore just-embed edits
-		if m.Content != "" {
-			edit <- m.Message
-		}
+		edit <- m.Message
 	})
 }
 
