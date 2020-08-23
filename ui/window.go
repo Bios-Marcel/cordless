@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
@@ -1504,40 +1503,6 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 	return message
 }
 
-// emojiSequenceIndexes will find all parts of a string (rune array) that
-// could potentially be emoji sequences and will return them backwards.
-// they'll be returned backwards in order to allow easily manipulating the
-// data without invalidating the following indexes accidentally.
-// Example:
-//     Hello :world:, what a :nice: day.
-// would result in
-//     []int{22,,27,6,12}
-func emojiSequenceIndexes(runes []rune) []int {
-	var sequencesBackwards []int
-	for i := len(runes) - 1; i >= 0; i-- {
-		if runes[i] == ':' {
-			for j := i - 1; j >= 0; j-- {
-				char := runes[j]
-				if char == ':' {
-					//Handle this ':' in the next iteration of the outer loop otherwise
-					if j != i-1 {
-						sequencesBackwards = append(sequencesBackwards, j, i)
-						i = j
-						break
-					} else {
-						break
-					}
-				} else if unicode.IsSpace(char) {
-					i = j
-					break
-				}
-			}
-		}
-	}
-
-	return sequencesBackwards
-}
-
 // mergeRuneSlices copies the passed rune arrays into a new rune array of the
 // correct size.
 func mergeRuneSlices(a, b, c []rune) *[]rune {
@@ -1556,7 +1521,7 @@ func mergeRuneSlices(a, b, c []rune) *[]rune {
 // For private channels, the channelGuild may be nil.
 func (window *Window) replaceEmojiSequences(channelGuild *discordgo.Guild, message string) string {
 	asRunes := []rune(message)
-	indexes := emojiSequenceIndexes(asRunes)
+	indexes := text.FindEmojiIndices(asRunes)
 INDEX_LOOP:
 	for i := 0; i < len(indexes); i += 2 {
 		startIndex := indexes[i]
