@@ -1,7 +1,10 @@
 package files
 
 import (
+	"io"
+	"net/http"
 	"net/url"
+	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
@@ -40,4 +43,36 @@ func ToAbsolutePath(input string) (string, error) {
 	}
 
 	return resolvedPath, nil
+}
+
+// DownloadFile will download a url to a local file. It's efficient because it will
+// write as it downloads and not load the whole file into memory.
+func DownloadFile(filepath, url string) error {
+	response, httpError := http.Get(url)
+	if httpError != nil {
+		return httpError
+	}
+	defer response.Body.Close()
+
+	outputFile, fileError := os.Create(filepath)
+	if fileError != nil {
+		return fileError
+	}
+	defer outputFile.Close()
+
+	_, writeError := io.Copy(outputFile, response.Body)
+	return writeError
+}
+
+// DownloadFileOrAccessCache checks whether the file already exists on the
+// users filesystem and only downloads it if it doesn't.
+func DownloadFileOrAccessCache(filepath, url string) error {
+	_, statError := os.Stat(filepath)
+
+	//File already exists
+	if statError == nil {
+		return nil
+	}
+
+	return DownloadFile(filepath, url)
 }

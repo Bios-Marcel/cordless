@@ -87,9 +87,9 @@ Snap will automatically install updates.
 On Arch based distributions, you can use the AUR package to install cordless:
 
 ```shell
-$ git clone https://aur.archlinux.org/cordless-git.git
-$ cd cordless-git
-$ makepkg -sric
+git clone https://aur.archlinux.org/cordless-git.git
+cd cordless-git
+makepkg -sric
 ```
 
 or use your favourite AUR helper.
@@ -130,17 +130,16 @@ If you don't install via cordless via brew, then you should have to get
 
 ### Login
 
+**YOUR PASSWORD IS NEVER SAVED LOCALLY.**
+
 Logging in works via the UI on first startup of the application.
 
-If you are logging in with a bot token, you have to prepend `Bot ` (yes, with
-the space) in front of the token. Pasting only works via your terminals normal
-pasting shortcut.
-
-**YOUR PASSWORD IS NEVER SAVED LOCALLY.**
+If you are logging in with a bot token, you have to prepend `Bot` in front of
+the token.
 
 If you need to find out how to retrieve your token, check [the wiki](https://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token).
 
-**Currently captcha-code login isn't supported.**
+**Currently captcha-code login isn't supported. Thanks for your SHIT-API, Google**
 
 ## Quick overview - Navigation (switching between boxes / containers)
 
@@ -187,7 +186,7 @@ https://github.com/Bios-Marcel/cordless/wiki/FAQ
 - You like fancy GUI
 - You want to see images, videos and whatnot inside of the application itself
 - You need the voice/video calling features
-- You need to manage or moderate server
+- You need to manage or moderate servers
 
 ## Contributing
 

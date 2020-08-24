@@ -99,10 +99,9 @@ git push --tags
 # the version of the built snap package will end up being `DATE_dirty`.
 #
 
-# Borked af
-#snapcraft clean cordless
-#snapcraft
-#snapcraft upload "cordless_${RELEASE_DATE}_amd64.snap" --release stable
+snapcraft clean cordless
+snapcraft
+snapcraft upload "cordless_${RELEASE_DATE}_multi.snap" --release stable
 
 #
 # Copies the changelog for pasting into the github release. The changes will

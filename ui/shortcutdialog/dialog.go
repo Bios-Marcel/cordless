@@ -1,10 +1,11 @@
-package shortcuts
+package shortcutdialog
 
 import (
 	"log"
 	"os"
 	"regexp"
 
+	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/gdamore/tcell"
 
@@ -22,14 +23,14 @@ func checkVT() bool {
 
 var vtxxx = checkVT()
 
-func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func(view *tview.Flex)) {
+func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	var table *ShortcutTable
 	var shortcutDescription *tview.TextView
 	var exitButton *tview.Button
 	var resetButton *tview.Button
 
 	table = NewShortcutTable()
-	table.SetShortcuts(Shortcuts)
+	table.SetShortcuts(shortcuts.Shortcuts)
 
 	table.SetOnClose(onClose)
 
@@ -49,12 +50,12 @@ func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func
 
 	resetButton = tview.NewButton("Restore all defaults")
 	resetButton.SetSelectedFunc(func() {
-		for _, shortcut := range Shortcuts {
+		for _, shortcut := range shortcuts.Shortcuts {
 			shortcut.Reset()
 		}
-		Persist()
+		shortcuts.Persist()
 
-		table.SetShortcuts(Shortcuts)
+		table.SetShortcuts(shortcuts.Shortcuts)
 		app.ForceDraw()
 	})
 	resetButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -104,20 +105,17 @@ func ShowShortcutsDialog(app *tview.Application, onClose func(), beforeShow func
 
 	app.SetRoot(shortcutsView, true)
 	app.SetFocus(table.GetPrimitive())
-	if beforeShow != nil {
-		beforeShow(shortcutsView)
-	}
 }
 
 func RunShortcutsDialogStandalone() {
-	loadError := Load()
+	loadError := shortcuts.Load()
 	if loadError != nil {
 		log.Fatalf("Error loading shortcuts: %s\n", loadError)
 	}
 	app := tview.NewApplication()
 	ShowShortcutsDialog(app, func() {
 		app.Stop()
-	}, nil)
+	})
 	startError := app.Run()
 	if startError != nil {
 		log.Fatalf("Error launching shortcuts dialog: %s\n", startError)

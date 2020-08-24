@@ -27,13 +27,21 @@ var (
 func GetMemberColor(state *discordgo.State, member *discordgo.Member) string {
 	if len(member.Roles) > 0 && !member.User.Bot &&
 		config.Current.UserColors == config.RoleColor {
+
+		//Since roles aren't sorted, we need to find the smallest one.
+		var roleToUse *discordgo.Role
 		for _, memberRole := range member.Roles {
 			role, _ := state.Role(member.GuildID, memberRole)
-			if color := GetRoleColor(role); color != "" {
-				return color
+			if roleToUse == nil || role.Position > roleToUse.Position {
+				roleToUse = role
 			}
 		}
 
+		if roleToUse != nil {
+			if color := GetRoleColor(roleToUse); color != "" {
+				return color
+			}
+		}
 	}
 
 	return GetUserColor(member.User)
@@ -88,7 +96,7 @@ func getRandomColorString() string {
 // either the username or the nickname. In case the member is a bot, the bot
 // prefix will be prepended.
 func GetMemberName(member *discordgo.Member) string {
-	if member.Nick != "" {
+	if config.Current.ShowNicknames && member.Nick != "" {
 		return getUserName(member.Nick, member.User.Bot)
 	}
 

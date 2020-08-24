@@ -436,7 +436,7 @@ func NewEditor() *Editor {
 			return nil
 		} else if shortcuts.PasteAtSelection.Equals(event) {
 			editor.Paste(event)
-			editor.triggerHeightRequestIfNecessary()
+			editor.TriggerHeightRequestIfNecessary()
 			return nil
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter('\n')
@@ -448,7 +448,7 @@ func NewEditor() *Editor {
 			return event
 		}
 
-		editor.triggerHeightRequestIfNecessary()
+		editor.TriggerHeightRequestIfNecessary()
 		editor.internalTextView.ScrollToHighlight()
 		return nil
 	})
@@ -480,14 +480,24 @@ func (editor *Editor) countRows(text string) int {
 	return tviewutil.CalculateNecessaryHeight(width, text)
 }
 
-func (editor *Editor) triggerHeightRequestIfNecessary() {
+// TriggerHeightRequestIfNecessary informs the parent that more or less height
+// is requierd for rendering than currently in use, unless the height is already
+// optimal.
+func (editor *Editor) TriggerHeightRequestIfNecessary() {
 	if editor.heightRequestHandler == nil {
 		return
 	}
 
 	rowAmount := editor.countRows(editor.GetText())
 
-	newRequestedHeight := rowAmount + 2 /*borders*/
+	newRequestedHeight := rowAmount
+	if editor.internalTextView.IsBorderTop() {
+		newRequestedHeight++
+	}
+	if editor.internalTextView.IsBorderBottom() {
+		newRequestedHeight++
+	}
+
 	if newRequestedHeight != editor.requestedHeight {
 		editor.requestedHeight = newRequestedHeight
 		editor.heightRequestHandler(newRequestedHeight)
@@ -550,7 +560,7 @@ func (editor *Editor) SetText(text string) {
 	editor.buffer.Cursor.ResetSelection()
 	editor.buffer.Cursor.GotoLoc(editor.buffer.End())
 	editor.applyBuffer()
-	editor.triggerHeightRequestIfNecessary()
+	editor.TriggerHeightRequestIfNecessary()
 }
 
 // SetBorderFocusColor delegates to the underlying components

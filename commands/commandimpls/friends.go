@@ -259,8 +259,9 @@ func (f *Friends) Name() string {
 	return "friends"
 }
 
+// Aliases returns availabe aliases for this command
 func (f *Friends) Aliases() []string {
-	return nil
+	return []string{"friend"}
 }
 
 // PrintHelp prints the general help page for the friends commands.

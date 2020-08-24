@@ -4,14 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"os/exec"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
 
+	"github.com/Bios-Marcel/cordless/fileopen"
+	"github.com/Bios-Marcel/cordless/util/files"
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/text"
 	"github.com/Bios-Marcel/cordless/version"
@@ -34,6 +36,7 @@ import (
 	"github.com/Bios-Marcel/cordless/scripting"
 	"github.com/Bios-Marcel/cordless/scripting/js"
 	"github.com/Bios-Marcel/cordless/shortcuts"
+	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/maths"
 )
@@ -51,7 +54,6 @@ type Window struct {
 	dialogReplacement *tview.Flex
 	dialogButtonBar   *tview.Flex
 	dialogTextView    *tview.TextView
-	currentContainer  tview.Primitive
 
 	leftArea    *tview.Flex
 	guildList   *GuildList
@@ -362,16 +364,45 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if shortcuts.ViewSelectedMessageImages.Equals(event) {
-			links := make([]string, 0, len(message.Attachments))
-			for _, file := range message.Attachments {
-				links = append(links, file.URL)
-			}
-			if len(links) > 0 {
-				cmd := exec.Command(config.Current.ImageViewer, links...)
-				err := cmd.Start()
-				if err != nil {
-					window.ShowErrorDialog(err.Error())
+			var targetFolder string
+
+			if config.Current.FileOpenSaveFilesPermanently {
+				absolutePath, pathError := files.ToAbsolutePath(config.Current.FileOpenSaveFolder)
+				if pathError == nil {
+					targetFolder = absolutePath
 				}
+			}
+
+			if targetFolder == "" {
+				cacheDir, osError := os.UserCacheDir()
+				if osError == nil && cacheDir != "" {
+					//Own subdirectory to avoid nuking foreing files by accident.
+					targetFolder = filepath.Join(cacheDir, "cordless")
+					makeDirError := os.MkdirAll(targetFolder, 0766)
+					if makeDirError != nil {
+						window.ShowCustomErrorDialog("Couldn't open file", "Can't create cache subdirectory.")
+						return nil
+					}
+				}
+			}
+
+			if targetFolder == "" {
+				window.ShowCustomErrorDialog("Couldn't open file", "Can't find cache directory.")
+			} else {
+				for _, file := range message.Attachments {
+					openError := fileopen.OpenFile(targetFolder, file.ID, file.URL)
+					if openError != nil {
+						window.ShowCustomErrorDialog("Couldn't open file", openError.Error())
+					}
+				}
+			}
+
+			//If permanent saving isn't disabled, we clear files older
+			//than one month whenever something is opened. Since this
+			//will happen in a background thread, it won't cause
+			//application blocking.
+			if !config.Current.FileOpenSaveFilesPermanently && targetFolder != "" {
+				fileopen.LaunchCacheCleaner(targetFolder, time.Hour*(24*14))
 			}
 
 			return nil
@@ -1101,7 +1132,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
 		bottomBar.AddItem(tview.NewBox(), 1, 0, false)
 
-		shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcuts.EventToString(shortcutsDialogShortcut))
+		shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut))
 		if vtxxx {
 			shortcutInfoText = "[::r]" + shortcutInfoText
 		}
@@ -1113,7 +1144,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	}
 
 	app.SetRoot(window.rootContainer, true)
-	window.currentContainer = window.rootContainer
 	app.SetInputCapture(window.handleGlobalShortcuts)
 
 	if config.Current.UseFixedLayout {
@@ -1164,6 +1194,17 @@ Welcome to version %s of Cordless. Below you can see the most
 important changes of the last two versions officially released.
 
 [::b]THIS VERSION
+	- Features
+		- Nicknames can now be disabled via the configuration
+	- Changes
+		- The "friends" command now has "friend" as an alias
+		- "logout" is now a seperate command, but "account logout" still works
+		- Currently active account is now highlight in "account list" output
+		- Password input dialog now uses the configured shortcut for paste
+	- Bugfixes
+		- Fix crash due to race condition in readmarker feature
+		- Embed-Edits won't be ignored anymore
+[::b]2020-08-11 - 2020-06-30
 	- Features
 		- Notifications for servers and DMs are now displayed in the containers header row 
 		- Embeds can now be rendered
@@ -1277,7 +1318,7 @@ func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
 func (window *Window) insertNewLineAtCursor() {
 	window.messageInput.InsertCharacter('\n')
 	window.app.QueueUpdateDraw(func() {
-		window.messageInput.triggerHeightRequestIfNecessary()
+		window.messageInput.TriggerHeightRequestIfNecessary()
 		window.messageInput.internalTextView.ScrollToHighlight()
 	})
 }
@@ -1495,40 +1536,6 @@ func (window *Window) prepareMessage(targetChannel *discordgo.Channel, inputText
 	return message
 }
 
-// emojiSequenceIndexes will find all parts of a string (rune array) that
-// could potentially be emoji sequences and will return them backwards.
-// they'll be returned backwards in order to allow easily manipulating the
-// data without invalidating the following indexes accidentally.
-// Example:
-//     Hello :world:, what a :nice: day.
-// would result in
-//     []int{22,,27,6,12}
-func emojiSequenceIndexes(runes []rune) []int {
-	var sequencesBackwards []int
-	for i := len(runes) - 1; i >= 0; i-- {
-		if runes[i] == ':' {
-			for j := i - 1; j >= 0; j-- {
-				char := runes[j]
-				if char == ':' {
-					//Handle this ':' in the next iteration of the outer loop otherwise
-					if j != i-1 {
-						sequencesBackwards = append(sequencesBackwards, j, i)
-						i = j
-						break
-					} else {
-						break
-					}
-				} else if unicode.IsSpace(char) {
-					i = j
-					break
-				}
-			}
-		}
-	}
-
-	return sequencesBackwards
-}
-
 // mergeRuneSlices copies the passed rune arrays into a new rune array of the
 // correct size.
 func mergeRuneSlices(a, b, c []rune) *[]rune {
@@ -1547,7 +1554,7 @@ func mergeRuneSlices(a, b, c []rune) *[]rune {
 // For private channels, the channelGuild may be nil.
 func (window *Window) replaceEmojiSequences(channelGuild *discordgo.Guild, message string) string {
 	asRunes := []rune(message)
-	indexes := emojiSequenceIndexes(asRunes)
+	indexes := text.FindEmojiIndices(asRunes)
 INDEX_LOOP:
 	for i := 0; i < len(indexes); i += 2 {
 		startIndex := indexes[i]
@@ -1784,10 +1791,7 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 	})
 
 	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
-		//Ignore just-embed edits
-		if m.Content != "" {
-			edit <- m.Message
-		}
+		edit <- m.Message
 	})
 }
 
@@ -2257,7 +2261,19 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
-	if window.currentContainer != window.rootContainer {
+	//This two have to work in baremode as well, since otherwise only the mouse
+	//can be used for focus switching, which sucks in a terminal app.
+	if shortcuts.FocusMessageInput.Equals(event) {
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+		return nil
+	}
+
+	if shortcuts.FocusMessageContainer.Equals(event) {
+		window.app.SetFocus(window.chatView.internalTextView)
+		return nil
+	}
+
+	if window.app.GetRoot() != window.rootContainer {
 		return event
 	}
 
@@ -2266,12 +2282,9 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	}
 
 	if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
-		shortcuts.ShowShortcutsDialog(window.app, func() {
+		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
-			window.currentContainer = window.rootContainer
 			window.app.ForceDraw()
-		}, func(view *tview.Flex) {
-			window.currentContainer = view
 		})
 	} else if shortcuts.ToggleCommandView.Equals(event) {
 		window.SetCommandModeEnabled(!window.commandMode)
@@ -2309,14 +2322,10 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	} else if shortcuts.FocusGuildContainer.Equals(event) {
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.guildList)
-	} else if shortcuts.FocusMessageContainer.Equals(event) {
-		window.app.SetFocus(window.chatView.internalTextView)
 	} else if shortcuts.FocusUserContainer.Equals(event) {
 		if window.activeView == Guilds && window.userList.internalTreeView.IsVisible() {
 			window.app.SetFocus(window.userList.internalTreeView)
 		}
-	} else if shortcuts.FocusMessageInput.Equals(event) {
-		window.app.SetFocus(window.messageInput.GetPrimitive())
 	} else {
 		return event
 	}
@@ -2352,14 +2361,22 @@ func (window *Window) toggleUserContainer() {
 func (window *Window) toggleBareChat() {
 	window.bareChat = !window.bareChat
 	if window.bareChat {
-		window.chatView.internalTextView.SetBorder(false)
-		window.currentContainer = window.chatView.GetPrimitive()
-		window.app.SetRoot(window.chatView.GetPrimitive(), true)
+		window.chatView.internalTextView.SetBorderSides(true, false, true, false)
+		previousFocus := window.app.GetFocus()
+		//Initially this should be gone. Maybe we'll allow reacessing it at some point.
+		window.SetCommandModeEnabled(false)
+		window.app.SetRoot(window.chatArea, true)
+		window.app.SetFocus(previousFocus)
 	} else {
-		window.chatView.internalTextView.SetBorder(true)
-		window.currentContainer = window.rootContainer
+		window.chatView.internalTextView.SetBorderSides(true, true, true, true)
 		window.app.SetRoot(window.rootContainer, true)
+		window.app.SetFocus(window.messageInput.GetPrimitive())
 	}
+
+	window.app.QueueUpdateDraw(func() {
+		window.messageInput.TriggerHeightRequestIfNecessary()
+		window.chatView.Reprint()
+	})
 }
 
 // FindCommand searches through the registered command, whether any of them
@@ -2510,10 +2527,16 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 	}
 }
 
-//ShowErrorDialog shows a simple error dialog that has only an Okay button,
+// ShowErrorDialog shows a simple error dialog that has only an Okay button,
 // a generic title and the given text.
 func (window *Window) ShowErrorDialog(text string) {
 	window.ShowDialog(config.GetTheme().ErrorColor, "An error occurred - "+text, func(_ string) {}, "Okay")
+}
+
+// ShowCustomErrorDialog shows a simple error dialog with a custom title
+// and text. The button says "Okay" and only closes the dialog.
+func (window *Window) ShowCustomErrorDialog(title, text string) {
+	window.ShowDialog(config.GetTheme().ErrorColor, title+" - "+text, func(_ string) {}, "Okay")
 }
 
 func (window *Window) editMessage(channelID, messageID, messageEdited string) {
@@ -2564,7 +2587,8 @@ func (window *Window) SwitchToFriendsPage() {
 	window.activeView = Dms
 }
 
-// Switches to the previous channel and layout.
+// SwitchToPreviousChannel loads the previously loaded channel and focuses it
+// in it's respective UI primitive.
 func (window *Window) SwitchToPreviousChannel() error {
 	if window.previousChannel == nil || window.previousChannel == window.selectedChannel {
 		// No previous channel.
@@ -2759,52 +2783,10 @@ func (window *Window) GetSelectedChannel() *discordgo.Channel {
 	return window.selectedChannel
 }
 
-// PromptSecretInput shows an input dialog that masks the user input. The
-// returned value will either be empty or what the user has entered.
+// PromptSecretInput shows a fullscreen input dialog that masks the user input.
+// The returned value will either be empty or what the user has entered.
 func (window *Window) PromptSecretInput(title, message string) string {
-	waitChannel := make(chan struct{})
-	var output string
-	var previousFocus tview.Primitive
-	window.app.QueueUpdateDraw(func() {
-		previousFocus = window.app.GetFocus()
-		inputField := tview.NewInputField()
-		inputField.SetMaskCharacter('*')
-		inputField.SetDoneFunc(func(key tcell.Key) {
-			if key == tcell.KeyEnter {
-				output = inputField.GetText()
-				waitChannel <- struct{}{}
-			} else if key == tcell.KeyEscape {
-				waitChannel <- struct{}{}
-			}
-		})
-		inputField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			//FIXME Use shortcut and make it proper PasteAtCursor/Selection
-			if event.Key() == tcell.KeyCtrlV {
-				content, clipError := clipboard.ReadAll()
-				if clipError == nil {
-					inputField.SetText(content)
-				}
-				return nil
-			}
-
-			return event
-		})
-		frame := tview.NewFrame(inputField)
-		frame.SetTitle(title)
-		frame.SetBorder(true)
-		frame.AddText(message, true, tview.AlignLeft, tcell.ColorDefault)
-		window.app.SetRoot(frame, true)
-		window.currentContainer = frame
-	})
-	<-waitChannel
-	window.app.QueueUpdateDraw(func() {
-		window.app.SetRoot(window.rootContainer, true)
-		window.currentContainer = window.rootContainer
-		window.app.SetFocus(previousFocus)
-		waitChannel <- struct{}{}
-	})
-	<-waitChannel
-	return output
+	return tviewutil.PrompSecretSingleLineInput(window.app, title, message)
 }
 
 // ForceRedraw triggers ForceDraw on the underlying tview application, causing
