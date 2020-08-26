@@ -18,6 +18,7 @@ func main() {
 	setConfigDirectory := flag.String("config-dir", "", "Sets the configuration directory")
 	setScriptDirectory := flag.String("script-dir", "", "Sets the script directory")
 	setConfigFilePath := flag.String("config-file", "", "Sets exact path of the configuration file")
+	accountToUse := flag.String("account", "", "Defines which account cordless tries to load")
 	flag.Parse()
 
 	if setConfigDirectory != nil {
@@ -35,6 +36,10 @@ func main() {
 	} else if showVersion != nil && *showVersion {
 		fmt.Printf("You are running cordless version %s\nKeep in mind that this version might not be correct for manually built versions, as those can contain additional commits.\n", version.Version)
 	} else {
-		app.Run()
+		if accountToUse != nil && *accountToUse != "" {
+			app.RunWithAccount(*accountToUse)
+		} else {
+			app.Run()
+		}
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Bios-Marcel/cordless/util/files"
 )
@@ -160,6 +161,18 @@ type Config struct {
 type Account struct {
 	Name  string
 	Token string
+}
+
+// GetAccountToken returns the token for the given account or an empty string
+// if the account can't be found or has no token set up.
+func (config *Config) GetAccountToken(account string) string {
+	for _, acc := range config.Accounts {
+		if strings.EqualFold(acc.Name, account) {
+			return acc.Token
+		}
+	}
+
+	return ""
 }
 
 var cachedConfigDir string
