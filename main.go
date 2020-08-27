@@ -18,22 +18,28 @@ func main() {
 	setConfigDirectory := flag.String("config-dir", "", "Sets the configuration directory")
 	setScriptDirectory := flag.String("script-dir", "", "Sets the script directory")
 	setConfigFilePath := flag.String("config-file", "", "Sets exact path of the configuration file")
+	accountToUse := flag.String("account", "", "Defines which account cordless tries to load")
 	flag.Parse()
+
+	if setConfigDirectory != nil {
+		config.SetConfigDirectory(*setConfigDirectory)
+	}
+	if setScriptDirectory != nil {
+		config.SetScriptDirectory(*setScriptDirectory)
+	}
+	if setConfigFilePath != nil {
+		config.SetConfigFile(*setConfigFilePath)
+	}
 
 	if showShortcutsDialog != nil && *showShortcutsDialog {
 		shortcutdialog.RunShortcutsDialogStandalone()
 	} else if showVersion != nil && *showVersion {
 		fmt.Printf("You are running cordless version %s\nKeep in mind that this version might not be correct for manually built versions, as those can contain additional commits.\n", version.Version)
 	} else {
-		if setConfigDirectory != nil {
-			config.SetConfigDirectory(*setConfigDirectory)
+		if accountToUse != nil && *accountToUse != "" {
+			app.RunWithAccount(*accountToUse)
+		} else {
+			app.Run()
 		}
-		if setScriptDirectory != nil {
-			config.SetScriptDirectory(*setScriptDirectory)
-		}
-		if setConfigFilePath != nil {
-			config.SetConfigFile(*setConfigFilePath)
-		}
-		app.Run()
 	}
 }

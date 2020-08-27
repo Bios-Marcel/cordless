@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/Bios-Marcel/discordgo"
@@ -16,9 +17,11 @@ import (
 	"github.com/Bios-Marcel/cordless/version"
 )
 
-// Run launches the whole application and might abort in case it encounters an
-//error.
-func Run() {
+// RunWithAccount launches the whole application and might
+// abort in case it encounters an error. The login will attempt
+// using the account specified, unless the argument is empty.
+// If the account can't be found, the login page will be shown.
+func RunWithAccount(account string) {
 	configDir, configErr := config.GetConfigDirectory()
 
 	if configErr != nil {
@@ -36,6 +39,9 @@ func Run() {
 	runNext := make(chan bool, 1)
 
 	configuration, configLoadError := config.LoadConfig()
+	if strings.TrimSpace(account) != "" {
+		configuration.Token = configuration.GetAccountToken(account)
+	}
 
 	if configLoadError != nil {
 		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
@@ -162,6 +168,12 @@ func Run() {
 	if run {
 		Run()
 	}
+}
+
+// Run launches the whole application and might abort in case
+// it encounters an error.
+func Run() {
+	RunWithAccount("")
 }
 
 func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *config.Config) (*discordgo.Session, *discordgo.Ready) {
