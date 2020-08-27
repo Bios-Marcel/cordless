@@ -10,8 +10,8 @@ import (
 	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
-	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/config"
 )
@@ -142,6 +142,17 @@ func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
 
 func createPrivateChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	channelNode := tview.NewTreeNode(discordutil.GetPrivateChannelName(channel))
+	var prefixes string
+	if channel.Type == discordgo.ChannelTypeDM {
+		prefixes += tviewutil.Escape("🧑")
+	}
+
+	if channel.Type == discordgo.ChannelTypeGroupDM {
+		prefixes += tviewutil.Escape("🧑🧑🧑")
+	}
+
+	channelNode.SetPrefix(prefixes)
+
 	channelNode.SetReference(channel.ID)
 	return channelNode
 }

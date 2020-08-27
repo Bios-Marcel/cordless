@@ -10,8 +10,8 @@ import (
 
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
-	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
@@ -104,8 +104,8 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 	// Top level channel
 	state := channelTree.state
 	for _, channel := range channels {
-		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews) ||
-			channel.ParentID != "" || !discordutil.HasReadMessagesPermission(channel.ID, state) {
+		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews && channel.Type != discordgo.ChannelTypeGuildStore) ||
+			channel.ParentID != "" || discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
 		createTopLevelChannelNodes(channelTree, channel)
@@ -137,8 +137,8 @@ CATEGORY_LOOP:
 	}
 	// Second level channel
 	for _, channel := range channels {
-		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews) ||
-			channel.ParentID == "" || !discordutil.HasReadMessagesPermission(channel.ID, state) {
+		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews && channel.Type != discordgo.ChannelTypeGuildStore) ||
+			channel.ParentID == "" || discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
 		createSecondLevelChannelNodes(channelTree, channel)
@@ -191,6 +191,18 @@ func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	var prefixes string
 	if channel.NSFW {
 		prefixes += tviewutil.Escape("🔞")
+	}
+
+	if channel.Type == discordgo.ChannelTypeGuildNews {
+		prefixes += tviewutil.Escape("🎺")
+	}
+
+	if channel.Type == discordgo.ChannelTypeGuildStore {
+		prefixes += tviewutil.Escape("💳")
+	}
+
+	if channel.Type == discordgo.ChannelTypeGuildCategory {
+		prefixes += tviewutil.Escape("📊")
 	}
 
 	// Adds a padlock prefix if the channel if not readable by the everyone group
