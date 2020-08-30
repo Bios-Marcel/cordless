@@ -367,7 +367,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			var targetFolder string
 
 			if config.Current.FileOpenSaveFilesPermanently {
-				absolutePath, pathError := files.ToAbsolutePath(config.Current.FileOpenSaveFolder)
+				absolutePath, pathError := files.ToAbsolutePath(config.Current.FileDownloadSaveLocation)
 				if pathError == nil {
 					targetFolder = absolutePath
 				}
@@ -405,6 +405,38 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				fileopen.LaunchCacheCleaner(targetFolder, time.Hour*(24*14))
 			}
 
+			return nil
+		}
+
+		if shortcuts.DownloadMessageFiles.Equals(event) {
+			absolutePath, pathError := files.ToAbsolutePath(config.Current.FileDownloadSaveLocation)
+			if pathError != nil || absolutePath == "" {
+				window.ShowErrorDialog("Please specify a valid path in 'FileOpenSaveFolder' of your configuration.")
+			} else {
+				for _, file := range message.Attachments {
+					extension := strings.TrimPrefix(filepath.Ext(file.URL), ".")
+					targetFile := filepath.Join(absolutePath, file.ID+"."+extension)
+
+					//All files are downloaded separately in order to not
+					//block the UI and not download for ages if one or more
+					//page has a slow download speed.
+					go func(savePath, fileURL string) {
+						_, statErr := os.Stat(savePath)
+						//If it's a different error, we don't care. Other errors
+						//will run into later anyways.
+						if statErr == os.ErrExist {
+							return
+						}
+
+						downloadError := files.DownloadFile(savePath, fileURL)
+						if downloadError != nil {
+							window.app.QueueUpdateDraw(func() {
+								window.ShowErrorDialog("Error download file: " + downloadError.Error())
+							})
+						}
+					}(targetFile, file.URL)
+				}
+			}
 			return nil
 		}
 

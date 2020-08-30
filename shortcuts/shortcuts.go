@@ -22,6 +22,8 @@ var (
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'q', tcell.ModNone))
 	EditSelectedMessage = addShortcut("edit_selected_message", "Edit selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'e', tcell.ModNone))
+	DownloadMessageFiles = addShortcut("dowbload_message_files", "Download all files in selected message",
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone))
 	ReplySelectedMessage = addShortcut("reply_selected_message", "Reply to author selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'r', tcell.ModNone))
 	CopySelectedMessageLink = addShortcut("copy_selected_message_link", "Copy link to selected message",
