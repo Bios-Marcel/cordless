@@ -101,7 +101,7 @@ git push --tags
 
 snapcraft clean cordless
 snapcraft
-snapcraft upload "cordless_${RELEASE_DATE}_multi.snap" --release stable
+snapcraft upload "cordless_${RELEASE_DATE}_amd64.snap" --release stable
 
 #
 # Copies the changelog for pasting into the github release. The changes will
