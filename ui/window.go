@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
 
 	"github.com/Bios-Marcel/cordless/fileopen"
@@ -1149,29 +1148,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.rootContainer.AddItem(window.dialogReplacement, 2, 0, false)
 
 	if config.Current.ShowBottomBar {
-		bottomBar := tview.NewFlex().SetDirection(tview.FlexColumn)
-		bottomBar.SetBackgroundColor(config.GetTheme().PrimitiveBackgroundColor)
-
-		loggedInAsText := fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.String()))
-		if vtxxx {
-			// For some reason there's an offset when the tag is applied. I have no idea how to fix this.
-			// Except maybe unify the bottom bar into a single TextView rather than using two in a Flex.
-			loggedInAsText = "[::r]" + loggedInAsText
-		}
-		loggedInAs := tview.NewTextView().SetText(loggedInAsText).SetDynamicColors(true)
-		loggedInAs.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
-
-		bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
-		bottomBar.AddItem(tview.NewBox(), 1, 0, false)
-
-		shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut))
-		if vtxxx {
-			shortcutInfoText = "[::r]" + shortcutInfoText
-		}
-		shortcutInfo := tview.NewTextView().SetText(shortcutInfoText).SetDynamicColors(true)
-		shortcutInfo.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
-		bottomBar.AddItem(shortcutInfo, runewidth.StringWidth(shortcutInfoText), 0, false)
-
+		bottomBar := NewBottomBar(session.State.User.Username)
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
 
