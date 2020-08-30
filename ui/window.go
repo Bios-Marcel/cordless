@@ -1205,14 +1205,22 @@ important changes of the last two versions officially released.
 [::b]THIS VERSION
 	- Features
 		- Nicknames can now be disabled via the configuration
+		- Files from messages can now be downloaded (key d) or opened (key o)
+		- New parameter "--account" to start cordless with a certain account
 	- Changes
 		- The "friends" command now has "friend" as an alias
-		- "logout" is now a seperate command, but "account logout" still works
+		- "logout" is now a separate command, but "account logout" still works
 		- Currently active account is now highlight in "account list" output
 		- Password input dialog now uses the configured shortcut for paste
+		- Baremode
+			- Now includes the message input
+			- The command view will hide when entering baremode
 	- Bugfixes
 		- Fix crash due to race condition in readmarker feature
 		- Embed-Edits won't be ignored anymore
+		- Names with role colors now respect their role order
+		- Unread message numbers now always update when loading a channel instead of when leaving it
+		- UTF-8 disabling wasn't taken into account when rendering the channel tree
 [::b]2020-08-11 - 2020-06-30
 	- Features
 		- Notifications for servers and DMs are now displayed in the containers header row 
