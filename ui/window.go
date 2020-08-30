@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattn/go-runewidth"
 	"github.com/mdp/qrterminal/v3"
 
 	"github.com/Bios-Marcel/cordless/fileopen"
@@ -171,12 +170,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerGuildChannelHandler()
 
 	discordutil.SortGuilds(window.session.State.Settings, guilds)
-	guildList := NewGuildList(guilds, window)
+	guildList := NewGuildList(guilds)
 	window.guildList = guildList
-	window.updateUnreadGuildAmount(guildList.GetRoot())
+	window.guildList.UpdateUnreadGuildCount()
 	guildList.SetOnGuildSelect(func(node *tview.TreeNode, guildID string) {
 		if window.selectedGuild != nil && window.selectedGuildNode != nil {
-			window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
+			window.updateServerReadStatus(window.selectedGuildNode, false)
 		}
 
 		guild, cacheError := window.session.Guild(guildID)
@@ -198,7 +197,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.selectedGuildNode = node
 		window.selectedGuild = guild
 
-		window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, true)
+		window.updateServerReadStatus(window.selectedGuildNode, true)
 
 		//FIXME Request presences as soon as that stuff remotely works?
 		requestError := session.RequestGuildMembers(guildID, "", 0, false)
@@ -367,7 +366,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			var targetFolder string
 
 			if config.Current.FileOpenSaveFilesPermanently {
-				absolutePath, pathError := files.ToAbsolutePath(config.Current.FileOpenSaveFolder)
+				absolutePath, pathError := files.ToAbsolutePath(config.Current.FileDownloadSaveLocation)
 				if pathError == nil {
 					targetFolder = absolutePath
 				}
@@ -405,6 +404,38 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				fileopen.LaunchCacheCleaner(targetFolder, time.Hour*(24*14))
 			}
 
+			return nil
+		}
+
+		if shortcuts.DownloadMessageFiles.Equals(event) {
+			absolutePath, pathError := files.ToAbsolutePath(config.Current.FileDownloadSaveLocation)
+			if pathError != nil || absolutePath == "" {
+				window.ShowErrorDialog("Please specify a valid path in 'FileOpenSaveFolder' of your configuration.")
+			} else {
+				for _, file := range message.Attachments {
+					extension := strings.TrimPrefix(filepath.Ext(file.URL), ".")
+					targetFile := filepath.Join(absolutePath, file.ID+"."+extension)
+
+					//All files are downloaded separately in order to not
+					//block the UI and not download for ages if one or more
+					//page has a slow download speed.
+					go func(savePath, fileURL string) {
+						_, statErr := os.Stat(savePath)
+						//If it's a different error, we don't care. Other errors
+						//will run into later anyways.
+						if statErr == os.ErrExist {
+							return
+						}
+
+						downloadError := files.DownloadFile(savePath, fileURL)
+						if downloadError != nil {
+							window.app.QueueUpdateDraw(func() {
+								window.ShowErrorDialog("Error download file: " + downloadError.Error())
+							})
+						}
+					}(targetFile, file.URL)
+				}
+			}
 			return nil
 		}
 
@@ -1036,7 +1067,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					} else {
 						for _, guildNode := range window.guildList.GetRoot().GetChildren() {
 							if guildNode.GetReference() == channel.GuildID {
-								window.updateServerReadStatus(channel.GuildID, guildNode, false)
+								window.updateServerReadStatus(guildNode, false)
 								break
 							}
 						}
@@ -1117,29 +1148,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.rootContainer.AddItem(window.dialogReplacement, 2, 0, false)
 
 	if config.Current.ShowBottomBar {
-		bottomBar := tview.NewFlex().SetDirection(tview.FlexColumn)
-		bottomBar.SetBackgroundColor(config.GetTheme().PrimitiveBackgroundColor)
-
-		loggedInAsText := fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.String()))
-		if vtxxx {
-			// For some reason there's an offset when the tag is applied. I have no idea how to fix this.
-			// Except maybe unify the bottom bar into a single TextView rather than using two in a Flex.
-			loggedInAsText = "[::r]" + loggedInAsText
-		}
-		loggedInAs := tview.NewTextView().SetText(loggedInAsText).SetDynamicColors(true)
-		loggedInAs.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
-
-		bottomBar.AddItem(loggedInAs, runewidth.StringWidth(loggedInAsText), 0, false)
-		bottomBar.AddItem(tview.NewBox(), 1, 0, false)
-
-		shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut))
-		if vtxxx {
-			shortcutInfoText = "[::r]" + shortcutInfoText
-		}
-		shortcutInfo := tview.NewTextView().SetText(shortcutInfoText).SetDynamicColors(true)
-		shortcutInfo.SetTextColor(config.GetTheme().PrimitiveBackgroundColor).SetBackgroundColor(config.GetTheme().PrimaryTextColor)
-		bottomBar.AddItem(shortcutInfo, runewidth.StringWidth(shortcutInfoText), 0, false)
-
+		bottomBar := NewBottomBar(session.State.User.Username)
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
 
@@ -1196,14 +1205,22 @@ important changes of the last two versions officially released.
 [::b]THIS VERSION
 	- Features
 		- Nicknames can now be disabled via the configuration
+		- Files from messages can now be downloaded (key d) or opened (key o)
+		- New parameter "--account" to start cordless with a certain account
 	- Changes
 		- The "friends" command now has "friend" as an alias
-		- "logout" is now a seperate command, but "account logout" still works
+		- "logout" is now a separate command, but "account logout" still works
 		- Currently active account is now highlight in "account list" output
 		- Password input dialog now uses the configured shortcut for paste
+		- Baremode
+			- Now includes the message input
+			- The command view will hide when entering baremode
 	- Bugfixes
 		- Fix crash due to race condition in readmarker feature
 		- Embed-Edits won't be ignored anymore
+		- Names with role colors now respect their role order
+		- Unread message numbers now always update when loading a channel instead of when leaving it
+		- UTF-8 disabling wasn't taken into account when rendering the channel tree
 [::b]2020-08-11 - 2020-06-30
 	- Features
 		- Notifications for servers and DMs are now displayed in the containers header row 
@@ -1447,45 +1464,9 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 	}
 }
 
-func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.TreeNode, isSelected bool) {
-	if isSelected {
-		if vtxxx {
-			guildNode.SetAttributes(tcell.AttrUnderline)
-		} else {
-			guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
-		}
-	} else {
-		if !readstate.HasGuildBeenRead(guildID) {
-			if vtxxx {
-				guildNode.SetAttributes(tcell.AttrBlink)
-			} else {
-				guildNode.SetColor(config.GetTheme().AttentionColor)
-			}
-		} else {
-			guildNode.SetAttributes(tcell.AttrNone)
-			guildNode.SetColor(tview.Styles.PrimaryTextColor)
-		}
-	}
-
-	//FIXME Lazy and dumb way to do this.
-	window.updateUnreadGuildAmount(guildNode.GetParent())
-}
-
-func (window *Window) updateUnreadGuildAmount(rootNode *tview.TreeNode) {
-	if rootNode != nil {
-		var notificationAmount int
-		for _, child := range rootNode.GetChildren() {
-			if !readstate.HasGuildBeenRead((child.GetReference()).(string)) {
-				notificationAmount++
-			}
-		}
-
-		if notificationAmount == 0 {
-			window.guildList.SetTitle("Servers")
-		} else {
-			window.guildList.SetTitle(fmt.Sprintf("Servers[%s](%d)", tviewutil.ColorToHex(config.GetTheme().AttentionColor), notificationAmount))
-		}
-	}
+func (window *Window) updateServerReadStatus(guildNode *tview.TreeNode, isSelected bool) {
+	window.guildList.UpdateNodeState(guildNode, isSelected)
+	window.guildList.UpdateUnreadGuildCount()
 }
 
 // prepareMessage prepares a message for being sent to the discord API.
@@ -1843,7 +1824,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				for _, guildNode := range window.guildList.GetRoot().GetChildren() {
 					if guildNode.GetReference() == channel.GuildID {
 						window.app.QueueUpdateDraw(func() {
-							window.updateServerReadStatus(channel.GuildID, guildNode, false)
+							window.updateServerReadStatus(guildNode, false)
 						})
 						break
 					}
@@ -2678,7 +2659,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		}
 	}
 
-	//If there is a  currently loaded guild channel and it isn't the same as
+	//If there is a currently loaded guild channel and it isn't the same as
 	//the new one we assume it must be read and mark it white.
 	if window.selectedChannelNode != nil && channel.ID != window.selectedChannel.ID {
 		window.selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
@@ -2690,9 +2671,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	//Unlike with the channel, where we can assume it is read, we gotta check
 	//whether there is still an unread channel and mark the server accordingly.
-	if window.selectedGuild != nil && window.selectedGuild.ID != channel.GuildID {
-		window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
-	}
+	wasSelectedGuild := window.selectedGuild != nil && window.selectedGuild.ID != channel.GuildID
 
 	if channel.GuildID == "" {
 		window.selectedGuild = nil
@@ -2713,12 +2692,17 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		readstate.UpdateRead(window.session, channel, channel.LastMessageID)
 		// Here we make the assumption that the channel we are loading must be part
 		// of the currently loaded guild, since we don't allow loading a channel of
-		// a guilder otherwise.
+		// a guild otherwise.
 		if channel.GuildID != "" {
 			guild, cacheError := window.session.State.Guild(channel.GuildID)
-			if cacheError == nil {
-				window.selectedGuild = guild
-				window.app.QueueUpdateDraw(func() {
+
+			window.app.QueueUpdateDraw(func() {
+				if wasSelectedGuild {
+					window.updateServerReadStatus(window.selectedGuildNode, false)
+				}
+
+				if cacheError == nil {
+					window.selectedGuild = guild
 					for _, guildNode := range window.guildList.GetRoot().GetChildren() {
 						if guildNode.GetReference() == channel.GuildID {
 							window.guildList.SetCurrentNode(guildNode)
@@ -2731,8 +2715,8 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 							break
 						}
 					}
-				})
-			}
+				}
+			})
 		}
 	}()
 

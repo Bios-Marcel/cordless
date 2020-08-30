@@ -151,9 +151,10 @@ type Config struct {
 	// FileOpenSaveFilesPermanently decides whether opened files are saved
 	// in the system cache (temporary) or in the user specified path.
 	FileOpenSaveFilesPermanently bool
-	// FileOpenSaveFolder defines the folder where opened files are downloaded
-	// to, if FileOpenSaveFilesPermanently is set to true.
-	FileOpenSaveFolder string
+	// FileDownloadSaveLocation defines the folder where cordless generally
+	// download files to. If FileOpenSaveFilesPermanently has been set to
+	// true, then all opened files are saved in this folder for example.
+	FileDownloadSaveLocation string
 }
 
 // Account has a name and a token. The name is just for the users recognition.
@@ -209,7 +210,7 @@ func createDefaultConfig() *Config {
 		ShowNicknames:                               true,
 		FileOpenHandlers:                            make(map[string]string),
 		FileOpenSaveFilesPermanently:                false,
-		FileOpenSaveFolder:                          "~/Downloads",
+		FileDownloadSaveLocation:                    "~/Downloads",
 	}
 }
 
@@ -218,7 +219,7 @@ func createDefaultConfig() *Config {
 func SetConfigFile(configFilePath string) error {
 	// get parent directory of config file
 	parent := filepath.Dir(configFilePath)
-	err := ensureDirectory(parent)
+	err := files.EnsureDirectoryExists(parent)
 	if err == nil {
 		cachedConfigFile = configFilePath
 	} else {
@@ -226,7 +227,7 @@ func SetConfigFile(configFilePath string) error {
 		if err != nil {
 			return err
 		}
-		err = ensureDirectory(absolute)
+		err = files.EnsureDirectoryExists(absolute)
 		if err == nil {
 			cachedConfigFile = configFilePath
 		}
@@ -253,7 +254,7 @@ func GetConfigFile() (string, error) {
 // SetScriptDirectory sets the script directory cache
 // to the specified value
 func SetScriptDirectory(directoryPath string) error {
-	err := ensureDirectory(directoryPath)
+	err := files.EnsureDirectoryExists(directoryPath)
 	if err == nil {
 		cachedScriptDir = directoryPath
 	} else {
@@ -261,7 +262,7 @@ func SetScriptDirectory(directoryPath string) error {
 		if err != nil {
 			return err
 		}
-		err = ensureDirectory(absolute)
+		err = files.EnsureDirectoryExists(absolute)
 		if err == nil {
 			cachedConfigFile = absolute
 		}
@@ -281,7 +282,7 @@ func GetScriptDirectory() string {
 
 // SetConfigDirectory sets the directory cache
 func SetConfigDirectory(directoryPath string) error {
-	err := ensureDirectory(directoryPath)
+	err := files.EnsureDirectoryExists(directoryPath)
 	if err == nil {
 		cachedConfigDir = directoryPath
 	} else {
@@ -289,7 +290,7 @@ func SetConfigDirectory(directoryPath string) error {
 		if err != nil {
 			return err
 		}
-		err = ensureDirectory(absolute)
+		err = files.EnsureDirectoryExists(absolute)
 		if err == nil {
 			cachedConfigFile = absolute
 		}
@@ -310,7 +311,7 @@ func GetConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	statError := ensureDirectory(directory)
+	statError := files.EnsureDirectoryExists(directory)
 	if statError != nil {
 		return "", statError
 	}
@@ -319,18 +320,6 @@ func GetConfigDirectory() (string, error) {
 	//stuff over and over again.
 	cachedConfigDir = directory
 	return cachedConfigDir, nil
-}
-
-func ensureDirectory(directoryPath string) error {
-	_, statError := os.Stat(directoryPath)
-	if os.IsNotExist(statError) {
-		createDirsError := os.MkdirAll(directoryPath, 0766)
-		if createDirsError != nil {
-			return createDirsError
-		}
-		return nil
-	}
-	return statError
 }
 
 func getAbsolutePath(directoryPath string) (string, error) {

@@ -316,7 +316,6 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 	for node, state := range privateList.privateChannelStates {
 		if state == loaded {
 			privateList.privateChannelStates[node] = read
-			privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 			if vtxxx {
 				node.SetAttributes(tcell.AttrNone)
 			} else {
@@ -338,6 +337,8 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 			break
 		}
 	}
+
+	privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 }
 
 // SetOnFriendSelect sets the handler that decides what happens when a friend

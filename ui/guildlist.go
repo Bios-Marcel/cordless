@@ -1,8 +1,12 @@
 package ui
 
 import (
-	"github.com/Bios-Marcel/discordgo"
+	"fmt"
+
+	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
+	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
@@ -16,7 +20,7 @@ type GuildList struct {
 }
 
 // NewGuildList creates and initializes a ready to use GuildList.
-func NewGuildList(guilds []*discordgo.Guild, window *Window) *GuildList {
+func NewGuildList(guilds []*discordgo.Guild) *GuildList {
 	guildList := &GuildList{
 		TreeView: tview.NewTreeView(),
 	}
@@ -48,7 +52,7 @@ func NewGuildList(guilds []*discordgo.Guild, window *Window) *GuildList {
 		guildNode.SetReference(guild.ID)
 		root.AddChild(guildNode)
 
-		window.updateServerReadStatus(guild.ID, guildNode, false)
+		guildList.UpdateNodeState(guildNode, false)
 
 		guildNode.SetSelectable(true)
 	}
@@ -58,6 +62,32 @@ func NewGuildList(guilds []*discordgo.Guild, window *Window) *GuildList {
 	}
 
 	return guildList
+}
+
+// UpdateNodeState updates the state of a node accordingly to its
+// readstate, unless the node is selected.
+//
+// FIXME selected should probably be removed here, but bugs will occur
+// so I'll do it someday ... :D
+func (g *GuildList) UpdateNodeState(node *tview.TreeNode, selected bool) {
+	if selected {
+		if vtxxx {
+			node.SetAttributes(tcell.AttrUnderline)
+		} else {
+			node.SetColor(tview.Styles.ContrastBackgroundColor)
+		}
+	} else {
+		if !readstate.HasGuildBeenRead(node.GetReference().(string)) {
+			if vtxxx {
+				node.SetAttributes(tcell.AttrBlink)
+			} else {
+				node.SetColor(config.GetTheme().AttentionColor)
+			}
+		} else {
+			node.SetAttributes(tcell.AttrNone)
+			node.SetColor(tview.Styles.PrimaryTextColor)
+		}
+	}
 }
 
 // SetOnGuildSelect sets the handler for when a guild is selected.
@@ -97,4 +127,29 @@ func (g *GuildList) UpdateName(guildID, newName string) {
 			break
 		}
 	}
+}
+
+func (g *GuildList) setNotificationCount(count int) {
+	if count == 0 {
+		g.SetTitle("Servers")
+	} else {
+		g.SetTitle(fmt.Sprintf("Servers[%s](%d)", tviewutil.ColorToHex(config.GetTheme().AttentionColor), count))
+	}
+}
+
+func (g *GuildList) amountOfUnreadGuilds() int {
+	var unreadCount int
+	for _, child := range g.GetRoot().GetChildren() {
+		if !readstate.HasGuildBeenRead((child.GetReference()).(string)) {
+			unreadCount++
+		}
+	}
+
+	return unreadCount
+}
+
+// UpdateUnreadGuildCount finds the number of guilds containing unread
+// channels and updates the title accordingly.
+func (g *GuildList) UpdateUnreadGuildCount() {
+	g.setNotificationCount(g.amountOfUnreadGuilds())
 }

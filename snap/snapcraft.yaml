@@ -8,8 +8,6 @@ confinement: strict
 grade: stable
 architectures:
   - amd64
-  - arm64
-  - armhf
 base: core18
 
 parts:
