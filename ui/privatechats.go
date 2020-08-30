@@ -10,8 +10,8 @@ import (
 	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
-	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/config"
 )
@@ -305,7 +305,6 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 	for node, state := range privateList.privateChannelStates {
 		if state == loaded {
 			privateList.privateChannelStates[node] = read
-			privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 			if vtxxx {
 				node.SetAttributes(tcell.AttrNone)
 			} else {
@@ -327,6 +326,8 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 			break
 		}
 	}
+
+	privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 }
 
 // SetOnFriendSelect sets the handler that decides what happens when a friend
