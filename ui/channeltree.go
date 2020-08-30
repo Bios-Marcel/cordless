@@ -10,8 +10,8 @@ import (
 
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
-	"github.com/Bios-Marcel/discordgo"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"
@@ -318,7 +318,7 @@ func (channelTree *ChannelTree) MarkChannelAsRead(channelID string) {
 		if ok && referenceChannelID == channelID {
 			channel, stateError := channelTree.state.Channel(channelID)
 			if stateError == nil {
-				node.SetText(channel.Name)
+				node.SetText(tviewutil.Escape(channel.Name))
 			}
 
 			if channelTree.channelStates[node] != channelLoaded {
@@ -345,7 +345,7 @@ func (channelTree *ChannelTree) MarkChannelAsMentioned(channelID string) {
 			channelTree.channelStates[node] = channelMentioned
 			channel, stateError := channelTree.state.Channel(channelID)
 			if stateError == nil {
-				node.SetText("(@You) " + channel.Name)
+				node.SetText("(@You) " + tviewutil.Escape(channel.Name))
 			}
 			if vtxxx {
 				node.SetAttributes(tcell.AttrBlink)
@@ -381,7 +381,7 @@ func (channelTree *ChannelTree) MarkChannelAsLoaded(channelID string) {
 			channelTree.channelStates[node] = channelLoaded
 			channel, stateError := channelTree.state.Channel(channelID)
 			if stateError == nil {
-				node.SetText(channel.Name)
+				node.SetText(tviewutil.Escape(channel.Name))
 			}
 			if vtxxx {
 				node.SetAttributes(tcell.AttrUnderline)
