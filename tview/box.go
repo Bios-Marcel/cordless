@@ -396,11 +396,9 @@ func (b *Box) Draw(screen tcell.Screen) bool {
 
 	// Fill background.
 	background := def.Background(b.backgroundColor).Reverse(b.reverse)
-	if b.backgroundColor != tcell.ColorDefault {
-		for y := b.y; y < b.y+b.height; y++ {
-			for x := b.x; x < b.x+b.width; x++ {
-				screen.SetContent(x, y, ' ', nil, background)
-			}
+	for y := b.y; y < b.y+b.height; y++ {
+		for x := b.x; x < b.x+b.width; x++ {
+			screen.SetContent(x, y, ' ', nil, background)
 		}
 	}
 
