@@ -171,12 +171,12 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.registerGuildChannelHandler()
 
 	discordutil.SortGuilds(window.session.State.Settings, guilds)
-	guildList := NewGuildList(guilds, window)
+	guildList := NewGuildList(guilds)
 	window.guildList = guildList
-	window.updateUnreadGuildAmount(guildList.GetRoot())
+	window.guildList.UpdateUnreadGuildCount()
 	guildList.SetOnGuildSelect(func(node *tview.TreeNode, guildID string) {
 		if window.selectedGuild != nil && window.selectedGuildNode != nil {
-			window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
+			window.updateServerReadStatus(window.selectedGuildNode, false)
 		}
 
 		guild, cacheError := window.session.Guild(guildID)
@@ -198,7 +198,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.selectedGuildNode = node
 		window.selectedGuild = guild
 
-		window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, true)
+		window.updateServerReadStatus(window.selectedGuildNode, true)
 
 		//FIXME Request presences as soon as that stuff remotely works?
 		requestError := session.RequestGuildMembers(guildID, "", 0, false)
@@ -1036,7 +1036,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					} else {
 						for _, guildNode := range window.guildList.GetRoot().GetChildren() {
 							if guildNode.GetReference() == channel.GuildID {
-								window.updateServerReadStatus(channel.GuildID, guildNode, false)
+								window.updateServerReadStatus(guildNode, false)
 								break
 							}
 						}
@@ -1447,45 +1447,9 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 	}
 }
 
-func (window *Window) updateServerReadStatus(guildID string, guildNode *tview.TreeNode, isSelected bool) {
-	if isSelected {
-		if vtxxx {
-			guildNode.SetAttributes(tcell.AttrUnderline)
-		} else {
-			guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
-		}
-	} else {
-		if !readstate.HasGuildBeenRead(guildID) {
-			if vtxxx {
-				guildNode.SetAttributes(tcell.AttrBlink)
-			} else {
-				guildNode.SetColor(config.GetTheme().AttentionColor)
-			}
-		} else {
-			guildNode.SetAttributes(tcell.AttrNone)
-			guildNode.SetColor(tview.Styles.PrimaryTextColor)
-		}
-	}
-
-	//FIXME Lazy and dumb way to do this.
-	window.updateUnreadGuildAmount(guildNode.GetParent())
-}
-
-func (window *Window) updateUnreadGuildAmount(rootNode *tview.TreeNode) {
-	if rootNode != nil {
-		var notificationAmount int
-		for _, child := range rootNode.GetChildren() {
-			if !readstate.HasGuildBeenRead((child.GetReference()).(string)) {
-				notificationAmount++
-			}
-		}
-
-		if notificationAmount == 0 {
-			window.guildList.SetTitle("Servers")
-		} else {
-			window.guildList.SetTitle(fmt.Sprintf("Servers[%s](%d)", tviewutil.ColorToHex(config.GetTheme().AttentionColor), notificationAmount))
-		}
-	}
+func (window *Window) updateServerReadStatus(guildNode *tview.TreeNode, isSelected bool) {
+	window.guildList.UpdateNodeState(guildNode, isSelected)
+	window.guildList.UpdateUnreadGuildCount()
 }
 
 // prepareMessage prepares a message for being sent to the discord API.
@@ -1843,7 +1807,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				for _, guildNode := range window.guildList.GetRoot().GetChildren() {
 					if guildNode.GetReference() == channel.GuildID {
 						window.app.QueueUpdateDraw(func() {
-							window.updateServerReadStatus(channel.GuildID, guildNode, false)
+							window.updateServerReadStatus(guildNode, false)
 						})
 						break
 					}
@@ -2678,7 +2642,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		}
 	}
 
-	//If there is a  currently loaded guild channel and it isn't the same as
+	//If there is a currently loaded guild channel and it isn't the same as
 	//the new one we assume it must be read and mark it white.
 	if window.selectedChannelNode != nil && channel.ID != window.selectedChannel.ID {
 		window.selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
@@ -2690,9 +2654,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	//Unlike with the channel, where we can assume it is read, we gotta check
 	//whether there is still an unread channel and mark the server accordingly.
-	if window.selectedGuild != nil && window.selectedGuild.ID != channel.GuildID {
-		window.updateServerReadStatus(window.selectedGuild.ID, window.selectedGuildNode, false)
-	}
+	wasSelectedGuild := window.selectedGuild != nil && window.selectedGuild.ID != channel.GuildID
 
 	if channel.GuildID == "" {
 		window.selectedGuild = nil
@@ -2713,12 +2675,17 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 		readstate.UpdateRead(window.session, channel, channel.LastMessageID)
 		// Here we make the assumption that the channel we are loading must be part
 		// of the currently loaded guild, since we don't allow loading a channel of
-		// a guilder otherwise.
+		// a guild otherwise.
 		if channel.GuildID != "" {
 			guild, cacheError := window.session.State.Guild(channel.GuildID)
-			if cacheError == nil {
-				window.selectedGuild = guild
-				window.app.QueueUpdateDraw(func() {
+
+			window.app.QueueUpdateDraw(func() {
+				if wasSelectedGuild {
+					window.updateServerReadStatus(window.selectedGuildNode, false)
+				}
+
+				if cacheError == nil {
+					window.selectedGuild = guild
 					for _, guildNode := range window.guildList.GetRoot().GetChildren() {
 						if guildNode.GetReference() == channel.GuildID {
 							window.guildList.SetCurrentNode(guildNode)
@@ -2731,8 +2698,8 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 							break
 						}
 					}
-				})
-			}
+				}
+			})
 		}
 	}()
 
