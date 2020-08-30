@@ -76,3 +76,14 @@ func DownloadFileOrAccessCache(filepath, url string) error {
 
 	return DownloadFile(filepath, url)
 }
+
+// EnsureDirectoryExists creates a directy if doesn't already exist.
+// If an error occurs during the existence check, that error is returned
+// directly.
+func EnsureDirectoryExists(directoryPath string) error {
+	_, statError := os.Stat(directoryPath)
+	if os.IsNotExist(statError) {
+		return os.MkdirAll(directoryPath, 0766)
+	}
+	return statError
+}

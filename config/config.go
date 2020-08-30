@@ -219,7 +219,7 @@ func createDefaultConfig() *Config {
 func SetConfigFile(configFilePath string) error {
 	// get parent directory of config file
 	parent := filepath.Dir(configFilePath)
-	err := ensureDirectory(parent)
+	err := files.EnsureDirectoryExists(parent)
 	if err == nil {
 		cachedConfigFile = configFilePath
 	} else {
@@ -227,7 +227,7 @@ func SetConfigFile(configFilePath string) error {
 		if err != nil {
 			return err
 		}
-		err = ensureDirectory(absolute)
+		err = files.EnsureDirectoryExists(absolute)
 		if err == nil {
 			cachedConfigFile = configFilePath
 		}
@@ -254,7 +254,7 @@ func GetConfigFile() (string, error) {
 // SetScriptDirectory sets the script directory cache
 // to the specified value
 func SetScriptDirectory(directoryPath string) error {
-	err := ensureDirectory(directoryPath)
+	err := files.EnsureDirectoryExists(directoryPath)
 	if err == nil {
 		cachedScriptDir = directoryPath
 	} else {
@@ -262,7 +262,7 @@ func SetScriptDirectory(directoryPath string) error {
 		if err != nil {
 			return err
 		}
-		err = ensureDirectory(absolute)
+		err = files.EnsureDirectoryExists(absolute)
 		if err == nil {
 			cachedConfigFile = absolute
 		}
@@ -282,7 +282,7 @@ func GetScriptDirectory() string {
 
 // SetConfigDirectory sets the directory cache
 func SetConfigDirectory(directoryPath string) error {
-	err := ensureDirectory(directoryPath)
+	err := files.EnsureDirectoryExists(directoryPath)
 	if err == nil {
 		cachedConfigDir = directoryPath
 	} else {
@@ -290,7 +290,7 @@ func SetConfigDirectory(directoryPath string) error {
 		if err != nil {
 			return err
 		}
-		err = ensureDirectory(absolute)
+		err = files.EnsureDirectoryExists(absolute)
 		if err == nil {
 			cachedConfigFile = absolute
 		}
@@ -311,7 +311,7 @@ func GetConfigDirectory() (string, error) {
 		return "", err
 	}
 
-	statError := ensureDirectory(directory)
+	statError := files.EnsureDirectoryExists(directory)
 	if statError != nil {
 		return "", statError
 	}
@@ -320,14 +320,6 @@ func GetConfigDirectory() (string, error) {
 	//stuff over and over again.
 	cachedConfigDir = directory
 	return cachedConfigDir, nil
-}
-
-func ensureDirectory(directoryPath string) error {
-	_, statError := os.Stat(directoryPath)
-	if os.IsNotExist(statError) {
-		return os.MkdirAll(directoryPath, 0766)
-	}
-	return statError
 }
 
 func getAbsolutePath(directoryPath string) (string, error) {
