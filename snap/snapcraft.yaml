@@ -29,4 +29,4 @@ apps:
     command: bin/cordless
     plugs: [x11, network-bind, desktop]
     environment:
-      XDG_CONFIG_DIR: $SNAP_USER_DATA/
+      XDG_CONFIG_HOME: $SNAP_USER_DATA/
