@@ -55,7 +55,6 @@ func (b *BottomBar) Draw(screen tcell.Screen) bool {
 
 		//Spacing between items
 		xPos++
-		screen.SetContent(xPos, yPos, ' ', nil, tcell.StyleDefault)
 	}
 
 	return true

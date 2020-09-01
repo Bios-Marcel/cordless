@@ -49,8 +49,8 @@ Discord Inc.
 
 ### Building from source
 
-In order to execute the following command, you need to install go 1.13 or higher.
-You can find golang packages at (https://golang.org/doc/install).
+In order to execute the following command, you need to install **go 1.13 or**
+higher. You can find golang packages at (https://golang.org/doc/install).
 
 **UPDATES HAVE TO BE INSTALLED MANUALLY**
 
@@ -59,14 +59,20 @@ binary will be put into that folder. Afterwards install or update cordless
 via the command:
 
 ```shell
-go get -u github.com/Bios-Marcel/cordless
+GO111MODULE=on; go get -u github.com/Bios-Marcel/cordless
 ```
+
+The environment variable is necessary for correct compilation. In future go
+versions this hopefully won't be necessary anymore. The syntax above will work
+for both powershell, bash and probably a row of other shells. If it
+doesn't work for your shell, please search the internet, using your
+favourite search engine, for `how to set an environment variable in XXX`.
 
 Note:
 
 * X11 users need `xclip` in order to copy and paste.
 * Wayland users need `wl-clipboard` in order to copy and paste.
-* Mac OS users probably want `pngpaste` in order to copy and paste.
+* Mac OS users need `pngpaste` in order to copy and paste images.
 
 ### Installing on Linux
 
