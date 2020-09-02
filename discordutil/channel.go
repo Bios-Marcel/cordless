@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/Bios-Marcel/cordless/config"
+
 	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
