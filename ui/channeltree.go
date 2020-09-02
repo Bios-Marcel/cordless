@@ -192,6 +192,15 @@ func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	if channel.NSFW {
 		prefixes += tviewutil.Escape("🔞")
 	}
+	if channel.Type == discordgo.ChannelTypeGuildNews {
+		prefixes += tviewutil.Escape("🎺")
+	}
+	if channel.Type == discordgo.ChannelTypeGuildStore {
+		prefixes += tviewutil.Escape("💳")
+	}
+	if channel.Type == discordgo.ChannelTypeGuildCategory {
+		prefixes += tviewutil.Escape("📊")
+	}
 
 	// Adds a padlock prefix if the channel if not readable by the everyone group
 	if config.Current.IndicateChannelAccessRestriction {
