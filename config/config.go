@@ -137,6 +137,8 @@ type Config struct {
 
 	// Show a padlock prefix of the channels that have access restriction
 	IndicateChannelAccessRestriction bool
+	// Show hidden channels
+	ShowHiddenChannels bool
 	// ShowBottomBar decides whether an informational line is shown at the
 	// bottom of cordless or not.
 	ShowBottomBar bool
@@ -205,6 +207,7 @@ func createDefaultConfig() *Config {
 		ShowPlaceholderForBlockedMessages:           true,
 		DontShowUpdateNotificationFor:               "",
 		ShowUpdateNotifications:                     true,
+		ShowHiddenChannels:                          false,
 		IndicateChannelAccessRestriction:            false,
 		ShowBottomBar:                               true,
 		ShowNicknames:                               true,
