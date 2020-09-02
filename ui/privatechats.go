@@ -142,6 +142,15 @@ func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
 
 func createPrivateChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	channelNode := tview.NewTreeNode(discordutil.GetPrivateChannelName(channel))
+	var prefixes string
+	if channel.Type == discordgo.ChannelTypeDM {
+		prefixes += tviewutil.Escape("🧑")
+	}
+	if channel.Type == discordgo.ChannelTypeGroupDM {
+		prefixes += tviewutil.Escape("🧑🧑🧑")
+	}
+	channelNode.SetPrefix(prefixes)
+	
 	channelNode.SetReference(channel.ID)
 	return channelNode
 }
