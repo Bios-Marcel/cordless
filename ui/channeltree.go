@@ -104,7 +104,7 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 	// Top level channel
 	state := channelTree.state
 	for _, channel := range channels {
-		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews) ||
+		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews && channel.Type != discordgo.ChannelTypeGuildStore) ||
 			channel.ParentID != "" || !discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
@@ -137,7 +137,7 @@ CATEGORY_LOOP:
 	}
 	// Second level channel
 	for _, channel := range channels {
-		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews) ||
+		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews && channel.Type != discordgo.ChannelTypeGuildStore) ||
 			channel.ParentID == "" || !discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
 		}
