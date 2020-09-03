@@ -1960,7 +1960,14 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				for _, message := range window.chatView.data {
 					if message.ID == tempMessageEdited.ID {
 						//FIXME Workaround for the fact that discordgo doesn't update already filled fields.
-						message.Content = tempMessageEdited.Content
+
+						//FIXME Workaround for the workaround, since discord appears to not send the content
+						//again for messages that have only had an embed added. In that situation, the
+						//timestamp for editing will also not be set, therefore we can circumvent this issue.
+						if tempMessageEdited.EditedTimestamp != "" && tempMessageEdited.Content != "" {
+							message.Content = tempMessageEdited.Content
+						}
+
 						message.Mentions = tempMessageEdited.Mentions
 						message.MentionRoles = tempMessageEdited.MentionRoles
 						message.MentionEveryone = tempMessageEdited.MentionEveryone
