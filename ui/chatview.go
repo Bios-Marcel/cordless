@@ -442,7 +442,7 @@ func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string
 		userColor = discordutil.GetUserColor(message.Author)
 	}
 
-	return "[::b][" + userColor + "]" + messageAuthor + "[::-]"
+	return "[::b][" + userColor + "]" + messageAuthor + ":[::-]"
 }
 
 func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
