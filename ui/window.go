@@ -1796,11 +1796,13 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	go func() {
 		for tempMessage := range input {
 			message := tempMessage
-			go func() {
-				for _, engine := range window.extensionEngines {
-					engine.OnMessageReceive(message)
-				}
-			}()
+			if len(window.extensionEngines) > 0 {
+				go func() {
+					for _, engine := range window.extensionEngines {
+						engine.OnMessageReceive(message)
+					}
+				}()
+			}
 
 			channel, stateError := window.session.State.Channel(message.ChannelID)
 			if stateError != nil {
@@ -1919,11 +1921,13 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 		for messageDeleted := range delete {
 			tempMessageDeleted := messageDeleted
 
-			go func() {
-				for _, engine := range window.extensionEngines {
-					engine.OnMessageDelete(tempMessageDeleted)
-				}
-			}()
+			if len(window.extensionEngines) > 0 {
+				go func() {
+					for _, engine := range window.extensionEngines {
+						engine.OnMessageDelete(tempMessageDeleted)
+					}
+				}()
+			}
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageDeleted.ChannelID {
 				window.QueueUpdateDrawSynchronized(func() {
