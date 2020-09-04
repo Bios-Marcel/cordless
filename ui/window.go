@@ -1948,13 +1948,16 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 	}()
 
 	go func() {
+	MESSAGE_EDIT_LOOP:
 		for messageEdited := range edit {
 			tempMessageEdited := messageEdited
-			go func() {
-				for _, engine := range window.extensionEngines {
-					engine.OnMessageEdit(tempMessageEdited)
-				}
-			}()
+			if len(window.extensionEngines) > 0 {
+				go func() {
+					for _, engine := range window.extensionEngines {
+						engine.OnMessageEdit(tempMessageEdited)
+					}
+				}()
+			}
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
 				for _, message := range window.chatView.data {
@@ -1973,9 +1976,10 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						message.MentionEveryone = tempMessageEdited.MentionEveryone
 
 						window.QueueUpdateDrawSynchronized(func() {
+							defer window.chatView.Unlock()
 							window.chatView.UpdateMessage(message)
 						})
-						break
+						continue MESSAGE_EDIT_LOOP
 					}
 				}
 			}
