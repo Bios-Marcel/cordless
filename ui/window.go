@@ -2180,15 +2180,15 @@ func (window *Window) registerGuildChannelHandler() {
 	})
 }
 
-func (window *Window) handleNotification(message *discordgo.Message, channel *discordgo.Channel) error {
+func (window *Window) isElligibleForNotification(message *discordgo.Message, channel *discordgo.Channel) bool {
 	if discordutil.IsBlocked(window.session.State, message.Author) {
-		return nil
+		return false
 	}
 
 	isCurrentChannel := window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID
 	//Client is not in a state elligible for notifications.
 	if isCurrentChannel && (window.userActive || !config.Current.DesktopNotificationsForLoadedChannel) {
-		return nil
+		return false
 	}
 
 	isPrivateChannel := channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM
@@ -2196,6 +2196,14 @@ func (window *Window) handleNotification(message *discordgo.Message, channel *di
 	//We always show notification for private messages, no matter whether
 	//the user was explicitly mentioned.
 	if !isPrivateChannel && !mentionsCurrentUser {
+		return false
+	}
+
+	return true
+}
+
+func (window *Window) handleNotification(message *discordgo.Message, channel *discordgo.Channel) error {
+	if !window.isElligibleForNotification(message, channel) {
 		return nil
 	}
 
