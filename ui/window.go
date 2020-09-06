@@ -1855,47 +1855,12 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 				continue
 			}
 
-			isCurrentChannel := window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID
-			mentionsCurrentUser := discordutil.MentionsCurrentUserExplicitly(window.session.State, message)
-			if config.Current.DesktopNotifications &&
-				(mentionsCurrentUser ||
-					//Always show notification for private messages
-					channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM) &&
-				(!isCurrentChannel ||
-					(config.Current.DesktopNotificationsForLoadedChannel && !window.userActive)) {
-
-				var notificationLocation string
-				if channel.Type == discordgo.ChannelTypeDM {
-					notificationLocation = message.Author.Username
-				} else if channel.Type == discordgo.ChannelTypeGroupDM {
-					notificationLocation = channel.Name
-					if notificationLocation == "" {
-						for index, recipient := range channel.Recipients {
-							if index == 0 {
-								notificationLocation = recipient.Username
-							} else {
-								notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
-							}
-						}
-					}
-
-					notificationLocation = message.Author.Username + " - " + notificationLocation
-				} else if channel.Type == discordgo.ChannelTypeGuildText {
-					guild, cacheError := window.session.State.Guild(message.GuildID)
-					if guild != nil && cacheError == nil {
-						notificationLocation = fmt.Sprintf("%s - %s - %s", guild.Name, channel.Name, message.Author.Username)
-					} else {
-						notificationLocation = fmt.Sprintf("%s - %s", message.Author.Username, channel.Name)
-					}
-				}
-
-				notifyError := beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
-				if notifyError != nil {
-					log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
-				}
+			if config.Current.DesktopNotifications {
+				notifyError := window.handleNotification(message, channel)
+				log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
 			}
 
-			if isCurrentChannel {
+			if window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID {
 				if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 					if !readstate.IsPrivateChannelMuted(channel) {
 						window.app.QueueUpdateDraw(func() {
@@ -1903,7 +1868,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						})
 					}
 				} else if channel.Type == discordgo.ChannelTypeGuildText {
-					if mentionsCurrentUser {
+					if discordutil.MentionsCurrentUserExplicitly(window.session.State, message) {
 						window.app.QueueUpdateDraw(func() {
 							window.channelTree.MarkChannelAsMentioned(channel.ID)
 						})
@@ -2213,6 +2178,53 @@ func (window *Window) registerGuildChannelHandler() {
 			})
 		}
 	})
+}
+
+func (window *Window) handleNotification(message *discordgo.Message, channel *discordgo.Channel) error {
+	if discordutil.IsBlocked(window.session.State, message.Author) {
+		return nil
+	}
+
+	isCurrentChannel := window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID
+	//Client is not in a state elligible for notifications.
+	if isCurrentChannel && (window.userActive || !config.Current.DesktopNotificationsForLoadedChannel) {
+		return nil
+	}
+
+	isPrivateChannel := channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM
+	mentionsCurrentUser := discordutil.MentionsCurrentUserExplicitly(window.session.State, message)
+	//We always show notification for private messages, no matter whether
+	//the user was explicitly mentioned.
+	if !isPrivateChannel && !mentionsCurrentUser {
+		return nil
+	}
+
+	var notificationLocation string
+	if channel.Type == discordgo.ChannelTypeDM {
+		notificationLocation = message.Author.Username
+	} else if channel.Type == discordgo.ChannelTypeGroupDM {
+		notificationLocation = channel.Name
+		if notificationLocation == "" {
+			for index, recipient := range channel.Recipients {
+				if index == 0 {
+					notificationLocation = recipient.Username
+				} else {
+					notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
+				}
+			}
+		}
+
+		notificationLocation = message.Author.Username + " - " + notificationLocation
+	} else if channel.Type == discordgo.ChannelTypeGuildText {
+		guild, cacheError := window.session.State.Guild(message.GuildID)
+		if guild != nil && cacheError == nil {
+			notificationLocation = fmt.Sprintf("%s - %s - %s", guild.Name, channel.Name, message.Author.Username)
+		} else {
+			notificationLocation = fmt.Sprintf("%s - %s", message.Author.Username, channel.Name)
+		}
+	}
+
+	return beeep.Notify("Cordless - "+notificationLocation, message.ContentWithMentionsReplaced(), "assets/information.png")
 }
 
 func (window *Window) askForMessageDeletion(messageID string, usedWithSelection bool) {
