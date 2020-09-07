@@ -1857,7 +1857,9 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 			if config.Current.DesktopNotifications {
 				notifyError := window.handleNotification(message, channel)
-				log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
+				if notifyError != nil {
+					log.Printf("["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error sending notification:\n\t[%s]%s\n", tviewutil.ColorToHex(config.GetTheme().ErrorColor), notifyError)
+				}
 			}
 
 			if window.selectedChannel == nil || message.ChannelID != window.selectedChannel.ID {
