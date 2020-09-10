@@ -1204,6 +1204,14 @@ important changes of the last two versions officially released.
 
 [::b]THIS VERSION
 	- Features
+	- Changes
+		- There's now a double-colon to separate author and messages
+	- Bugfixes
+		- Messages containing links won't disappear anymore after sending
+		- Messages from blocked users won't trigger notifications anymore
+		- No more spammed empty error messages when receiving notifications
+[::b]2020-08-30
+	- Features
 		- Nicknames can now be disabled via the configuration
 		- Files from messages can now be downloaded (key d) or opened (key o)
 		- New parameter "--account" to start cordless with a certain account
