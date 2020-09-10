@@ -44,7 +44,6 @@ type Login struct {
 	loginTypePasswordButton *tview.Button
 	sessionChannel          chan *loginAttempt
 	messageText             *tview.TextView
-	runNext                 chan bool
 
 	content           *tview.Flex
 	loginChoiceView   tview.Primitive

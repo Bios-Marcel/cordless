@@ -340,14 +340,6 @@ func (b *Box) IsBorderLeft() bool {
 	return b.border && b.borderLeft
 }
 
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-
-	return b
-}
-
 // SetBorderAttributes sets the border's style attributes. You can combine
 // different attributes using bitmask operations:
 //
