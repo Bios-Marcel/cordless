@@ -82,7 +82,7 @@ func (cmd *FileSend) Name() string {
 }
 
 func (cmd *FileSend) Aliases() []string {
-	return []string{"filesend"}
+	return []string{"filesend", "sendfile", "send-file"}
 }
 
 // PrintHelp prints the help for the FileSend command.
