@@ -47,26 +47,41 @@ Discord Inc.
 
 ## Installation
 
+### Using prebuilt binaries
+
+If you don't want to build the application yourself or use some kind of
+package management system, you can get the latest binaries for the three
+major systems in the release overview:
+
+https://github.com/Bios-Marcel/cordless/releases/latest
+
 ### Building from source
 
-In order to execute the following command, you need to install **go 1.13 or**
-higher. You can find golang packages at (https://golang.org/doc/install).
+In order to execute the following commands, you need to install **go 1.13 or**
+higher. You can find golang packages at https://golang.org/doc/install.
+On top of that, you need to have **git** installed. It can be fund at
+https://git-scm.com/downloads.
 
 **UPDATES HAVE TO BE INSTALLED MANUALLY**
 
-Make sure `$GOPATH/bin` is in your systems `PATH` variable, since the
-binary will be put into that folder. Afterwards install or update cordless
-via the command:
+Open a command line and execute the following commands:
 
 ```shell
-GO111MODULE=on; go get -u github.com/Bios-Marcel/cordless
+git clone https://github.com/Bios-Marcel/cordless.git
+cd cordless
+go build
 ```
 
-The environment variable is necessary for correct compilation. In future go
-versions this hopefully won't be necessary anymore. The syntax above will work
-for both powershell, bash and probably a row of other shells. If it
-doesn't work for your shell, please search the internet, using your
-favourite search engine, for `how to set an environment variable in XXX`.
+This will create an executable file called `cordless` or `cordless.exe`
+depending on whether you are on Windows or not. Move that file anywhere
+that your terminal can find it. I recommend adding a `bin` folder to your
+user home and adding it to your systems `PATH` variable. Please search the
+internet, using your favourite search engine, for
+`how to set an environment variable in XXX` in order to update your `PATH`
+variable correctly.
+
+For updateing you simply have to delete the folder you downloaded last
+time and repeat the instructions.
 
 Note:
 
