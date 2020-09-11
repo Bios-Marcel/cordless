@@ -98,6 +98,15 @@ var (
 	ExitApplication = addShortcut("exit_application", "Exit application",
 		globalScope, tcell.NewEventKey(tcell.KeyCtrlC, rune(tcell.KeyCtrlC), tcell.ModCtrl))
 
+	FocusUp = addShortcut("focus_up", "Focus the next widget above",
+		globalScope, tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModAlt))
+	FocusDown = addShortcut("focus_down", "Focus the next widget below",
+		globalScope, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModAlt))
+	FocusLeft = addShortcut("focus_left", "Focus the next widget to the left",
+		globalScope, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModAlt))
+	FocusRight = addShortcut("focus_right", "Focus the next widget to the right",
+		globalScope, tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModAlt))
+
 	FocusChannelContainer = addShortcut("focus_channel_container", "Focus channel container",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'c', tcell.ModAlt))
 	FocusUserContainer = addShortcut("focus_user_container", "Focus user container",
