@@ -33,6 +33,11 @@ func (b *BottomBar) Draw(screen tcell.Screen) bool {
 		return false
 	}
 
+	if len(b.items) == 0 {
+		//True, as we've already drawn.
+		return true
+	}
+
 	style := tcell.StyleDefault.
 		//Background(config.GetTheme().PrimitiveBackgroundColor).
 		Foreground(config.GetTheme().PrimaryTextColor).
