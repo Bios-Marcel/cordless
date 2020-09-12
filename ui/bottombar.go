@@ -1,12 +1,10 @@
 package ui
 
 import (
-	"fmt"
+	"sync"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
-	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/gdamore/tcell"
 	"github.com/mattn/go-runewidth"
 	"github.com/rivo/uniseg"
@@ -15,12 +13,12 @@ import (
 // BottomBar custom simple component to render static information at the bottom
 // of the application.
 type BottomBar struct {
+	*sync.Mutex
 	*tview.Box
 	items []*bottomBarItem
 }
 
 type bottomBarItem struct {
-	name    string
 	content string
 }
 
@@ -28,6 +26,8 @@ type bottomBarItem struct {
 // screen's ShowCursor() function but should only do so when they have focus.
 // (They will need to keep track of this themselves.)
 func (b *BottomBar) Draw(screen tcell.Screen) bool {
+	b.Lock()
+	defer b.Unlock()
 	hasDrawn := b.Box.Draw(screen)
 	if !hasDrawn {
 		return false
@@ -60,24 +60,19 @@ func (b *BottomBar) Draw(screen tcell.Screen) bool {
 	return true
 }
 
+// AddItem adds a new item to the right side of the already existing items.
+func (b *BottomBar) AddItem(text string) {
+	b.Lock()
+	defer b.Unlock()
+	b.items = append(b.items, &bottomBarItem{text})
+}
+
 // NewBottomBar creates a new bar to be put at the bottom aplication.
 // It contains static information and hints.
-func NewBottomBar(username string) *BottomBar {
-	loggedInAsText := fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(username))
-	shortcutInfoText := fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut))
-
+func NewBottomBar() *BottomBar {
 	bottomBar := &BottomBar{
-		Box: tview.NewBox(),
-		items: []*bottomBarItem{
-			{
-				name:    "username",
-				content: loggedInAsText,
-			},
-			{
-				name:    "shortcut-info",
-				content: shortcutInfoText,
-			},
-		},
+		Mutex: &sync.Mutex{},
+		Box:   tview.NewBox(),
 	}
 	bottomBar.SetBorder(false)
 

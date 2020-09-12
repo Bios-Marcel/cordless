@@ -1125,7 +1125,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.rootContainer.AddItem(window.dialogReplacement, 2, 0, false)
 
 	if config.Current.ShowBottomBar {
-		bottomBar := NewBottomBar(session.State.User.Username)
+		bottomBar := NewBottomBar()
+		bottomBar.AddItem(fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.Username)))
+		bottomBar.AddItem(fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut)))
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
 
