@@ -109,6 +109,7 @@ func (editor *Editor) checkForAutocompletion() {
 	}
 }
 
+// MoveCursorLeft moves the cursor left by one cell.
 func (editor *Editor) MoveCursorLeft() {
 	if editor.buffer.Cursor.HasSelection() {
 		editor.buffer.Cursor.GotoLoc(editor.buffer.Cursor.CurSelection[0])
@@ -120,6 +121,7 @@ func (editor *Editor) MoveCursorLeft() {
 	editor.applyBuffer()
 }
 
+// MoveCursorRight moves the cursor right by one cell.
 func (editor *Editor) MoveCursorRight() {
 	if editor.buffer.Cursor.HasSelection() {
 		editor.buffer.Cursor.GotoLoc(editor.buffer.Cursor.CurSelection[1])
@@ -131,10 +133,14 @@ func (editor *Editor) MoveCursorRight() {
 	editor.applyBuffer()
 }
 
+// SelectionToLeft extends the selection one cell to the left.
 func (editor *Editor) SelectionToLeft() {
 	editor.selectLeft(false)
 }
 
+// SelectWordLeft extends the selection one word to the left. A word may
+// span multiple words. A word however can be one cell and mustn't be a word
+// in terms of human language definition.
 func (editor *Editor) SelectWordLeft() {
 	editor.selectLeft(true)
 }
@@ -169,10 +175,14 @@ func (editor *Editor) selectLeft(word bool) {
 	editor.applyBuffer()
 }
 
+// SelectionToRight extends the selection one cell to the right.
 func (editor *Editor) SelectionToRight() {
 	editor.selectRight(false)
 }
 
+// SelectWordRight extends the selection one word to the right. A word may
+// span multiple words. A word however can be one cell and mustn't be a word
+// in terms of human language definition.
 func (editor *Editor) SelectWordRight() {
 	editor.selectRight(true)
 }
@@ -202,6 +212,8 @@ func (editor *Editor) selectRight(word bool) {
 	editor.applyBuffer()
 }
 
+// SelectAll selects all text (cells) currently filled. If no text is
+// available, nothing will change.
 func (editor *Editor) SelectAll() {
 	start := editor.buffer.Start()
 	editor.buffer.Cursor.SetSelectionStart(start)
@@ -211,6 +223,9 @@ func (editor *Editor) SelectAll() {
 	editor.applyBuffer()
 }
 
+// SelectToStartOfLine will select all text to the left til the next newline
+// is found. Lines doesn't mean "editor line" in this context, as the editor
+// doesn't currently support vertical navigation.
 func (editor *Editor) SelectToStartOfLine() {
 	oldCursor := editor.buffer.Cursor.Loc
 	editor.buffer.Cursor.StartOfText()
@@ -224,6 +239,9 @@ func (editor *Editor) SelectToStartOfLine() {
 	editor.applyBuffer()
 }
 
+// SelectToEndOfLine will select all text to the right til the next newline
+// is found. Lines doesn't mean "editor line" in this context, as the editor
+// doesn't currently support vertical navigation.
 func (editor *Editor) SelectToEndOfLine() {
 	oldCursor := editor.buffer.Cursor.Loc
 	editor.buffer.Cursor.End()
@@ -232,6 +250,8 @@ func (editor *Editor) SelectToEndOfLine() {
 	editor.applyBuffer()
 }
 
+// SelectToStartOfText will select all text to the start of the editor.
+// Meaning the top-left most cell.
 func (editor *Editor) SelectToStartOfText() {
 	oldCursor := editor.buffer.Cursor.Loc
 	textStart := editor.buffer.Start()
@@ -241,6 +261,8 @@ func (editor *Editor) SelectToStartOfText() {
 	editor.applyBuffer()
 }
 
+// SelectToEndOfText will select all text to the end of the editor.
+// Meaning the bottom-right most cell.
 func (editor *Editor) SelectToEndOfText() {
 	oldCursor := editor.buffer.Cursor.Loc
 	textEnd := editor.buffer.End()

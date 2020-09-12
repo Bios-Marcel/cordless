@@ -32,7 +32,10 @@ import (
 )
 
 const dashCharacter = "\u2500"
-const EMBED_TIMESTAMP_FORMAT = "2006-01-02 15:04"
+
+// embedTimestampFormat represents the format for times used when
+// rendering embeds.
+const embedTimestampFormat = "2006-01-02 15:04"
 
 var (
 	successiveCustomEmojiRegex = regexp.MustCompile("<a?:.+?:\\d+(><)a?:.+?:\\d+>")
@@ -787,7 +790,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 					embedBuffer.WriteString(" - ")
 				}
 				localTime := parsedTimestamp.Local()
-				embedBuffer.WriteString(localTime.Format(EMBED_TIMESTAMP_FORMAT))
+				embedBuffer.WriteString(localTime.Format(embedTimestampFormat))
 			} else {
 				log.Println("Error parsing time: " + err.Error())
 			}
