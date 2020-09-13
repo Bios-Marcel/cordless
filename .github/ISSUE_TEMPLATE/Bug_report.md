@@ -16,22 +16,19 @@ about: Tell us what went wrong
 
 <!-- Explain what happened (the problem)-->
 
-## How do you reproduce this bug
-
-<!-- Explain how exactly I can produce this bug on my machine -->
-
 ## Error output
 
 <!-- If there was any output, enter it here please -->
 
-## Hints on what could've happened
+## How do you reproduce this bug
 
-<!-- If you know how to solve this problem, tell others how -->
+<!-- Explain how exactly I can produce this bug on my machine -->
 
 ## System information
 
 | Key | Value |
 | - | - |
-| OS | **TODO** |
-| Architecture | **TODO** |
-| Go version | <!-- Only apply if self-compiled via "go get" or "go build". Retrieve via terminal with "go version". --> |
+| OS | **TODO** <!-- Your system, so Debian, Ubuntu, Windows 10, Mac OS ... -->|
+| Architecture | **TODO** <!-- Your CPUs architechture, e.g. amd64, aarch64, ... --> |
+| Terminal | **TODO** <!-- For example xterm, termite, st ... -->
+| Go version | **TODO** <!-- Only apply if self-compiled via "go get" or "go build". Retrieve via terminal with "go version". --> |
