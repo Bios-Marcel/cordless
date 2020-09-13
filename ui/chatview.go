@@ -798,8 +798,6 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 
 		messageBuffer.WriteString(strings.Replace(parseBoldAndUnderline(embedBuffer.String()), "\n", "\n"+color+"▐["+defaultColor+"] ", -1))
 		embedBuffer.WriteRune('\n')
-
-		//TODO embed.Timestamp
 	}
 
 	return messageBuffer.String()
