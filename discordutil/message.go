@@ -125,18 +125,19 @@ func SendMessageAsFile(session *discordgo.Session, message string, channel strin
 	}
 }
 
-// Generates a Quote using the given Input. The `messageAfterQuote` will be
-// appended after the quote in case it is not empty.
+// GenerateQuote formats a message quote using the given Input. The
+// `messageAfterQuote` will be appended after the quote in case it is not
+// empty.
 func GenerateQuote(message, author string, time discordgo.Timestamp, attachments []*discordgo.MessageAttachment, messageAfterQuote string) (string, error) {
 	messageTime, parseError := time.Parse()
 	if parseError != nil {
 		return "", parseError
 	}
 
-	// All quotes should be UTC.
+	// All quotes should be UTC in order to not confuse quote-readers.
 	messageTimeUTC := messageTime.UTC()
-
 	quotedMessage := strings.ReplaceAll(message, "\n", "\n> ")
+
 	if len(attachments) > 0 {
 		var attachmentsAsText string
 		for index, attachment := range attachments {
@@ -147,17 +148,17 @@ func GenerateQuote(message, author string, time discordgo.Timestamp, attachments
 			}
 		}
 
+		//If the quoted message ends with a "useless" quote-line-prefix
+		//we simply "reuse" that line to not add unnecessary newlines.
 		if strings.HasSuffix(quotedMessage, "> ") {
 			quotedMessage = quotedMessage + attachmentsAsText
 		} else {
 			quotedMessage = quotedMessage + "\n> " + attachmentsAsText
 		}
 	}
-	quotedMessage = fmt.Sprintf("> **%s** %s UTC:\n> %s\n", author, times.TimeToString(&messageTimeUTC), quotedMessage)
-	currentContent := strings.TrimSpace(messageAfterQuote)
-	if currentContent != "" {
-		quotedMessage = quotedMessage + currentContent
-	}
 
-	return quotedMessage, nil
+	return fmt.Sprintf("> **%s** %s UTC:\n> %s\n%s", author,
+			times.TimeToString(&messageTimeUTC), quotedMessage,
+			strings.TrimSpace(messageAfterQuote)),
+		nil
 }

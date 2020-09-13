@@ -200,6 +200,7 @@ func TestGenerateQuote(t *testing.T) {
 		message           string
 		author            string
 		time              discordgo.Timestamp
+		attachments       []*discordgo.MessageAttachment
 		messageAfterQuote string
 	}
 	tests := []struct {
@@ -318,17 +319,55 @@ func TestGenerateQuote(t *testing.T) {
 			},
 			want:    "",
 			wantErr: true,
+		}, {
+			name: "single line plus single attachment, no sender message",
+			args: args{
+				message: "f",
+				author:  "author",
+				attachments: []*discordgo.MessageAttachment{
+					{
+						URL: "https://download/this.zip",
+					},
+				},
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "",
+			},
+			want: "> **author** 21:30:57 UTC:\n" +
+				"> f\n" +
+				"> https://download/this.zip\n",
+			wantErr: false,
+		}, {
+			name: "single line plus two attachment, no sender message",
+			args: args{
+				message: "f",
+				author:  "author",
+				attachments: []*discordgo.MessageAttachment{
+					{
+						URL: "https://download/this.zip",
+					},
+					{
+						URL: "https://download/thistoo.zip",
+					},
+				},
+				time:              discordgo.Timestamp("2019-10-28T21:30:57.003000+00:00"),
+				messageAfterQuote: "",
+			},
+			want: "> **author** 21:30:57 UTC:\n" +
+				"> f\n" +
+				"> https://download/this.zip\n" +
+				"> https://download/thistoo.zip\n",
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenerateQuote(tt.args.message, tt.args.author, tt.args.time, nil, tt.args.messageAfterQuote)
+			got, err := GenerateQuote(tt.args.message, tt.args.author, tt.args.time, tt.args.attachments, tt.args.messageAfterQuote)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateQuote() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("GenerateQuote() got = %v, want %v", got, tt.want)
+				t.Errorf("GenerateQuote() got = '%v', want '%v'", got, tt.want)
 			}
 		})
 	}
