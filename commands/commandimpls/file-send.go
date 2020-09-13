@@ -13,6 +13,7 @@ import (
 
 	"github.com/Bios-Marcel/discordgo"
 
+	"github.com/Bios-Marcel/cordless/commands"
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
@@ -93,7 +94,7 @@ func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 	for _, parameter := range filteredParameters {
 		resolvedPath, resolveError := files.ToAbsolutePath(parameter)
 		if resolveError != nil {
-			fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Error reading file:\n\t["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]%s\n", resolveError.Error())
+			commands.PrintError(writer, "Error reading file", resolveError.Error())
 			return
 		}
 
@@ -106,8 +107,8 @@ func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 			//FIXME Handle error.
 			stats, _ := os.Stat(path)
 			if stats.IsDir() {
-				fmt.Fprintf(writer, "["+tviewutil.ColorToHex(config.GetTheme().ErrorColor)+"]Directories can only be uploaded if the '-r' flag is set.\n")
-				break
+				commands.PrintError(writer, "Invalid input", "Directories can only be uploaded if the '-r' flag is set")
+				return
 			}
 		}
 	}
