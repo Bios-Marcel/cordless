@@ -4,9 +4,4 @@ cordless_linux_64
 cordless
 cordless_64.exe
 cordless_32.exe
-*.snap
-*.xdelta*
-stage/
-prime/
-snap/.snapcraft
 .vscode/

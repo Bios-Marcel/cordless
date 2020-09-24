@@ -7,7 +7,6 @@
 # Dependencies:
 #   * sha256sum
 #   * envsubst
-#   * snapcraft
 #   * git
 #   * date
 #   * go
@@ -93,17 +92,6 @@ git tag -s "$RELEASE_DATE" -m "Update scoop package to version ${RELEASE_DATE}"
 git push --tags
 
 #
-# Build and push the snap package.
-#
-# It is important that this happens after pushing the tag, because otherwise
-# the version of the built snap package will end up being `DATE_dirty`.
-#
-
-snapcraft clean cordless
-snapcraft
-snapcraft upload "cordless_${RELEASE_DATE}_amd64.snap" --release stable
-
-#
 # Copies the changelog for pasting into the github release. The changes will
 # include all commits between the latest and the previous tag.
 #
@@ -163,10 +151,3 @@ unset EXE_64_HASH
 unset EXE_32_HASH
 unset TAR_HASH
 
-#
-# Cleanup snap stuff so I can still run unit tests for cordless only.
-#
-
-rm -rf stage/
-rm -rf parts/
-rm -rf prime/

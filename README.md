@@ -74,7 +74,7 @@ go build
 
 This will create an executable file called `cordless` or `cordless.exe`
 depending on whether you are on Windows or not. Move that file anywhere
-that your terminal can find it. I recommend adding a `bin` folder to your
+ that your terminal can find it. I recommend adding a `bin` folder to your
 user home and adding it to your systems `PATH` variable. Please search the
 internet, using your favourite search engine, for
 `how to set an environment variable in XXX` in order to update your `PATH`
@@ -90,18 +90,6 @@ Note:
 * Mac OS users need `pngpaste` in order to copy and paste images.
 
 ### Installing on Linux
-
-#### Snap
-
-**Currently I can't release new snap versions due to a bug!**
-
-Run (Might require sudo):
-
-```shell
-snap install cordless
-```
-
-Snap will automatically install updates.
 
 #### Arch based Linux distributions
 
