@@ -39,12 +39,12 @@ func RunWithAccount(account string) {
 	runNext := make(chan bool, 1)
 
 	configuration, configLoadError := config.LoadConfig()
-	if strings.TrimSpace(account) != "" {
-		configuration.Token = configuration.GetAccountToken(account)
-	}
-
 	if configLoadError != nil {
 		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
+	}
+
+	if strings.TrimSpace(account) != "" {
+		configuration.Token = configuration.GetAccountToken(account)
 	}
 
 	updateAvailableChannel := make(chan bool, 1)
