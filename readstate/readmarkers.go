@@ -171,10 +171,23 @@ func isChannelMuted(channel *discordgo.Channel) bool {
 
 // IsGuildChannelMuted checks whether a guild channel has been set to silent.
 func IsGuildChannelMuted(channel *discordgo.Channel) bool {
+	if isGuildChannelMuted(channel.GuildID, channel.ID) {
+		return true
+	}
+
+	//Check if Parent (CATEGORY) is muted
+	if channel.ParentID != "" && isGuildChannelMuted(channel.GuildID, channel.ParentID) {
+		return true
+	}
+
+	return false
+}
+
+func isGuildChannelMuted(guildID, channelID string) bool {
 	for _, settings := range state.UserGuildSettings {
-		if settings.GetGuildID() == channel.GuildID {
+		if settings.GetGuildID() == guildID {
 			for _, override := range settings.ChannelOverrides {
-				if override.ChannelID == channel.ID {
+				if override.ChannelID == channelID {
 					if override.Muted {
 						return true
 					}
