@@ -74,7 +74,7 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	primaryTextColor := tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)
 
 	shortcutDescription = tview.NewTextView()
-	shortcutDescription.SetDynamicColors(true)
+	shortcutDescription.SetDynamicColors(true).SetBorderPadding(1, 0, 0, 0)
 	if vtxxx {
 		shortcutDescription.SetText("R [::r]Reset shortcut[::-]" +
 			"[::-]  Backspace [::r]Delete shortcut" +
@@ -101,7 +101,7 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 
 	shortcutsView.AddItem(table.GetPrimitive(), 0, 1, false)
 	shortcutsView.AddItem(buttonBar, 1, 0, false)
-	shortcutsView.AddItem(shortcutDescription, 1, 0, false)
+	shortcutsView.AddItem(shortcutDescription, 2, 0, false)
 
 	app.SetRoot(shortcutsView, true)
 	app.SetFocus(table.GetPrimitive())
