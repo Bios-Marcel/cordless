@@ -36,6 +36,14 @@ var (
 		chatview, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone))
 	ViewSelectedMessageImages = addShortcut("view_selected_message_images", "View selected message's attached images",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'o', tcell.ModNone))
+	ChatViewSelectionUp = addShortcut("selection_up", "Move selection up by one",
+		chatview, tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone))
+	ChatViewSelectionDown = addShortcut("selection_down", "Move selection down by one",
+		chatview, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone))
+	ChatViewSelectionTop = addShortcut("selection_top", "Move selection to the upmost message",
+		chatview, tcell.NewEventKey(tcell.KeyHome, 0, tcell.ModNone))
+	ChatViewSelectionBottom = addShortcut("selection_bottom", "Move selection to the downmost message",
+		chatview, tcell.NewEventKey(tcell.KeyEnd, 0, tcell.ModNone))
 
 	ExpandSelectionToLeft = addShortcut("expand_selection_word_to_left", "Expand selection word to left",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModShift))

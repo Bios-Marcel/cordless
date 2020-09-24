@@ -118,7 +118,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 
 	chatView.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if chatView.selectionMode && event.Modifiers() == tcell.ModNone {
-			if event.Key() == tcell.KeyUp {
+			if shortcuts.ChatViewSelectionUp.Equals(event) {
 				if chatView.selection == -1 {
 					chatView.selection = len(chatView.data) - 1
 				} else if chatView.selection >= 1 {
@@ -132,7 +132,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 				return nil
 			}
 
-			if event.Key() == tcell.KeyDown {
+			if shortcuts.ChatViewSelectionDown.Equals(event) {
 				if chatView.selection == -1 {
 					chatView.selection = 0
 				} else if chatView.selection <= len(chatView.data)-2 {
@@ -146,7 +146,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 				return nil
 			}
 
-			if event.Key() == tcell.KeyHome {
+			if shortcuts.ChatViewSelectionTop.Equals(event) {
 				if chatView.selection != 0 {
 					chatView.selection = 0
 
@@ -156,7 +156,7 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 				return nil
 			}
 
-			if event.Key() == tcell.KeyEnd {
+			if shortcuts.ChatViewSelectionBottom.Equals(event) {
 				if chatView.selection != len(chatView.data)-1 {
 					chatView.selection = len(chatView.data) - 1
 
