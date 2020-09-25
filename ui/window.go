@@ -513,11 +513,19 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				if stateError == nil {
 					filteredRoles := fuzzy.ScoreAndSortRoles(value, guild.Roles)
 					for _, role := range filteredRoles {
-						autocompleteValues = append(autocompleteValues, &AutocompleteValue{
-							RenderValue: role.Name,
-							//FIXME Inconsistent, we should change this.
-							InsertValue: "<@&" + role.ID + ">",
-						})
+						//Workaround for discord just having a default role called "@everyone"
+						if role.Name == "@everyone" {
+							autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+								RenderValue: role.Name,
+								InsertValue: "@everyone",
+							})
+						} else {
+							autocompleteValues = append(autocompleteValues, &AutocompleteValue{
+								RenderValue: role.Name,
+								InsertValue: "<@&" + role.ID + ">",
+							})
+
+						}
 					}
 
 					filteredMembers := fuzzy.ScoreAndSortMembers(value, guild.Members)
