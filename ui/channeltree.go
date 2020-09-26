@@ -148,15 +148,7 @@ CATEGORY_LOOP:
 }
 
 func createTopLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
-	channelNode := createChannelNode(channel)
-	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
-		channelTree.channelStates[channelNode] = channelUnread
-		if vtxxx {
-			channelNode.SetAttributes(tcell.AttrBlink)
-		} else {
-			channelNode.SetColor(config.GetTheme().AttentionColor)
-		}
-	}
+	channelNode := channelTree.createTextChannelNode(channel)
 	channelTree.GetRoot().AddChild(channelNode)
 }
 
@@ -167,19 +159,10 @@ func createChannelCategoryNode(channelTree *ChannelTree, channel *discordgo.Chan
 }
 
 func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Channel) {
-	channelNode := createChannelNode(channel)
 	for _, node := range channelTree.GetRoot().GetChildren() {
 		channelID, ok := node.GetReference().(string)
 		if ok && channelID == channel.ParentID {
-			if !readstate.HasBeenRead(channel, channel.LastMessageID) {
-				channelTree.channelStates[channelNode] = channelUnread
-				if vtxxx {
-					channelNode.SetAttributes(tcell.AttrBlink)
-				} else {
-					channelNode.SetColor(config.GetTheme().AttentionColor)
-				}
-			}
-
+			channelNode := channelTree.createTextChannelNode(channel)
 			node.AddChild(channelNode)
 			break
 		}
@@ -205,6 +188,25 @@ func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	channelNode.SetPrefix(prefixes)
 
 	channelNode.SetReference(channel.ID)
+	return channelNode
+}
+
+func (channelTree *ChannelTree) createTextChannelNode(channel *discordgo.Channel) *tview.TreeNode {
+	channelNode := createChannelNode(channel)
+
+	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
+		channelTree.channelStates[channelNode] = channelUnread
+		if vtxxx {
+			channelNode.SetAttributes(tcell.AttrBlink)
+		} else {
+			channelNode.SetColor(config.GetTheme().AttentionColor)
+		}
+	}
+
+	if readstate.HasBeenMentioned(channel.ID) {
+		channelTree.markNodeAsMentioned(channelNode, channel.ID)
+	}
+
 	return channelNode
 }
 
@@ -342,22 +344,25 @@ func (channelTree *ChannelTree) MarkChannelAsMentioned(channelID string) {
 	channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channelID {
-			channelTree.channelStates[node] = channelMentioned
-			channel, stateError := channelTree.state.Channel(channelID)
-			if stateError == nil {
-				node.SetText("(@You) " + tviewutil.Escape(channel.Name))
-			}
-			if vtxxx {
-				node.SetAttributes(tcell.AttrBlink)
-			} else {
-				node.SetColor(config.GetTheme().AttentionColor)
-			}
-
+			channelTree.markNodeAsMentioned(node, channelID)
 			return false
 		}
 
 		return true
 	})
+}
+
+func (channelTree *ChannelTree) markNodeAsMentioned(node *tview.TreeNode, channelID string) {
+	channelTree.channelStates[node] = channelMentioned
+	channel, stateError := channelTree.state.Channel(channelID)
+	if stateError == nil {
+		node.SetText("(@) " + tviewutil.Escape(channel.Name))
+	}
+	if vtxxx {
+		node.SetAttributes(tcell.AttrBlink)
+	} else {
+		node.SetColor(config.GetTheme().AttentionColor)
+	}
 }
 
 // MarkChannelAsLoaded marks a channel as loaded and therefore marks all other

@@ -174,6 +174,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.guildList = guildList
 	window.guildList.UpdateUnreadGuildCount()
 	guildList.SetOnGuildSelect(func(node *tview.TreeNode, guildID string) {
+		//Update previously selected guild.
 		if window.selectedGuild != nil && window.selectedGuildNode != nil {
 			window.updateServerReadStatus(window.selectedGuildNode, false)
 		}
@@ -1460,8 +1461,19 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 }
 
 func (window *Window) updateServerReadStatus(guildNode *tview.TreeNode, isSelected bool) {
-	window.guildList.UpdateNodeState(guildNode, isSelected)
-	window.guildList.UpdateUnreadGuildCount()
+	guild, cacheError := window.session.State.Guild(guildNode.GetReference().(string))
+	if cacheError == nil {
+		window.guildList.UpdateNodeState(guild, guildNode, isSelected)
+		window.guildList.UpdateUnreadGuildCount()
+	}
+}
+
+func (window *Window) updateServerReadStatusByID(guildID string, isSelected bool) {
+	guild, cacheError := window.session.State.Guild(guildID)
+	if cacheError == nil && guild != nil {
+		window.guildList.UpdateNodeStateByGuild(guild, isSelected)
+		window.guildList.UpdateUnreadGuildCount()
+	}
 }
 
 // prepareMessage prepares a message for being sent to the discord API.
@@ -1866,7 +1878,10 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 					}
 				} else if channel.Type == discordgo.ChannelTypeGuildText {
 					if discordutil.MentionsCurrentUserExplicitly(window.session.State, message) {
+						readstate.MarkAsMentioned(channel.ID)
 						window.app.QueueUpdateDraw(func() {
+							isCurrentGuild := window.selectedGuild != nil && window.selectedGuild.ID == channel.GuildID
+							window.updateServerReadStatusByID(channel.GuildID, isCurrentGuild)
 							window.channelTree.MarkChannelAsMentioned(channel.ID)
 						})
 					} else if !readstate.IsGuildChannelMuted(channel) {
@@ -2703,7 +2718,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	//Unlike with the channel, where we can assume it is read, we gotta check
 	//whether there is still an unread channel and mark the server accordingly.
-	wasSelectedGuild := window.selectedGuild != nil && window.selectedGuild.ID != channel.GuildID
+	wasSelectedGuild := window.selectedGuild != nil && window.selectedGuild.ID == channel.GuildID
 
 	if channel.GuildID == "" {
 		window.selectedGuild = nil
@@ -2729,9 +2744,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 			guild, cacheError := window.session.State.Guild(channel.GuildID)
 
 			window.app.QueueUpdateDraw(func() {
-				if wasSelectedGuild {
-					window.updateServerReadStatus(window.selectedGuildNode, false)
-				}
+				window.updateServerReadStatusByID(channel.GuildID, wasSelectedGuild)
 
 				if cacheError == nil {
 					window.selectedGuild = guild

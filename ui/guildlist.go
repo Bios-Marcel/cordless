@@ -52,7 +52,7 @@ func NewGuildList(guilds []*discordgo.Guild) *GuildList {
 		guildNode.SetReference(guild.ID)
 		root.AddChild(guildNode)
 
-		guildList.UpdateNodeState(guildNode, false)
+		guildList.UpdateNodeState(guild, guildNode, false)
 
 		guildNode.SetSelectable(true)
 	}
@@ -64,12 +64,26 @@ func NewGuildList(guilds []*discordgo.Guild) *GuildList {
 	return guildList
 }
 
+// UpdateNodeStateByGuild updates the state of a guilds node accordingly
+// to its readstate, unless the node is selected.
+//
+// FIXME selected should probably be removed here, but bugs will occur
+// so I'll do it someday ... :D
+func (g *GuildList) UpdateNodeStateByGuild(guild *discordgo.Guild, selected bool) {
+	for _, node := range g.GetRoot().GetChildren() {
+		if node.GetReference().(string) == guild.ID {
+			g.UpdateNodeState(guild, node, selected)
+			break
+		}
+	}
+}
+
 // UpdateNodeState updates the state of a node accordingly to its
 // readstate, unless the node is selected.
 //
 // FIXME selected should probably be removed here, but bugs will occur
 // so I'll do it someday ... :D
-func (g *GuildList) UpdateNodeState(node *tview.TreeNode, selected bool) {
+func (g *GuildList) UpdateNodeState(guild *discordgo.Guild, node *tview.TreeNode, selected bool) {
 	if selected {
 		if vtxxx {
 			node.SetAttributes(tcell.AttrUnderline)
@@ -77,7 +91,7 @@ func (g *GuildList) UpdateNodeState(node *tview.TreeNode, selected bool) {
 			node.SetColor(tview.Styles.ContrastBackgroundColor)
 		}
 	} else {
-		if !readstate.HasGuildBeenRead(node.GetReference().(string)) {
+		if !readstate.HasGuildBeenRead(guild.ID) {
 			if vtxxx {
 				node.SetAttributes(tcell.AttrBlink)
 			} else {
@@ -87,6 +101,12 @@ func (g *GuildList) UpdateNodeState(node *tview.TreeNode, selected bool) {
 			node.SetAttributes(tcell.AttrNone)
 			node.SetColor(tview.Styles.PrimaryTextColor)
 		}
+	}
+
+	if readstate.HasGuildBeenMentioned(guild.ID) {
+		node.SetText("(@) " + tviewutil.Escape(guild.Name))
+	} else {
+		node.SetText(tviewutil.Escape(guild.Name))
 	}
 }
 
