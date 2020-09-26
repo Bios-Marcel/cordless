@@ -12,6 +12,7 @@ import (
 	"github.com/mdp/qrterminal/v3"
 
 	"github.com/Bios-Marcel/cordless/fileopen"
+	"github.com/Bios-Marcel/cordless/logging"
 	"github.com/Bios-Marcel/cordless/util/files"
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/text"
@@ -125,7 +126,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	}
 
 	window.commandView = NewCommandView(window.ExecuteCommand)
-	log.SetOutput(window.commandView)
+	logging.SetAdditionalOutput(window.commandView)
 
 	for _, engine := range window.extensionEngines {
 		initError := window.initExtensionEngine(engine)
