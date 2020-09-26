@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 
+	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/atotto/clipboard"
@@ -75,8 +76,10 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 	}
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlC {
+		if shortcuts.ExitApplication.Equals(event) {
 			app.Stop()
+			//We call exit as we'd otherwise be waiting for a value
+			//from the runNext channel.
 			os.Exit(0)
 			return nil
 		}
