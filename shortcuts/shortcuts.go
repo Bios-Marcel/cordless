@@ -17,6 +17,8 @@ var (
 	globalScope        = addScope("global", "Application wide", nil)
 	multilineTextInput = addScope("multiline_text_input", "Multiline text input", globalScope)
 	chatview           = addScope("chatview", "Chatview", globalScope)
+	guildlist          = addScope("guildlist", "Guildlist", globalScope)
+	channeltree        = addScope("channeltree", "Channeltree", globalScope)
 
 	QuoteSelectedMessage = addShortcut("quote_selected_message", "Quote selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'q', tcell.ModNone))
@@ -34,7 +36,7 @@ var (
 		chatview, tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModNone))
 	DeleteSelectedMessage = addShortcut("delete_selected_message", "Delete the selected message",
 		chatview, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone))
-	ViewSelectedMessageImages = addShortcut("view_selected_message_images", "View selected message's attached images",
+	ViewSelectedMessageImages = addShortcut("view_selected_message_images", "View selected message's attached files",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'o', tcell.ModNone))
 	ChatViewSelectionUp = addShortcut("selection_up", "Move selection up by one",
 		chatview, tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone))
@@ -140,6 +142,12 @@ var (
 		globalScope, tcell.NewEventKey(tcell.KeyRune, '.', tcell.ModAlt))
 	ToggleBareChat = addShortcut("toggle_bare_chat", "Toggle bare chat",
 		globalScope, tcell.NewEventKey(tcell.KeyCtrlB, rune(tcell.KeyCtrlB), tcell.ModCtrl))
+
+	GuildListMarkRead = addShortcut("guild_mark_read", "Mark server as read",
+		guildlist, tcell.NewEventKey(tcell.KeyCtrlR, rune(tcell.KeyCtrlR), tcell.ModCtrl))
+
+	ChannelTreeMarkRead = addShortcut("channel_mark_read", "Mark channel as read",
+		channeltree, tcell.NewEventKey(tcell.KeyCtrlR, rune(tcell.KeyCtrlR), tcell.ModCtrl))
 
 	scopes    []*Scope
 	Shortcuts []*Shortcut

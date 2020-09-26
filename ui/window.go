@@ -832,16 +832,13 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.userList.internalTreeView.SetSearchOnTypeEnabled(true)
 		window.privateList.internalTreeView.SetSearchOnTypeEnabled(true)
 	} else if config.Current.OnTypeInListBehaviour == config.FocusMessageInputOnTypeInList {
-		guildList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			window.app, window.messageInput.internalTextView))
-		channelTree.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			window.app, window.messageInput.internalTextView))
-		window.userList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			window.app, window.messageInput.internalTextView))
-		window.privateList.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			window.app, window.messageInput.internalTextView))
-		window.chatView.internalTextView.SetInputCapture(tviewutil.CreateFocusTextViewOnTypeInputHandler(
-			window.app, window.messageInput.internalTextView))
+		focusTextViewOnTypeInputHandler := tviewutil.CreateFocusTextViewOnTypeInputHandler(
+			window.app, window.messageInput.internalTextView)
+		guildList.SetInputCapture(focusTextViewOnTypeInputHandler)
+		channelTree.SetInputCapture(focusTextViewOnTypeInputHandler)
+		window.userList.SetInputCapture(focusTextViewOnTypeInputHandler)
+		window.privateList.SetInputCapture(focusTextViewOnTypeInputHandler)
+		window.chatView.internalTextView.SetInputCapture(focusTextViewOnTypeInputHandler)
 	}
 
 	//Guild Container arrow key navigation. Please end my life.
@@ -863,6 +860,17 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		if shortcuts.FocusRight.Equals(event) {
 			window.app.SetFocus(window.chatView.internalTextView)
+			return nil
+		}
+
+		if shortcuts.GuildListMarkRead.Equals(event) {
+			selectedGuildNode := guildList.GetCurrentNode()
+			if selectedGuildNode != nil {
+				ackError := window.session.GuildMessageAck(selectedGuildNode.GetReference().(string))
+				if ackError != nil {
+					window.ShowErrorDialog(ackError.Error())
+				}
+			}
 			return nil
 		}
 
@@ -909,6 +917,20 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				window.app.SetFocus(window.commandView.commandOutput)
 			} else {
 				window.app.SetFocus(window.messageInput.GetPrimitive())
+			}
+			return nil
+		}
+
+		if shortcuts.ChannelTreeMarkRead.Equals(event) {
+			selectedChannelNode := channelTree.GetCurrentNode()
+			if selectedChannelNode != nil {
+				channel, stateError := window.session.State.Channel(selectedChannelNode.GetReference().(string))
+				if stateError == nil && channel.LastMessageID != "" {
+					_, ackError := window.session.ChannelMessageAck(channel.ID, channel.LastMessageID, "")
+					if ackError != nil {
+						window.ShowErrorDialog(ackError.Error())
+					}
+				}
 			}
 			return nil
 		}
