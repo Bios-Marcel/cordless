@@ -1215,9 +1215,18 @@ important changes of the last two versions officially released.
 
 [::b]THIS VERSION
 	- Features
+		- Mark guilds as read
+		- Mark guild channels as read
+		- Write to logfile by setting "--log"
+		- Mentions are now displayed in the guild list
+		- You can now bulk send folders and files
 	- Changes
 		- There's now a double-colon to separate author and messages
+		- There's more customizable shortcuts now
 	- Bugfixes
+		- Muted guilds, channels and categories shouldn't be displayed as
+		  unread anymore
+		- @everyone works again, so you can piss of others again
 		- Messages containing links won't disappear anymore after sending
 		- Messages from blocked users won't trigger notifications anymore
 		- No more spammed empty error messages when receiving notifications
