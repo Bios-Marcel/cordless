@@ -24,7 +24,7 @@ func main() {
 	logPath := flag.String("log", "", "Defines what file we log to")
 	flag.Parse()
 
-	if logPath != nil {
+	if logPath != nil && *logPath != "" {
 		logFile, openError := os.OpenFile(*logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if openError != nil {
 			panic(openError)
