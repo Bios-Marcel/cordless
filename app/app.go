@@ -194,6 +194,11 @@ func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *con
 		return attemptLogin(loginScreen, fmt.Sprintf("Error during last login attempt:\n\n[red]%s", discordError), configuration)
 	}
 
+	if session == nil {
+		configuration.Token = ""
+		return attemptLogin(loginScreen, "Error during last login attempt:\n\n[red]Received session is nil", configuration)
+	}
+
 	readyChan := make(chan *discordgo.Ready, 1)
 	session.AddHandlerOnce(func(s *discordgo.Session, event *discordgo.Ready) {
 		readyChan <- event
