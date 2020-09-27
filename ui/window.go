@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -1424,6 +1425,52 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 		return
 	}
 
+	if window.editingMessageID != nil {
+		window.editMessage(targetChannel.ID, *window.editingMessageID, message)
+		return
+	}
+
+	if strings.HasPrefix(message, "file://") {
+		window.app.QueueUpdateDraw(func() {
+			yesButton := "Yes"
+			window.ShowDialog(config.GetTheme().PrimitiveBackgroundColor, "Resolve filepath and send a file instead?", func(button string) {
+				if button == yesButton {
+					window.messageInput.SetText("")
+					go func() {
+						path, pathError := files.ToAbsolutePath(message)
+						if pathError != nil {
+							window.app.QueueUpdateDraw(func() {
+								window.ShowErrorDialog(pathError.Error())
+							})
+							return
+						}
+						data, readError := ioutil.ReadFile(path)
+						if readError != nil {
+							window.app.QueueUpdateDraw(func() {
+								window.ShowErrorDialog(readError.Error())
+							})
+							return
+						}
+						reader := bytes.NewBuffer(data)
+						_, sendError := window.session.ChannelFileSend(targetChannel.ID, filepath.Base(message), reader)
+						if sendError != nil {
+							window.app.QueueUpdateDraw(func() {
+								window.ShowErrorDialog(sendError.Error())
+							})
+						}
+					}()
+				} else {
+					window.sendMessageWithLengthCheck(targetChannel, message)
+				}
+			}, yesButton, "No")
+		})
+		return
+	}
+
+	window.sendMessageWithLengthCheck(targetChannel, message)
+}
+
+func (window *Window) sendMessageWithLengthCheck(targetChannel *discordgo.Channel, message string) {
 	message = window.prepareMessage(targetChannel, message)
 	overlength := len(message) - 2000
 	if overlength > 0 {
@@ -1437,11 +1484,6 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 					}
 				}, sendAsFile, "Nothing")
 		})
-		return
-	}
-
-	if window.editingMessageID != nil {
-		window.editMessage(targetChannel.ID, *window.editingMessageID, message)
 		return
 	}
 
