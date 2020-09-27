@@ -866,7 +866,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		if shortcuts.GuildListMarkRead.Equals(event) {
 			selectedGuildNode := guildList.GetCurrentNode()
-			if selectedGuildNode != nil {
+			if selectedGuildNode != nil && !readstate.HasGuildBeenRead(selectedGuildNode.GetReference().(string)) {
 				ackError := window.session.GuildMessageAck(selectedGuildNode.GetReference().(string))
 				if ackError != nil {
 					window.ShowErrorDialog(ackError.Error())
@@ -926,7 +926,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			selectedChannelNode := channelTree.GetCurrentNode()
 			if selectedChannelNode != nil {
 				channel, stateError := window.session.State.Channel(selectedChannelNode.GetReference().(string))
-				if stateError == nil && channel.LastMessageID != "" {
+				if stateError == nil && channel.LastMessageID != "" && !readstate.HasBeenRead(channel, channel.LastMessageID) {
 					_, ackError := window.session.ChannelMessageAck(channel.ID, channel.LastMessageID, "")
 					if ackError != nil {
 						window.ShowErrorDialog(ackError.Error())
