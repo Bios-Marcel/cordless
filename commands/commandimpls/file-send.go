@@ -104,8 +104,16 @@ func (cmd *FileSend) Execute(writer io.Writer, parameters []string) {
 	//If folders are not to be included, we error if any folder is found.
 	if !recursive {
 		for _, path := range consumablePaths {
-			//FIXME Handle error.
-			stats, _ := os.Stat(path)
+			stats, statError := os.Stat(path)
+			if statError != nil {
+				if os.IsNotExist(statError) {
+					commands.PrintError(writer, "Invalid input", fmt.Sprintf("'%s' doesn't exist", path))
+				} else {
+					commands.PrintError(writer, "Invalid input", statError.Error())
+				}
+				return
+			}
+
 			if stats.IsDir() {
 				commands.PrintError(writer, "Invalid input", "Directories can only be uploaded if the '-r' flag is set")
 				return
