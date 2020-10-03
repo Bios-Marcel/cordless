@@ -362,25 +362,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if shortcuts.CopySelectedMessage.Equals(event) {
-			content := message.ContentWithMentionsReplaced()
-			if len(message.Attachments) == 1 {
-				if content == "" {
-					content = message.Attachments[0].URL
-				} else {
-					content += "\n" + message.Attachments[0].URL
-				}
-			} else if len(message.Attachments) > 1 {
-				links := make([]string, 0, len(message.Attachments))
-				for _, file := range message.Attachments {
-					links = append(links, file.URL)
-				}
-				if content == "" {
-					content = strings.Join(links, "\n")
-				} else {
-					content += "\n" + strings.Join(links, "\n")
-				}
-			}
-			copyError := clipboard.WriteAll(content)
+			copyError := clipboard.WriteAll(discordutil.MessageToPlainText(message))
 			if copyError != nil {
 				window.ShowErrorDialog(fmt.Sprintf("Error copying message: %s", copyError.Error()))
 			}
@@ -1238,6 +1220,7 @@ important changes of the last two versions officially released.
 
 [::b]THIS VERSION
 	- Features
+		- DM people via "p" in the chatview or use the dm-open command
 		- Mark guilds as read
 		- Mark guild channels as read
 		- Write to logfile by setting "--log"
@@ -1399,6 +1382,8 @@ func (window *Window) insertNewLineAtCursor() {
 	})
 }
 
+// IsCursorInsideCodeBlock checks if the cursor comes after three backticks
+// that don't have another 3 backticks following after them.
 func (window *Window) IsCursorInsideCodeBlock() bool {
 	left := window.messageInput.GetTextLeftOfSelection()
 	leftSplit := strings.Split(left, "```")
@@ -2769,9 +2754,9 @@ func (window *Window) RefreshLayout() {
 		(window.selectedChannel != nil && window.selectedChannel.Type == discordgo.ChannelTypeGroupDM)))
 
 	if config.Current.UseFixedLayout {
-		window.middleContainer.ResizeItem(window.leftArea, config.Current.FixedSizeLeft, 7)
+		window.middleContainer.ResizeItem(window.leftArea, config.Current.FixedSizeLeft, 0)
 		window.middleContainer.ResizeItem(window.chatArea, 0, 1)
-		window.middleContainer.ResizeItem(window.userList.internalTreeView, config.Current.FixedSizeRight, 6)
+		window.middleContainer.ResizeItem(window.userList.internalTreeView, config.Current.FixedSizeRight, 0)
 	} else {
 		window.middleContainer.ResizeItem(window.leftArea, 0, 7)
 		window.middleContainer.ResizeItem(window.chatArea, 0, 20)

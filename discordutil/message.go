@@ -162,3 +162,37 @@ func GenerateQuote(message, author string, time discordgo.Timestamp, attachments
 			strings.TrimSpace(messageAfterQuote)),
 		nil
 }
+
+// MessageToPlainText converts a discord message to a human readable text.
+// Markdown characters are reserved and file attachments are added as URLs.
+// Embeds are currently not being handled, nor are other special elements.
+func MessageToPlainText(message *discordgo.Message) string {
+	content := message.ContentWithMentionsReplaced()
+	builder := &strings.Builder{}
+
+	if content != "" {
+		builder.Grow(len(content))
+		builder.WriteString(content)
+	}
+
+	if len(message.Attachments) > 0 {
+		builder.Grow(1)
+		builder.WriteRune('\n')
+
+		if len(message.Attachments) == 1 {
+			builder.Grow(len(message.Attachments[0].URL))
+			builder.WriteString(message.Attachments[0].URL)
+		} else if len(message.Attachments) > 1 {
+			links := make([]string, 0, len(message.Attachments))
+			for _, file := range message.Attachments {
+				links = append(links, file.URL)
+			}
+
+			linksAsText := strings.Join(links, "\n")
+			builder.Grow(len(linksAsText))
+			builder.WriteString(linksAsText)
+		}
+	}
+
+	return builder.String()
+}
