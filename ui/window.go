@@ -313,6 +313,28 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			return nil
 		}
 
+		if shortcuts.NewDirectMessage.Equals(event) {
+			//Can't message yourself, goon!
+			if message.Author.ID == window.session.State.User.ID {
+				return nil
+			}
+
+			//If there's an existing channel, we use that and avoid unnecessary traffic.
+			existingChannel := discordutil.FindDMChannelWithUser(window.session.State, message.Author.ID)
+			if existingChannel != nil {
+				window.SwitchToPrivateChannel(existingChannel)
+				return nil
+			}
+
+			newChannel, createError := window.session.UserChannelCreate(message.Author.ID)
+			if createError != nil {
+				window.ShowErrorDialog(createError.Error())
+			} else {
+				window.SwitchToPrivateChannel(newChannel)
+			}
+			return nil
+		}
+
 		if shortcuts.ReplySelectedMessage.Equals(event) {
 			window.messageInput.SetText("@" + message.Author.Username + "#" + message.Author.Discriminator + " " + window.messageInput.GetText())
 			app.SetFocus(window.messageInput.GetPrimitive())
@@ -1359,6 +1381,14 @@ func (window *Window) initExtensionEngine(engine scripting.Engine) error {
 func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
 	window.LoadChannel(channel)
 	window.RefreshLayout()
+}
+
+// SwitchToPrivateChannel switches to the friends page, loads the given channel
+// and then focuses the input primitive.
+func (window *Window) SwitchToPrivateChannel(channel *discordgo.Channel) {
+	window.SwitchToFriendsPage()
+	window.app.SetFocus(window.messageInput.GetPrimitive())
+	window.loadPrivateChannel(channel)
 }
 
 func (window *Window) insertNewLineAtCursor() {

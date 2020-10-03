@@ -156,6 +156,7 @@ func RunWithAccount(account string) {
 			window.RegisterCommand(tfaDisableCmd)
 			window.RegisterCommand(tfaBackupGetCmd)
 			window.RegisterCommand(tfaBackupResetCmd)
+			window.RegisterCommand(commandimpls.NewDMOpenCmd(discord, window))
 		})
 	}()
 

@@ -54,6 +54,22 @@ func GetPrivateChannelName(channel *discordgo.Channel) string {
 	return tviewutil.Escape(channelName)
 }
 
+// FindDMChannelWithUser tries to find a DM channel with the specified user as
+// one of its two recipients. If no channel is found, nil is returned.
+func FindDMChannelWithUser(state *discordgo.State, userID string) *discordgo.Channel {
+	for _, privateChannel := range state.PrivateChannels {
+		if privateChannel.Type == discordgo.ChannelTypeDM {
+			for _, recipient := range privateChannel.Recipients {
+				if recipient.ID == userID {
+					return privateChannel
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 // CompareChannels checks which channel is smaller. Smaller meaning it is the
 // one with the more recent message.
 func CompareChannels(a, b *discordgo.Channel) bool {
