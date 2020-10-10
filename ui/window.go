@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/mdp/qrterminal/v3"
+	"github.com/skratchdot/open-golang/open"
 
 	"github.com/Bios-Marcel/cordless/fileopen"
 	"github.com/Bios-Marcel/cordless/logging"
@@ -401,10 +403,29 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 						window.ShowCustomErrorDialog("Couldn't open file", openError.Error())
 					}
 				}
+
+				urlMatches := urlRegex.FindAllString(message.Content, 1000)
+				for _, url := range urlMatches {
+					header, _ := http.Head(url)
+
+					log.Println(header.Header.Get("Content-Type"))
+					//A website! Any other text/ could be a file, like .txt, .css or whatever.
+					//Is there a more bulletproof way to doing this?
+					if strings.Contains(header.Header.Get("Content-Type"), "text/html") {
+						//We hope to just open this with the users browser ;)
+						open.Run(url)
+						continue
+					}
+
+					openError := fileopen.OpenFile(targetFolder, "file", url)
+					if openError != nil {
+						window.ShowCustomErrorDialog("Couldn't open file", openError.Error())
+					}
+				}
 			}
 
 			//If permanent saving isn't disabled, we clear files older
-			//than one month whenever something is opened. Since this
+			//than two weeks whenever something is opened. Since this
 			//will happen in a background thread, it won't cause
 			//application blocking.
 			if !config.Current.FileOpenSaveFilesPermanently && targetFolder != "" {
@@ -430,7 +451,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 						_, statErr := os.Stat(savePath)
 						//If it's a different error, we don't care. Other errors
 						//will run into later anyways.
-						if statErr == os.ErrExist {
+						if os.IsNotExist(statErr) {
 							return
 						}
 
@@ -441,6 +462,35 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 							})
 						}
 					}(targetFile, file.URL)
+				}
+
+				urlMatches := urlRegex.FindAllString(message.Content, 1000)
+				for _, url := range urlMatches {
+					baseName := filepath.Base(url)
+					if baseName == "" {
+						continue
+					}
+
+					targetFile := filepath.Join(absolutePath, filepath.Base(url))
+
+					//All files are downloaded separately in order to not
+					//block the UI and not download for ages if one or more
+					//page has a slow download speed.
+					go func(savePath, fileURL string) {
+						_, statErr := os.Stat(savePath)
+						//If it's a different error, we don't care. Other errors
+						//will run into later anyways.
+						if os.IsNotExist(statErr) {
+							return
+						}
+
+						downloadError := files.DownloadFile(savePath, fileURL)
+						if downloadError != nil {
+							window.app.QueueUpdateDraw(func() {
+								window.ShowErrorDialog("Error download file: " + downloadError.Error())
+							})
+						}
+					}(targetFile, url)
 				}
 			}
 			return nil
