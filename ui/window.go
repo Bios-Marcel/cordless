@@ -208,7 +208,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			window.ShowErrorDialog(channelLoadError.Error())
 		} else {
 			if config.Current.FocusChannelAfterGuildSelection {
-				app.SetFocus(window.channelTree)
+				window.channelTree.SetFocus(window.app)
 			}
 		}
 
@@ -331,7 +331,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		if shortcuts.ReplySelectedMessage.Equals(event) {
 			window.messageInput.SetText("@" + message.Author.Username + "#" + message.Author.Discriminator + " " + window.messageInput.GetText())
-			app.SetFocus(window.messageInput.GetPrimitive())
+			window.messageInput.SetFocus(window.app)
 			return nil
 		}
 
@@ -491,7 +491,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		autocompleteView.GetRoot().ClearChildren()
 		if len(values) == 0 {
 			autocompleteView.SetVisible(false)
-			window.app.SetFocus(window.messageInput.GetPrimitive())
+			window.messageInput.SetFocus(window.app)
 		} else {
 			rootNode := autocompleteView.GetRoot()
 			for _, value := range values {
@@ -509,7 +509,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	autocompleteView.SetSelectedFunc(func(node *tview.TreeNode) {
 		value := node.GetReference().(*AutocompleteValue)
 		window.messageInput.Autocomplete(value.InsertValue)
-		window.app.SetFocus(window.messageInput.GetPrimitive())
+		window.messageInput.SetFocus(window.app)		
 		autocompleteView.SetVisible(false)
 	})
 
@@ -688,7 +688,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	captureFunc := func(event *tcell.EventKey) *tcell.EventKey {
 		messageToSend := window.messageInput.GetText()
-
 		if event.Modifiers() == tcell.ModCtrl {
 			if event.Key() == tcell.KeyUp {
 				window.chatView.internalTextView.ScrollUp()
@@ -909,7 +908,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					}
 				}
 			}
-		})
 	})
 
 	window.middleContainer = tview.NewFlex().
@@ -1183,7 +1181,7 @@ func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
 // and then focuses the input primitive.
 func (window *Window) SwitchToPrivateChannel(channel *discordgo.Channel) {
 	window.SwitchToFriendsPage()
-	window.app.SetFocus(window.messageInput.GetPrimitive())
+	window.messageInput.SetFocus(window.app)
 	window.loadPrivateChannel(channel)
 }
 
@@ -1226,7 +1224,7 @@ func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
 	quotedMessage, generateError := discordutil.GenerateQuote(message.ContentWithMentionsReplaced(), username, message.Timestamp, message.Attachments, window.messageInput.GetText())
 	if generateError == nil {
 		window.messageInput.SetText(quotedMessage)
-		window.app.SetFocus(window.messageInput.GetPrimitive())
+		window.messageInput.SetFocus(window.app)
 	} else {
 		window.ShowErrorDialog(fmt.Sprintf("Error quoting message:\n\t%s", generateError.Error()))
 	}
@@ -1555,7 +1553,7 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 func (window *Window) registerMouseFocusListeners() {
 	window.chatView.internalTextView.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
-			window.app.SetFocus(window.chatView.internalTextView)
+			window.chatView.SetFocus(window.app)
 		} else if event.Buttons() == tcell.WheelDown {
 			window.chatView.internalTextView.ScrollDown()
 		} else if event.Buttons() == tcell.WheelUp {
@@ -1575,11 +1573,11 @@ func (window *Window) registerMouseFocusListeners() {
 				//Avoid triggering multiple times in a row due to mouse movement during the click
 				if nowMillis-lastLeftContainerSwitchTimeMillis > 60 {
 					window.SwitchToGuildsPage()
-					window.app.SetFocus(window.guildList)
+					window.guildList.SetFocus(window.app)
 				}
 				lastLeftContainerSwitchTimeMillis = nowMillis
 			} else {
-				window.app.SetFocus(window.guildList)
+				window.guildList.SetFocus(window.app)
 			}
 			return true
 		}
@@ -1588,7 +1586,7 @@ func (window *Window) registerMouseFocusListeners() {
 	})
 	window.channelTree.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
-			window.app.SetFocus(window.channelTree)
+			window.channelTree.SetFocus(window.app)
 
 			return true
 		}
@@ -1598,7 +1596,7 @@ func (window *Window) registerMouseFocusListeners() {
 
 	window.userList.internalTreeView.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
-			window.app.SetFocus(window.userList.internalTreeView)
+			window.userList.SetFocus(window.app)
 
 			return true
 		}
@@ -1613,11 +1611,11 @@ func (window *Window) registerMouseFocusListeners() {
 				//Avoid triggering multiple times in a row due to mouse movement during the click
 				if nowMillis-lastLeftContainerSwitchTimeMillis > 60 {
 					window.SwitchToFriendsPage()
-					window.app.SetFocus(window.privateList.internalTreeView)
+					window.privateList.SetFocus(window.app)
 				}
 				lastLeftContainerSwitchTimeMillis = nowMillis
 			} else {
-				window.app.SetFocus(window.privateList.internalTreeView)
+				window.privateList.SetFocus(window.app)
 			}
 			return true
 		}
@@ -1627,7 +1625,7 @@ func (window *Window) registerMouseFocusListeners() {
 
 	window.messageInput.internalTextView.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
-			window.app.SetFocus(window.messageInput.internalTextView)
+			window.messageInput.SetFocus(window.app)
 
 			return true
 		}
@@ -1637,7 +1635,7 @@ func (window *Window) registerMouseFocusListeners() {
 
 	window.commandView.commandInput.internalTextView.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
-			window.app.SetFocus(window.commandView.commandInput.internalTextView)
+			window.commandView.SetFocus(window.app)
 
 			return true
 		}
@@ -1647,7 +1645,7 @@ func (window *Window) registerMouseFocusListeners() {
 
 	window.commandView.commandOutput.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
-			window.app.SetFocus(window.commandView.commandOutput)
+			window.commandView.SetFocus(window.app)
 		} else if event.Buttons() == tcell.WheelDown {
 			window.commandView.commandOutput.ScrollDown()
 		} else if event.Buttons() == tcell.WheelUp {
@@ -2174,12 +2172,12 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 	//This two have to work in baremode as well, since otherwise only the mouse
 	//can be used for focus switching, which sucks in a terminal app.
 	if shortcuts.FocusMessageInput.Equals(event) {
-		window.app.SetFocus(window.messageInput.GetPrimitive())
+		window.messageInput.SetFocus(window.app)
 		return nil
 	}
 
 	if shortcuts.FocusMessageContainer.Equals(event) {
-		window.app.SetFocus(window.chatView.internalTextView)
+		window.chatView.SetFocus(window.app)
 		return nil
 	}
 
@@ -2200,30 +2198,30 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		window.SetCommandModeEnabled(!window.commandMode)
 
 		if window.commandMode {
-			window.app.SetFocus(window.commandView.commandInput.internalTextView)
+			window.commandView.SetFocus(window.app)
 		} else {
-			window.app.SetFocus(window.messageInput.GetPrimitive())
+			window.messageInput.SetFocus(window.app)
 		}
 	} else if shortcuts.FocusCommandOutput.Equals(event) {
 		if !window.commandMode {
 			window.SetCommandModeEnabled(true)
 		}
 
-		window.app.SetFocus(window.commandView.commandOutput)
+		window.commandView.SetFocus(window.app)
 	} else if shortcuts.FocusCommandInput.Equals(event) {
 		if !window.commandMode {
 			window.SetCommandModeEnabled(true)
 		}
 
-		window.app.SetFocus(window.commandView.commandInput.internalTextView)
+		window.commandView.SetFocus(window.app)
 	} else if shortcuts.ToggleUserContainer.Equals(event) {
 		window.toggleUserContainer()
 	} else if shortcuts.FocusChannelContainer.Equals(event) {
 		window.SwitchToGuildsPage()
-		window.app.SetFocus(window.channelTree)
+		window.channelTree.SetFocus(window.app)
 	} else if shortcuts.FocusPrivateChatPage.Equals(event) {
 		window.SwitchToFriendsPage()
-		window.app.SetFocus(window.privateList.GetComponent())
+		window.privateList.SetFocus(window.app)
 	} else if shortcuts.SwitchToPreviousChannel.Equals(event) {
 		err := window.SwitchToPreviousChannel()
 		if err != nil {
@@ -2231,10 +2229,10 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		}
 	} else if shortcuts.FocusGuildContainer.Equals(event) {
 		window.SwitchToGuildsPage()
-		window.app.SetFocus(window.guildList)
+		window.guildList.SetFocus(window.app)
 	} else if shortcuts.FocusUserContainer.Equals(event) {
 		if window.activeView == Guilds && window.userList.internalTreeView.IsVisible() {
-			window.app.SetFocus(window.userList.internalTreeView)
+			window.userList.SetFocus(window.app)
 		}
 	} else {
 		return event
@@ -2247,7 +2245,7 @@ func (window *Window) toggleUserContainer() {
 	config.Current.ShowUserContainer = !config.Current.ShowUserContainer
 
 	if !config.Current.ShowUserContainer && window.app.GetFocus() == window.userList.internalTreeView {
-		window.app.SetFocus(window.messageInput.GetPrimitive())
+		window.messageInput.SetFocus(window.app)
 	}
 
 	if config.Current.ShowUserContainer {
@@ -2280,7 +2278,7 @@ func (window *Window) toggleBareChat() {
 	} else {
 		window.chatView.internalTextView.SetBorderSides(true, true, true, true)
 		window.app.SetRoot(window.rootContainer, true)
-		window.app.SetFocus(window.messageInput.GetPrimitive())
+		window.messageInput.SetFocus(window.app)
 	}
 
 	window.app.QueueUpdateDraw(func() {
@@ -2418,7 +2416,7 @@ func (window *Window) startEditingMessage(message *discordgo.Message) {
 			window.messageInput.SetBorderFocusAttributes(tcell.AttrBlink | tcell.AttrBold)
 		}
 		window.editingMessageID = &message.ID
-		window.app.SetFocus(window.messageInput.GetPrimitive())
+		window.messageInput.SetFocus(window.app)
 	}
 }
 
@@ -2542,7 +2540,7 @@ func (window *Window) SwitchToPreviousChannel() error {
 	default:
 		return fmt.Errorf("Invalid channel type: %v", window.previousChannel.Type)
 	}
-	window.app.SetFocus(window.messageInput.internalTextView)
+	window.messageInput.SetFocus(window.app)
 	return nil
 }
 
@@ -2624,7 +2622,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	window.exitMessageEditModeAndKeepText()
 
 	if config.Current.FocusMessageInputAfterChannelSelection {
-		window.app.SetFocus(window.messageInput.internalTextView)
+		window.messageInput.SetFocus(window.app)
 	}
 
 	go func() {

@@ -386,3 +386,10 @@ func (privateList *PrivateChatList) GetComponent() *tview.TreeView {
 func (privateList *PrivateChatList) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventKey) {
 	privateList.internalTreeView.SetInputCapture(capture)
 }
+
+// Focus tells a UI component to change the focus
+// of the given application to itself
+// Implements Focusable
+func (privateList *PrivateChatList) SetFocus(app *tview.Application) {
+	app.SetFocus(privateList.internalTreeView)
+}

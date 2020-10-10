@@ -414,3 +414,10 @@ func (channelTree *ChannelTree) Lock() {
 func (channelTree *ChannelTree) Unlock() {
 	channelTree.mutex.Unlock()
 }
+
+// Focus tells a UI component to change the focus
+// of the given application to itself
+// Implements Focusable
+func (channelTree *ChannelTree) SetFocus(app *tview.Application) {
+	app.SetFocus(channelTree)
+}

@@ -55,6 +55,8 @@ type OnMessageAction = func(message *discordgo.Message, event *tcell.EventKey) *
 // ChatViewInterface is the interface which collaborators 
 // of a chat view depend on
 type ChatViewInterface interface {
+	Focusable
+
 	//AddMessage add an additional message to the ChatView.
 	AddMessage(message *discordgo.Message)
 
@@ -1117,4 +1119,11 @@ func (chatView *ChatView) Lock() {
 // Unlock unlocks the previously locked ChatView.
 func (chatView *ChatView) Unlock() {
 	chatView.mutex.Unlock()
+}
+
+// Focus tells a UI component to change the focus
+// of the given application to itself
+// Implements Focusable
+func (chatView *ChatView) SetFocus(app *tview.Application) {
+	app.SetFocus(chatView.internalTextView)
 }

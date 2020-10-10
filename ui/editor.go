@@ -628,3 +628,10 @@ func (editor *Editor) GetText() string {
 func (editor *Editor) GetPrimitive() tview.Primitive {
 	return editor.internalTextView
 }
+
+// Focus tells a UI component to change the focus
+// of the given application to itself
+// Implements Focusable
+func (editor *Editor) SetFocus(app *tview.Application) {
+	app.SetFocus(editor.GetPrimitive())
+}

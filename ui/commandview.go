@@ -187,3 +187,10 @@ func (cmdView *CommandView) Write(p []byte) (n int, err error) {
 
 	return
 }
+
+// Focus tells a UI component to change the focus
+// of the given application to itself
+// Implements Focusable
+func (cmdView *CommandView) SetFocus(app *tview.Application) {
+	app.SetFocus(cmdView.commandOutput)
+}

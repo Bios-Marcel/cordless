@@ -324,3 +324,10 @@ func (userTree *UserTree) SetInputCapture(capture func(event *tcell.EventKey) *t
 func (userTree *UserTree) IsLoaded() bool {
 	return userTree.loaded
 }
+
+// Focus tells a UI component to change the focus
+// of the given application to itself
+// Implements Focusable
+func (userTree *UserTree) SetFocus(app *tview.Application) {
+	app.SetFocus(userTree.internalTreeView)
+}

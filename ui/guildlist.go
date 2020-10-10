@@ -166,3 +166,10 @@ func (g *GuildList) amountOfUnreadGuilds() int {
 func (g *GuildList) UpdateUnreadGuildCount() {
 	g.setNotificationCount(g.amountOfUnreadGuilds())
 }
+
+// Focus tells a UI component to change the focus
+// of the given application to itself
+// Implements Focusable
+func (g *GuildList) SetFocus(app *tview.Application) {
+	app.SetFocus(g)
+}
