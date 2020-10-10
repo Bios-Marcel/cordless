@@ -448,9 +448,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					//page has a slow download speed.
 					go func(savePath, fileURL string) {
 						_, statErr := os.Stat(savePath)
-						//If it's a different error, we don't care. Other errors
-						//will run into later anyways.
-						if os.IsNotExist(statErr) {
+						//If the file exists already, we needn't do anything.
+						if statErr == nil {
 							return
 						}
 
@@ -477,9 +476,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					//page has a slow download speed.
 					go func(savePath, fileURL string) {
 						_, statErr := os.Stat(savePath)
-						//If it's a different error, we don't care. Other errors
-						//will run into later anyways.
-						if os.IsNotExist(statErr) {
+						//If the file exists already, we needn't do anything.
+						if statErr == nil {
 							return
 						}
 
