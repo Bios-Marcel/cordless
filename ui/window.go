@@ -65,7 +65,7 @@ type Window struct {
 	privateList *PrivateChatList
 
 	chatArea         *tview.Flex
-	chatView         *ChatView
+	chatView         ChatViewInterface
 	messageContainer tview.Primitive
 	messageInput     *Editor
 
@@ -282,7 +282,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					return
 				}
 			}
-
 			newChannel, discordError := window.session.UserChannelCreate(userID)
 			if discordError == nil {
 				messages, discordError := window.session.ChannelMessages(newChannel.ID, 100, "", "", "")

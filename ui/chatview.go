@@ -48,6 +48,68 @@ var (
 	roleMentionRegex           = regexp.MustCompile(`<@&\d*>`)
 )
 
+// OnMessageAction represents the handler that will get called 
+// if the user tries to interact with a selected message.
+type OnMessageAction = func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey
+
+// ChatViewInterface is the interface which collaborators 
+// of a chat view depend on
+type ChatViewInterface interface {
+	//AddMessage add an additional message to the ChatView.
+	AddMessage(message *discordgo.Message)
+
+	// ClearSelection clears the current selection of messages.	
+	ClearSelection()
+
+	// ClearViewAndCache clears the TextView buffer and removes all data for
+	// all messages.	
+	ClearViewAndCache()
+
+	// DeleteMessage drops the message from the cache and triggers a reprint
+	DeleteMessage(deletedMessage *discordgo.Message)
+
+	// DeleteMessages drops the messages from the cache and triggers a reprint
+	DeleteMessages(deletedMessages []string)
+
+	// GetPrimitive returns the component that can be added to a layout, since
+	// the ChatView itself is not a component.
+	GetPrimitive() tview.Primitive
+
+	// Lock will lock the ChatView, allowing other callers to prevent race
+	// conditions.
+	Lock()
+
+	// Reprint clears the internal TextView and prints all currently cached
+	// messages into the internal TextView again. This will not actually cause a
+	// redraw in the user interface. This would still only be done by
+	// ForceDraw, QueueUpdateDraw or user events. Calling this method is
+	// necessary if previously added content has changed or has been removed, since
+	// can only append to the TextViews buffers, but not cut parts out.
+	Reprint()
+
+	// SignalSelectionDeleted notifies the ChatView that its currently selected
+	// message doesn't exist anymore, moving the selection up by a row if possible.	
+	SignalSelectionDeleted()
+
+	// SetMessages defines all currently displayed messages. Parsing and
+	// manipulation of single message elements happens in this function.	
+	SetMessages(messages []*discordgo.Message)
+
+	// SetOnMessageAction sets the handler that will get called if the user tries
+	// to interact with a selected message.
+	SetOnMessageAction(onMessageAction OnMessageAction)
+
+	// SetTitle sets the border text of the chatview.
+	SetTitle(text string)
+
+	// Unlock unlocks the previously locked ChatView.	
+	Unlock()
+
+	// UpdateMessage reformats the passed message, updates the cache and triggers
+	// a reprint.
+	UpdateMessage(updatedMessage *discordgo.Message)
+}
+
 // ChatView is using a tview.TextView in order to be able to display messages
 // in a simple way. It supports highlighting specific element types and it
 // also supports multiline.
