@@ -73,13 +73,35 @@ type ChatViewInterface interface {
 	// DeleteMessages drops the messages from the cache and triggers a reprint
 	DeleteMessages(deletedMessages []string)
 
+	// Dispose instructs the chat view to dispose of any resources it is
+	// holding on to
+	Dispose()
+
+	// GetBoundingBox returns the coordinates of the component's top
+	// left corner and its width and height
+	GetBoundingBox() (int, int, int, int)
+
+	// GetInputCapture returns the function that handles key events
+	GetInputCapture() func(event *tcell.EventKey) *tcell.EventKey
+
+	// GetMessages returns the messages that the chat view is able to show
+	GetMessages() []*discordgo.Message
+
 	// GetPrimitive returns the component that can be added to a layout, since
 	// the ChatView itself is not a component.
 	GetPrimitive() tview.Primitive
 
+	// HandleEvent allows collaborators to pass the chat view an event
+	// for it to handle
+	HandleEvent(event *tcell.EventKey)
+
 	// Lock will lock the ChatView, allowing other callers to prevent race
 	// conditions.
 	Lock()
+
+	// OverwriteDisplayedMessages will replace the currently displayed messages
+	// with the given text. The messages are not removed from the cache.
+	OverwriteDisplayedMessages(text string)
 
 	// Reprint clears the internal TextView and prints all currently cached
 	// messages into the internal TextView again. This will not actually cause a
@@ -89,13 +111,35 @@ type ChatViewInterface interface {
 	// can only append to the TextViews buffers, but not cut parts out.
 	Reprint()
 
+	// ScrollDown instrcuts the chat view to show newer messages
+	// by scrolling the view downward
+	ScrollDown()
+
+	// ScrollToEnd instructs the chat view to show the latest messages
+	// by scrolling to the very end
+	ScrollToEnd()
+
+	// ScrollUp instructs the chat view to show older messages
+	// by scrolling the view upward
+	ScrollUp()
+
 	// SignalSelectionDeleted notifies the ChatView that its currently selected
 	// message doesn't exist anymore, moving the selection up by a row if possible.	
 	SignalSelectionDeleted()
 
+	// SetBorderSides sets which borders should on the chat view should be shown,
+	// in the order top, left, bottom, right
+	SetBorderSides(top, left, bottom, right bool)
+
+	// SetInputCapture sets the function which will handle key events
+	SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey)
+
 	// SetMessages defines all currently displayed messages. Parsing and
 	// manipulation of single message elements happens in this function.	
 	SetMessages(messages []*discordgo.Message)
+
+	// SetMouseHandler sets the function which will handle mouse events
+	SetMouseHandler(handler func(event *tcell.EventMouse) bool)
 
 	// SetOnMessageAction sets the handler that will get called if the user tries
 	// to interact with a selected message.
@@ -1126,4 +1170,75 @@ func (chatView *ChatView) Unlock() {
 // Implements Focusable
 func (chatView *ChatView) SetFocus(app *tview.Application) {
 	app.SetFocus(chatView.internalTextView)
+}
+
+// GetBoundingBox returns the coordinates of the component's top
+// left corner and its width and height
+func (chatView *ChatView) GetBoundingBox() (int, int, int, int) {
+	return chatView.internalTextView.GetRect()
+}
+
+// ScrollUp instructs the chat view to show older messages
+// by scrolling the view upward
+func (chatView *ChatView) ScrollUp() {
+	chatView.internalTextView.ScrollUp()
+}
+
+// ScrollDown instrcuts the chat view to show newer messages
+// by scrolling the view downward
+func (chatView *ChatView) ScrollDown() {
+	chatView.internalTextView.ScrollDown()
+}
+
+// ScrollToEnd instructs the chat view to show the latest messages
+// by scrolling to the very end
+func (chatView *ChatView) ScrollToEnd() {
+	chatView.internalTextView.ScrollToEnd()
+}
+
+// HandleEvent allows collaborators to pass the chat view an event
+// for it to handle
+func (chatView *ChatView) HandleEvent(event *tcell.EventKey) {
+	handler := chatView.internalTextView.InputHandler()
+	handler(event, nil)	
+}
+
+// GetMessages returns the messages that the chat view is able to show
+func (chatView *ChatView) GetMessages() []*discordgo.Message {
+	return chatView.data
+}
+
+// SetInputCapture sets the function which will handle key events
+func (chatView *ChatView) SetInputCapture(handler func(event *tcell.EventKey) *tcell.EventKey) {
+	chatView.internalTextView.SetInputCapture(handler)
+}
+
+// GetInputCapture returns the function that handles key events
+func (chatView *ChatView) GetInputCapture() func(event *tcell.EventKey) *tcell.EventKey {
+	return chatView.internalTextView.GetInputCapture()
+}
+
+// SetMouseHandler sets the function which will handle mouse events
+func (chatView *ChatView) SetMouseHandler(handler func(event *tcell.EventMouse) bool) {
+	chatView.internalTextView.SetMouseHandler(handler)
+}
+
+// OverwriteDisplayedMessages will replace the currently displayed messages
+// with the given text. The messages are not removed from the cache.
+func (chatView *ChatView) OverwriteDisplayedMessages(text string) {
+	chatView.internalTextView.SetText(text)
+}
+
+// SetBorderSides sets which borders should on the chat view should be shown,
+// in the order top, left, bottom, right
+func (chatView *ChatView) SetBorderSides(top, left, bottom, right bool) {
+	chatView.internalTextView.SetBorderSides(top, left, bottom, right)
+}
+
+// Dispose instructs the chat view to dispose of any resources it is
+// holding on to
+func (chatView *ChatView) Dispose() { 
+	if chatView.shortenLinks {
+		chatView.shortener.Close()
+	}
 }

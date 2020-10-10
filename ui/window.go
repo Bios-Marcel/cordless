@@ -481,7 +481,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.messageInput = NewEditor()
 	window.messageInput.internalTextView.SetIndicateOverflow(true)
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
-		_, _, _, chatViewHeight := window.chatView.internalTextView.GetRect()
+		_, _, _, chatViewHeight := window.chatView.GetBoundingBox()
 		newHeight := maths.Min(height, chatViewHeight/2)
 
 		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), newHeight, 0)
@@ -690,30 +690,28 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		messageToSend := window.messageInput.GetText()
 		if event.Modifiers() == tcell.ModCtrl {
 			if event.Key() == tcell.KeyUp {
-				window.chatView.internalTextView.ScrollUp()
+				window.chatView.ScrollUp()
 				return nil
 			}
 
 			if event.Key() == tcell.KeyDown {
-				window.chatView.internalTextView.ScrollDown()
+				window.chatView.ScrollDown()
 				return nil
 			}
 		}
 
 		if event.Key() == tcell.KeyPgUp {
-			handler := window.chatView.internalTextView.InputHandler()
-			handler(tcell.NewEventKey(tcell.KeyPgUp, 0, tcell.ModNone), nil)
+			window.chatView.HandleEvent(tcell.NewEventKey(tcell.KeyPgUp, 0, tcell.ModNone))
 			return nil
 		}
 
 		if event.Key() == tcell.KeyPgDn {
-			handler := window.chatView.internalTextView.InputHandler()
-			handler(tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone), nil)
+			window.chatView.HandleEvent(tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone))
 			return nil
 		}
 
 		chooseNextMessageToEdit := func(loopStart, loopEnd int, iterNext func(int) int) *discordgo.Message {
-			if len(window.chatView.data) == 0 {
+			if len(window.chatView.GetMessages()) == 0 {
 				return nil
 			}
 
@@ -721,8 +719,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			defer window.chatView.Unlock()
 
 			var chooseNextMatch bool
+			chatViewMessages := window.chatView.GetMessages()
+
 			for i := loopStart; i != loopEnd; i = iterNext(i) {
-				message := window.chatView.data[i]
+				message := chatViewMessages[i]
 				if message.Author.ID == window.session.State.User.ID {
 					if !chooseNextMatch && window.editingMessageID != nil && *window.editingMessageID == message.ID {
 						chooseNextMatch = true
@@ -740,7 +740,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		//When you are already typing a message, you probably don't want to risk loosing it.
 		if event.Key() == tcell.KeyUp && (messageToSend == "" || window.editingMessageID != nil) {
-			messageToEdit := chooseNextMessageToEdit(len(window.chatView.data)-1, -1, func(i int) int { return i - 1 })
+			chatViewMessages := window.chatView.GetMessages()
+			messageToEdit := chooseNextMessageToEdit(len(chatViewMessages)-1, -1, func(i int) int { return i - 1 })
 			if messageToEdit != nil {
 				window.startEditingMessage(messageToEdit)
 			}
@@ -749,7 +750,8 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		if event.Key() == tcell.KeyDown && window.editingMessageID != nil {
-			messageToEdit := chooseNextMessageToEdit(0, len(window.chatView.data), func(i int) int { return i + 1 })
+			chatViewMessages := window.chatView.GetMessages()
+			messageToEdit := chooseNextMessageToEdit(0, len(chatViewMessages), func(i int) int { return i + 1 })
 			if messageToEdit != nil {
 				window.startEditingMessage(messageToEdit)
 			}
@@ -831,7 +833,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		channelTree.SetInputCapture(focusTextViewOnTypeInputHandler)
 		window.userList.SetInputCapture(focusTextViewOnTypeInputHandler)
 		window.privateList.SetInputCapture(focusTextViewOnTypeInputHandler)
-		window.chatView.internalTextView.SetInputCapture(focusTextViewOnTypeInputHandler)
+		window.chatView.SetInputCapture(focusTextViewOnTypeInputHandler)
 	}
 
 	newGuildHandler := func(event *tcell.EventKey) *tcell.EventKey {
@@ -891,7 +893,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			return event
 		})
 	}
-
+	
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.MessageAck) {
 		window.app.QueueUpdateDraw(func() {
 			if readstate.UpdateReadLocal(event.ChannelID, event.MessageID) {
@@ -1018,7 +1020,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.registerMouseFocusListeners()
 	}
 
-	window.chatView.internalTextView.SetText(getWelcomeText())
+	window.chatView.OverwriteDisplayedMessages(getWelcomeText())
 
 	return window, nil
 }
@@ -1338,7 +1340,7 @@ func (window *Window) sendMessageAsFile(message string, channel string) {
 func (window *Window) sendMessage(targetChannelID, message string) {
 	window.app.QueueUpdateDraw(func() {
 		window.messageInput.SetText("")
-		window.chatView.internalTextView.ScrollToEnd()
+		window.chatView.ScrollToEnd()
 	})
 	_, sendError := window.session.ChannelMessageSend(targetChannelID, message)
 	if sendError != nil {
@@ -1551,13 +1553,13 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 }
 
 func (window *Window) registerMouseFocusListeners() {
-	window.chatView.internalTextView.SetMouseHandler(func(event *tcell.EventMouse) bool {
+	window.chatView.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
 			window.chatView.SetFocus(window.app)
 		} else if event.Buttons() == tcell.WheelDown {
-			window.chatView.internalTextView.ScrollDown()
+			window.chatView.ScrollDown()
 		} else if event.Buttons() == tcell.WheelUp {
-			window.chatView.internalTextView.ScrollUp()
+			window.chatView.ScrollUp()
 		} else {
 			return false
 		}
@@ -1828,7 +1830,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			}
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
-				for _, message := range window.chatView.data {
+				for _, message := range window.chatView.GetMessages() {
 					if message.ID == tempMessageEdited.ID {
 						//FIXME Workaround for the fact that discordgo doesn't update already filled fields.
 
@@ -2269,14 +2271,14 @@ func (window *Window) toggleUserContainer() {
 func (window *Window) toggleBareChat() {
 	window.bareChat = !window.bareChat
 	if window.bareChat {
-		window.chatView.internalTextView.SetBorderSides(true, false, true, false)
+		window.chatView.SetBorderSides(true, false, true, false)
 		previousFocus := window.app.GetFocus()
 		//Initially this should be gone. Maybe we'll allow reacessing it at some point.
 		window.SetCommandModeEnabled(false)
 		window.app.SetRoot(window.chatArea, true)
 		window.app.SetFocus(previousFocus)
 	} else {
-		window.chatView.internalTextView.SetBorderSides(true, true, true, true)
+		window.chatView.SetBorderSides(true, true, true, true)
 		window.app.SetRoot(window.rootContainer, true)
 		window.messageInput.SetFocus(window.app)
 	}
@@ -2574,7 +2576,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	window.chatView.SetMessages(messages)
 	window.chatView.ClearSelection()
-	window.chatView.internalTextView.ScrollToEnd()
+	window.chatView.ScrollToEnd()
 
 	window.UpdateChatHeader(channel)
 
@@ -2721,7 +2723,7 @@ func (window *Window) Run() error {
 // Shutdown disconnects from the discord API and stops the tview application.
 func (window *Window) Shutdown() {
 	if config.Current.ShortenLinks {
-		window.chatView.shortener.Close()
+		window.chatView.Dispose()
 	}
 	window.session.Close()
 	window.app.Stop()
