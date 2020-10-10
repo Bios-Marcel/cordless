@@ -408,7 +408,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				for _, url := range urlMatches {
 					header, _ := http.Head(url)
 
-					log.Println(header.Header.Get("Content-Type"))
 					//A website! Any other text/ could be a file, like .txt, .css or whatever.
 					//Is there a more bulletproof way to doing this?
 					if strings.Contains(header.Header.Get("Content-Type"), "text/html") {
