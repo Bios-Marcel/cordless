@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/Bios-Marcel/discordgo"
-
-	"github.com/Bios-Marcel/cordless/discordutil"
 )
 
 var (
@@ -155,7 +153,7 @@ func HasGuildBeenRead(guildID string) bool {
 		defer readStateMutex.Unlock()
 
 		for _, channel := range realGuild.Channels {
-			if !discordutil.HasReadMessagesPermission(channel.ID, state) {
+			if !hasReadMessagesPermission(channel.ID, state) {
 				continue
 			}
 
@@ -166,6 +164,16 @@ func HasGuildBeenRead(guildID string) bool {
 	}
 
 	return true
+}
+
+//HACK Had to copy this from discordutil/channel.go due to import cycle.
+func hasReadMessagesPermission(channelID string, state *discordgo.State) bool {
+	userPermissions, err := state.UserChannelPermissions(state.User.ID, channelID)
+	if err != nil {
+		// Unable to access channel permissions.
+		return false
+	}
+	return (userPermissions & discordgo.PermissionViewChannel) > 0
 }
 
 // HasGuildBeenMentioned checks whether any channel in the guild mentioned

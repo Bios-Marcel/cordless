@@ -154,7 +154,6 @@ func createTopLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.Cha
 
 func createChannelCategoryNode(channelTree *ChannelTree, channel *discordgo.Channel) {
 	channelNode := createChannelNode(channel)
-	channelNode.SetSelectable(false)
 	channelTree.GetRoot().AddChild(channelNode)
 }
 

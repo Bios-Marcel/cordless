@@ -7,6 +7,7 @@ import (
 
 	"github.com/Bios-Marcel/discordgo"
 
+	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
@@ -102,4 +103,51 @@ func HasReadMessagesPermission(channelID string, state *discordgo.State) bool {
 		return false
 	}
 	return (userPermissions & discordgo.PermissionViewChannel) > 0
+}
+
+// AcknowledgeChannel acknowledges all messages in the given channel. If the
+// channel is a category, all children will be acknowledged.
+func AcknowledgeChannel(session *discordgo.Session, channelID string) error {
+	channel, stateError := session.State.Channel(channelID)
+	if stateError != nil {
+		return stateError
+	}
+
+	//Bulk-Acknowledge of categories
+	if channel.Type == discordgo.ChannelTypeGuildCategory {
+		guild, stateError := session.State.Guild(channel.GuildID)
+		if stateError != nil {
+			return stateError
+		}
+
+		var channelsToAck []*discordgo.Channel
+		for _, guildChannel := range guild.Channels {
+			if guildChannel.ParentID != channel.ID {
+				continue
+			}
+
+			//These can't have messages. Store is dead anyways, so we needn't handle it.
+			if guildChannel.Type == discordgo.ChannelTypeGuildVoice {
+				continue
+			}
+
+			if guildChannel.LastMessageID == "" || readstate.HasBeenRead(guildChannel, guildChannel.LastMessageID) {
+				continue
+			}
+
+			channelsToAck = append(channelsToAck, guildChannel)
+		}
+
+		if len(channelsToAck) > 0 {
+			ackError := session.BulkChannelMessageAck(channelsToAck)
+			return ackError
+		}
+	} else {
+		if channel.LastMessageID != "" && !readstate.HasBeenRead(channel, channel.LastMessageID) {
+			_, ackError := session.ChannelMessageAck(channel.ID, channel.LastMessageID, "")
+			return ackError
+		}
+	}
+
+	return nil
 }

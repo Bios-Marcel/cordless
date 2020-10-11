@@ -158,7 +158,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.channelTree = channelTree
 	channelTree.SetOnChannelSelect(func(channelID string) {
 		channel, cacheError := window.session.State.Channel(channelID)
-		if cacheError == nil {
+		if cacheError == nil && channel.Type != discordgo.ChannelTypeGuildCategory {
 			go func() {
 				window.chatView.Lock()
 				defer window.chatView.Unlock()
@@ -976,12 +976,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		if shortcuts.ChannelTreeMarkRead.Equals(event) {
 			selectedChannelNode := channelTree.GetCurrentNode()
 			if selectedChannelNode != nil {
-				channel, stateError := window.session.State.Channel(selectedChannelNode.GetReference().(string))
-				if stateError == nil && channel.LastMessageID != "" && !readstate.HasBeenRead(channel, channel.LastMessageID) {
-					_, ackError := window.session.ChannelMessageAck(channel.ID, channel.LastMessageID, "")
-					if ackError != nil {
-						window.ShowErrorDialog(ackError.Error())
-					}
+				ackError := discordutil.AcknowledgeChannel(window.session, selectedChannelNode.GetReference().(string))
+				if ackError != nil {
+					window.ShowErrorDialog(ackError.Error())
 				}
 			}
 			return nil
@@ -1129,25 +1126,27 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	}
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.MessageAck) {
-		if readstate.UpdateReadLocal(event.ChannelID, event.MessageID) {
-			channel, stateError := s.State.Channel(event.ChannelID)
-			if stateError == nil && event.MessageID == channel.LastMessageID {
-				if channel.GuildID == "" {
-					window.privateList.MarkChannelAsRead(channel.ID)
-				} else {
-					if window.selectedGuild != nil && channel.GuildID == window.selectedGuild.ID {
-						window.channelTree.MarkChannelAsRead(channel.ID)
+		window.app.QueueUpdateDraw(func() {
+			if readstate.UpdateReadLocal(event.ChannelID, event.MessageID) {
+				channel, stateError := s.State.Channel(event.ChannelID)
+				if stateError == nil && event.MessageID == channel.LastMessageID {
+					if channel.GuildID == "" {
+						window.privateList.MarkChannelAsRead(channel.ID)
 					} else {
-						for _, guildNode := range window.guildList.GetRoot().GetChildren() {
-							if guildNode.GetReference() == channel.GuildID {
-								window.updateServerReadStatus(guildNode, false)
-								break
+						if window.selectedGuild != nil && channel.GuildID == window.selectedGuild.ID {
+							window.channelTree.MarkChannelAsRead(channel.ID)
+						} else {
+							for _, guildNode := range window.guildList.GetRoot().GetChildren() {
+								if guildNode.GetReference() == channel.GuildID {
+									window.updateServerReadStatus(guildNode, false)
+									break
+								}
 							}
 						}
 					}
 				}
 			}
-		}
+		})
 	})
 
 	window.commandView.SetInputCaptureForInput(func(event *tcell.EventKey) *tcell.EventKey {
