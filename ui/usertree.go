@@ -13,6 +13,8 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+var _ Focusable = (*UserTree)(nil)
+
 // UserTree represents the visual list of users in a guild.
 type UserTree struct {
 	internalTreeView *tview.TreeView

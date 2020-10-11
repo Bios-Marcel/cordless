@@ -12,6 +12,8 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
+var _ Focusable = (*GuildList)(nil)
+
 // GuildList is the UI component to hold all user guilds and allow loading
 // one of them.
 type GuildList struct {

@@ -37,6 +37,8 @@ func checkVT() bool {
 
 var vtxxx = checkVT()
 
+var _ Focusable = (*ChannelTree)(nil)
+
 // ChannelTree is the component that displays the channel hierarchy of the
 // currently loaded guild and allows interactions with those channels.
 type ChannelTree struct {

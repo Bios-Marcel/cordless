@@ -13,6 +13,8 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
+var _ Focusable = (*Editor)(nil)
+
 // Editor is a simple component that wraps tview.TextView in order to give
 // the user minimal text edit functionality.
 type Editor struct {

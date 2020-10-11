@@ -24,6 +24,8 @@ const (
 	read
 )
 
+var _ Focusable = (*PrivateChatList)(nil)
+
 // PrivateChatList holds the nodes and handlers for the private view. That
 // is the one responsible for managing private chats and friends.
 type PrivateChatList struct {

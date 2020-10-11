@@ -48,11 +48,11 @@ var (
 	roleMentionRegex           = regexp.MustCompile(`<@&\d*>`)
 )
 
-// OnMessageAction represents the handler that will get called 
+// OnMessageAction represents the handler that will get called
 // if the user tries to interact with a selected message.
 type OnMessageAction = func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey
 
-// ChatViewInterface is the interface which collaborators 
+// ChatViewInterface is the interface which collaborators
 // of a chat view depend on
 type ChatViewInterface interface {
 	Focusable
@@ -60,11 +60,11 @@ type ChatViewInterface interface {
 	//AddMessage add an additional message to the ChatView.
 	AddMessage(message *discordgo.Message)
 
-	// ClearSelection clears the current selection of messages.	
+	// ClearSelection clears the current selection of messages.
 	ClearSelection()
 
 	// ClearViewAndCache clears the TextView buffer and removes all data for
-	// all messages.	
+	// all messages.
 	ClearViewAndCache()
 
 	// DeleteMessage drops the message from the cache and triggers a reprint
@@ -124,7 +124,7 @@ type ChatViewInterface interface {
 	ScrollUp()
 
 	// SignalSelectionDeleted notifies the ChatView that its currently selected
-	// message doesn't exist anymore, moving the selection up by a row if possible.	
+	// message doesn't exist anymore, moving the selection up by a row if possible.
 	SignalSelectionDeleted()
 
 	// SetBorderSides sets which borders should on the chat view should be shown,
@@ -135,7 +135,7 @@ type ChatViewInterface interface {
 	SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey)
 
 	// SetMessages defines all currently displayed messages. Parsing and
-	// manipulation of single message elements happens in this function.	
+	// manipulation of single message elements happens in this function.
 	SetMessages(messages []*discordgo.Message)
 
 	// SetMouseHandler sets the function which will handle mouse events
@@ -148,7 +148,7 @@ type ChatViewInterface interface {
 	// SetTitle sets the border text of the chatview.
 	SetTitle(text string)
 
-	// Unlock unlocks the previously locked ChatView.	
+	// Unlock unlocks the previously locked ChatView.
 	Unlock()
 
 	// UpdateMessage reformats the passed message, updates the cache and triggers
@@ -157,6 +157,7 @@ type ChatViewInterface interface {
 }
 
 var _ ChatViewInterface = (*ChatView)(nil)
+var _ Focusable = (*ChatView)(nil)
 
 // ChatView is using a tview.TextView in order to be able to display messages
 // in a simple way. It supports highlighting specific element types and it
@@ -1202,7 +1203,7 @@ func (chatView *ChatView) ScrollToEnd() {
 // for it to handle
 func (chatView *ChatView) HandleEvent(event *tcell.EventKey) {
 	handler := chatView.internalTextView.InputHandler()
-	handler(event, nil)	
+	handler(event, nil)
 }
 
 // GetMessages returns the messages that the chat view is able to show
@@ -1239,7 +1240,7 @@ func (chatView *ChatView) SetBorderSides(top, left, bottom, right bool) {
 
 // Dispose instructs the chat view to dispose of any resources it is
 // holding on to
-func (chatView *ChatView) Dispose() { 
+func (chatView *ChatView) Dispose() {
 	if chatView.shortenLinks {
 		chatView.shortener.Close()
 	}

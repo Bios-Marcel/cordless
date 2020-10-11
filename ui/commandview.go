@@ -9,6 +9,8 @@ import (
 
 const noHistoryIndexSelected = -1
 
+var _ Focusable = (*CommandView)(nil)
+
 // CommandView contains a simple textview for output and an input field for
 // input. All commands are added to the history when confirmed via enter.
 type CommandView struct {
