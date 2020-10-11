@@ -10,6 +10,15 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
+func TestChatViewImplementsChatViewInterface(t *testing.T) {
+	chatView := &ChatView{}
+	_, ok := interface{}(chatView).(ChatViewInterface)
+
+	if !ok {
+		t.Errorf("ChatView does not implement ChatViewInterface")
+	}
+}
+
 func TestParseBoldAndUnderline(t *testing.T) {
 	tests := []struct {
 		name  string
