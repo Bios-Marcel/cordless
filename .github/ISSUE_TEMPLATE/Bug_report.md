@@ -6,7 +6,8 @@ about: Tell us what went wrong
 ## How have you installed cordless
 
 - [ ] Arch User Repository
-- [ ] Snap
+<!--SNAP IS NOT SUPPORTED ANYMORE; VIEW THE README FOR NEW INSTALL INSTRUCTIONS-->
+<!-- - [ ] Snap-->
 - [ ] scoop
 - [ ] brew
 - [ ] go get
