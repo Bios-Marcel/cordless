@@ -439,6 +439,21 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			if pathError != nil || absolutePath == "" {
 				window.ShowErrorDialog("Please specify a valid path in 'FileOpenSaveFolder' of your configuration.")
 			} else {
+				downloadFunction := func(savePath, fileURL string) {
+					_, statErr := os.Stat(savePath)
+					//If the file exists already, we needn't do anything.
+					if statErr == nil {
+						return
+					}
+
+					downloadError := files.DownloadFile(savePath, fileURL)
+					if downloadError != nil {
+						window.app.QueueUpdateDraw(func() {
+							window.ShowErrorDialog("Error download file: " + downloadError.Error())
+						})
+					}
+				}
+
 				for _, file := range message.Attachments {
 					extension := strings.TrimPrefix(filepath.Ext(file.URL), ".")
 					targetFile := filepath.Join(absolutePath, file.ID+"."+extension)
@@ -446,20 +461,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					//All files are downloaded separately in order to not
 					//block the UI and not download for ages if one or more
 					//page has a slow download speed.
-					go func(savePath, fileURL string) {
-						_, statErr := os.Stat(savePath)
-						//If the file exists already, we needn't do anything.
-						if statErr == nil {
-							return
-						}
-
-						downloadError := files.DownloadFile(savePath, fileURL)
-						if downloadError != nil {
-							window.app.QueueUpdateDraw(func() {
-								window.ShowErrorDialog("Error download file: " + downloadError.Error())
-							})
-						}
-					}(targetFile, file.URL)
+					go downloadFunction(targetFile, file.URL)
 				}
 
 				urlMatches := urlRegex.FindAllString(message.Content, 1000)
@@ -474,20 +476,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 					//All files are downloaded separately in order to not
 					//block the UI and not download for ages if one or more
 					//page has a slow download speed.
-					go func(savePath, fileURL string) {
-						_, statErr := os.Stat(savePath)
-						//If the file exists already, we needn't do anything.
-						if statErr == nil {
-							return
-						}
-
-						downloadError := files.DownloadFile(savePath, fileURL)
-						if downloadError != nil {
-							window.app.QueueUpdateDraw(func() {
-								window.ShowErrorDialog("Error download file: " + downloadError.Error())
-							})
-						}
-					}(targetFile, url)
+					go downloadFunction(targetFile, url)
 				}
 			}
 			return nil
