@@ -308,6 +308,8 @@ EventLoop:
 	return nil
 }
 
+// SetFocusDirectionHandler decides which function checks whether an incomming
+// key-event is supposed to indication a focus-change for the given direction.
 func (a *Application) SetFocusDirectionHandler(direction FocusDirection, isValidEvent func(event *tcell.EventKey) bool) {
 	a.focusDirectionHandlers[direction] = isValidEvent
 }

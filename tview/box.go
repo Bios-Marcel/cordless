@@ -563,10 +563,16 @@ func (b *Box) Blur() {
 	}
 }
 
+// SetNextFocusableComponents decides which components are to be focused using
+// a certain focus direction. If more than one component is passed, the
+// priority goes from left-most to right-most. A component will be skipped if
+// it is not visible.
 func (b *Box) SetNextFocusableComponents(direction FocusDirection, components ...Primitive) {
 	b.nextFocusableComponents[direction] = components
 }
 
+// NextFocusableComponent decides which component should receive focus next.
+// If nil is returned, the focus is retained.
 func (b *Box) NextFocusableComponent(direction FocusDirection) Primitive {
 	components, avail := b.nextFocusableComponents[direction]
 	if avail {
