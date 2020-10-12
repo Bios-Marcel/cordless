@@ -697,45 +697,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	captureFunc := func(event *tcell.EventKey) *tcell.EventKey {
 		messageToSend := window.messageInput.GetText()
 
-		if shortcuts.FocusUp.Equals(event) {
-			window.app.SetFocus(window.chatView.internalTextView)
-			return nil
-		}
-
-		if shortcuts.FocusDown.Equals(event) {
-			if window.commandMode {
-				window.app.SetFocus(window.commandView.commandOutput)
-			} else {
-				window.app.SetFocus(window.chatView.internalTextView)
-			}
-			return nil
-		}
-
-		if shortcuts.FocusRight.Equals(event) {
-			if window.userList.internalTreeView.IsVisible() {
-				window.app.SetFocus(window.userList.internalTreeView)
-			} else {
-				if window.activeView == Guilds {
-					window.app.SetFocus(window.channelTree)
-					return nil
-				} else if window.activeView == Dms {
-					window.app.SetFocus(window.privateList.internalTreeView)
-					return nil
-				}
-			}
-			return nil
-		}
-
-		if shortcuts.FocusLeft.Equals(event) {
-			if window.activeView == Guilds {
-				window.app.SetFocus(window.channelTree)
-				return nil
-			} else if window.activeView == Dms {
-				window.app.SetFocus(window.privateList.internalTreeView)
-				return nil
-			}
-		}
-
 		if event.Modifiers() == tcell.ModCtrl {
 			if event.Key() == tcell.KeyUp {
 				window.chatView.internalTextView.ScrollUp()
@@ -882,28 +843,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.chatView.internalTextView.SetInputCapture(focusTextViewOnTypeInputHandler)
 	}
 
-	//Guild Container arrow key navigation. Please end my life.
-	oldGuildListHandler := guildList.GetInputCapture()
 	newGuildHandler := func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.FocusUp.Equals(event) || shortcuts.FocusDown.Equals(event) {
-			window.app.SetFocus(window.channelTree)
-			return nil
-		}
-
-		if shortcuts.FocusLeft.Equals(event) {
-			if window.userList.internalTreeView.IsVisible() {
-				window.app.SetFocus(window.userList.internalTreeView)
-			} else {
-				window.app.SetFocus(window.chatView.internalTextView)
-			}
-			return nil
-		}
-
-		if shortcuts.FocusRight.Equals(event) {
-			window.app.SetFocus(window.chatView.internalTextView)
-			return nil
-		}
-
 		if shortcuts.GuildListMarkRead.Equals(event) {
 			selectedGuildNode := guildList.GetCurrentNode()
 			if selectedGuildNode != nil && !readstate.HasGuildBeenRead(selectedGuildNode.GetReference().(string)) {
@@ -918,6 +858,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		return event
 	}
 
+	oldGuildListHandler := guildList.GetInputCapture()
 	if oldGuildListHandler == nil {
 		guildList.SetInputCapture(newGuildHandler)
 	} else {
@@ -931,37 +872,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		})
 	}
 
-	//Channel Container arrow key navigation. Please end my life.
-	oldChannelListHandler := channelTree.GetInputCapture()
 	newChannelListHandler := func(event *tcell.EventKey) *tcell.EventKey {
-
-		if shortcuts.FocusUp.Equals(event) || shortcuts.FocusDown.Equals(event) {
-			window.app.SetFocus(window.guildList)
-			return nil
-		}
-
-		if shortcuts.FocusLeft.Equals(event) {
-			if window.userList.internalTreeView.IsVisible() {
-				window.app.SetFocus(window.userList.internalTreeView)
-			} else {
-				if window.commandMode {
-					window.app.SetFocus(window.commandView.commandOutput)
-				} else {
-					window.app.SetFocus(window.messageInput.GetPrimitive())
-				}
-			}
-			return nil
-		}
-
-		if shortcuts.FocusRight.Equals(event) {
-			if window.commandMode {
-				window.app.SetFocus(window.commandView.commandOutput)
-			} else {
-				window.app.SetFocus(window.messageInput.GetPrimitive())
-			}
-			return nil
-		}
-
 		if shortcuts.ChannelTreeMarkRead.Equals(event) {
 			selectedChannelNode := channelTree.GetCurrentNode()
 			if selectedChannelNode != nil {
@@ -976,6 +887,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		return event
 	}
 
+	oldChannelListHandler := channelTree.GetInputCapture()
 	if oldChannelListHandler == nil {
 		channelTree.SetInputCapture(newChannelListHandler)
 	} else {
@@ -983,131 +895,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			handledEvent := newChannelListHandler(event)
 			if handledEvent != nil {
 				return oldChannelListHandler(event)
-			}
-
-			return event
-		})
-	}
-
-	//Chatview arrow key navigation. Please end my life.
-	oldChatViewHandler := window.chatView.internalTextView.GetInputCapture()
-	newChatViewHandler := func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.FocusDown.Equals(event) {
-			window.app.SetFocus(window.messageInput.GetPrimitive())
-			return nil
-		}
-
-		if shortcuts.FocusUp.Equals(event) {
-			if window.commandMode {
-				window.app.SetFocus(window.commandView.commandInput.internalTextView)
-			} else {
-				window.app.SetFocus(window.messageInput.GetPrimitive())
-			}
-			return nil
-		}
-
-		if shortcuts.FocusLeft.Equals(event) {
-			if window.activeView == Guilds {
-				window.app.SetFocus(window.guildList)
-				return nil
-			} else if window.activeView == Guilds {
-				window.app.SetFocus(window.privateList.internalTreeView)
-				return nil
-			}
-		}
-
-		if shortcuts.FocusRight.Equals(event) {
-			if window.userList.internalTreeView.IsVisible() {
-				window.app.SetFocus(window.userList.internalTreeView)
-			} else {
-				if window.activeView == Guilds {
-					window.app.SetFocus(window.guildList)
-					return nil
-				} else if window.activeView == Guilds {
-					window.app.SetFocus(window.privateList.internalTreeView)
-					return nil
-				}
-			}
-			return nil
-		}
-
-		return event
-	}
-
-	if oldChatViewHandler == nil {
-		window.chatView.internalTextView.SetInputCapture(newChatViewHandler)
-	} else {
-		window.chatView.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			handledEvent := newChatViewHandler(event)
-			if handledEvent != nil {
-				return oldChatViewHandler(event)
-			}
-
-			return event
-		})
-	}
-
-	//User Container arrow key navigation. Please end my life.
-	oldUserListHandler := window.userList.internalTreeView.GetInputCapture()
-	newUserListHandler := func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.FocusRight.Equals(event) {
-			if window.activeView == Guilds {
-				window.app.SetFocus(window.guildList)
-				return nil
-			} else if window.activeView == Guilds {
-				window.app.SetFocus(window.privateList.internalTreeView)
-				return nil
-			}
-			return nil
-		}
-		if shortcuts.FocusLeft.Equals(event) {
-			window.app.SetFocus(window.chatView.GetPrimitive())
-			return nil
-		}
-
-		return event
-	}
-
-	if oldUserListHandler == nil {
-		window.userList.internalTreeView.SetInputCapture(newUserListHandler)
-	} else {
-		window.userList.internalTreeView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			handledEvent := newUserListHandler(event)
-			if handledEvent != nil {
-				return oldUserListHandler(event)
-			}
-
-			return event
-		})
-	}
-
-	//Private Container arrow key navigation. Please end my life.
-	oldPrivateListHandler := window.privateList.internalTreeView.GetInputCapture()
-	newPrivateListHandler := func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.FocusLeft.Equals(event) {
-			if window.userList.internalTreeView.IsVisible() {
-				window.app.SetFocus(window.userList.internalTreeView)
-			} else {
-				window.app.SetFocus(window.chatView.internalTextView)
-			}
-			return nil
-		}
-
-		if shortcuts.FocusRight.Equals(event) {
-			window.app.SetFocus(window.chatView.internalTextView)
-			return nil
-		}
-
-		return event
-	}
-
-	if oldPrivateListHandler == nil {
-		window.privateList.internalTreeView.SetInputCapture(newPrivateListHandler)
-	} else {
-		window.privateList.internalTreeView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			handledEvent := newPrivateListHandler(event)
-			if handledEvent != nil {
-				return oldPrivateListHandler(event)
 			}
 
 			return event
@@ -1136,42 +923,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 				}
 			}
 		})
-	})
-
-	window.commandView.SetInputCaptureForInput(func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.FocusUp.Equals(event) {
-			window.app.SetFocus(window.commandView.commandOutput)
-		} else if shortcuts.FocusDown.Equals(event) {
-			window.app.SetFocus(window.chatView.GetPrimitive())
-		} else if shortcuts.FocusRight.Equals(event) {
-			if window.userList.internalTreeView.IsVisible() {
-				window.app.SetFocus(window.userList.internalTreeView)
-			} else {
-				window.app.SetFocus(window.channelTree)
-			}
-		} else if shortcuts.FocusLeft.Equals(event) {
-			window.app.SetFocus(window.channelTree)
-		}
-
-		return event
-	})
-
-	window.commandView.SetInputCaptureForOutput(func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.FocusUp.Equals(event) {
-			window.app.SetFocus(window.messageInput.GetPrimitive())
-		} else if shortcuts.FocusDown.Equals(event) {
-			window.app.SetFocus(window.commandView.commandInput.GetPrimitive())
-		} else if shortcuts.FocusRight.Equals(event) {
-			if window.userList.internalTreeView.IsVisible() {
-				window.app.SetFocus(window.userList.internalTreeView)
-			} else {
-				window.app.SetFocus(window.channelTree)
-			}
-		} else if shortcuts.FocusLeft.Equals(event) {
-			window.app.SetFocus(window.channelTree)
-		}
-
-		return event
 	})
 
 	window.middleContainer = tview.NewFlex().
@@ -1238,9 +989,49 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 	window.SwitchToGuildsPage()
 
+	app.SetFocusDirectionHandler(tview.Up, shortcuts.FocusUp.Equals)
+	app.SetFocusDirectionHandler(tview.Down, shortcuts.FocusDown.Equals)
+	app.SetFocusDirectionHandler(tview.Left, shortcuts.FocusLeft.Equals)
+	app.SetFocusDirectionHandler(tview.Right, shortcuts.FocusRight.Equals)
+
+	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Up, window.chatView.internalTextView)
+	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Down, window.commandView.commandOutput, window.chatView.internalTextView)
+	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.channelTree, window.privateList.internalTreeView)
+	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Left, window.channelTree, window.privateList.internalTreeView)
+
+	window.channelTree.SetNextFocusableComponents(tview.Up, window.guildList)
+	window.channelTree.SetNextFocusableComponents(tview.Down, window.guildList)
+	window.channelTree.SetNextFocusableComponents(tview.Left, window.userList.internalTreeView, window.commandView.commandOutput, window.messageInput.GetPrimitive())
+	window.channelTree.SetNextFocusableComponents(tview.Right, window.commandView.commandOutput, window.messageInput.GetPrimitive())
+
+	window.guildList.SetNextFocusableComponents(tview.Up, window.channelTree)
+	window.guildList.SetNextFocusableComponents(tview.Down, window.channelTree)
+	window.guildList.SetNextFocusableComponents(tview.Left, window.userList.internalTreeView, window.chatView.GetPrimitive())
+	window.guildList.SetNextFocusableComponents(tview.Right, window.chatView.GetPrimitive(), window.userList.internalTreeView)
+
+	window.privateList.internalTreeView.SetNextFocusableComponents(tview.Right, window.chatView.GetPrimitive())
+	window.privateList.internalTreeView.SetNextFocusableComponents(tview.Left, window.userList.internalTreeView, window.chatView.GetPrimitive())
+
+	window.userList.internalTreeView.SetNextFocusableComponents(tview.Left, window.chatView.GetPrimitive())
+
+	window.chatView.internalTextView.SetNextFocusableComponents(tview.Down, window.messageInput.GetPrimitive())
+	window.chatView.internalTextView.SetNextFocusableComponents(tview.Up, window.commandView.commandInput.internalTextView, window.messageInput.GetPrimitive())
+
+	window.commandView.commandInput.internalTextView.SetNextFocusableComponents(tview.Up, window.commandView.commandOutput)
+	window.commandView.commandInput.internalTextView.SetNextFocusableComponents(tview.Down, window.chatView.GetPrimitive())
+	window.commandView.commandInput.internalTextView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.channelTree, window.privateList.internalTreeView)
+	window.commandView.commandInput.internalTextView.SetNextFocusableComponents(tview.Left, window.channelTree, window.privateList.internalTreeView)
+
+	window.commandView.commandOutput.SetNextFocusableComponents(tview.Up, window.messageInput.GetPrimitive())
+	window.commandView.commandOutput.SetNextFocusableComponents(tview.Down, window.commandView.commandInput.GetPrimitive())
+	window.commandView.commandOutput.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.channelTree, window.privateList.internalTreeView)
+	window.commandView.commandOutput.SetNextFocusableComponents(tview.Left, window.channelTree, window.privateList.internalTreeView)
+
 	app.SetFocus(guildList)
 
-	window.registerMouseFocusListeners()
+	if config.Current.MouseEnabled {
+		window.registerMouseFocusListeners()
+	}
 
 	window.chatView.internalTextView.SetText(getWelcomeText())
 
@@ -2727,6 +2518,9 @@ func (window *Window) SwitchToGuildsPage() {
 	window.leftArea.AddItem(window.guildPage, 0, 1, false)
 	window.activeView = Guilds
 
+	window.userList.internalTreeView.SetNextFocusableComponents(tview.Right, window.guildList)
+	window.chatView.internalTextView.SetNextFocusableComponents(tview.Left, window.guildList)
+	window.chatView.internalTextView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.guildList)
 }
 
 //SwitchToFriendsPage switches the left side of the layout over to the view
@@ -2737,6 +2531,10 @@ func (window *Window) SwitchToFriendsPage() {
 	window.leftArea.AddItem(window.guildList, 1, 0, false)
 	window.leftArea.AddItem(window.privateList.GetComponent(), 0, 1, false)
 	window.activeView = Dms
+
+	window.userList.internalTreeView.SetNextFocusableComponents(tview.Right, window.privateList.internalTreeView)
+	window.chatView.internalTextView.SetNextFocusableComponents(tview.Left, window.privateList.internalTreeView)
+	window.chatView.internalTextView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.privateList.internalTreeView)
 }
 
 // SwitchToPreviousChannel loads the previously loaded channel and focuses it

@@ -55,4 +55,15 @@ type Primitive interface {
 
 	// GetFocusable returns the item's Focusable.
 	GetFocusable() Focusable
+
+	NextFocusableComponent(FocusDirection) Primitive
 }
+
+type FocusDirection int
+
+const (
+	Up FocusDirection = iota
+	Down
+	Left
+	Right
+)

@@ -85,25 +85,28 @@ type Box struct {
 
 	// Handler that gets called when this component loses focus.
 	onBlur func()
+
+	nextFocusableComponents map[FocusDirection][]Primitive
 }
 
 // NewBox returns a Box without a border.
 func NewBox() *Box {
 	b := &Box{
-		width:                 15,
-		height:                10,
-		innerX:                -1, // Mark as uninitialized.
-		backgroundColor:       Styles.PrimitiveBackgroundColor,
-		borderColor:           Styles.BorderColor,
-		borderFocusColor:      Styles.BorderFocusColor,
-		borderFocusAttributes: tcell.AttrNone,
-		titleColor:            Styles.TitleColor,
-		titleAlign:            AlignCenter,
-		borderTop:             true,
-		borderBottom:          true,
-		borderLeft:            true,
-		borderRight:           true,
-		visible:               true,
+		width:                   15,
+		height:                  10,
+		innerX:                  -1, // Mark as uninitialized.
+		backgroundColor:         Styles.PrimitiveBackgroundColor,
+		borderColor:             Styles.BorderColor,
+		borderFocusColor:        Styles.BorderFocusColor,
+		borderFocusAttributes:   tcell.AttrNone,
+		titleColor:              Styles.TitleColor,
+		titleAlign:              AlignCenter,
+		borderTop:               true,
+		borderBottom:            true,
+		borderLeft:              true,
+		borderRight:             true,
+		visible:                 true,
+		nextFocusableComponents: make(map[FocusDirection][]Primitive),
 	}
 
 	if vtxxx {
@@ -558,6 +561,23 @@ func (b *Box) Blur() {
 	if b.onBlur != nil {
 		b.onBlur()
 	}
+}
+
+func (b *Box) SetNextFocusableComponents(direction FocusDirection, components ...Primitive) {
+	b.nextFocusableComponents[direction] = components
+}
+
+func (b *Box) NextFocusableComponent(direction FocusDirection) Primitive {
+	components, avail := b.nextFocusableComponents[direction]
+	if avail {
+		for _, comp := range components {
+			if comp.IsVisible() {
+				return comp
+			}
+		}
+	}
+
+	return nil
 }
 
 // HasFocus returns whether or not this primitive has focus.
