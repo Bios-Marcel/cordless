@@ -89,6 +89,10 @@ func (c *CoreLayout) GetFocusable() tview.Focusable {
 	panic("implement me")
 }
 
+func (c *CoreLayout) NextFocusableComponent(direction tview.FocusDirection) tview.Primitive {
+	panic("implement me")
+}
+
 func NewDemoComponent(r rune) *demoComponent {
 	return &demoComponent{visible: true, fillWith: r}
 }
@@ -163,5 +167,9 @@ func (d *demoComponent) SetOnBlur(handler func()) {
 }
 
 func (d *demoComponent) GetFocusable() tview.Focusable {
+	return nil
+}
+
+func (d *demoComponent) NextFocusableComponent(direction tview.FocusDirection) tview.Primitive {
 	return nil
 }

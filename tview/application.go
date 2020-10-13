@@ -66,15 +66,18 @@ type Application struct {
 	// (screen.Init() and draw() will be called implicitly). A value of nil will
 	// stop the application.
 	screenReplacement chan tcell.Screen
+
+	focusDirectionHandlers map[FocusDirection]func(*tcell.EventKey) bool
 }
 
 // NewApplication creates and returns a new application.
 func NewApplication() *Application {
 	return &Application{
-		events:            make(chan tcell.Event, queueSize),
-		updates:           make(chan func(), queueSize),
-		screenReplacement: make(chan tcell.Screen, 1),
-		MouseEnabled:      true,
+		events:                 make(chan tcell.Event, queueSize),
+		updates:                make(chan func(), queueSize),
+		screenReplacement:      make(chan tcell.Screen, 1),
+		MouseEnabled:           true,
+		focusDirectionHandlers: make(map[FocusDirection]func(*tcell.EventKey) bool),
 	}
 }
 
@@ -225,6 +228,29 @@ EventLoop:
 				inputCapture := a.inputCapture
 				a.RUnlock()
 
+				//Focus handling
+				if p != nil {
+					var nextFocus Primitive
+					if handler, ok := a.focusDirectionHandlers[Up]; ok && handler(event) {
+						nextFocus = p.NextFocusableComponent(Up)
+					}
+					if handler, ok := a.focusDirectionHandlers[Down]; ok && handler(event) {
+						nextFocus = p.NextFocusableComponent(Down)
+					}
+					if handler, ok := a.focusDirectionHandlers[Left]; ok && handler(event) {
+						nextFocus = p.NextFocusableComponent(Left)
+					}
+					if handler, ok := a.focusDirectionHandlers[Right]; ok && handler(event) {
+						nextFocus = p.NextFocusableComponent(Right)
+					}
+
+					if nextFocus != nil {
+						a.SetFocus(nextFocus)
+						a.draw()
+						continue
+					}
+				}
+
 				// Intercept keys.
 				if inputCapture != nil {
 					event = inputCapture(event)
@@ -280,6 +306,12 @@ EventLoop:
 	a.screen = nil
 
 	return nil
+}
+
+// SetFocusDirectionHandler decides which function checks whether an incomming
+// key-event is supposed to indication a focus-change for the given direction.
+func (a *Application) SetFocusDirectionHandler(direction FocusDirection, isValidEvent func(event *tcell.EventKey) bool) {
+	a.focusDirectionHandlers[direction] = isValidEvent
 }
 
 // GetComponentAt returns the highest level component at the given coordinates

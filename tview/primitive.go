@@ -55,4 +55,19 @@ type Primitive interface {
 
 	// GetFocusable returns the item's Focusable.
 	GetFocusable() Focusable
+
+	// NextFocusableComponent decides which component should receive focus next.
+	// If nil is returned, the focus is retained.
+	NextFocusableComponent(FocusDirection) Primitive
 }
+
+// FocusDirection decides in what direction the focus should travel relative
+// to the currently focused component.
+type FocusDirection int
+
+const (
+	Up FocusDirection = iota
+	Down
+	Left
+	Right
+)
