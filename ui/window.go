@@ -2595,8 +2595,17 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	//If there is a currently loaded guild channel and it isn't the same as
 	//the new one we assume it must be read and mark it white.
 	if window.selectedChannel != nil && channel.ID != window.selectedChannel.ID {
-		selectedChannelNode := tviewutil.GetNodeByReference(window.selectedChannel.ID, window.channelTree.TreeView)
-		selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
+		//FIXME Designflaw! We need to manually reset the primary text
+		//color of the selected channels, this really sucks.
+		selectedChannelID := window.selectedChannel.ID
+		selectedChannelNode := tviewutil.GetNodeByReference(selectedChannelID, window.channelTree.TreeView)
+		if selectedChannelNode == nil {
+			selectedChannelNode = tviewutil.GetNodeByReference(selectedChannelID, window.privateList.internalTreeView)
+		}
+
+		if selectedChannelNode != nil {
+			selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
+		}
 	}
 
 	window.selectedChannel = channel
