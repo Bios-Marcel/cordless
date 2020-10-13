@@ -76,14 +76,10 @@ type Window struct {
 
 	session *discordgo.Session
 
-	selectedGuildNode   *tview.TreeNode
-	previousGuildNode   *tview.TreeNode
-	selectedGuild       *discordgo.Guild
-	previousGuild       *discordgo.Guild
-	selectedChannelNode *tview.TreeNode
-	previousChannelNode *tview.TreeNode
-	selectedChannel     *discordgo.Channel
-	previousChannel     *discordgo.Channel
+	selectedGuild   *discordgo.Guild
+	previousGuild   *discordgo.Guild
+	selectedChannel *discordgo.Channel
+	previousChannel *discordgo.Channel
 
 	extensionEngines []scripting.Engine
 
@@ -177,10 +173,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	guildList := NewGuildList(guilds)
 	window.guildList = guildList
 	window.guildList.UpdateUnreadGuildCount()
-	guildList.SetOnGuildSelect(func(node *tview.TreeNode, guildID string) {
+	guildList.SetOnGuildSelect(func(guildID string) {
 		//Update previously selected guild.
-		if window.selectedGuild != nil && window.selectedGuildNode != nil {
-			window.updateServerReadStatus(window.selectedGuildNode, false)
+		if window.selectedGuild != nil {
+			window.updateServerReadStatus(window.selectedGuild.ID, false)
 		}
 
 		guild, cacheError := window.session.Guild(guildID)
@@ -191,18 +187,15 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		// previousGuild and previousGuildNode should be set initially.
 		// If going from first guild -> private chat, SwitchToPreviousChannel would crash.
-		if window.selectedGuildNode == nil {
-			window.previousGuildNode = node
+		if window.selectedGuild == nil {
 			window.previousGuild = guild
-		} else if window.previousGuildNode != window.selectedGuildNode {
-			window.previousGuildNode = window.selectedGuildNode
+		} else if window.previousGuild != window.selectedGuild {
 			window.previousGuild = window.selectedGuild
 		}
 
-		window.selectedGuildNode = node
 		window.selectedGuild = guild
 
-		window.updateServerReadStatus(window.selectedGuildNode, true)
+		window.updateServerReadStatus(guild.ID, true)
 
 		//FIXME Request presences as soon as that stuff remotely works?
 		requestError := session.RequestGuildMembers(guildID, "", 0, false)
@@ -245,7 +238,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.leftArea.AddItem(window.privateList.GetComponent(), 1, 0, false)
 	window.leftArea.AddItem(window.guildPage, 0, 1, false)
 
-	window.privateList.SetOnChannelSelect(func(node *tview.TreeNode, channelID string) {
+	window.privateList.SetOnChannelSelect(func(channelID string) {
 		channel, stateError := window.session.State.Channel(channelID)
 		if stateError != nil {
 			window.ShowErrorDialog(fmt.Sprintf("Error loading chat: %s", stateError.Error()))
@@ -912,12 +905,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 						if window.selectedGuild != nil && channel.GuildID == window.selectedGuild.ID {
 							window.channelTree.MarkChannelAsRead(channel.ID)
 						} else {
-							for _, guildNode := range window.guildList.GetRoot().GetChildren() {
-								if guildNode.GetReference() == channel.GuildID {
-									window.updateServerReadStatus(guildNode, false)
-									break
-								}
-							}
+							window.updateServerReadStatus(channel.GuildID, false)
 						}
 					}
 				}
@@ -1375,17 +1363,9 @@ func (window *Window) sendMessage(targetChannelID, message string) {
 	}
 }
 
-func (window *Window) updateServerReadStatus(guildNode *tview.TreeNode, isSelected bool) {
-	guild, cacheError := window.session.State.Guild(guildNode.GetReference().(string))
-	if cacheError == nil {
-		window.guildList.UpdateNodeState(guild, guildNode, isSelected)
-		window.guildList.UpdateUnreadGuildCount()
-	}
-}
-
-func (window *Window) updateServerReadStatusByID(guildID string, isSelected bool) {
+func (window *Window) updateServerReadStatus(guildID string, isSelected bool) {
 	guild, cacheError := window.session.State.Guild(guildID)
-	if cacheError == nil && guild != nil {
+	if cacheError == nil {
 		window.guildList.UpdateNodeStateByGuild(guild, isSelected)
 		window.guildList.UpdateUnreadGuildCount()
 	}
@@ -1745,14 +1725,9 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 
 			if channel.Type == discordgo.ChannelTypeGuildText && (window.selectedGuild == nil ||
 				window.selectedGuild.ID != channel.GuildID) {
-				for _, guildNode := range window.guildList.GetRoot().GetChildren() {
-					if guildNode.GetReference() == channel.GuildID {
-						window.app.QueueUpdateDraw(func() {
-							window.updateServerReadStatus(guildNode, false)
-						})
-						break
-					}
-				}
+				window.app.QueueUpdateDraw(func() {
+					window.updateServerReadStatus(channel.GuildID, false)
+				})
 			}
 
 			// TODO,HACK.FIXME Since the cache is inconsistent, I have to
@@ -1796,7 +1771,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 						readstate.MarkAsMentioned(channel.ID)
 						window.app.QueueUpdateDraw(func() {
 							isCurrentGuild := window.selectedGuild != nil && window.selectedGuild.ID == channel.GuildID
-							window.updateServerReadStatusByID(channel.GuildID, isCurrentGuild)
+							window.updateServerReadStatus(channel.GuildID, isCurrentGuild)
 							window.channelTree.MarkChannelAsMentioned(channel.ID)
 						})
 					} else if !readstate.IsGuildChannelMuted(channel) {
@@ -1929,30 +1904,26 @@ func (window *Window) registerGuildHandlers() {
 
 	go func() {
 		for guildRemove := range guildRemoveChannel {
-			if window.selectedGuildNode == nil {
+			if window.selectedGuild == nil {
 				continue
 			}
 
-			if window.previousGuildNode != nil && window.previousGuildNode.GetReference() == guildRemove.ID {
-				window.previousGuildNode = nil
+			if window.previousGuild != nil && window.previousGuild.ID == guildRemove.ID {
 				window.previousGuild = nil
-				window.previousChannelNode = nil
 				window.previousChannel = nil
 			}
 
-			if window.selectedGuildNode.GetReference() == guildRemove.ID {
+			if window.selectedGuild.ID == guildRemove.ID {
 				guildID := guildRemove.ID
 				window.app.QueueUpdateDraw(func() {
 					if window.selectedChannel != nil && window.selectedChannel.GuildID == guildID {
 						window.chatView.ClearViewAndCache()
 						window.selectedChannel = nil
-						window.selectedChannelNode = nil
 					}
 
 					window.channelTree.Clear()
 					window.userList.Clear()
 					window.guildList.RemoveGuild(guildID)
-					window.selectedGuildNode = nil
 					window.selectedGuild = nil
 				})
 			}
@@ -2081,16 +2052,13 @@ func (window *Window) registerGuildChannelHandler() {
 
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.ChannelDelete) {
 		if window.isChannelEventRelevant(event.Channel) {
-			if window.previousChannelNode != nil && window.previousChannelNode.GetReference() == event.ID {
-				window.previousGuildNode = nil
+			if window.previousChannel != nil && window.previousChannel.ID == event.ID {
 				window.previousGuild = nil
-				window.previousChannelNode = nil
 				window.previousChannel = nil
 			}
 
-			if window.selectedChannelNode != nil && window.selectedChannelNode.GetReference() == event.ID {
+			if window.selectedChannel != nil && window.selectedChannel.ID == event.ID {
 				window.selectedChannel = nil
-				window.selectedChannelNode = nil
 				window.app.QueueUpdateDraw(func() {
 					window.chatView.ClearViewAndCache()
 				})
@@ -2548,7 +2516,6 @@ func (window *Window) SwitchToPreviousChannel() error {
 	_, err := window.session.State.Channel(window.previousChannel.ID)
 	if err != nil {
 		window.previousChannel = nil
-		window.previousChannelNode = nil
 		return fmt.Errorf("Channel %s not found", window.previousChannel.Name)
 	}
 
@@ -2556,22 +2523,22 @@ func (window *Window) SwitchToPreviousChannel() error {
 	switch window.previousChannel.Type {
 	case discordgo.ChannelTypeDM, discordgo.ChannelTypeGroupDM:
 		window.SwitchToFriendsPage()
-
-		window.privateList.onChannelSelect(window.previousChannelNode, window.previousChannel.ID)
+		window.privateList.onChannelSelect(window.previousChannel.ID)
 	case discordgo.ChannelTypeGuildText:
 		_, err := window.session.State.Guild(window.previousGuild.ID)
 		if err != nil {
 			window.previousGuild = nil
-			window.previousGuildNode = nil
 			return fmt.Errorf("Unable to load guild: %s", window.previousGuild.Name)
 		}
 		if !discordutil.HasReadMessagesPermission(window.previousChannel.ID, window.session.State) {
 			return fmt.Errorf("No read permissions for channel: %s", window.previousChannel.Name)
 		}
 		window.SwitchToGuildsPage()
-		window.guildList.SetCurrentNode(window.previousGuildNode)
-		window.guildList.onGuildSelect(window.previousGuildNode, window.previousGuild.ID)
-		window.channelTree.SetCurrentNode(window.previousChannelNode)
+		previousGuildNode := tviewutil.GetNodeByReference(window.previousGuild.ID, window.guildList.TreeView)
+		previousChannelNode := tviewutil.GetNodeByReference(window.previousChannel.ID, window.channelTree.TreeView)
+		window.guildList.SetCurrentNode(previousGuildNode)
+		window.guildList.onGuildSelect(window.previousGuild.ID)
+		window.channelTree.SetCurrentNode(previousChannelNode)
 		window.channelTree.onChannelSelect(window.previousChannel.ID)
 	default:
 		return fmt.Errorf("Invalid channel type: %v", window.previousChannel.Type)
@@ -2616,27 +2583,23 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	if window.selectedChannel == nil {
 		window.previousChannel = channel
-		window.previousChannelNode = window.channelTree.GetCurrentNode()
 	} else if channel != window.selectedChannel {
 		window.previousChannel = window.selectedChannel
-		window.previousChannelNode = window.selectedChannelNode
 
 		// When switching to a channel in the same guild, the previousGuild must be set.
 		if window.previousChannel.GuildID == channel.GuildID {
 			window.previousGuild = window.selectedGuild
-			window.previousGuildNode = window.selectedGuildNode
 		}
 	}
 
 	//If there is a currently loaded guild channel and it isn't the same as
 	//the new one we assume it must be read and mark it white.
-	if window.selectedChannelNode != nil && channel.ID != window.selectedChannel.ID {
-		window.selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
+	if window.selectedChannel != nil && channel.ID != window.selectedChannel.ID {
+		selectedChannelNode := tviewutil.GetNodeByReference(window.selectedChannel.ID, window.channelTree.TreeView)
+		selectedChannelNode.SetColor(tview.Styles.PrimaryTextColor)
 	}
 
 	window.selectedChannel = channel
-	//FIXME this is a bit bad, since it could be wrong
-	window.selectedChannelNode = window.channelTree.GetCurrentNode()
 
 	//Unlike with the channel, where we can assume it is read, we gotta check
 	//whether there is still an unread channel and mark the server accordingly.
@@ -2644,7 +2607,6 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 
 	if channel.GuildID == "" {
 		window.selectedGuild = nil
-		window.selectedGuildNode = nil
 	}
 
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
@@ -2666,7 +2628,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 			guild, cacheError := window.session.State.Guild(channel.GuildID)
 
 			window.app.QueueUpdateDraw(func() {
-				window.updateServerReadStatusByID(channel.GuildID, wasSelectedGuild)
+				window.updateServerReadStatus(channel.GuildID, wasSelectedGuild)
 
 				if cacheError == nil {
 					window.selectedGuild = guild
@@ -2678,7 +2640,6 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 							} else {
 								guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
 							}
-							window.selectedGuildNode = guildNode
 							break
 						}
 					}

@@ -34,7 +34,7 @@ type PrivateChatList struct {
 	chatsNode   *tview.TreeNode
 	friendsNode *tview.TreeNode
 
-	onChannelSelect      func(node *tview.TreeNode, channelID string)
+	onChannelSelect      func(channelID string)
 	onFriendSelect       func(userID string)
 	privateChannelStates map[*tview.TreeNode]privateChannelState
 }
@@ -84,7 +84,7 @@ func (privateList *PrivateChatList) onNodeSelected(node *tview.TreeNode) {
 		if privateList.onChannelSelect != nil {
 			channelID, ok := node.GetReference().(string)
 			if ok {
-				privateList.onChannelSelect(node, channelID)
+				privateList.onChannelSelect(channelID)
 			}
 		}
 	} else if node.GetParent() == privateList.friendsNode {
@@ -338,7 +338,7 @@ func (privateList *PrivateChatList) SetOnFriendSelect(handler func(userID string
 
 // SetOnChannelSelect sets the handler that decides what happens when a
 // channel node gets selected.
-func (privateList *PrivateChatList) SetOnChannelSelect(handler func(node *tview.TreeNode, channelID string)) {
+func (privateList *PrivateChatList) SetOnChannelSelect(handler func(channelID string)) {
 	privateList.onChannelSelect = handler
 }
 

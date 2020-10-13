@@ -27,3 +27,20 @@ func CreateFocusTextViewOnTypeInputHandler(app *tview.Application, component *tv
 
 	return eventHandler
 }
+
+// GetNodeByReference returns the first matched node where the given reference
+// is equal. If no node with a matching reference exists, the return value
+// is nil.
+func GetNodeByReference(reference interface{}, tree *tview.TreeView) *tview.TreeNode {
+	var matchedNode *tview.TreeNode
+	tree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+		if node.GetReference() == reference {
+			matchedNode = node
+			return false
+		}
+
+		return true
+	})
+
+	return matchedNode
+}

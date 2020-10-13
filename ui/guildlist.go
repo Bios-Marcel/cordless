@@ -16,7 +16,7 @@ import (
 // one of them.
 type GuildList struct {
 	*tview.TreeView
-	onGuildSelect func(node *tview.TreeNode, guildID string)
+	onGuildSelect func(guildID string)
 }
 
 // NewGuildList creates and initializes a ready to use GuildList.
@@ -38,7 +38,7 @@ func NewGuildList(guilds []*discordgo.Guild) *GuildList {
 	guildList.SetSelectedFunc(func(node *tview.TreeNode) {
 		guildID, ok := node.GetReference().(string)
 		if ok && guildList.onGuildSelect != nil {
-			guildList.onGuildSelect(node, guildID)
+			guildList.onGuildSelect(guildID)
 		}
 	})
 
@@ -52,7 +52,7 @@ func NewGuildList(guilds []*discordgo.Guild) *GuildList {
 		guildNode.SetReference(guild.ID)
 		root.AddChild(guildNode)
 
-		guildList.UpdateNodeState(guild, guildNode, false)
+		guildList.updateNodeState(guild, guildNode, false)
 
 		guildNode.SetSelectable(true)
 	}
@@ -70,20 +70,13 @@ func NewGuildList(guilds []*discordgo.Guild) *GuildList {
 // FIXME selected should probably be removed here, but bugs will occur
 // so I'll do it someday ... :D
 func (g *GuildList) UpdateNodeStateByGuild(guild *discordgo.Guild, selected bool) {
-	for _, node := range g.GetRoot().GetChildren() {
-		if node.GetReference().(string) == guild.ID {
-			g.UpdateNodeState(guild, node, selected)
-			break
-		}
+	matchedNode := tviewutil.GetNodeByReference(guild.ID, g.TreeView)
+	if matchedNode != nil {
+		g.updateNodeState(guild, matchedNode, selected)
 	}
 }
 
-// UpdateNodeState updates the state of a node accordingly to its
-// readstate, unless the node is selected.
-//
-// FIXME selected should probably be removed here, but bugs will occur
-// so I'll do it someday ... :D
-func (g *GuildList) UpdateNodeState(guild *discordgo.Guild, node *tview.TreeNode, selected bool) {
+func (g *GuildList) updateNodeState(guild *discordgo.Guild, node *tview.TreeNode, selected bool) {
 	if selected {
 		if vtxxx {
 			node.SetAttributes(tcell.AttrUnderline)
@@ -111,7 +104,7 @@ func (g *GuildList) UpdateNodeState(guild *discordgo.Guild, node *tview.TreeNode
 }
 
 // SetOnGuildSelect sets the handler for when a guild is selected.
-func (g *GuildList) SetOnGuildSelect(handler func(node *tview.TreeNode, guildID string)) {
+func (g *GuildList) SetOnGuildSelect(handler func(guildID string)) {
 	g.onGuildSelect = handler
 }
 
