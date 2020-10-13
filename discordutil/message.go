@@ -26,7 +26,12 @@ func MentionsCurrentUserExplicitly(state *discordgo.State, message *discordgo.Me
 // channels. This is satisfied by the discordgo.Session struct and can be
 // used in order to make testing easier.
 type MessageDataSupplier interface {
-	ChannelMessages(string, int, string, string, string) ([]*discordgo.Message, error)
+	// ChannelMessages fetches up to 100 messages for a channel.
+	// The parameter beforeID defines whether message only older than
+	// a specific message should be returned. The parameter afterID does
+	// the same but for newer messages. The parameter aroundID is a mix of
+	// both.
+	ChannelMessages(channelID string, limit int, beforeID string, afterID string, aroundID string) ([]*discordgo.Message, error)
 }
 
 // MessageLoader represents a util object that remember which channels have
@@ -43,6 +48,8 @@ func (l *MessageLoader) IsCached(channelID string) bool {
 	return cached && value
 }
 
+// CreateMessageLoader creates a MessageLoader using the given
+// MessageDataSupplier. It is empty and can be used right away.
 func CreateMessageLoader(messageDataSupplier MessageDataSupplier) *MessageLoader {
 	loader := &MessageLoader{
 		requestedChannels:   make(map[string]bool),
