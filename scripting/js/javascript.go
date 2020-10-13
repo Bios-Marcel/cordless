@@ -57,7 +57,8 @@ type ScriptInstance struct {
 	onMessageDelete  *otto.Value
 }
 
-// New instantiates a new scripting engine
+// New instantiates a new scripting engine. The resulting object doesn't hold
+// any data or VMs initially. Only upon loading scripts, VMs are created.
 func New() *JavaScriptEngine {
 	return &JavaScriptEngine{}
 }
@@ -176,6 +177,8 @@ func (engine *JavaScriptEngine) readScriptsRecursively(dirname string) error {
 	return nil
 }
 
+// SetErrorOutput sets the writer to which errors can be written from inside
+// the JavaScript engines.
 func (engine *JavaScriptEngine) SetErrorOutput(errorOutput io.Writer) {
 	engine.errorOutput = errorOutput
 }
