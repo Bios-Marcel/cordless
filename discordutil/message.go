@@ -70,44 +70,53 @@ func (l *MessageLoader) DeleteFromCache(channelID string) {
 // were sent, less will be returned. As soon as a channel has been loaded once
 // it won't ever be loaded again, instead a global cache will be accessed.
 func (l *MessageLoader) LoadMessages(channel *discordgo.Channel) ([]*discordgo.Message, error) {
-	var messages []*discordgo.Message
-
-	if channel.LastMessageID != "" {
-		if !l.IsCached(channel.ID) {
-			l.requestedChannels[channel.ID] = true
-
-			var beforeID string
-			localMessageCount := len(channel.Messages)
-			if localMessageCount > 0 {
-				beforeID = channel.Messages[0].ID
-			}
-
-			messagesToGet := 100 - localMessageCount
-			if messagesToGet > 0 {
-				var discordError error
-				messages, discordError = l.messageDateSupplier.ChannelMessages(channel.ID, messagesToGet, beforeID, "", "")
-				if discordError != nil {
-					return nil, discordError
-				}
-
-				if channel.GuildID != "" {
-					for _, message := range messages {
-						message.GuildID = channel.GuildID
-					}
-				}
-				if localMessageCount == 0 {
-					channel.Messages = messages
-				} else {
-					//There are already messages in cache; However, those came from updates events.
-					//Therefore those have to be newer than the newly retrieved ones.
-					channel.Messages = append(messages, channel.Messages...)
-				}
-			}
-		}
-		messages = channel.Messages
+	//Empty channels are never marked as cached and needn't be loaded.
+	if channel.LastMessageID == "" {
+		return nil, nil
 	}
 
-	return messages, nil
+	//If it's already cached, we assume that it contains all existing messages.
+	if l.IsCached(channel.ID) {
+		return channel.Messages, nil
+	}
+
+	var beforeID string
+	localMessageCount := len(channel.Messages)
+	if localMessageCount > 0 {
+		beforeID = channel.Messages[0].ID
+	}
+
+	//We might not have all messages, as we might have received message due to
+	//update events, which doesn't include the previously sent messages. This
+	//however only matters if we haven't already reached 100 or more messages
+	//via update events.
+	messagesToGet := 100 - localMessageCount
+	if messagesToGet > 0 {
+		messages, discordError := l.messageDateSupplier.ChannelMessages(channel.ID, messagesToGet, beforeID, "", "")
+		if discordError != nil {
+			return nil, discordError
+		}
+
+		//Workaround for a bug where messages were lacking the GuildID.
+		if channel.GuildID != "" {
+			for _, message := range messages {
+				message.GuildID = channel.GuildID
+			}
+		}
+
+		if localMessageCount == 0 {
+			channel.Messages = messages
+		} else {
+			//There are already messages in cache; However, those came from
+			//updates events, meaning those have to be newer than the
+			//requested ones.
+			channel.Messages = append(messages, channel.Messages...)
+		}
+	}
+
+	l.requestedChannels[channel.ID] = true
+
+	return channel.Messages, nil
 }
 
 // SendMessageAsFile sends the given message into the given channel using the
