@@ -154,16 +154,10 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	channelTree.SetOnChannelSelect(func(channelID string) {
 		channel, cacheError := window.session.State.Channel(channelID)
 		if cacheError == nil && channel.Type != discordgo.ChannelTypeGuildCategory {
-			go func() {
-				window.chatView.Lock()
-				defer window.chatView.Unlock()
-				window.QueueUpdateDrawSynchronized(func() {
-					loadError := window.LoadChannel(channel)
-					if loadError != nil {
-						window.ShowErrorDialog(loadError.Error())
-					}
-				})
-			}()
+			loadError := window.LoadChannel(channel)
+			if loadError != nil {
+				window.ShowErrorDialog(loadError.Error())
+			}
 		}
 	})
 	window.registerGuildChannelHandler()
@@ -235,28 +229,24 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			return
 		}
 
-		go func() {
-			window.chatView.Lock()
-			defer window.chatView.Unlock()
-			window.QueueUpdateDrawSynchronized(func() {
-				window.userList.Clear()
-				window.RefreshLayout()
+		window.chatView.Lock()
+		defer window.chatView.Unlock()
 
-				if channel.Type == discordgo.ChannelTypeGroupDM {
+		window.userList.Clear()
+		window.RefreshLayout()
 
-					if window.userList.internalTreeView.IsVisible() {
-						loadError := window.userList.LoadGroup(channel.ID)
-						if loadError != nil {
-							fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
-						}
-					}
-				}
+		if channel.Type == discordgo.ChannelTypeGroupDM && window.userList.internalTreeView.IsVisible() {
+			loadError := window.userList.LoadGroup(channel.ID)
+			//The userlist isn't important, so we'll still try loading the channel.
+			if loadError != nil {
+				fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
+			}
+		}
 
-			})
-			window.QueueUpdateDrawSynchronized(func() {
-				window.LoadChannel(channel)
-			})
-		}()
+		loadError := window.LoadChannel(channel)
+		if loadError != nil {
+			window.ShowErrorDialog(loadError.Error())
+		}
 	})
 
 	window.privateList.SetOnFriendSelect(func(userID string) {
@@ -2230,10 +2220,6 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 func (window *Window) toggleUserContainer() {
 	config.Current.ShowUserContainer = !config.Current.ShowUserContainer
 
-	if !config.Current.ShowUserContainer && window.app.GetFocus() == window.userList.internalTreeView {
-		window.app.SetFocus(window.messageInput.GetPrimitive())
-	}
-
 	if config.Current.ShowUserContainer {
 		if !window.userList.IsLoaded() {
 			if window.selectedChannel != nil && window.selectedChannel.GuildID == "" {
@@ -2243,6 +2229,13 @@ func (window *Window) toggleUserContainer() {
 			}
 		}
 	} else {
+		//If the userList was focused before, we focus the input, so that the
+		//user can still properly navigate around via alt+arrowkey.
+		if window.app.GetFocus() == window.userList.internalTreeView {
+			window.app.SetFocus(window.messageInput.GetPrimitive())
+		}
+		//If we hide away the user list, we remove all data and allow the GC
+		//to clean it up.
 		window.userList.Clear()
 	}
 
