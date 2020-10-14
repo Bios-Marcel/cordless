@@ -197,7 +197,6 @@ func (privateList *PrivateChatList) RemoveFriend(userID string) {
 // RemoveChannel removes a channel node if present.
 func (privateList *PrivateChatList) RemoveChannel(channel *discordgo.Channel) {
 	newChildren := make([]*tview.TreeNode, 0)
-
 	channelID := channel.ID
 
 	for _, node := range privateList.chatsNode.GetChildren() {
@@ -222,19 +221,16 @@ func (privateList *PrivateChatList) RemoveChannel(channel *discordgo.Channel) {
 	privateList.chatsNode.SetChildren(newChildren)
 }
 
-// MarkChannelAsUnread marks the channel as unread, coloring it red.
-func (privateList *PrivateChatList) MarkChannelAsUnread(channel *discordgo.Channel) {
-	for _, node := range privateList.chatsNode.GetChildren() {
-		referenceChannelID, ok := node.GetReference().(string)
-		if ok && referenceChannelID == channel.ID {
-			privateList.privateChannelStates[node] = unread
-			privateList.setNotificationCount(privateList.amountOfUnreadChannels())
-			if vtxxx {
-				node.SetAttributes(tcell.AttrBlink)
-			} else {
-				node.SetColor(config.GetTheme().AttentionColor)
-			}
-			break
+// MarkAsUnread marks the channel as unread, coloring it red.
+func (privateList *PrivateChatList) MarkAsUnread(channelID string) {
+	node := tviewutil.GetNodeByReference(channelID, privateList.internalTreeView)
+	if node != nil {
+		privateList.privateChannelStates[node] = unread
+		privateList.setNotificationCount(privateList.amountOfUnreadChannels())
+		if vtxxx {
+			node.SetAttributes(tcell.AttrBlink)
+		} else {
+			node.SetColor(config.GetTheme().AttentionColor)
 		}
 	}
 }
@@ -250,28 +246,23 @@ func (privateList *PrivateChatList) amountOfUnreadChannels() int {
 	return amount
 }
 
-// MarkChannelAsRead marks a channel as read if it isn't loaded already
-func (privateList *PrivateChatList) MarkChannelAsRead(channelID string) {
-	for _, node := range privateList.chatsNode.GetChildren() {
-		referenceChannelID, ok := node.GetReference().(string)
-		if ok && referenceChannelID == channelID {
-			if privateList.privateChannelStates[node] != loaded {
-				privateList.setNotificationCount(privateList.amountOfUnreadChannels())
-				privateList.privateChannelStates[node] = read
-				if vtxxx {
-					node.SetAttributes(tcell.AttrNone)
-				} else {
-					node.SetColor(config.GetTheme().PrimaryTextColor)
-				}
-			}
-			break
+// MarkAsRead marks a channel as read.
+func (privateList *PrivateChatList) MarkAsRead(channelID string) {
+	node := tviewutil.GetNodeByReference(channelID, privateList.internalTreeView)
+	if node != nil {
+		privateList.setNotificationCount(privateList.amountOfUnreadChannels())
+		privateList.privateChannelStates[node] = read
+		if vtxxx {
+			node.SetAttributes(tcell.AttrNone)
+		} else {
+			node.SetColor(config.GetTheme().PrimaryTextColor)
 		}
 	}
 }
 
-// ReorderChannelList resorts the list of private chats according to their last
+// Reorder resorts the list of private chats according to their last
 // message times.
-func (privateList *PrivateChatList) ReorderChannelList() {
+func (privateList *PrivateChatList) Reorder() {
 	children := privateList.chatsNode.GetChildren()
 	sort.Slice(children, func(a, b int) bool {
 		nodeA := children[a]
@@ -299,9 +290,9 @@ func (privateList *PrivateChatList) ReorderChannelList() {
 	})
 }
 
-// MarkChannelAsLoaded marks a channel as loaded, coloring it blue. If
+// MarkAsLoaded marks a channel as loaded, coloring it blue. If
 // a different channel had loaded before, it's set to read.
-func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Channel) {
+func (privateList *PrivateChatList) MarkAsLoaded(channelID string) {
 	for node, state := range privateList.privateChannelStates {
 		if state == loaded {
 			privateList.privateChannelStates[node] = read
@@ -316,7 +307,7 @@ func (privateList *PrivateChatList) MarkChannelAsLoaded(channel *discordgo.Chann
 
 	for _, node := range privateList.chatsNode.GetChildren() {
 		referenceChannelID, ok := node.GetReference().(string)
-		if ok && referenceChannelID == channel.ID {
+		if ok && referenceChannelID == channelID {
 			privateList.privateChannelStates[node] = loaded
 			if vtxxx {
 				node.SetAttributes(tcell.AttrUnderline)

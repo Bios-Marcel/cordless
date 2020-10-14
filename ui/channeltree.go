@@ -294,61 +294,43 @@ func (channelTree *ChannelTree) removeNode(node, parent *tview.TreeNode, channel
 	}
 }
 
-// MarkChannelAsUnread marks a channel as unread.
-func (channelTree *ChannelTree) MarkChannelAsUnread(channelID string) {
-	channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-		referenceChannelID, ok := node.GetReference().(string)
-		if ok && referenceChannelID == channelID {
-			channelTree.channelStates[node] = channelUnread
-			if vtxxx {
-				node.SetAttributes(tcell.AttrBlink)
-			} else {
-				node.SetColor(config.GetTheme().AttentionColor)
-			}
-			return false
+// MarkAsUnread marks a channel as unread.
+func (channelTree *ChannelTree) MarkAsUnread(channelID string) {
+	node := tviewutil.GetNodeByReference(channelID, channelTree.TreeView)
+	if node != nil {
+		channelTree.channelStates[node] = channelUnread
+		if vtxxx {
+			node.SetAttributes(tcell.AttrBlink)
+		} else {
+			node.SetColor(config.GetTheme().AttentionColor)
 		}
-
-		return true
-	})
+	}
 }
 
-// MarkChannelAsRead marks a channel as read if it's not loaded already.
-func (channelTree *ChannelTree) MarkChannelAsRead(channelID string) {
-	channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-		referenceChannelID, ok := node.GetReference().(string)
-		if ok && referenceChannelID == channelID {
-			channel, stateError := channelTree.state.Channel(channelID)
-			if stateError == nil {
-				node.SetText(tviewutil.Escape(channel.Name))
-			}
-
-			if channelTree.channelStates[node] != channelLoaded {
-				channelTree.channelStates[node] = channelRead
-				if vtxxx {
-					node.SetAttributes(tcell.AttrNone)
-				} else {
-					node.SetColor(config.GetTheme().PrimaryTextColor)
-				}
-			}
-
-			return false
+// MarkAsRead marks a channel as read.
+func (channelTree *ChannelTree) MarkAsRead(channelID string) {
+	node := tviewutil.GetNodeByReference(channelID, channelTree.TreeView)
+	if node != nil {
+		channel, stateError := channelTree.state.Channel(channelID)
+		if stateError == nil {
+			node.SetText(tviewutil.Escape(channel.Name))
 		}
 
-		return true
-	})
+		channelTree.channelStates[node] = channelRead
+		if vtxxx {
+			node.SetAttributes(tcell.AttrNone)
+		} else {
+			node.SetColor(config.GetTheme().PrimaryTextColor)
+		}
+	}
 }
 
-// MarkChannelAsMentioned marks a channel as mentioned.
-func (channelTree *ChannelTree) MarkChannelAsMentioned(channelID string) {
-	channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-		referenceChannelID, ok := node.GetReference().(string)
-		if ok && referenceChannelID == channelID {
-			channelTree.markNodeAsMentioned(node, channelID)
-			return false
-		}
-
-		return true
-	})
+// MarkAsMentioned marks a channel as mentioned.
+func (channelTree *ChannelTree) MarkAsMentioned(channelID string) {
+	node := tviewutil.GetNodeByReference(channelID, channelTree.TreeView)
+	if node != nil {
+		channelTree.markNodeAsMentioned(node, channelID)
+	}
 }
 
 func (channelTree *ChannelTree) markNodeAsMentioned(node *tview.TreeNode, channelID string) {
@@ -364,9 +346,9 @@ func (channelTree *ChannelTree) markNodeAsMentioned(node *tview.TreeNode, channe
 	}
 }
 
-// MarkChannelAsLoaded marks a channel as loaded and therefore marks all other
+// MarkAsLoaded marks a channel as loaded and therefore marks all other
 // channels as either unread, read or mentioned.
-func (channelTree *ChannelTree) MarkChannelAsLoaded(channelID string) {
+func (channelTree *ChannelTree) MarkAsLoaded(channelID string) {
 	for node, state := range channelTree.channelStates {
 		if state == channelLoaded {
 			channelTree.channelStates[node] = channelRead

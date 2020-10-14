@@ -166,3 +166,16 @@ func (g *GuildList) amountOfUnreadGuilds() int {
 func (g *GuildList) UpdateUnreadGuildCount() {
 	g.setNotificationCount(g.amountOfUnreadGuilds())
 }
+
+// MarkAsLoaded selects the guild and marks it as loaded.
+func (g *GuildList) MarkAsLoaded(guildID string) {
+	guildNode := tviewutil.GetNodeByReference(guildID, g.TreeView)
+	if guildNode != nil {
+		g.SetCurrentNode(guildNode)
+		if vtxxx {
+			guildNode.SetAttributes(tcell.AttrUnderline)
+		} else {
+			guildNode.SetColor(tview.Styles.ContrastBackgroundColor)
+		}
+	}
+}
