@@ -105,16 +105,11 @@ func (g *GuildList) SetOnGuildSelect(handler func(guildID string)) {
 // RemoveGuild removes the node that refers to the given guildID.
 func (g *GuildList) RemoveGuild(guildID string) {
 	children := g.GetRoot().GetChildren()
-	indexToRemove := -1
 	for index, node := range children {
 		if node.GetReference() == guildID {
-			indexToRemove = index
+			g.GetRoot().SetChildren(append(children[:index], children[index+1:]...))
 			break
 		}
-	}
-
-	if indexToRemove != -1 {
-		g.GetRoot().SetChildren(append(children[:indexToRemove], children[indexToRemove+1:]...))
 	}
 }
 
@@ -128,11 +123,9 @@ func (g *GuildList) AddGuild(guildID, name string) {
 
 // UpdateName updates the name of the guild with the given ID.
 func (g *GuildList) UpdateName(guildID, newName string) {
-	for _, node := range g.GetRoot().GetChildren() {
-		if node.GetReference() == guildID {
-			node.SetText(tviewutil.Escape(newName))
-			break
-		}
+	node := tviewutil.GetNodeByReference(guildID, g.TreeView)
+	if node != nil {
+		node.SetText(tviewutil.Escape(newName))
 	}
 }
 
@@ -144,7 +137,7 @@ func (g *GuildList) setNotificationCount(count int) {
 	}
 }
 
-func (g *GuildList) amountOfUnreadGuilds() int {
+func (g *GuildList) countUnreadGuilds() int {
 	var unreadCount int
 	for _, child := range g.GetRoot().GetChildren() {
 		if !readstate.HasGuildBeenRead((child.GetReference()).(string)) {
@@ -158,7 +151,7 @@ func (g *GuildList) amountOfUnreadGuilds() int {
 // UpdateUnreadGuildCount finds the number of guilds containing unread
 // channels and updates the title accordingly.
 func (g *GuildList) UpdateUnreadGuildCount() {
-	g.setNotificationCount(g.amountOfUnreadGuilds())
+	g.setNotificationCount(g.countUnreadGuilds())
 }
 
 // MarkAsLoaded selects the guild and marks it as loaded.

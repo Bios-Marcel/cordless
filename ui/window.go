@@ -1879,25 +1879,25 @@ func (window *Window) registerGuildHandlers() {
 
 	go func() {
 		for guildRemove := range guildRemoveChannel {
-			if window.selectedGuild == nil {
-				continue
-			}
-
 			if window.previousChannel != nil && window.previousChannel.GuildID == guildRemove.ID {
 				window.previousChannel = nil
 			}
 
-			if window.selectedGuild.ID == guildRemove.ID {
-				guildID := guildRemove.ID
+			guildID := guildRemove.ID
+			window.guildList.RemoveGuild(guildID)
+
+			selectedGuild := window.selectedGuild
+			if selectedGuild != nil && selectedGuild.ID == guildID {
 				window.app.QueueUpdateDraw(func() {
 					if window.selectedChannel != nil && window.selectedChannel.GuildID == guildID {
-						window.chatView.ClearViewAndCache()
-						window.selectedChannel = nil
+						window.UnloadChannel()
+						//Unload channel sets the selectedChannel as the previous
+						//one, which isn't correct.
+						window.previousChannel = nil
 					}
 
 					window.channelTree.Clear()
 					window.userList.Clear()
-					window.guildList.RemoveGuild(guildID)
 					window.selectedGuild = nil
 				})
 			}
