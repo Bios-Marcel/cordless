@@ -631,9 +631,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		return autocompleteValues
 	})
 
-	captureFunc := func(event *tcell.EventKey) *tcell.EventKey {
-		messageToSend := window.messageInput.GetText()
-
+	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers() == tcell.ModCtrl {
 			if event.Key() == tcell.KeyUp {
 				window.chatView.internalTextView.ScrollUp()
@@ -685,13 +683,16 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		//When you are already typing a message, you probably don't want to risk loosing it.
-		if event.Key() == tcell.KeyUp && (messageToSend == "" || window.editingMessageID != nil) {
-			messageToEdit := chooseNextMessageToEdit(len(window.chatView.data)-1, -1, func(i int) int { return i - 1 })
-			if messageToEdit != nil {
-				window.startEditingMessage(messageToEdit)
-			}
+		if event.Key() == tcell.KeyUp {
+			messageToSend := window.messageInput.GetText()
+			if messageToSend == "" || window.editingMessageID != nil {
+				messageToEdit := chooseNextMessageToEdit(len(window.chatView.data)-1, -1, func(i int) int { return i - 1 })
+				if messageToEdit != nil {
+					window.startEditingMessage(messageToEdit)
+				}
 
-			return nil
+				return nil
+			}
 		}
 
 		if event.Key() == tcell.KeyDown && window.editingMessageID != nil {
@@ -744,6 +745,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			window.insertNewLineAtCursor()
 			return nil
 		} else if shortcuts.SendMessage.Equals(event) {
+			messageToSend := window.messageInput.GetText()
 			if window.selectedChannel != nil {
 				window.TrySendMessage(window.selectedChannel, messageToSend)
 			}
@@ -751,8 +753,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		}
 
 		return event
-	}
-	window.messageInput.SetInputCapture(captureFunc)
+	})
 
 	//FIXME Buffering might just be retarded, as the event handlers are launched in separate routines either way.
 	messageInputChan := make(chan *discordgo.Message)
@@ -2420,8 +2421,10 @@ func (window *Window) startEditingMessage(message *discordgo.Message) {
 }
 
 func (window *Window) exitMessageEditMode() {
-	window.exitMessageEditModeAndKeepText()
-	window.messageInput.SetText("")
+	if window.editingMessageID != nil {
+		window.exitMessageEditModeAndKeepText()
+		window.messageInput.SetText("")
+	}
 }
 
 func (window *Window) exitMessageEditModeAndKeepText() {

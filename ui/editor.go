@@ -407,8 +407,14 @@ func NewEditor() *Editor {
 	editor.buffer.Cursor.SetSelectionEnd(editor.buffer.End())
 
 	editor.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// TODO: This entire chunk could be cleaned up by assigning handlers to each event type,
-		// e.g. event.trigger()
+		inputCapture := editor.inputCapture
+		if inputCapture != nil {
+			event = inputCapture(event)
+			if event == nil {
+				return nil
+			}
+		}
+
 		if shortcuts.MoveCursorLeft.Equals(event) {
 			editor.MoveCursorLeft()
 		} else if shortcuts.ExpandSelectionToLeft.Equals(event) {
@@ -462,12 +468,8 @@ func NewEditor() *Editor {
 			return nil
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter('\n')
-		} else if shortcuts.SendMessage.Equals(event) && editor.inputCapture != nil {
-			return editor.inputCapture(event)
-		} else if (editor.inputCapture == nil || editor.inputCapture(event) != nil) && event.Rune() != 0 {
+		} else if event.Rune() != 0 {
 			editor.InsertCharacter(event.Rune())
-		} else {
-			return event
 		}
 
 		editor.TriggerHeightRequestIfNecessary()
