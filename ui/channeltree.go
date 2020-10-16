@@ -374,7 +374,7 @@ func (channelTree *ChannelTree) markNodeAsLoaded(node *tview.TreeNode) {
 	} else {
 		node.SetColor(tview.Styles.ContrastBackgroundColor)
 	}
-	node.RemovePrefix("@")
+	node.RemovePrefix(mentionedIndicator)
 }
 
 // SetOnChannelSelect sets the handler that reacts to channel selection events.
