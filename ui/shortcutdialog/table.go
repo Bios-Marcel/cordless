@@ -20,7 +20,6 @@ const (
 type ShortcutTable struct {
 	table         *tview.Table
 	shortcuts     []*shortcuts.Shortcut
-	onClose       func()
 	selection     int
 	focusNext     func()
 	focusPrevious func()
@@ -116,13 +115,6 @@ func (shortcutTable *ShortcutTable) SetFocusPrevious(function func()) {
 
 func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.EventKey {
 	if shortcutTable.selection == -1 {
-		if event.Key() == tcell.KeyESC {
-			if shortcutTable.onClose != nil {
-				shortcutTable.onClose()
-			}
-			return nil
-		}
-
 		if event.Key() == tcell.KeyTab {
 			if shortcutTable.focusNext != nil {
 				shortcutTable.focusNext()
@@ -132,7 +124,6 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 				shortcutTable.focusPrevious()
 			}
 		}
-
 		if event.Key() == tcell.KeyUp || event.Key() == tcell.KeyDown {
 			return event
 		}
@@ -185,12 +176,6 @@ func (shortcutTable *ShortcutTable) handleInput(event *tcell.EventKey) *tcell.Ev
 	return nil
 }
 
-// SetOnClose sets the handler that will be run when someone attempts closing
-// the shortcuts table.
-func (shortcutTable *ShortcutTable) SetOnClose(onClose func()) {
-	shortcutTable.onClose = onClose
-}
-
 // EventToString renders a tcell.EventKey as a human readable string
 func EventToString(event *tcell.EventKey) string {
 	if event == nil {
@@ -235,4 +220,10 @@ func EventToString(event *tcell.EventKey) string {
 	}
 
 	return tview.Escape(s)
+}
+
+// IsDefiningShortcut indicates whether the user is currently selecting a
+// shortcut for any function.
+func (shortcutTable *ShortcutTable) IsDefiningShortcut() bool {
+	return shortcutTable.selection != -1
 }

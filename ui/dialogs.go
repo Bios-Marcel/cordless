@@ -1,4 +1,4 @@
-package tviewutil
+package ui
 
 import (
 	"github.com/Bios-Marcel/cordless/shortcuts"

@@ -20,8 +20,6 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	table = NewShortcutTable()
 	table.SetShortcuts(shortcuts.Shortcuts)
 
-	table.SetOnClose(onClose)
-
 	exitButton = tview.NewButton("Go back")
 	exitButton.SetSelectedFunc(onClose)
 	exitButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -29,11 +27,11 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 			app.SetFocus(table.GetPrimitive())
 		} else if event.Key() == tcell.KeyBacktab {
 			app.SetFocus(resetButton)
-		} else if event.Key() == tcell.KeyESC {
-			onClose()
+		} else {
+			return event
 		}
 
-		return event
+		return nil
 	})
 
 	resetButton = tview.NewButton("Restore all defaults")
@@ -51,11 +49,11 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 			app.SetFocus(exitButton)
 		} else if event.Key() == tcell.KeyBacktab {
 			app.SetFocus(table.GetPrimitive())
-		} else if event.Key() == tcell.KeyESC {
-			onClose()
+		} else {
+			return event
 		}
 
-		return event
+		return nil
 	})
 
 	primitiveBGColor := tviewutil.ColorToHex(config.GetTheme().PrimitiveBackgroundColor)
@@ -86,7 +84,18 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 
 	shortcutsView := tview.NewFlex()
 	shortcutsView.SetDirection(tview.FlexRow)
+	shortcutsView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if table.IsDefiningShortcut() {
+			return event
+		}
 
+		if event.Key() == tcell.KeyESC {
+			onClose()
+			return nil
+		}
+
+		return event
+	})
 	shortcutsView.AddItem(table.GetPrimitive(), 0, 1, false)
 	shortcutsView.AddItem(buttonBar, 1, 0, false)
 	shortcutsView.AddItem(shortcutDescription, 2, 0, false)

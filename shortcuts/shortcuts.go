@@ -11,6 +11,8 @@ import (
 	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
 var (
@@ -370,5 +372,21 @@ func Persist() error {
 		return writeError
 	}
 
+	return nil
+}
+
+func DirectionalFocusHandling(event *tcell.EventKey, app *tview.Application) *tcell.EventKey {
+	focused := app.GetFocus()
+	if FocusUp.Equals(event) {
+		tviewutil.FocusNextIfPossible(tview.Up, app, focused)
+	} else if FocusDown.Equals(event) {
+		tviewutil.FocusNextIfPossible(tview.Down, app, focused)
+	} else if FocusLeft.Equals(event) {
+		tviewutil.FocusNextIfPossible(tview.Left, app, focused)
+	} else if FocusRight.Equals(event) {
+		tviewutil.FocusNextIfPossible(tview.Right, app, focused)
+	} else {
+		return event
+	}
 	return nil
 }

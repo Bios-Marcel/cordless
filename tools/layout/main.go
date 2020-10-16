@@ -65,7 +65,7 @@ func (c *CoreLayout) SetRect(x, y, width, height int) {
 	c.height = height
 }
 
-func (c *CoreLayout) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (c *CoreLayout) InputHandler() tview.InputHandlerFunc {
 	panic("implement me")
 }
 
@@ -91,6 +91,14 @@ func (c *CoreLayout) GetFocusable() tview.Focusable {
 
 func (c *CoreLayout) NextFocusableComponent(direction tview.FocusDirection) tview.Primitive {
 	panic("implement me")
+}
+
+func (c *CoreLayout) SetParent(parent tview.Primitive) {
+	//Do nothing
+}
+
+func (c *CoreLayout) GetParent() tview.Primitive {
+	return nil
 }
 
 func NewDemoComponent(r rune) *demoComponent {
@@ -144,9 +152,9 @@ func (d *demoComponent) SetRect(x, y, width, height int) {
 	d.height = height
 }
 
-func (d *demoComponent) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-
+func (d *demoComponent) InputHandler() tview.InputHandlerFunc {
+	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) *tcell.EventKey {
+		return event
 	}
 }
 
@@ -171,5 +179,13 @@ func (d *demoComponent) GetFocusable() tview.Focusable {
 }
 
 func (d *demoComponent) NextFocusableComponent(direction tview.FocusDirection) tview.Primitive {
+	return nil
+}
+
+func (d *demoComponent) SetParent(parent tview.Primitive) {
+	//Do nothing
+}
+
+func (d *demoComponent) GetParent() tview.Primitive {
 	return nil
 }

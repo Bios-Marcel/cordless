@@ -890,8 +890,9 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
 
-	app.SetRoot(window.rootContainer, true)
+	window.rootContainer.SetInputCapture(window.handleChatWindowShortcuts)
 	app.SetInputCapture(window.handleGlobalShortcuts)
+	app.SetRoot(window.rootContainer, true)
 
 	if config.Current.UseFixedLayout {
 		window.middleContainer.AddItem(window.leftArea, config.Current.FixedSizeLeft, 0, true)
@@ -924,11 +925,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.chatArea.AddItem(window.commandView.commandInput.internalTextView, 3, 0, false)
 
 	window.SwitchToGuildsPage()
-
-	app.SetFocusDirectionHandler(tview.Up, shortcuts.FocusUp.Equals)
-	app.SetFocusDirectionHandler(tview.Down, shortcuts.FocusDown.Equals)
-	app.SetFocusDirectionHandler(tview.Left, shortcuts.FocusLeft.Equals)
-	app.SetFocusDirectionHandler(tview.Right, shortcuts.FocusRight.Equals)
 
 	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Up, window.chatView.internalTextView)
 	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Down, window.commandView.commandOutput, window.chatView.internalTextView)
@@ -1509,6 +1505,7 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 			buttonHandler(newButton.GetLabel())
 			window.dialogReplacement.SetVisible(false)
 			window.app.SetFocus(previousFocus)
+			window.app.ForceDraw()
 		})
 		buttonWidgets = append(buttonWidgets, newButton)
 
@@ -2162,32 +2159,33 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		window.userActiveTimer.Reset(time.Duration(config.Current.DesktopNotificationsUserInactivityThreshold) * time.Second)
 	}
 
+	return event
+}
+
+func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.EventKey {
+	if window.dialogReplacement.IsVisible() {
+		//Delegate to focused component which is the dialog.
+		//We do this, cause we don't want people to focus anything else than
+		//the dialog.
+		return event
+	}
+
+	if event.Key() == tcell.KeyCtrlE {
+		window.ShowErrorDialog("Oopsie woopsie")
+		return nil
+	}
+
+	if shortcuts.DirectionalFocusHandling(event, window.app) == nil {
+		return nil
+	}
+
 	if shortcuts.ToggleBareChat.Equals(event) {
 		window.toggleBareChat()
-		return nil
-	}
-
-	//This two have to work in baremode as well, since otherwise only the mouse
-	//can be used for focus switching, which sucks in a terminal app.
-	if shortcuts.FocusMessageInput.Equals(event) {
+	} else if shortcuts.FocusMessageInput.Equals(event) {
 		window.app.SetFocus(window.messageInput.GetPrimitive())
-		return nil
-	}
-
-	if shortcuts.FocusMessageContainer.Equals(event) {
+	} else if shortcuts.FocusMessageContainer.Equals(event) {
 		window.app.SetFocus(window.chatView.internalTextView)
-		return nil
-	}
-
-	if window.app.GetRoot() != window.rootContainer {
-		return event
-	}
-
-	if window.dialogReplacement.IsVisible() {
-		return event
-	}
-
-	if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
+	} else if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
 		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
 			window.app.ForceDraw()
@@ -2619,6 +2617,8 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 	discordutil.SortMessagesByTimestamp(messages)
 
+	//FIXME Only slow function here. 200-500 MS depending on content.
+	//That's horrible!
 	window.chatView.SetMessages(messages)
 	window.chatView.internalTextView.ScrollToEnd()
 	window.UpdateChatHeader(channel)
@@ -2700,7 +2700,7 @@ func (window *Window) GetSelectedChannel() *discordgo.Channel {
 // PromptSecretInput shows a fullscreen input dialog that masks the user input.
 // The returned value will either be empty or what the user has entered.
 func (window *Window) PromptSecretInput(title, message string) string {
-	return tviewutil.PrompSecretSingleLineInput(window.app, title, message)
+	return PrompSecretSingleLineInput(window.app, title, message)
 }
 
 // ForceRedraw triggers ForceDraw on the underlying tview application, causing
