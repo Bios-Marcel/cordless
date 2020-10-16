@@ -79,6 +79,7 @@ type ChatView struct {
 // NewChatView constructs a new ready to use ChatView.
 func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 	chatView := ChatView{
+		data:             make([]*discordgo.Message, 0, 100),
 		internalTextView: tview.NewTextView(),
 		state:            state,
 		ownUserID:        ownUserID,
@@ -285,7 +286,9 @@ OUTER_LOOP:
 // ClearViewAndCache clears the TextView buffer and removes all data for
 // all messages.
 func (chatView *ChatView) ClearViewAndCache() {
-	chatView.data = make([]*discordgo.Message, 0)
+	//100 as default size, as we usually have message. Even if not, this
+	//is worth the memory overhead.
+	chatView.data = make([]*discordgo.Message, 0, 100)
 	chatView.showSpoilerContent = make(map[string]bool)
 	chatView.formattedMessages = make(map[string]string)
 	chatView.selection = -1
