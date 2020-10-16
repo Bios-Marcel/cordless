@@ -1174,9 +1174,25 @@ func (window *Window) insertNewLineAtCursor() {
 // IsCursorInsideCodeBlock checks if the cursor comes after three backticks
 // that don't have another 3 backticks following after them.
 func (window *Window) IsCursorInsideCodeBlock() bool {
-	left := window.messageInput.GetTextLeftOfSelection()
-	leftSplit := strings.Split(left, "```")
-	return len(leftSplit)%2 == 0
+	var backtickCount int
+	var foundUnclosedBackticks bool
+	for _, char := range window.messageInput.GetTextLeftOfSelection() {
+		if char == '`' {
+			backtickCount++
+		} else {
+			backtickCount = 0
+		}
+
+		if backtickCount == 3 {
+			if foundUnclosedBackticks {
+				foundUnclosedBackticks = false
+			} else {
+				foundUnclosedBackticks = true
+			}
+		}
+	}
+
+	return foundUnclosedBackticks
 }
 
 func getUsernameForQuote(state *discordgo.State, message *discordgo.Message) string {
