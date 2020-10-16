@@ -84,7 +84,8 @@ func (channelTree *ChannelTree) Clear() {
 // LoadGuild accesses the state in order to load all locally present channels
 // for the passed guild.
 func (channelTree *ChannelTree) LoadGuild(guildID string) error {
-	guild, cacheError := channelTree.state.Guild(guildID)
+	state := channelTree.state
+	guild, cacheError := state.Guild(guildID)
 	if cacheError != nil {
 		return cacheError
 	}
@@ -97,7 +98,6 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 	})
 
 	// Top level channel
-	state := channelTree.state
 	for _, channel := range channels {
 		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews) ||
 			channel.ParentID != "" || !discordutil.HasReadMessagesPermission(channel.ID, state) {
@@ -105,7 +105,8 @@ func (channelTree *ChannelTree) LoadGuild(guildID string) error {
 		}
 		channelTree.createTopLevelChannelNodes(channel)
 	}
-	// Categories
+	// Categories; Must be handled before second level channels, as the
+	// categories serve as parents.
 CATEGORY_LOOP:
 	for _, channel := range channels {
 		if channel.Type != discordgo.ChannelTypeGuildCategory || channel.ParentID != "" {
@@ -117,10 +118,15 @@ CATEGORY_LOOP:
 			if potentialChild.ParentID == channel.ID {
 				if discordutil.HasReadMessagesPermission(potentialChild.ID, state) {
 					//We have at least one child with read-permissions,
-					// therefore we add the category and jump to the next
+					//therefore we add the category as the channel will need
+					//a parent.
 					channelTree.createChannelCategoryNode(channel)
 					continue CATEGORY_LOOP
 				}
+
+				//Has at least once child-channel, so we don't need to add a
+				//category later on, if none of the child-channels is
+				//accessible by the currently logged on user.
 				childless = false
 			}
 		}
@@ -132,6 +138,9 @@ CATEGORY_LOOP:
 	}
 	// Second level channel
 	for _, channel := range channels {
+		//Only Text and News are supported. If new channel types are
+		//added, support first needs to be confirmed or implemented. This is
+		//in order to avoid faulty runtime behaviour.
 		if (channel.Type != discordgo.ChannelTypeGuildText && channel.Type != discordgo.ChannelTypeGuildNews) ||
 			channel.ParentID == "" || !discordutil.HasReadMessagesPermission(channel.ID, state) {
 			continue
@@ -202,7 +211,7 @@ func (channelTree *ChannelTree) AddOrUpdateChannel(channel *discordgo.Channel) {
 	channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 		nodeChannelID, ok := node.GetReference().(string)
 		if ok && nodeChannelID == channel.ID {
-			//TODO Do the moving somehow
+			//TODO Support Re-Parenting
 			/*oldPosition := channelTree.channelPosition[channel.ID]
 			oldParentID, parentOk := parent.GetReference().(string)
 			if (!parentOk && channel.ParentID != "") || (oldPosition != channel.Position) ||
@@ -224,11 +233,9 @@ func (channelTree *ChannelTree) AddOrUpdateChannel(channel *discordgo.Channel) {
 		if channel.ParentID == "" {
 			channelTree.GetRoot().AddChild(channelNode)
 		} else {
-			for _, node := range channelTree.GetRoot().GetChildren() {
-				channelID, ok := node.GetReference().(string)
-				if ok && channelID == channel.ParentID {
-					node.AddChild(channelNode)
-				}
+			parentNode := tviewutil.GetNodeByReference(channel.ParentID, channelTree.TreeView)
+			if parentNode != parentNode {
+				parentNode.AddChild(channelNode)
 			}
 		}
 	}
@@ -249,15 +256,12 @@ func (channelTree *ChannelTree) RemoveChannel(channel *discordgo.Channel) {
 			return true
 		})
 	} else if channel.Type == discordgo.ChannelTypeGuildCategory {
-		for _, node := range channelTree.GetRoot().GetChildren() {
-			nodeChannelID, ok := node.GetReference().(string)
-			if ok && nodeChannelID == channelID {
-				oldChildren := node.GetChildren()
-				node.SetChildren(make([]*tview.TreeNode, 0))
-				channelTree.removeNode(node, channelTree.GetRoot(), channelID)
-				channelTree.GetRoot().SetChildren(append(channelTree.GetRoot().GetChildren(), oldChildren...))
-				break
-			}
+		node := tviewutil.GetNodeByReference(channelID, channelTree.TreeView)
+		if node != nil {
+			oldChildren := node.GetChildren()
+			node.SetChildren(make([]*tview.TreeNode, 0))
+			channelTree.removeNode(node, channelTree.GetRoot(), channelID)
+			channelTree.GetRoot().SetChildren(append(channelTree.GetRoot().GetChildren(), oldChildren...))
 		}
 	}
 }
