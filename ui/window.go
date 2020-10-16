@@ -992,6 +992,12 @@ important changes of the last two versions officially released.
 		- There's now a double-colon to separate author and messages
 		- There's more customizable shortcuts now
 	- Bugfixes
+		- Deleting / Leaving guilds now properly deletes them from the UI
+		- Jumping to guilds / channels you were mentioned in, now works by
+		  by typing their name again
+		- Fixed deadlock when spamming "Switch to previous channel"
+		- "Switch to previous channel" doesn't jumble the state anymore
+		  when switching between different guilds and DMs
 		- Muted guilds, channels and categories shouldn't be displayed as
 		  unread anymore
 		- @everyone works again, so you can piss of others again
