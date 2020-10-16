@@ -109,7 +109,7 @@ func NewBox() *Box {
 		nextFocusableComponents: make(map[FocusDirection][]Primitive),
 	}
 
-	if vtxxx {
+	if IsVtxxx {
 		b.borderFocusAttributes = tcell.AttrBold
 	}
 

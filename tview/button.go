@@ -1,9 +1,6 @@
 package tview
 
 import (
-	"os"
-	"regexp"
-
 	"github.com/gdamore/tcell"
 )
 
@@ -32,16 +29,6 @@ type Button struct {
 	// key is provided indicating which key was pressed to leave (tab or backtab).
 	blur func(tcell.Key)
 }
-
-func checkVT() bool {
-	VTxxx, err := regexp.MatchString("(vt)[0-9]+", os.Getenv("TERM"))
-	if err != nil {
-		panic(err)
-	}
-	return VTxxx
-}
-
-var vtxxx bool = checkVT()
 
 // NewButton returns a new input field.
 func NewButton(label string) *Button {
@@ -119,13 +106,13 @@ func (b *Button) Draw(screen tcell.Screen) bool {
 	// Draw the box.
 	borderColor := b.borderColor
 	backgroundColor := b.backgroundColor
-	if vtxxx {
+	if IsVtxxx {
 		b.reverse = false
 	}
 	if b.focus.HasFocus() {
 		b.backgroundColor = b.backgroundColorActivated
 		b.borderColor = b.labelColorActivated
-		if vtxxx {
+		if IsVtxxx {
 			b.reverse = true
 		}
 		defer func() {

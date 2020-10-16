@@ -2,6 +2,7 @@ package tview
 
 import (
 	"math"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -17,6 +18,18 @@ const (
 	AlignCenter
 	AlignRight
 )
+
+// IsVtxxx indicates whether the TERM environment variable matches that of a
+// VTxxx terminal, for example VT320.
+var IsVtxxx = checkVT()
+
+func checkVT() bool {
+	isVtxxx, err := regexp.MatchString("(vt)[0-9]+", os.Getenv("TERM"))
+	if err != nil {
+		panic(err)
+	}
+	return isVtxxx
+}
 
 // Common regular expressions.
 var (

@@ -1,8 +1,7 @@
 package tview
 
 import (
-	"os"
-	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -31,8 +30,8 @@ type TreeNode struct {
 	// The item's text.
 	text string
 
-	// This text is a prefix in front of the normal text.
-	prefix string
+	// This text is a prefixes in front of the normal text.
+	prefixes []string
 
 	// The text color.
 	color tcell.Color
@@ -121,9 +120,9 @@ func (n *TreeNode) GetText() string {
 	return n.text
 }
 
-// GetPrefix returns this node's prefix text.
-func (n *TreeNode) GetPrefix() string {
-	return n.prefix
+// GetPrefixes returns this node's prefix text.
+func (n *TreeNode) GetPrefixes() []string {
+	return n.prefixes
 }
 
 // GetParent returns a refrence to this nodes parent node or nil if this is a
@@ -215,10 +214,42 @@ func (n *TreeNode) SetText(text string) *TreeNode {
 	return n
 }
 
-// SetPrefix sets the node's prefix text which is displayed.
-func (n *TreeNode) SetPrefix(prefix string) *TreeNode {
-	n.prefix = prefix
+// AddPrefix sets the node's prefix text which is displayed. Duplicates are
+// ignored.
+func (n *TreeNode) AddPrefix(newPrefix string) *TreeNode {
+	for _, prefix := range n.prefixes {
+		if prefix == newPrefix {
+			return n
+		}
+	}
+
+	n.prefixes = append(n.prefixes, newPrefix)
 	return n
+}
+
+// RemovePrefix removes the given prefix, maintaining the order of the items.
+func (n *TreeNode) RemovePrefix(prefix string) {
+	for removeIndex, oldPrefix := range n.prefixes {
+		if oldPrefix == prefix {
+			n.prefixes = append(n.prefixes[:removeIndex], n.prefixes[removeIndex+1:]...)
+			break
+		}
+	}
+}
+
+// ClearPrefixes removes all prefixes by nulling the underlying array.
+func (n *TreeNode) ClearPrefixes() {
+	n.prefixes = nil
+}
+
+// SortPrefixes sorts all currently set prefixes. This function sin't executed
+// once new prefixes are added.
+func (n *TreeNode) SortPrefixes(lessFunction func(a, b string) bool) {
+	sort.Slice(n.prefixes, func(a, b int) bool {
+		aItem := n.prefixes[a]
+		bItem := n.prefixes[b]
+		return lessFunction(aItem, bItem)
+	})
 }
 
 // GetColor returns the node's color.
@@ -300,7 +331,7 @@ type TreeView struct {
 	topLevel int
 
 	// Strings drawn before the nodes, based on their level.
-	prefixes []string
+	bulletCharacters []string
 
 	// This decides whether the selection will cycle when reaching the end
 	// or the beginning of the tree.
@@ -385,17 +416,17 @@ func (t *TreeView) SetTopLevel(topLevel int) *TreeView {
 	return t
 }
 
-// SetPrefixes defines the strings drawn before the nodes' texts. This is a
-// slice of strings where each element corresponds to a node's hierarchy level,
-// i.e. 0 for the root, 1 for the root's children, and so on (levels will
-// cycle).
+// SetBulletCharacters defines the strings drawn before the nodes' texts.
+// This is a slice of strings where each element corresponds to a node's
+// hierarchy level, i.e. 0 for the root, 1 for the root's children, and
+// so on (levels will cycle).
 //
 // For example, to display a hierarchical list with bullet points:
 //
 //   treeView.SetGraphics(false).
-//     SetPrefixes([]string{"* ", "- ", "x "})
-func (t *TreeView) SetPrefixes(prefixes []string) *TreeView {
-	t.prefixes = prefixes
+//     SetBulletCharacters([]string{"* ", "- ", "x "})
+func (t *TreeView) SetBulletCharacters(prefixes []string) *TreeView {
+	t.bulletCharacters = prefixes
 	return t
 }
 
@@ -763,26 +794,26 @@ func (t *TreeView) Draw(screen tcell.Screen) bool {
 		// Draw the prefix and the text.
 		if node.textX < width && posY < y+height {
 			// Prefix.
-			var prefixWidth int
-			if len(t.prefixes) > 0 {
-				_, prefixWidth = Print(screen, t.prefixes[(node.level-t.topLevel)%len(t.prefixes)], x+node.textX, posY, width-node.textX, AlignLeft, node.color)
+			var bulletCharacterWidth int
+			if len(t.bulletCharacters) > 0 {
+				_, bulletCharacterWidth = Print(screen, t.bulletCharacters[(node.level-t.topLevel)%len(t.bulletCharacters)], x+node.textX, posY, width-node.textX, AlignLeft, node.color)
 			}
 
 			// Text.
-			VTxxx, err := regexp.MatchString("(vt)[0-9]+", os.Getenv("TERM"))
-			if err != nil {
-				panic(err)
-			}
-			if node.textX+prefixWidth < width {
+			if node.textX+bulletCharacterWidth < width {
 				style := tcell.StyleDefault.Foreground(node.color) | tcell.Style(node.attr)
 				if node == t.currentNode {
-					if VTxxx {
+					if IsVtxxx {
 						style = tcell.StyleDefault.Reverse(true)
 					} else {
 						style = tcell.StyleDefault.Background(node.color).Foreground(t.backgroundColor) | tcell.Style(node.attr)
 					}
 				}
-				printWithStyle(screen, node.prefix+node.text, x+node.textX+prefixWidth, posY, width-node.textX-prefixWidth, AlignLeft, style)
+				var fullPrefix string
+				for _, prefix := range node.prefixes {
+					fullPrefix += prefix
+				}
+				printWithStyle(screen, fullPrefix+node.text, x+node.textX+bulletCharacterWidth, posY, width-node.textX-bulletCharacterWidth, AlignLeft, style)
 			}
 		}
 
