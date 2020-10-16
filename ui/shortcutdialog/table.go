@@ -36,7 +36,7 @@ func NewShortcutTable() *ShortcutTable {
 
 	table.SetSelectable(true, false)
 	table.SetBorder(true)
-	if vtxxx {
+	if tview.IsVtxxx {
 		table.SetSelectedStyle(tcell.ColorBlack, tcell.ColorWhite, tcell.AttrReverse)
 	}
 

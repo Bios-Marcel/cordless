@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"os"
-	"regexp"
 	"sort"
 	"sync"
 
@@ -27,28 +25,24 @@ const (
 	channelRead
 )
 
-func checkVT() bool {
-	VTxxx, err := regexp.MatchString("(vt)[0-9]+", os.Getenv("TERM"))
-	if err != nil {
-		panic(err)
-	}
-	return VTxxx
-}
-
-var vtxxx = checkVT()
+var (
+	mentionedIndicator = "(@)"
+	nsfwIndicator      = tviewutil.Escape("🔞")
+	lockedIndicator    = tviewutil.Escape("\U0001F512")
+)
 
 // ChannelTree is the component that displays the channel hierarchy of the
 // currently loaded guild and allows interactions with those channels.
 type ChannelTree struct {
 	*tview.TreeView
+	*sync.Mutex
 
 	state *discordgo.State
 
 	onChannelSelect func(channelID string)
 	channelStates   map[*tview.TreeNode]channelState
 	channelPosition map[string]int
-
-	mutex *sync.Mutex
+	prefixes        map[string][]string
 }
 
 // NewChannelTree creates a new ready-to-be-used ChannelTree
@@ -58,7 +52,8 @@ func NewChannelTree(state *discordgo.State) *ChannelTree {
 		TreeView:        tview.NewTreeView(),
 		channelStates:   make(map[*tview.TreeNode]channelState),
 		channelPosition: make(map[string]int),
-		mutex:           &sync.Mutex{},
+		prefixes:        make(map[string][]string),
+		Mutex:           &sync.Mutex{},
 	}
 
 	channelTree.
@@ -170,21 +165,19 @@ func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.
 
 func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
 	channelNode := tview.NewTreeNode(channel.Name)
-	var prefixes string
 	if channel.NSFW {
-		prefixes += tviewutil.Escape("🔞")
+		channelNode.AddPrefix(nsfwIndicator)
 	}
 
 	// Adds a padlock prefix if the channel if not readable by the everyone group
 	if config.Current.IndicateChannelAccessRestriction {
 		for _, permission := range channel.PermissionOverwrites {
 			if permission.Type == "role" && permission.ID == channel.GuildID && permission.Deny&discordgo.PermissionViewChannel == discordgo.PermissionViewChannel {
-				prefixes += tviewutil.Escape("\U0001F512")
+				channelNode.AddPrefix(lockedIndicator)
+				break
 			}
 		}
 	}
-
-	channelNode.SetPrefix(prefixes)
 
 	channelNode.SetReference(channel.ID)
 	return channelNode
@@ -195,11 +188,7 @@ func (channelTree *ChannelTree) createTextChannelNode(channel *discordgo.Channel
 
 	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 		channelTree.channelStates[channelNode] = channelUnread
-		if vtxxx {
-			channelNode.SetAttributes(tcell.AttrBlink)
-		} else {
-			channelNode.SetColor(config.GetTheme().AttentionColor)
-		}
+		channelTree.markNodeAsUnread(channelNode)
 	}
 
 	if readstate.HasBeenMentioned(channel.ID) {
@@ -299,11 +288,15 @@ func (channelTree *ChannelTree) MarkAsUnread(channelID string) {
 	node := tviewutil.GetNodeByReference(channelID, channelTree.TreeView)
 	if node != nil {
 		channelTree.channelStates[node] = channelUnread
-		if vtxxx {
-			node.SetAttributes(tcell.AttrBlink)
-		} else {
-			node.SetColor(config.GetTheme().AttentionColor)
-		}
+		channelTree.markNodeAsUnread(node)
+	}
+}
+
+func (channelTree *ChannelTree) markNodeAsUnread(node *tview.TreeNode) {
+	if tview.IsVtxxx {
+		node.SetAttributes(tcell.AttrBlink)
+	} else {
+		node.SetColor(config.GetTheme().AttentionColor)
 	}
 }
 
@@ -311,39 +304,50 @@ func (channelTree *ChannelTree) MarkAsUnread(channelID string) {
 func (channelTree *ChannelTree) MarkAsRead(channelID string) {
 	node := tviewutil.GetNodeByReference(channelID, channelTree.TreeView)
 	if node != nil {
-		channel, stateError := channelTree.state.Channel(channelID)
-		if stateError == nil {
-			node.SetText(tviewutil.Escape(channel.Name))
-		}
-
 		channelTree.channelStates[node] = channelRead
-		if vtxxx {
-			node.SetAttributes(tcell.AttrNone)
-		} else {
-			node.SetColor(config.GetTheme().PrimaryTextColor)
-		}
+		markNodeAsRead(node)
 	}
+}
+
+func markNodeAsRead(node *tview.TreeNode) {
+	if tview.IsVtxxx {
+		node.SetAttributes(tcell.AttrNone)
+	} else {
+		node.SetColor(config.GetTheme().PrimaryTextColor)
+	}
+	node.RemovePrefix(mentionedIndicator)
 }
 
 // MarkAsMentioned marks a channel as mentioned.
 func (channelTree *ChannelTree) MarkAsMentioned(channelID string) {
 	node := tviewutil.GetNodeByReference(channelID, channelTree.TreeView)
 	if node != nil {
+		channelTree.channelStates[node] = channelMentioned
 		channelTree.markNodeAsMentioned(node, channelID)
 	}
 }
 
 func (channelTree *ChannelTree) markNodeAsMentioned(node *tview.TreeNode, channelID string) {
-	channelTree.channelStates[node] = channelMentioned
-	channel, stateError := channelTree.state.Channel(channelID)
-	if stateError == nil {
-		node.SetText("(@) " + tviewutil.Escape(channel.Name))
+	channelTree.markNodeAsUnread(node)
+	node.AddPrefix(mentionedIndicator)
+	node.SortPrefixes(prefixSorter)
+}
+
+func prefixSorter(a, b string) bool {
+	if a == mentionedIndicator {
+		return true
+	} else if b == mentionedIndicator {
+		return false
+	} else if a == nsfwIndicator {
+		return true
+	} else if b == nsfwIndicator {
+		return false
+	} else if a == lockedIndicator {
+		return true
+	} else if b == lockedIndicator {
+		return false
 	}
-	if vtxxx {
-		node.SetAttributes(tcell.AttrBlink)
-	} else {
-		node.SetColor(config.GetTheme().AttentionColor)
-	}
+	return false
 }
 
 // MarkAsLoaded marks a channel as loaded and therefore marks all other
@@ -352,47 +356,28 @@ func (channelTree *ChannelTree) MarkAsLoaded(channelID string) {
 	for node, state := range channelTree.channelStates {
 		if state == channelLoaded {
 			channelTree.channelStates[node] = channelRead
-			if vtxxx {
-				node.SetAttributes(tcell.AttrNone)
-			} else {
-				node.SetColor(config.GetTheme().PrimaryTextColor)
-			}
+			markNodeAsRead(node)
 			break
 		}
 	}
 
-	channelTree.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-		referenceChannelID, ok := node.GetReference().(string)
-		if ok && referenceChannelID == channelID {
-			channelTree.channelStates[node] = channelLoaded
-			channel, stateError := channelTree.state.Channel(channelID)
-			if stateError == nil {
-				node.SetText(tviewutil.Escape(channel.Name))
-			}
-			if vtxxx {
-				node.SetAttributes(tcell.AttrUnderline)
-			} else {
-				node.SetColor(tview.Styles.ContrastBackgroundColor)
-			}
-			return false
-		}
+	node := tviewutil.GetNodeByReference(channelID, channelTree.TreeView)
+	if node != nil {
+		channelTree.channelStates[node] = channelLoaded
+		channelTree.markNodeAsLoaded(node)
+	}
+}
 
-		return true
-	})
+func (channelTree *ChannelTree) markNodeAsLoaded(node *tview.TreeNode) {
+	if tview.IsVtxxx {
+		node.SetAttributes(tcell.AttrUnderline)
+	} else {
+		node.SetColor(tview.Styles.ContrastBackgroundColor)
+	}
+	node.RemovePrefix("@")
 }
 
 // SetOnChannelSelect sets the handler that reacts to channel selection events.
 func (channelTree *ChannelTree) SetOnChannelSelect(handler func(channelID string)) {
 	channelTree.onChannelSelect = handler
-}
-
-// Lock will lock the ChannelTree, allowing other callers to prevent race
-// conditions.
-func (channelTree *ChannelTree) Lock() {
-	channelTree.mutex.Lock()
-}
-
-// Unlock unlocks the previously locked ChannelTree.
-func (channelTree *ChannelTree) Unlock() {
-	channelTree.mutex.Unlock()
 }

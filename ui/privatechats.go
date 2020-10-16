@@ -131,7 +131,7 @@ func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
 	newNode := createPrivateChannelNode(channel)
 	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 		privateList.privateChannelStates[newNode] = unread
-		if vtxxx {
+		if tview.IsVtxxx {
 			newNode.SetAttributes(tcell.AttrBlink)
 		} else {
 			newNode.SetColor(config.GetTheme().AttentionColor)
@@ -227,7 +227,7 @@ func (privateList *PrivateChatList) MarkAsUnread(channelID string) {
 	if node != nil {
 		privateList.privateChannelStates[node] = unread
 		privateList.setNotificationCount(privateList.amountOfUnreadChannels())
-		if vtxxx {
+		if tview.IsVtxxx {
 			node.SetAttributes(tcell.AttrBlink)
 		} else {
 			node.SetColor(config.GetTheme().AttentionColor)
@@ -252,7 +252,7 @@ func (privateList *PrivateChatList) MarkAsRead(channelID string) {
 	if node != nil {
 		privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 		privateList.privateChannelStates[node] = read
-		if vtxxx {
+		if tview.IsVtxxx {
 			node.SetAttributes(tcell.AttrNone)
 		} else {
 			node.SetColor(config.GetTheme().PrimaryTextColor)
@@ -296,7 +296,7 @@ func (privateList *PrivateChatList) MarkAsLoaded(channelID string) {
 	for node, state := range privateList.privateChannelStates {
 		if state == loaded {
 			privateList.privateChannelStates[node] = read
-			if vtxxx {
+			if tview.IsVtxxx {
 				node.SetAttributes(tcell.AttrNone)
 			} else {
 				node.SetColor(config.GetTheme().PrimaryTextColor)
@@ -309,7 +309,7 @@ func (privateList *PrivateChatList) MarkAsLoaded(channelID string) {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channelID {
 			privateList.privateChannelStates[node] = loaded
-			if vtxxx {
+			if tview.IsVtxxx {
 				node.SetAttributes(tcell.AttrUnderline)
 			} else {
 				node.SetColor(tview.Styles.ContrastBackgroundColor)

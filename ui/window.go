@@ -2391,7 +2391,7 @@ func (window *Window) startEditingMessage(message *discordgo.Message) {
 		window.messageInput.SetText(message.Content)
 		window.messageInput.SetBorderColor(tcell.ColorYellow)
 		window.messageInput.SetBorderFocusColor(tcell.ColorYellow)
-		if vtxxx {
+		if tview.IsVtxxx {
 			window.messageInput.SetBorderFocusAttributes(tcell.AttrBlink | tcell.AttrBold)
 		}
 		window.editingMessageID = &message.ID
@@ -2408,7 +2408,7 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 	window.editingMessageID = nil
 	window.messageInput.SetBorderColor(tview.Styles.BorderColor)
 	window.messageInput.SetBorderFocusColor(tview.Styles.BorderFocusColor)
-	if vtxxx {
+	if tview.IsVtxxx {
 		window.messageInput.SetBorderFocusAttributes(tcell.AttrBold)
 		window.messageInput.SetBorderAttributes(tcell.AttrNone)
 	}

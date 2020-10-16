@@ -2,8 +2,6 @@ package shortcutdialog
 
 import (
 	"log"
-	"os"
-	"regexp"
 
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
@@ -12,16 +10,6 @@ import (
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
-
-func checkVT() bool {
-	VTxxx, err := regexp.MatchString("(vt)[0-9]+", os.Getenv("TERM"))
-	if err != nil {
-		panic(err)
-	}
-	return VTxxx
-}
-
-var vtxxx = checkVT()
 
 func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	var table *ShortcutTable
@@ -75,7 +63,7 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 
 	shortcutDescription = tview.NewTextView()
 	shortcutDescription.SetDynamicColors(true).SetBorderPadding(1, 0, 0, 0)
-	if vtxxx {
+	if tview.IsVtxxx {
 		shortcutDescription.SetText("R [::r]Reset shortcut[::-]" +
 			"[::-]  Backspace [::r]Delete shortcut" +
 			"[::-]  Enter [::r]Change shortcut" +
