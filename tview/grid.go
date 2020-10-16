@@ -196,6 +196,7 @@ func (g *Grid) SetBordersColor(color tcell.Color) *Grid {
 // receives focus. If there are multiple items with a true focus flag, the last
 // visible one that was added will receive focus.
 func (g *Grid) AddItem(p Primitive, row, column, rowSpan, colSpan, minGridHeight, minGridWidth int, focus bool) *Grid {
+	p.SetParent(g)
 	g.items = append(g.items, &gridItem{
 		Item:          p,
 		Row:           row,
@@ -269,8 +270,8 @@ func (g *Grid) HasFocus() bool {
 }
 
 // InputHandler returns the handler for this primitive.
-func (g *Grid) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive)) {
-	return g.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) {
+func (g *Grid) InputHandler() InputHandlerFunc {
+	return g.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyRune:
 			switch event.Rune() {
@@ -286,7 +287,10 @@ func (g *Grid) InputHandler() func(event *tcell.EventKey, setFocus func(p Primit
 				g.columnOffset--
 			case 'l':
 				g.columnOffset++
+			default:
+				return event
 			}
+			return nil
 		case tcell.KeyHome:
 			g.rowOffset, g.columnOffset = 0, 0
 		case tcell.KeyEnd:
@@ -299,7 +303,11 @@ func (g *Grid) InputHandler() func(event *tcell.EventKey, setFocus func(p Primit
 			g.columnOffset--
 		case tcell.KeyRight:
 			g.columnOffset++
+		default:
+			return event
 		}
+
+		return nil
 	})
 }
 

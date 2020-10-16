@@ -827,8 +827,8 @@ func (t *TreeView) Draw(screen tcell.Screen) bool {
 }
 
 // InputHandler returns the handler for this primitive.
-func (t *TreeView) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive)) {
-	return t.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) {
+func (t *TreeView) InputHandler() InputHandlerFunc {
+	return t.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
 		selectNode := func() {
 			if t.currentNode != nil {
 				if t.selected != nil {
@@ -866,6 +866,8 @@ func (t *TreeView) InputHandler() func(event *tcell.EventKey, setFocus func(p Pr
 					t.movement = treeDown
 				case 'k':
 					t.movement = treeUp
+				default:
+					return event
 				}
 			} else if t.searchOnType {
 				if time.Since(t.jumpTime) > (500 * time.Millisecond) {
@@ -884,9 +886,12 @@ func (t *TreeView) InputHandler() func(event *tcell.EventKey, setFocus func(p Pr
 			}
 		case tcell.KeyEnter:
 			selectNode()
+		default:
+			return event
 		}
 
 		t.process()
+		return nil
 	})
 }
 

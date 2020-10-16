@@ -951,8 +951,8 @@ ColumnLoop:
 }
 
 // InputHandler returns the handler for this primitive.
-func (t *Table) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive)) {
-	return t.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) {
+func (t *Table) InputHandler() InputHandlerFunc {
+	return t.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
 		key := event.Key()
 
 		if (!t.rowsSelectable && !t.columnsSelectable && key == tcell.KeyEnter) ||
@@ -961,8 +961,8 @@ func (t *Table) InputHandler() func(event *tcell.EventKey, setFocus func(p Primi
 			key == tcell.KeyBacktab {
 			if t.done != nil {
 				t.done(key)
+				return nil
 			}
-			return
 		}
 
 		// Movement functions.
@@ -1126,6 +1126,8 @@ func (t *Table) InputHandler() func(event *tcell.EventKey, setFocus func(p Primi
 				left()
 			case 'l':
 				right()
+			default:
+				return event
 			}
 		case tcell.KeyHome:
 			home()
@@ -1147,6 +1149,8 @@ func (t *Table) InputHandler() func(event *tcell.EventKey, setFocus func(p Primi
 			if (t.rowsSelectable || t.columnsSelectable) && t.selected != nil {
 				t.selected(t.selectedRow, t.selectedColumn)
 			}
+		default:
+			return event
 		}
 
 		// If the selection has changed, notify the handler.
@@ -1155,5 +1159,7 @@ func (t *Table) InputHandler() func(event *tcell.EventKey, setFocus func(p Primi
 				t.columnsSelectable && previouslySelectedColumn != t.selectedColumn) {
 			t.selectionChanged(t.selectedRow, t.selectedColumn)
 		}
+
+		return nil
 	})
 }

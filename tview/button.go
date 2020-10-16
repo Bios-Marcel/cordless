@@ -142,8 +142,8 @@ func (b *Button) Draw(screen tcell.Screen) bool {
 }
 
 // InputHandler returns the handler for this primitive.
-func (b *Button) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive)) {
-	return b.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) {
+func (b *Button) InputHandler() InputHandlerFunc {
+	return b.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
 		// Process key event.
 		switch key := event.Key(); key {
 		case tcell.KeyEnter: // Selected.
@@ -155,5 +155,7 @@ func (b *Button) InputHandler() func(event *tcell.EventKey, setFocus func(p Prim
 				b.blur(key)
 			}
 		}
+
+		return event
 	})
 }

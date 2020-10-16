@@ -990,19 +990,19 @@ func (t *TextView) Draw(screen tcell.Screen) bool {
 }
 
 // InputHandler returns the handler for this primitive.
-func (t *TextView) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive)) {
-	return t.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) {
+func (t *TextView) InputHandler() InputHandlerFunc {
+	return t.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
 		key := event.Key()
 
 		if key == tcell.KeyEscape || key == tcell.KeyEnter || key == tcell.KeyTab || key == tcell.KeyBacktab {
 			if t.done != nil {
 				t.done(key)
+				return nil
 			}
-			return
 		}
 
 		if !t.scrollable {
-			return
+			return event
 		}
 
 		switch key {
@@ -1025,6 +1025,8 @@ func (t *TextView) InputHandler() func(event *tcell.EventKey, setFocus func(p Pr
 					t.columnOffset--
 				case 'l': // Right.
 					t.columnOffset++
+				default:
+					return event
 				}
 			}
 		case tcell.KeyHome:
@@ -1048,6 +1050,10 @@ func (t *TextView) InputHandler() func(event *tcell.EventKey, setFocus func(p Pr
 		case tcell.KeyPgUp:
 			t.trackEnd = false
 			t.lineOffset -= t.pageSize
+		default:
+			return event
 		}
+
+		return nil
 	})
 }

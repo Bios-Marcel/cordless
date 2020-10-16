@@ -48,20 +48,24 @@ func (r *RadioButtons) Draw(screen tcell.Screen) bool {
 }
 
 // InputHandler returns the handler for this primitive.
-func (r *RadioButtons) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return r.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (r *RadioButtons) InputHandler() tview.InputHandlerFunc {
+	return r.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyUp:
 			r.currentOption--
 			if r.currentOption < 0 {
 				r.currentOption = 0
 			}
+			return nil
 		case tcell.KeyDown:
 			r.currentOption++
 			if r.currentOption >= len(r.options) {
 				r.currentOption = len(r.options) - 1
 			}
+			return nil
 		}
+
+		return event
 	})
 }
 

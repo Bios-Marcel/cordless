@@ -87,6 +87,7 @@ type Box struct {
 	onBlur func()
 
 	nextFocusableComponents map[FocusDirection][]Primitive
+	parent                  Primitive
 }
 
 // NewBox returns a Box without a border.
@@ -221,19 +222,21 @@ func (b *Box) GetDrawFunc() func(screen tcell.Screen, x, y, width, height int) (
 // on to the provided (default) input handler.
 //
 // This is only meant to be used by subclassing primitives.
-func (b *Box) WrapInputHandler(inputHandler func(*tcell.EventKey, func(p Primitive))) func(*tcell.EventKey, func(p Primitive)) {
-	return func(event *tcell.EventKey, setFocus func(p Primitive)) {
+func (b *Box) WrapInputHandler(inputHandler InputHandlerFunc) InputHandlerFunc {
+	return func(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
 		if b.inputCapture != nil {
 			event = b.inputCapture(event)
 		}
 		if event != nil && inputHandler != nil {
-			inputHandler(event, setFocus)
+			event = inputHandler(event, setFocus)
 		}
+
+		return event
 	}
 }
 
 // InputHandler returns nil.
-func (b *Box) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive)) {
+func (b *Box) InputHandler() InputHandlerFunc {
 	return b.WrapInputHandler(nil)
 }
 
@@ -601,6 +604,15 @@ func (b *Box) GetFocusable() Focusable {
 func (b *Box) SetIndicateOverflow(indicateOverflow bool) *Box {
 	b.indicateOverflow = indicateOverflow
 	return b
+}
+
+func (b *Box) SetParent(parent Primitive) {
+	//Reparenting is possible!
+	b.parent = parent
+}
+
+func (b *Box) GetParent() Primitive {
+	return b.parent
 }
 
 func (b *Box) drawOverflow(screen tcell.Screen, showTop, showBottom bool) {

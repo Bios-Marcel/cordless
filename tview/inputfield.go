@@ -343,8 +343,8 @@ func (i *InputField) Insert(text string) {
 }
 
 // InputHandler returns the handler for this primitive.
-func (i *InputField) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive)) {
-	return i.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) {
+func (i *InputField) InputHandler() InputHandlerFunc {
+	return i.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
 		// Trigger changed events.
 		currentText := i.text
 		defer func() {
@@ -455,6 +455,10 @@ func (i *InputField) InputHandler() func(event *tcell.EventKey, setFocus func(p 
 			if i.finished != nil {
 				i.finished(key)
 			}
+		default:
+			return event
 		}
+
+		return nil
 	})
 }

@@ -396,8 +396,8 @@ func (d *DropDown) Draw(screen tcell.Screen) bool {
 }
 
 // InputHandler returns the handler for this primitive.
-func (d *DropDown) InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive)) {
-	return d.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) {
+func (d *DropDown) InputHandler() InputHandlerFunc {
+	return d.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
 		// A helper function which selects an item in the drop-down list based on
 		// the current prefix.
 		evalPrefix := func() {
@@ -461,6 +461,7 @@ func (d *DropDown) InputHandler() func(event *tcell.EventKey, setFocus func(p Pr
 				return event
 			})
 			setFocus(d.list)
+			return nil
 		case tcell.KeyEscape, tcell.KeyTab, tcell.KeyBacktab:
 			if d.done != nil {
 				d.done(key)
@@ -468,7 +469,10 @@ func (d *DropDown) InputHandler() func(event *tcell.EventKey, setFocus func(p Pr
 			if d.finished != nil {
 				d.finished(key)
 			}
+			return nil
 		}
+
+		return event
 	})
 }
 

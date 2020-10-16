@@ -66,18 +66,15 @@ type Application struct {
 	// (screen.Init() and draw() will be called implicitly). A value of nil will
 	// stop the application.
 	screenReplacement chan tcell.Screen
-
-	focusDirectionHandlers map[FocusDirection]func(*tcell.EventKey) bool
 }
 
 // NewApplication creates and returns a new application.
 func NewApplication() *Application {
 	return &Application{
-		events:                 make(chan tcell.Event, queueSize),
-		updates:                make(chan func(), queueSize),
-		screenReplacement:      make(chan tcell.Screen, 1),
-		MouseEnabled:           true,
-		focusDirectionHandlers: make(map[FocusDirection]func(*tcell.EventKey) bool),
+		events:            make(chan tcell.Event, queueSize),
+		updates:           make(chan func(), queueSize),
+		screenReplacement: make(chan tcell.Screen, 1),
+		MouseEnabled:      true,
 	}
 }
 
@@ -212,9 +209,18 @@ func (a *Application) Run() error {
 		}
 	}()
 
+	focusFunc := func(p Primitive) {
+		a.SetFocus(p)
+	}
+
 	// Start event loop.
+	var keyEventHandleHierarchy []Primitive
 EventLoop:
 	for {
+		//resize slice to zero without having to allocate a new array.
+		//We want to avoid slowdowns and unnecessary garbage collection during
+		//user input. This could especially effect stuff like pasting.
+		keyEventHandleHierarchy = keyEventHandleHierarchy[0:0]
 		select {
 		case event := <-a.events:
 			if event == nil {
@@ -228,29 +234,6 @@ EventLoop:
 				inputCapture := a.inputCapture
 				a.RUnlock()
 
-				//Focus handling
-				if p != nil {
-					var nextFocus Primitive
-					if handler, ok := a.focusDirectionHandlers[Up]; ok && handler(event) {
-						nextFocus = p.NextFocusableComponent(Up)
-					}
-					if handler, ok := a.focusDirectionHandlers[Down]; ok && handler(event) {
-						nextFocus = p.NextFocusableComponent(Down)
-					}
-					if handler, ok := a.focusDirectionHandlers[Left]; ok && handler(event) {
-						nextFocus = p.NextFocusableComponent(Left)
-					}
-					if handler, ok := a.focusDirectionHandlers[Right]; ok && handler(event) {
-						nextFocus = p.NextFocusableComponent(Right)
-					}
-
-					if nextFocus != nil {
-						a.SetFocus(nextFocus)
-						a.draw()
-						continue
-					}
-				}
-
 				// Intercept keys.
 				if inputCapture != nil {
 					event = inputCapture(event)
@@ -262,11 +245,27 @@ EventLoop:
 
 				// Pass other key events to the currently focused primitive.
 				if p != nil {
-					if handler := p.InputHandler(); handler != nil {
-						handler(event, func(p Primitive) {
-							a.SetFocus(p)
-						})
-						a.draw()
+					lastParent := p
+					for {
+						keyEventHandleHierarchy = append(keyEventHandleHierarchy, lastParent)
+						lastParent = lastParent.GetParent()
+
+						if lastParent == nil {
+							break
+						}
+					}
+
+					//Events are handled from bottom to top, so parents get
+					//handled before the actually focused primitive.
+					for i := len(keyEventHandleHierarchy) - 1; i >= 0; i-- {
+						nextFocusHandlingComponent := keyEventHandleHierarchy[i]
+						if handler := nextFocusHandlingComponent.InputHandler(); handler != nil {
+							event := handler(event, focusFunc)
+							if event == nil {
+								a.draw()
+								break
+							}
+						}
 					}
 				}
 			case *tcell.EventResize:
@@ -306,12 +305,6 @@ EventLoop:
 	a.screen = nil
 
 	return nil
-}
-
-// SetFocusDirectionHandler decides which function checks whether an incomming
-// key-event is supposed to indication a focus-change for the given direction.
-func (a *Application) SetFocusDirectionHandler(direction FocusDirection, isValidEvent func(event *tcell.EventKey) bool) {
-	a.focusDirectionHandlers[direction] = isValidEvent
 }
 
 // GetComponentAt returns the highest level component at the given coordinates

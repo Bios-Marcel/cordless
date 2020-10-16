@@ -22,6 +22,10 @@ type Primitive interface {
 	// SetRect sets a new position of the primitive.
 	SetRect(x, y, width, height int)
 
+	SetParent(Primitive)
+
+	GetParent() Primitive
+
 	// InputHandler returns a handler which receives key events when it has focus.
 	// It is called by the Application class.
 	//
@@ -38,7 +42,7 @@ type Primitive interface {
 	// The Box class provides functionality to intercept keyboard input. If you
 	// subclass from Box, it is recommended that you wrap your handler using
 	// Box.WrapInputHandler() so you inherit that functionality.
-	InputHandler() func(event *tcell.EventKey, setFocus func(p Primitive))
+	InputHandler() InputHandlerFunc
 
 	// Focus is called by the application when the primitive receives focus.
 	// Implementers may call delegate() to pass the focus on to another primitive.
@@ -60,6 +64,8 @@ type Primitive interface {
 	// If nil is returned, the focus is retained.
 	NextFocusableComponent(FocusDirection) Primitive
 }
+
+type InputHandlerFunc func(*tcell.EventKey, func(p Primitive)) *tcell.EventKey
 
 // FocusDirection decides in what direction the focus should travel relative
 // to the currently focused component.

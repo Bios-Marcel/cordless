@@ -63,6 +63,7 @@ func (p *Pages) GetPageCount() int {
 // primitive will be set to the size available to the Pages primitive whenever
 // the pages are drawn.
 func (p *Pages) AddPage(name string, item Primitive, resize, visible bool) *Pages {
+	item.SetParent(p)
 	hasFocus := p.HasFocus()
 	for index, pg := range p.pages {
 		if pg.Name == name {
