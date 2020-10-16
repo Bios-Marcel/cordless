@@ -164,7 +164,7 @@ func createSecondLevelChannelNodes(channelTree *ChannelTree, channel *discordgo.
 }
 
 func createChannelNode(channel *discordgo.Channel) *tview.TreeNode {
-	channelNode := tview.NewTreeNode(channel.Name)
+	channelNode := tview.NewTreeNode(tviewutil.Escape(channel.Name))
 	if channel.NSFW {
 		channelNode.AddPrefix(nsfwIndicator)
 	}
