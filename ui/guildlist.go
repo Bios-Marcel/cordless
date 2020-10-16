@@ -91,9 +91,9 @@ func (g *GuildList) updateNodeState(guild *discordgo.Guild, node *tview.TreeNode
 
 	//Prefix order doesn't matter for now, as we never have more than one.
 	if readstate.HasGuildBeenMentioned(guild.ID) {
-		node.AddPrefix("(@)")
+		node.AddPrefix(mentionedIndicator)
 	} else {
-		node.RemovePrefix("@")
+		node.RemovePrefix(mentionedIndicator)
 	}
 }
 
