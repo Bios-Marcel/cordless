@@ -1,17 +1,16 @@
 package shortcutdialog
 
 import (
-	"log"
-
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/cordless/windowman"
 	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
-func ShowShortcutsDialog(app *tview.Application, onClose func()) {
+func newShortcutView(setFocus windowman.Focusser, onClose func()) (tview.Primitive, tview.Primitive) {
 	var table *ShortcutTable
 	var shortcutDescription *tview.TextView
 	var exitButton *tview.Button
@@ -21,12 +20,14 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	table.SetShortcuts(shortcuts.Shortcuts)
 
 	exitButton = tview.NewButton("Go back")
-	exitButton.SetSelectedFunc(onClose)
+	if onClose != nil {
+		exitButton.SetSelectedFunc(onClose)
+	}
 	exitButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			app.SetFocus(table.GetPrimitive())
+			setFocus(table.GetPrimitive())
 		} else if event.Key() == tcell.KeyBacktab {
-			app.SetFocus(resetButton)
+			setFocus(resetButton)
 		} else {
 			return event
 		}
@@ -45,9 +46,9 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	})
 	resetButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			app.SetFocus(exitButton)
+			setFocus(exitButton)
 		} else if event.Key() == tcell.KeyBacktab {
-			app.SetFocus(table.GetPrimitive())
+			setFocus(table.GetPrimitive())
 		} else {
 			return event
 		}
@@ -71,8 +72,8 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Enter [:" + primaryTextColor + "][" + primitiveBGColor + "]Change shortcut" +
 			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Esc [:" + primaryTextColor + "][" + primitiveBGColor + "]Close dialog")
 	}
-	table.SetFocusNext(func() { app.SetFocus(resetButton) })
-	table.SetFocusPrevious(func() { app.SetFocus(exitButton) })
+	table.SetFocusNext(func() { setFocus(resetButton) })
+	table.SetFocusPrevious(func() { setFocus(exitButton) })
 
 	buttonBar := tview.NewFlex()
 	buttonBar.SetDirection(tview.FlexColumn)
@@ -88,7 +89,7 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 			return event
 		}
 
-		if event.Key() == tcell.KeyESC {
+		if event.Key() == tcell.KeyESC && onClose != nil {
 			onClose()
 			return nil
 		}
@@ -98,22 +99,47 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	shortcutsView.AddItem(table.GetPrimitive(), 0, 1, false)
 	shortcutsView.AddItem(buttonBar, 1, 0, false)
 	shortcutsView.AddItem(shortcutDescription, 2, 0, false)
-
-	app.SetRoot(shortcutsView, true)
-	app.SetFocus(table.GetPrimitive())
+	return shortcutsView, table.GetPrimitive()
 }
 
-func RunShortcutsDialogStandalone() {
-	loadError := shortcuts.Load()
-	if loadError != nil {
-		log.Fatalf("Error loading shortcuts: %s\n", loadError)
+func ShowShortcutsDialog(app *tview.Application, onClose func()) {
+	shortcutsView, table := newShortcutView(func(primitive tview.Primitive) error {
+		app.SetFocus(primitive)
+		return nil
+	}, onClose)
+	app.SetRoot(shortcutsView, true)
+	app.SetFocus(table)
+}
+
+type ShortcutWindow struct {
+	windowman.Window
+
+	root       tview.Primitive
+	setFocus   windowman.Focusser
+	focusFirst tview.Primitive
+}
+
+// Show resets the window state and returns the tview.Primitive that the caller should show.
+// The setFocus argument is used by the Window to change the focus
+func (sw *ShortcutWindow) Show(displayFunc windowman.DisplayFunc, setFocus windowman.Focusser) error {
+	displayError := displayFunc(sw.root)
+	if displayError != nil {
+		return displayError
 	}
-	app := tview.NewApplication()
-	ShowShortcutsDialog(app, func() {
-		app.Stop()
-	})
-	startError := app.Run()
-	if startError != nil {
-		log.Fatalf("Error launching shortcuts dialog: %s\n", startError)
-	}
+	sw.setFocus = setFocus
+	return sw.setFocus(sw.focusFirst)
+}
+
+func NewShortcutWindow() *ShortcutWindow {
+	shortcutWindow := &ShortcutWindow{}
+	//FIXME Shortcuts view doesn't close on ESC anymore, this needs to be solved.
+	//A solution might be to tell the window manager and therefore the application
+	//to initiate a shutdown.
+	shortcutsView, table := newShortcutView(func(primitive tview.Primitive) error {
+		shortcutWindow.setFocus(primitive)
+		return nil
+	}, nil)
+	shortcutWindow.root = shortcutsView
+	shortcutWindow.focusFirst = table
+	return shortcutWindow
 }

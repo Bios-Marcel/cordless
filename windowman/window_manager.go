@@ -17,7 +17,7 @@ type WindowManager interface {
 }
 
 type concreteWindowManager struct {
-	tviewApp tview.Application
+	tviewApp *tview.Application
 }
 
 func GetWindowManager() WindowManager {
@@ -36,22 +36,28 @@ func newWindowManager() WindowManager {
 	// WindowManager sets the root input handler.
 	// It captures exit application shortcuts, and exits the application,
 	// or otherwise allows the event to bubble down.
-	wm.tviewApp.SetInputHandler(func(event *tcell.EventKey) *tcell.EventKey {
+	wm.tviewApp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if shortcuts.ExitApplication.Equals(event) {
 			wm.tviewApp.Stop()
 			return nil
 		}
 		return event
 	})
+
+	return wm
 }
 
 func (wm *concreteWindowManager) Show(window Window) error {
-	primitive := window.Show(createSetFocusCallback(wm.tviewApp))
-	wm.tviewApp.SetRoot(primitive, true)
+	return window.Show(func(root tview.Primitive) error {
+		wm.tviewApp.SetRoot(root, true)
+		return nil
+	}, createSetFocusCallback(wm.tviewApp))
 }
+
 func (wm *concreteWindowManager) Dialog(dialog Dialog) error {
 	panic("not implemented")
 }
+
 func (wm *concreteWindowManager) Run(window Window) error {
 	err := wm.Show(window)
 	if err != nil {
@@ -62,7 +68,7 @@ func (wm *concreteWindowManager) Run(window Window) error {
 }
 
 func createSetFocusCallback(app *tview.Application) Focusser {
-	return func(primitive tview.Primtive) error {
+	return func(primitive tview.Primitive) error {
 		app.SetFocus(primitive)
 		return nil
 	}

@@ -28,11 +28,6 @@ func RunWithAccount(account string) {
 		log.Fatalf("Unable to determine configuration directory (%s)\n", configErr.Error())
 	}
 
-	themeLoadingError := config.LoadTheme()
-	if themeLoadingError == nil {
-		tview.Styles = *config.GetTheme().Theme
-	}
-
 	app := tview.NewApplication()
 	loginScreen := ui.NewLogin(app, configDir)
 	app.SetRoot(loginScreen, true)

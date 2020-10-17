@@ -10,8 +10,10 @@ import (
 	"github.com/Bios-Marcel/cordless/app"
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/logging"
+	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
 	"github.com/Bios-Marcel/cordless/version"
+	"github.com/Bios-Marcel/cordless/windowman"
 )
 
 func main() {
@@ -22,6 +24,7 @@ func main() {
 	setConfigFilePath := flag.String("config-file", "", "Sets exact path of the configuration file")
 	accountToUse := flag.String("account", "", "Defines which account cordless tries to load")
 	logPath := flag.String("log", "", "Defines what file we log to")
+	uiPrototype := flag.Bool("ui-prototype", false, "Start with the prototype UI")
 	flag.Parse()
 
 	if logPath != nil && *logPath != "" {
@@ -43,10 +46,23 @@ func main() {
 		config.SetConfigFile(*setConfigFilePath)
 	}
 
+	themeLoadingError := config.LoadTheme()
+	if themeLoadingError != nil {
+		panic(themeLoadingError)
+	}
+	tview.Styles = *config.GetTheme().Theme
+
 	if showShortcutsDialog != nil && *showShortcutsDialog {
-		shortcutdialog.RunShortcutsDialogStandalone()
+		wm := windowman.GetWindowManager()
+		shortcutWindow := shortcutdialog.NewShortcutWindow()
+		wmError := wm.Run(shortcutWindow)
+		if wmError != nil {
+			panic(wmError)
+		}
 	} else if showVersion != nil && *showVersion {
 		fmt.Printf("You are running cordless version %s\nKeep in mind that this version might not be correct for manually built versions, as those can contain additional commits.\n", version.Version)
+	} else if uiPrototype != nil && *uiPrototype {
+		fmt.Println("You've started up using the prototype UI. There's nothing to see here yet.")
 	} else {
 		if accountToUse != nil && *accountToUse != "" {
 			app.RunWithAccount(*accountToUse)
