@@ -150,10 +150,12 @@ func (b *Button) InputHandler() InputHandlerFunc {
 			if b.selected != nil {
 				b.selected()
 			}
+			return nil
 		case tcell.KeyBacktab, tcell.KeyTab, tcell.KeyEscape: // Leave. No action.
 			if b.blur != nil {
 				b.blur(key)
 			}
+			return nil
 		}
 
 		return event

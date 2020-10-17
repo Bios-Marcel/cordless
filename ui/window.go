@@ -1506,7 +1506,6 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 			buttonHandler(newButton.GetLabel())
 			window.dialogReplacement.SetVisible(false)
 			window.app.SetFocus(previousFocus)
-			window.app.ForceDraw()
 		})
 		buttonWidgets = append(buttonWidgets, newButton)
 

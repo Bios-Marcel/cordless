@@ -42,7 +42,6 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 		shortcuts.Persist()
 
 		table.SetShortcuts(shortcuts.Shortcuts)
-		app.ForceDraw()
 	})
 	resetButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
