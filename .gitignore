@@ -5,3 +5,6 @@ cordless
 cordless_64.exe
 cordless_32.exe
 .vscode/
+.idea/
+*.log
+theme.json
