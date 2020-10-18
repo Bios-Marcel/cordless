@@ -985,9 +985,11 @@ important changes of the last two versions officially released.
 		- Mentions are now displayed in the guild list
 		- You can now bulk send folders and files
 	- Changes
+		- Dialogs shown at the bottom of the chatview now allow tab / backtab
 		- There's now a double-colon to separate author and messages
 		- There's more customizable shortcuts now
 	- Bugfixes
+		- Guilds and channels were sometimes falsely seen as muted
 		- Deleting / Leaving guilds now properly deletes them from the UI
 		- Jumping to guilds / channels you were mentioned in, now works by
 		  by typing their name again
