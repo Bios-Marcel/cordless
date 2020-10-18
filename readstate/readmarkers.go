@@ -129,7 +129,7 @@ func UpdateReadBuffered(session *discordgo.Session, channel *discordgo.Channel, 
 func IsGuildMuted(guildID string) bool {
 	for _, settings := range state.UserGuildSettings {
 		if settings.GuildID == guildID {
-			if settings.Muted {
+			if settings.Muted && isStillMuted(settings.MuteConfig) {
 				return true
 			}
 
@@ -198,6 +198,23 @@ func HasGuildBeenMentioned(guildID string) bool {
 	return false
 }
 
+func isStillMuted(config *discordgo.MuteConfig) bool {
+	if config == nil || config.EndTime == "" {
+		//This means permanently muted; I think!
+		//We make the assumption that this function is only
+		//called if "Muted" is set to "true". Therefore no timeframe means
+		//we must be permanently muted.
+		return true
+	}
+
+	muteEndTime, parseError := config.EndTime.Parse()
+	if parseError != nil {
+		panic(parseError)
+	}
+
+	return time.Now().UTC().Before(muteEndTime)
+}
+
 func isChannelMuted(channel *discordgo.Channel) bool {
 	//optimization for the case of guild channels, as the handling for
 	//private channels will be unnecessarily slower.
@@ -227,7 +244,7 @@ func isGuildChannelMuted(guildID, channelID string) bool {
 		if settings.GetGuildID() == guildID {
 			for _, override := range settings.ChannelOverrides {
 				if override.ChannelID == channelID {
-					if override.Muted {
+					if override.Muted && isStillMuted(override.MuteConfig) {
 						return true
 					}
 
@@ -251,7 +268,7 @@ func IsPrivateChannelMuted(channel *discordgo.Channel) bool {
 		if settings.GetGuildID() == "" {
 			for _, override := range settings.ChannelOverrides {
 				if override.ChannelID == channel.ID {
-					if override.Muted {
+					if override.Muted && isStillMuted(override.MuteConfig) {
 						return true
 					}
 
