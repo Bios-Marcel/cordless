@@ -3,11 +3,14 @@ package discordutil
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"strings"
 
 	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/times"
+	"github.com/Bios-Marcel/cordless/util/files"
 )
 
 // MentionsCurrentUserExplicitly checks whether the message contains any
@@ -211,4 +214,21 @@ func MessageToPlainText(message *discordgo.Message) string {
 	}
 
 	return builder.String()
+}
+
+// ResolveFilePathAndSendFile will attempt to resolve the message and see if
+// it points to a file on the users harddrive. If so, it's sent to the given
+// channel using it's basename as the discord filename.
+func ResolveFilePathAndSendFile(session *discordgo.Session, message, targetChannelID string) error {
+	path, pathError := files.ToAbsolutePath(message)
+	if pathError != nil {
+		return pathError
+	}
+	data, readError := ioutil.ReadFile(path)
+	if readError != nil {
+		return readError
+	}
+	reader := bytes.NewBuffer(data)
+	_, sendError := session.ChannelFileSend(targetChannelID, filepath.Base(message), reader)
+	return sendError
 }

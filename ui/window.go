@@ -3,7 +3,6 @@ package ui
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -1260,22 +1259,7 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 				if button == yesButton {
 					window.messageInput.SetText("")
 					go func() {
-						path, pathError := files.ToAbsolutePath(message)
-						if pathError != nil {
-							window.app.QueueUpdateDraw(func() {
-								window.ShowErrorDialog(pathError.Error())
-							})
-							return
-						}
-						data, readError := ioutil.ReadFile(path)
-						if readError != nil {
-							window.app.QueueUpdateDraw(func() {
-								window.ShowErrorDialog(readError.Error())
-							})
-							return
-						}
-						reader := bytes.NewBuffer(data)
-						_, sendError := window.session.ChannelFileSend(targetChannel.ID, filepath.Base(message), reader)
+						sendError := discordutil.ResolveFilePathAndSendFile(window.session, message, targetChannel.ID)
 						if sendError != nil {
 							window.app.QueueUpdateDraw(func() {
 								window.ShowErrorDialog(sendError.Error())
