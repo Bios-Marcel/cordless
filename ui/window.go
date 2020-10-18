@@ -2170,11 +2170,6 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 		return event
 	}
 
-	if event.Key() == tcell.KeyCtrlE {
-		window.ShowErrorDialog("Oopsie woopsie")
-		return nil
-	}
-
 	if shortcuts.DirectionalFocusHandling(event, window.app) == nil {
 		return nil
 	}
