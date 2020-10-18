@@ -2539,8 +2539,6 @@ func (window *Window) RefreshLayout() {
 		window.middleContainer.ResizeItem(window.chatArea, 0, 20)
 		window.middleContainer.ResizeItem(window.userList.internalTreeView, 0, 6)
 	}
-
-	window.app.ForceDraw()
 }
 
 // UnloadChannel resets the windows to the state at which no channel has
