@@ -2641,14 +2641,12 @@ func (window *Window) UpdateChatHeader(channel *discordgo.Channel) {
 		return
 	}
 
-	if channel.Type == discordgo.ChannelTypeGuildText {
+	if channel.GuildID != "" {
 		if channel.Topic != "" {
 			window.chatView.SetTitle(channel.Name + " - " + channel.Topic)
 		} else {
 			window.chatView.SetTitle(channel.Name)
 		}
-	} else if channel.Type == discordgo.ChannelTypeDM {
-		window.chatView.SetTitle(channel.Recipients[0].Username)
 	} else {
 		window.chatView.SetTitle(discordutil.GetPrivateChannelName(channel))
 	}
