@@ -1511,7 +1511,7 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 
 		indexCopy := index
 		newButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-			if event.Key() == tcell.KeyRight {
+			if event.Key() == tcell.KeyRight || event.Key() == tcell.KeyTab {
 				if len(buttonWidgets) <= indexCopy+1 {
 					window.app.SetFocus(buttonWidgets[0])
 				} else {
@@ -1520,7 +1520,7 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 				return nil
 			}
 
-			if event.Key() == tcell.KeyLeft {
+			if event.Key() == tcell.KeyLeft || event.Key() == tcell.KeyBacktab {
 				if indexCopy == 0 {
 					window.app.SetFocus(buttonWidgets[len(buttonWidgets)-1])
 				} else {
