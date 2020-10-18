@@ -29,15 +29,23 @@ func SortMessagesByTimestamp(messages []*discordgo.Message) {
 	})
 }
 
-// GetPrivateChannelName generates a name for a private channel.
-func GetPrivateChannelName(channel *discordgo.Channel) string {
+// GetPrivateChannelNameUnescaped generates a name for a private channel.
+// The name won't be escaped view tviewutil and therefore shouldn't be used
+// for displaying it in tview components.
+func GetPrivateChannelNameUnescaped(channel *discordgo.Channel) string {
 	var channelName string
 	if channel.Type == discordgo.ChannelTypeDM {
+		//The first recipient should always be us!
 		channelName = channel.Recipients[0].Username
+		//Since the official client doesn't seem to allow creating nicks for
+		//simple DMs, we assume it isn't possible.
 	} else if channel.Type == discordgo.ChannelTypeGroupDM {
+		//Groups can have custom names.
 		if channel.Name != "" {
 			channelName = channel.Name
 		} else {
+			//Channels can have nicknames, but if they don't the default discord
+			//client just displays the recipients names sticked together.
 			for index, recipient := range channel.Recipients {
 				if index == 0 {
 					channelName = recipient.Username
@@ -48,11 +56,18 @@ func GetPrivateChannelName(channel *discordgo.Channel) string {
 		}
 	}
 
+	//This is a fallback, so we don't have an empty string.
+	//This happens sometimes, I am unsure when though.
 	if channelName == "" {
 		channelName = "Unnamed"
 	}
 
-	return tviewutil.Escape(channelName)
+	return channelName
+}
+
+// GetPrivateChannelName generates a name for a private channel.
+func GetPrivateChannelName(channel *discordgo.Channel) string {
+	return tviewutil.Escape(GetPrivateChannelNameUnescaped(channel))
 }
 
 // FindDMChannelWithUser tries to find a DM channel with the specified user as

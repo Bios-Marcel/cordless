@@ -2098,18 +2098,8 @@ func (window *Window) handleNotification(message *discordgo.Message, channel *di
 	if channel.Type == discordgo.ChannelTypeDM {
 		notificationLocation = message.Author.Username
 	} else if channel.Type == discordgo.ChannelTypeGroupDM {
-		notificationLocation = channel.Name
-		if notificationLocation == "" {
-			for index, recipient := range channel.Recipients {
-				if index == 0 {
-					notificationLocation = recipient.Username
-				} else {
-					notificationLocation = fmt.Sprintf("%s, %s", notificationLocation, recipient.Username)
-				}
-			}
-		}
-
-		notificationLocation = message.Author.Username + " - " + notificationLocation
+		notificationLocation = message.Author.Username + " - " +
+			discordutil.GetPrivateChannelNameUnescaped(channel)
 	} else if channel.Type == discordgo.ChannelTypeGuildText {
 		guild, cacheError := window.session.State.Guild(message.GuildID)
 		if guild != nil && cacheError == nil {
