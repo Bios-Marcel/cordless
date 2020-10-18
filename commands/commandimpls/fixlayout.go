@@ -45,7 +45,7 @@ func (fixLayout *FixLayout) Execute(writer io.Writer, parameters []string) {
 		}
 
 		config.Current.UseFixedLayout = choice
-		fixLayout.window.RefreshLayout()
+		fixLayout.window.ApplyFixedLayoutSettings()
 
 		persistError := config.PersistConfig()
 		if persistError != nil {
@@ -85,7 +85,7 @@ func (fixLayout *FixLayout) Execute(writer io.Writer, parameters []string) {
 			return
 		}
 
-		fixLayout.window.RefreshLayout()
+		fixLayout.window.ApplyFixedLayoutSettings()
 
 		persistError := config.PersistConfig()
 		if persistError != nil {

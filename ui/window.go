@@ -195,17 +195,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 			}
 		}
 
-		//Currently has to happen before userlist loading, as it might not load otherwise
-		window.RefreshLayout()
-
-		window.userList.Clear()
-		if window.userList.internalTreeView.IsVisible() {
-			userLoadError := window.userList.LoadGuild(guildID)
-			if userLoadError != nil {
-				window.ShowErrorDialog(userLoadError.Error())
-			}
-		}
-
+		window.updateUserList()
 	})
 
 	window.registerGuildHandlers()
@@ -230,17 +220,6 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 
 		window.chatView.Lock()
 		defer window.chatView.Unlock()
-
-		window.userList.Clear()
-		window.RefreshLayout()
-
-		if channel.Type == discordgo.ChannelTypeGroupDM && window.userList.internalTreeView.IsVisible() {
-			loadError := window.userList.LoadGroup(channel.ID)
-			//The userlist isn't important, so we'll still try loading the channel.
-			if loadError != nil {
-				fmt.Fprintln(window.commandView.commandOutput, "Error loading users for channel.")
-			}
-		}
 
 		loadError := window.LoadChannel(channel)
 		if loadError != nil {
@@ -903,6 +882,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		window.middleContainer.AddItem(window.chatArea, 0, 20, false)
 		window.middleContainer.AddItem(window.userList.internalTreeView, 0, 6, false)
 	}
+	window.updateUserList()
 
 	autocompleteView.SetVisible(false)
 	autocompleteView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -1154,17 +1134,12 @@ func (window *Window) OpenDirectMessage(userID string) error {
 	return nil
 }
 
-func (window *Window) loadPrivateChannel(channel *discordgo.Channel) {
-	window.LoadChannel(channel)
-	window.RefreshLayout()
-}
-
 // SwitchToPrivateChannel switches to the friends page, loads the given channel
 // and then focuses the input primitive.
 func (window *Window) SwitchToPrivateChannel(channel *discordgo.Channel) {
 	window.SwitchToFriendsPage()
 	window.app.SetFocus(window.messageInput.GetPrimitive())
-	window.loadPrivateChannel(channel)
+	window.LoadChannel(channel)
 }
 
 func (window *Window) insertNewLineAtCursor() {
@@ -1902,8 +1877,8 @@ func (window *Window) registerGuildHandlers() {
 					}
 
 					window.channelTree.Clear()
-					window.userList.Clear()
 					window.selectedGuild = nil
+					window.updateUserList()
 				})
 			}
 		}
@@ -2210,28 +2185,8 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 
 func (window *Window) toggleUserContainer() {
 	config.Current.ShowUserContainer = !config.Current.ShowUserContainer
-
-	if config.Current.ShowUserContainer {
-		if !window.userList.IsLoaded() {
-			if window.selectedChannel != nil && window.selectedChannel.GuildID == "" {
-				window.userList.LoadGroup(window.selectedChannel.ID)
-			} else if window.selectedGuild != nil {
-				window.userList.LoadGuild(window.selectedGuild.ID)
-			}
-		}
-	} else {
-		//If the userList was focused before, we focus the input, so that the
-		//user can still properly navigate around via alt+arrowkey.
-		if window.app.GetFocus() == window.userList.internalTreeView {
-			window.app.SetFocus(window.messageInput.GetPrimitive())
-		}
-		//If we hide away the user list, we remove all data and allow the GC
-		//to clean it up.
-		window.userList.Clear()
-	}
-
 	config.PersistConfig()
-	window.RefreshLayout()
+	window.updateUserList()
 }
 
 // toggleBareChat will display only the chatview as the fullscreen application
@@ -2524,12 +2479,51 @@ func (window *Window) SwitchToPreviousChannel() error {
 	return nil
 }
 
-//RefreshLayout removes and adds the main parts of the layout
-//so that the ones that are disabled by settings do not show up.
-func (window *Window) RefreshLayout() {
-	window.userList.internalTreeView.SetVisible(config.Current.ShowUserContainer && (window.selectedGuild != nil ||
-		(window.selectedChannel != nil && window.selectedChannel.Type == discordgo.ChannelTypeGroupDM)))
+// updateUserList decides whether the userlist should be shown according to
+// the current window state. Depending on the result, the list is cleared
+// and loaded.
+func (window *Window) updateUserList() {
+	selectedGuild := window.selectedGuild
+	selectedChannel := window.selectedChannel
+	showUserList := config.Current.ShowUserContainer &&
+		//We want to show it always when a guild is loaded.
+		(selectedGuild != nil &&
+			//This means also when no channel is loaded.
+			(selectedChannel == nil ||
+				//However, if there is a lodaded channel and it is a DM, this component
+				//is basically useless, as it's obvious who's part of the channel.
+				selectedChannel.Type != discordgo.ChannelTypeDM))
 
+	//If the userList was focused before, we focus the input, so that the
+	//user can still properly navigate around via alt+arrowkey.
+	if !showUserList && window.app.GetFocus() == window.userList.internalTreeView {
+		window.app.SetFocus(window.messageInput.GetPrimitive())
+	}
+
+	previousVisibleState := window.userList.internalTreeView.IsVisible()
+	window.userList.internalTreeView.SetVisible(showUserList)
+	if previousVisibleState != showUserList {
+		//We make sure relayouting happens right now, so that things like the
+		//chatview can correctly adapt to the new layout.
+		window.ForceRedraw()
+	}
+
+	if showUserList {
+		if selectedChannel != nil && selectedChannel.Type == discordgo.ChannelTypeGroupDM {
+			window.userList.LoadGroup(selectedChannel.ID)
+		} else if selectedGuild != nil {
+			window.userList.LoadGuild(selectedGuild.ID)
+		} else {
+			window.userList.Clear()
+		}
+	} else {
+		window.userList.Clear()
+	}
+}
+
+// ApplyFixedLayoutSettings applies the current settings for the FixedLayout
+// to the window. This means resizing the components.
+func (window *Window) ApplyFixedLayoutSettings() {
 	if config.Current.UseFixedLayout {
 		window.middleContainer.ResizeItem(window.leftArea, config.Current.FixedSizeLeft, 0)
 		window.middleContainer.ResizeItem(window.chatArea, 0, 1)
@@ -2594,12 +2588,16 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	}
 	discordutil.SortMessagesByTimestamp(messages)
 
+	window.selectedChannel = channel
+	//This happens before setting the messages into the view, to avoid
+	//incorrectly drawing the date separators initially.
+	window.updateUserList()
+
 	//FIXME Only slow function here. 200-500 MS depending on content.
 	//That's horrible!
 	window.chatView.SetMessages(messages)
 	window.chatView.internalTextView.ScrollToEnd()
 	window.UpdateChatHeader(channel)
-	window.selectedChannel = channel
 
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
 		window.privateList.MarkAsLoaded(channel.ID)
