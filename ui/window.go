@@ -2187,6 +2187,8 @@ func (window *Window) toggleUserContainer() {
 	config.Current.ShowUserContainer = !config.Current.ShowUserContainer
 	config.PersistConfig()
 	window.updateUserList()
+	//Solves https://github.com/Bios-Marcel/cordless/issues/246
+	window.chatView.Reprint()
 }
 
 // toggleBareChat will display only the chatview as the fullscreen application
