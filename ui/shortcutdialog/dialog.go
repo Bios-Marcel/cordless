@@ -111,12 +111,40 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	app.SetFocus(table)
 }
 
+func NewShortcutsDialog() *ShortcutDialog {
+	window := NewShortcutWindow()
+	return &ShortcutDialog{
+		ShortcutWindow: *window,
+	}
+}
+
+type ShortcutDialog struct {
+	ShortcutWindow
+
+	closer windowman.DialogCloser
+}
+
+func (sd *ShortcutDialog) Open(close windowman.DialogCloser) error {
+	sd.closer = close
+	return nil
+}
+
+func (sd *ShortcutDialog) HandleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
+	if event.Key() == tcell.KeyEsc {
+		sd.closer()
+		return nil
+	}
+
+	return sd.ShortcutWindow.HandleKeyEvent(event)
+}
+
 type ShortcutWindow struct {
 	windowman.Window
 
 	root       tview.Primitive
 	setFocus   windowman.Focusser
 	focusFirst tview.Primitive
+	focussed   tview.Primitive
 }
 
 // Show resets the window state and returns the tview.Primitive that the caller should show.
@@ -126,8 +154,22 @@ func (sw *ShortcutWindow) Show(displayFunc windowman.DisplayFunc, setFocus windo
 	if displayError != nil {
 		return displayError
 	}
-	sw.setFocus = setFocus
+	sw.setFocus = func(primitive tview.Primitive) error {
+		err := setFocus(primitive)
+		if err != nil {
+			return err
+		}
+		sw.focussed = primitive
+		return nil
+	}
 	return sw.setFocus(sw.focusFirst)
+}
+
+func (sw *ShortcutWindow) HandleKeyEvent(event *tcell.EventKey) *tcell.EventKey {
+	handler := sw.focussed.InputHandler()
+	return handler(event, func(p tview.Primitive) {
+		sw.setFocus(p)
+	})
 }
 
 func NewShortcutWindow() *ShortcutWindow {

@@ -10,6 +10,8 @@ var (
 	windowManagerSingleton WindowManager = nil
 )
 
+type EventHandler func(*tcell.EventKey) *tcell.EventKey
+
 type WindowManager interface {
 	Show(window Window) error
 	Dialog(dialog Dialog) error
@@ -36,22 +38,50 @@ func newWindowManager() WindowManager {
 	// WindowManager sets the root input handler.
 	// It captures exit application shortcuts, and exits the application,
 	// or otherwise allows the event to bubble down.
-	wm.tviewApp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.ExitApplication.Equals(event) {
-			wm.tviewApp.Stop()
-			return nil
-		}
-		return event
-	})
+	wm.tviewApp.SetInputCapture(wm.exitApplicationEventHandler)
 
 	return wm
 }
 
+func (wm *concreteWindowManager) exitApplicationEventHandler(event *tcell.EventKey) *tcell.EventKey {
+	if shortcuts.ExitApplication.Equals(event) {
+		wm.tviewApp.Stop()
+		return nil
+	}
+	return event
+}
+
+func stackEventHandler(root EventHandler, new EventHandler) EventHandler {
+	return func(event *tcell.EventKey) *tcell.EventKey {
+		rootEvt := root(event)
+
+		if rootEvt == nil {
+			return nil
+		}
+
+		return new(rootEvt)
+	}
+}
+
 func (wm *concreteWindowManager) Show(window Window) error {
-	return window.Show(func(root tview.Primitive) error {
+	err := window.Show(func(root tview.Primitive) error {
 		wm.tviewApp.SetRoot(root, true)
 		return nil
 	}, createSetFocusCallback(wm.tviewApp))
+
+	if err != nil {
+		return err
+	}
+
+	passThroughHandler := stackEventHandler(
+		wm.exitApplicationEventHandler,
+		func(evt *tcell.EventKey) *tcell.EventKey {
+			return window.HandleKeyEvent(evt)
+		},
+	)
+
+	wm.tviewApp.SetInputCapture(passThroughHandler)
+	return nil
 }
 
 func (wm *concreteWindowManager) Dialog(dialog Dialog) error {
