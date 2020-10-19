@@ -817,20 +817,18 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 		})
 	}
 
+	//If another client acknowledges a message, we locally mark the channel as read.
 	window.session.AddHandler(func(s *discordgo.Session, event *discordgo.MessageAck) {
 		window.app.QueueUpdateDraw(func() {
 			if readstate.UpdateReadLocal(event.ChannelID, event.MessageID) {
 				channel, stateError := s.State.Channel(event.ChannelID)
 				if stateError == nil && event.MessageID == channel.LastMessageID {
 					if channel.GuildID == "" {
-						if window.selectedChannel != nil || window.selectedChannel.ID != channel.ID {
-							window.privateList.MarkAsRead(channel.ID)
-						}
+						window.privateList.MarkAsRead(channel.ID)
 					} else {
-						if window.selectedGuild != nil && channel.GuildID == window.selectedGuild.ID {
-							if window.selectedChannel != nil || window.selectedChannel.ID != channel.ID {
-								window.channelTree.MarkAsRead(channel.ID)
-							}
+						selectedGuild := window.selectedGuild
+						if selectedGuild != nil && selectedGuild.ID == channel.GuildID {
+							window.channelTree.MarkAsRead(channel.ID)
 						} else {
 							window.updateServerReadStatus(channel.GuildID, false)
 						}
