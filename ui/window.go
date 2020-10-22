@@ -2362,6 +2362,8 @@ func (window *Window) exitMessageEditModeAndKeepText() {
 	window.editingMessageID = nil
 	//On Vtxxx the yellow color won't work, so we blink instead.
 	window.messageInput.SetBorderBlinking(false)
+	window.messageInput.SetBorderColor(tview.Styles.BorderColor)
+	window.messageInput.SetBorderFocusColor(tview.Styles.BorderFocusColor)
 }
 
 // ShowErrorDialog shows a simple error dialog that has only an Okay button,
