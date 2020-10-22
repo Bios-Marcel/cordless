@@ -1,7 +1,7 @@
 package tview
 
 import (
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 // Modal is a centered message window used to inform the user or prompt them

@@ -10,7 +10,7 @@ require (
 	github.com/alecthomas/chroma v0.6.6
 	github.com/atotto/clipboard v0.1.2
 	github.com/dlclark/regexp2 v1.2.0 // indirect
-	github.com/gdamore/tcell v1.4.0
+	github.com/gdamore/tcell/v2 v2.0.0
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
 	github.com/google/go-github/v29 v29.0.3
 	github.com/lucasb-eyer/go-colorful v1.0.3

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Bios-Marcel/discordgo"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 func TestChannelTree(t *testing.T) {

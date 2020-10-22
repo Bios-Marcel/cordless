@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	linkshortener "github.com/Bios-Marcel/shortnotforlong"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/discordutil"

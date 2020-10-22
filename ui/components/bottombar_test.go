@@ -1,10 +1,10 @@
-package ui
+package components
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 func TestBottomBar(t *testing.T) {

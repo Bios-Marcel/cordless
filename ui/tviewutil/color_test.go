@@ -3,7 +3,7 @@ package tviewutil
 import (
 	"testing"
 
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 func TestColorToHex(t *testing.T) {

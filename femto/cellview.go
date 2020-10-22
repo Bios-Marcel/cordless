@@ -1,7 +1,7 @@
 package femto
 
 import (
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 	"github.com/mattn/go-runewidth"
 )
 

@@ -1,7 +1,7 @@
 package tview
 
 import (
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 // Box implements Primitive with a background and optional elements such as a
@@ -41,11 +41,7 @@ type Box struct {
 	// The color of the border when the box has focus.
 	borderFocusColor tcell.Color
 
-	// The style attributes of the border.
-	borderAttributes tcell.AttrMask
-
-	// The style attributes of the border when the box has focus.
-	borderFocusAttributes tcell.AttrMask
+	borderBlinking bool
 
 	// If set to true, the text view will show down and up arrows if there is
 	// content out of sight. While box doesn't implement scrolling, this is
@@ -99,7 +95,6 @@ func NewBox() *Box {
 		backgroundColor:         Styles.PrimitiveBackgroundColor,
 		borderColor:             Styles.BorderColor,
 		borderFocusColor:        Styles.BorderFocusColor,
-		borderFocusAttributes:   tcell.AttrNone,
 		titleColor:              Styles.TitleColor,
 		titleAlign:              AlignCenter,
 		borderTop:               true,
@@ -108,10 +103,6 @@ func NewBox() *Box {
 		borderRight:             true,
 		visible:                 true,
 		nextFocusableComponents: make(map[FocusDirection][]Primitive),
-	}
-
-	if IsVtxxx {
-		b.borderFocusAttributes = tcell.AttrBold
 	}
 
 	b.focus = b
@@ -346,21 +337,8 @@ func (b *Box) IsBorderLeft() bool {
 	return b.border && b.borderLeft
 }
 
-// SetBorderAttributes sets the border's style attributes. You can combine
-// different attributes using bitmask operations:
-//
-//   box.SetBorderAttributes(tcell.AttrUnderline | tcell.AttrBold)
-func (b *Box) SetBorderAttributes(attr tcell.AttrMask) *Box {
-	b.borderAttributes = attr
-	return b
-}
-
-// SetBorderFocusAttributes sets the border's style attributes when focused. You can combine
-// different attributes using bitmask operations:
-//
-//   box.SetBorderFocusAttributes(tcell.AttrUnderline | tcell.AttrBold)
-func (b *Box) SetBorderFocusAttributes(attr tcell.AttrMask) *Box {
-	b.borderFocusAttributes = attr
+func (b *Box) SetBorderBlinking(blinking bool) *Box {
+	b.borderBlinking = blinking
 	return b
 }
 
@@ -402,16 +380,20 @@ func (b *Box) Draw(screen tcell.Screen) bool {
 
 	// Draw border.
 	if b.border && b.width >= 2 && b.height >= 1 {
-		var border tcell.Style
+		var borderStyle tcell.Style
 		if b.hasFocus {
-			if b.borderFocusAttributes != 0 {
-				border = background.Foreground(b.borderFocusColor) | tcell.Style(b.borderFocusAttributes)
-			} else {
-				border = background.Foreground(b.borderFocusColor) | tcell.Style(b.borderAttributes)
+			borderStyle = background.Foreground(b.borderFocusColor)
+			if IsVtxxx {
+				borderStyle = borderStyle.Bold(true)
 			}
 		} else {
-			border = background.Foreground(b.borderColor) | tcell.Style(b.borderAttributes)
+			borderStyle = background.Foreground(b.borderColor)
 		}
+
+		if b.borderBlinking {
+			borderStyle = borderStyle.Blink(true)
+		}
+
 		var vertical, horizontal, topLeft, topRight, bottomLeft, bottomRight rune
 
 		horizontal = Borders.Horizontal
@@ -424,19 +406,19 @@ func (b *Box) Draw(screen tcell.Screen) bool {
 		//Special case in order to render only the title-line of something properly.
 		if b.borderTop {
 			for x := b.x + 1; x < b.x+b.width-1; x++ {
-				screen.SetContent(x, b.y, horizontal, nil, border)
+				screen.SetContent(x, b.y, horizontal, nil, borderStyle)
 			}
 
 			if b.borderLeft {
-				screen.SetContent(b.x, b.y, topLeft, nil, border)
+				screen.SetContent(b.x, b.y, topLeft, nil, borderStyle)
 			} else {
-				screen.SetContent(b.x, b.y, horizontal, nil, border)
+				screen.SetContent(b.x, b.y, horizontal, nil, borderStyle)
 			}
 
 			if b.borderRight {
-				screen.SetContent(b.x+b.width-1, b.y, topRight, nil, border)
+				screen.SetContent(b.x+b.width-1, b.y, topRight, nil, borderStyle)
 			} else {
-				screen.SetContent(b.x+b.width-1, b.y, horizontal, nil, border)
+				screen.SetContent(b.x+b.width-1, b.y, horizontal, nil, borderStyle)
 			}
 		}
 
@@ -444,62 +426,62 @@ func (b *Box) Draw(screen tcell.Screen) bool {
 		if b.height > 1 {
 			if b.borderBottom {
 				for x := b.x + 1; x < b.x+b.width-1; x++ {
-					screen.SetContent(x, b.y+b.height-1, horizontal, nil, border)
+					screen.SetContent(x, b.y+b.height-1, horizontal, nil, borderStyle)
 				}
 
 				if b.borderLeft {
-					screen.SetContent(b.x, b.y+b.height-1, bottomLeft, nil, border)
+					screen.SetContent(b.x, b.y+b.height-1, bottomLeft, nil, borderStyle)
 				} else {
-					screen.SetContent(b.x, b.y+b.height-1, horizontal, nil, border)
+					screen.SetContent(b.x, b.y+b.height-1, horizontal, nil, borderStyle)
 				}
 				if b.borderRight {
-					screen.SetContent(b.x+b.width-1, b.y+b.height-1, bottomRight, nil, border)
+					screen.SetContent(b.x+b.width-1, b.y+b.height-1, bottomRight, nil, borderStyle)
 				} else {
-					screen.SetContent(b.x+b.width-1, b.y+b.height-1, horizontal, nil, border)
+					screen.SetContent(b.x+b.width-1, b.y+b.height-1, horizontal, nil, borderStyle)
 				}
 			}
 
 			if b.borderLeft {
 				for y := b.y + 1; y < b.y+b.height-1; y++ {
-					screen.SetContent(b.x, y, vertical, nil, border)
+					screen.SetContent(b.x, y, vertical, nil, borderStyle)
 				}
 
 				if b.borderTop {
-					screen.SetContent(b.x, b.y, topLeft, nil, border)
+					screen.SetContent(b.x, b.y, topLeft, nil, borderStyle)
 				} else {
-					screen.SetContent(b.x, b.y, vertical, nil, border)
+					screen.SetContent(b.x, b.y, vertical, nil, borderStyle)
 				}
 
 				if b.borderBottom {
-					screen.SetContent(b.x, b.y+b.height-1, bottomLeft, nil, border)
+					screen.SetContent(b.x, b.y+b.height-1, bottomLeft, nil, borderStyle)
 				} else {
-					screen.SetContent(b.x, b.y+b.height-1, vertical, nil, border)
+					screen.SetContent(b.x, b.y+b.height-1, vertical, nil, borderStyle)
 				}
 			}
 
 			if b.borderRight {
 				for y := b.y + 1; y < b.y+b.height-1; y++ {
-					screen.SetContent(b.x+b.width-1, y, vertical, nil, border)
+					screen.SetContent(b.x+b.width-1, y, vertical, nil, borderStyle)
 				}
 
 				if b.borderTop {
-					screen.SetContent(b.x+b.width-1, b.y, topRight, nil, border)
+					screen.SetContent(b.x+b.width-1, b.y, topRight, nil, borderStyle)
 				} else {
-					screen.SetContent(b.x+b.width-1, b.y, vertical, nil, border)
+					screen.SetContent(b.x+b.width-1, b.y, vertical, nil, borderStyle)
 				}
 
 				if b.borderBottom {
-					screen.SetContent(b.x+b.width-1, b.y+b.height-1, bottomRight, nil, border)
+					screen.SetContent(b.x+b.width-1, b.y+b.height-1, bottomRight, nil, borderStyle)
 				} else {
-					screen.SetContent(b.x+b.width-1, b.y+b.height-1, vertical, nil, border)
+					screen.SetContent(b.x+b.width-1, b.y+b.height-1, vertical, nil, borderStyle)
 				}
 			}
 		} else if b.height == 1 && !b.borderTop && !b.borderBottom {
 			if b.borderLeft {
-				screen.SetContent(b.x, b.y, vertical, nil, border)
+				screen.SetContent(b.x, b.y, vertical, nil, borderStyle)
 			}
 			if b.borderRight {
-				screen.SetContent(b.x+b.width-1, b.y+b.height-1, vertical, nil, border)
+				screen.SetContent(b.x+b.width-1, b.y+b.height-1, vertical, nil, borderStyle)
 			}
 		}
 

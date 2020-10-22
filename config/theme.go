@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/Bios-Marcel/cordless/tview"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 // Theme is a wrapper around the tview.Theme. This wrapper can be extended with

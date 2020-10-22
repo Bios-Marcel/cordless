@@ -3,7 +3,7 @@ package tview
 import (
 	"sync"
 
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 // The size of the event/update/redraw channels.
