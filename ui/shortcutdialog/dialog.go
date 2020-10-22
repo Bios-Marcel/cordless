@@ -10,7 +10,7 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 )
 
-func newShortcutView(setFocus windowman.Focusser, onClose func()) (tview.Primitive, tview.Primitive) {
+func newShortcutView(setFocus func(tview.Primitive) error, onClose func()) (tview.Primitive, tview.Primitive) {
 	var table *ShortcutTable
 	var shortcutDescription *tview.TextView
 	var exitButton *tview.Button
@@ -142,23 +142,17 @@ type ShortcutWindow struct {
 	windowman.Window
 
 	root       tview.Primitive
-	setFocus   windowman.Focusser
+	setFocus   func(tview.Primitive) error
 	focusFirst tview.Primitive
 	focussed   tview.Primitive
 }
 
 // Show resets the window state and returns the tview.Primitive that the caller should show.
 // The setFocus argument is used by the Window to change the focus
-func (sw *ShortcutWindow) Show(displayFunc windowman.DisplayFunc, setFocus windowman.Focusser) error {
-	displayError := displayFunc(sw.root)
-	if displayError != nil {
-		return displayError
-	}
+func (sw *ShortcutWindow) Show(appCtl windowman.ApplicationControl) error {
+	appCtl.SetRoot(sw.root, true)
 	sw.setFocus = func(primitive tview.Primitive) error {
-		err := setFocus(primitive)
-		if err != nil {
-			return err
-		}
+		appCtl.SetFocus(primitive)
 		sw.focussed = primitive
 		return nil
 	}

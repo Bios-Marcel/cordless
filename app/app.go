@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/cordless/windowman"
 	"github.com/Bios-Marcel/discordgo"
 
 	"github.com/Bios-Marcel/cordless/commands/commandimpls"
@@ -14,6 +15,7 @@ import (
 	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/ui"
+	"github.com/Bios-Marcel/cordless/ui/login"
 	"github.com/Bios-Marcel/cordless/version"
 )
 
@@ -28,9 +30,11 @@ func RunWithAccount(account string) {
 		log.Fatalf("Unable to determine configuration directory (%s)\n", configErr.Error())
 	}
 
+	windowManager := windowman.GetWindowManager()
+	loginWindow := login.NewLoginWindow(configDir)
+
 	app := tview.NewApplication()
-	loginScreen := ui.NewLogin(app, configDir)
-	app.SetRoot(loginScreen, true)
+	loginScreen := loginWindow.LoginWindowComponent
 	runNext := make(chan bool, 1)
 
 	configuration, configLoadError := config.LoadConfig()
@@ -54,12 +58,14 @@ func RunWithAccount(account string) {
 	app.MouseEnabled = configuration.MouseEnabled
 
 	go func() {
+		log.Println("entered goroutine")
 		shortcutsLoadError := shortcuts.Load()
 		if shortcutsLoadError != nil {
 			panic(shortcutsLoadError)
 		}
-
+		log.Println("attempting login")
 		discord, readyEvent := attemptLogin(loginScreen, "", configuration)
+		log.Println("attempted login")
 
 		config.Current.Token = discord.Token
 
@@ -155,7 +161,8 @@ func RunWithAccount(account string) {
 		})
 	}()
 
-	runError := app.Run()
+	log.Println("running")
+	runError := windowManager.Run(&loginWindow)
 	if runError != nil {
 		log.Fatalf("Error launching View (%v).\n", runError)
 	}
@@ -172,7 +179,7 @@ func Run() {
 	RunWithAccount("")
 }
 
-func attemptLogin(loginScreen *ui.Login, loginMessage string, configuration *config.Config) (*discordgo.Session, *discordgo.Ready) {
+func attemptLogin(loginScreen *login.Login, loginMessage string, configuration *config.Config) (*discordgo.Session, *discordgo.Ready) {
 	var (
 		session      *discordgo.Session
 		readyEvent   *discordgo.Ready

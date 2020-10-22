@@ -1,11 +1,10 @@
-package ui
+package login
 
 import (
 	"errors"
-	"os"
 
-	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/cordless/windowman"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell"
@@ -32,7 +31,7 @@ const (
 
 type Login struct {
 	*tview.Flex
-	app                *tview.Application
+	appCtl             windowman.ApplicationControl
 	tokenInput         *tview.InputField
 	tokenInputMasked   bool
 	tokenInputMaskRune rune
@@ -58,10 +57,10 @@ type loginAttempt struct {
 }
 
 // NewLogin creates a new login screen with the login components hidden by default.
-func NewLogin(app *tview.Application, configDir string) *Login {
+func NewLogin(configDir string) *Login {
 	login := &Login{
 		Flex:                    tview.NewFlex().SetDirection(tview.FlexRow),
-		app:                     app,
+		appCtl:                  nil,
 		sessionChannel:          make(chan *loginAttempt, 1),
 		tokenInput:              tview.NewInputField(),
 		usernameInput:           tview.NewInputField(),
@@ -74,18 +73,6 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 		loginTypePasswordButton: tview.NewButton("Login via E-Mail and password (Optionally Supports 2FA)"),
 		messageText:             tview.NewTextView(),
 	}
-
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.ExitApplication.Equals(event) {
-			app.Stop()
-			//We call exit as we'd otherwise be waiting for a value
-			//from the runNext channel.
-			os.Exit(0)
-			return nil
-		}
-
-		return event
-	})
 
 	splashScreen := tview.NewTextView()
 	splashScreen.SetTextAlign(tview.AlignCenter)
@@ -139,10 +126,10 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 			login.attemptLogin()
 			return nil
 		case tcell.KeyTAB, tcell.KeyDown:
-			login.app.SetFocus(login.passwordInput)
+			login.appCtl.SetFocus(login.passwordInput)
 			return nil
 		case tcell.KeyBacktab, tcell.KeyUp:
-			login.app.SetFocus(login.tfaTokenInput)
+			login.appCtl.SetFocus(login.tfaTokenInput)
 			return nil
 		case tcell.KeyCtrlV:
 			content, clipError := clipboard.ReadAll()
@@ -160,10 +147,10 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 			login.attemptLogin()
 			return nil
 		case tcell.KeyTAB, tcell.KeyDown:
-			login.app.SetFocus(login.tfaTokenInput)
+			login.appCtl.SetFocus(login.tfaTokenInput)
 			return nil
 		case tcell.KeyBacktab, tcell.KeyUp:
-			login.app.SetFocus(login.usernameInput)
+			login.appCtl.SetFocus(login.usernameInput)
 			return nil
 		case tcell.KeyCtrlV:
 			content, clipError := clipboard.ReadAll()
@@ -181,10 +168,10 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 			login.attemptLogin()
 			return nil
 		case tcell.KeyTAB, tcell.KeyDown:
-			login.app.SetFocus(login.usernameInput)
+			login.appCtl.SetFocus(login.usernameInput)
 			return nil
 		case tcell.KeyBacktab, tcell.KeyUp:
-			login.app.SetFocus(login.passwordInput)
+			login.appCtl.SetFocus(login.passwordInput)
 			return nil
 		case tcell.KeyCtrlV:
 			content, clipError := clipboard.ReadAll()
@@ -205,7 +192,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 	login.loginTypeTokenButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab || event.Key() == tcell.KeyBacktab || event.Key() == tcell.KeyDown ||
 			event.Key() == tcell.KeyUp || event.Key() == tcell.KeyLeft || event.Key() == tcell.KeyRight {
-			login.app.SetFocus(login.loginTypePasswordButton)
+			login.appCtl.SetFocus(login.loginTypePasswordButton)
 			return nil
 		}
 
@@ -219,7 +206,7 @@ func NewLogin(app *tview.Application, configDir string) *Login {
 	login.loginTypePasswordButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab || event.Key() == tcell.KeyBacktab || event.Key() == tcell.KeyDown ||
 			event.Key() == tcell.KeyUp || event.Key() == tcell.KeyLeft || event.Key() == tcell.KeyRight {
-			login.app.SetFocus(login.loginTypeTokenButton)
+			login.appCtl.SetFocus(login.loginTypeTokenButton)
 			return nil
 		}
 
@@ -257,7 +244,7 @@ func (login *Login) attemptLogin() {
 	//Following two lines are little hack to prevent anything from being leftover
 	//in the terminal buffer from the previous view. This is a bug in the tview
 	//drawing logic.
-	login.app.SetFocus(nil)
+	login.appCtl.SetFocus(nil)
 	login.ResizeItem(login.content, 0, 0)
 
 	login.messageText.SetText("Attempting to log in ...")
@@ -305,7 +292,7 @@ func (login *Login) RequestLogin(additionalMessage string) (*discordgo.Session, 
 	}
 
 	//Easier, since we don't have to call QueueUpdateDraw. Without this, we won't see any of the primitives.
-	login.app.ForceDraw()
+	login.appCtl.Draw()
 
 	loginAttempt := <-login.sessionChannel
 	login.loginType = None
@@ -314,19 +301,19 @@ func (login *Login) RequestLogin(additionalMessage string) (*discordgo.Session, 
 
 func (login *Login) showLoginTypeChoice() {
 	login.showView(login.loginChoiceView, 5)
-	login.app.SetFocus(login.loginTypeTokenButton)
+	login.appCtl.SetFocus(login.loginTypeTokenButton)
 	login.messageText.SetText("Please choose a login method.\n\nLogging in as a Bot will only work using a Authentication-Token.")
 }
 
 func (login *Login) showPasswordLogin() {
 	login.showView(login.passwordInputView, 9)
-	login.app.SetFocus(login.usernameInput)
+	login.appCtl.SetFocus(login.usernameInput)
 	login.messageText.SetText("Please input your E-Mail and password.\n\nIf you haven't enabled Two-Factor-Authentication on your account, just leave the field empty.")
 }
 
 func (login *Login) showTokenLogin() {
 	login.showView(login.tokenInputView, 3)
-	login.app.SetFocus(login.tokenInput)
+	login.appCtl.SetFocus(login.tokenInput)
 	login.messageText.SetText("Prepend 'Bot ' for bot tokens.\n\nFor information on how to retrieve your token, check:\nhttps://github.com/Bios-Marcel/cordless/wiki/Retrieving-your-token\n\nToken input is hidden by default, toggle with Ctrl + R.")
 }
 
@@ -334,4 +321,8 @@ func (login *Login) showView(view tview.Primitive, size int) {
 	login.content.RemoveAllItems()
 	login.ResizeItem(login.content, size, 0)
 	login.content.AddItem(tviewutil.CreateCenteredComponent(view, 68), size, 0, false)
+}
+
+func (login *Login) SetAppControl(appCtl windowman.ApplicationControl) {
+	login.appCtl = appCtl
 }

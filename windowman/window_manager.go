@@ -18,6 +18,14 @@ type WindowManager interface {
 	Run(window Window) error
 }
 
+type ApplicationControl interface {
+	SetFocus(p tview.Primitive) *tview.Application
+	SetRoot(root tview.Primitive, fullscreen bool) *tview.Application
+	Draw() *tview.Application
+	QueueUpdate(f func()) *tview.Application
+	QueueUpdateDraw(f func()) *tview.Application
+}
+
 type concreteWindowManager struct {
 	tviewApp *tview.Application
 }
@@ -64,10 +72,7 @@ func stackEventHandler(root EventHandler, new EventHandler) EventHandler {
 }
 
 func (wm *concreteWindowManager) Show(window Window) error {
-	err := window.Show(func(root tview.Primitive) error {
-		wm.tviewApp.SetRoot(root, true)
-		return nil
-	}, createSetFocusCallback(wm.tviewApp))
+	err := window.Show(wm.tviewApp)
 
 	if err != nil {
 		return err
@@ -97,7 +102,7 @@ func (wm *concreteWindowManager) Run(window Window) error {
 	return wm.tviewApp.Run()
 }
 
-func createSetFocusCallback(app *tview.Application) Focusser {
+func createSetFocusCallback(app *tview.Application) func(tview.Primitive) error {
 	return func(primitive tview.Primitive) error {
 		app.SetFocus(primitive)
 		return nil
