@@ -78,17 +78,10 @@ export EXE_32_HASH
 envsubst < cordless.json_template > cordless.json
 
 #
-# Commit and push the new scoop manifest.
-#
-
-git commit cordless.json -m "Bump scoop package to version $RELEASE_DATE"
-git push
-
-#
 # Create a new tag and push it.
 #
 
-git tag -s "$RELEASE_DATE" -m "Update scoop package to version ${RELEASE_DATE}"
+git tag -s "$RELEASE_DATE"
 git push --tags
 
 #
