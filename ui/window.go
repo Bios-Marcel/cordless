@@ -2133,7 +2133,6 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 	} else if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
 		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
-			window.app.ForceDraw()
 		})
 	} else if shortcuts.ToggleCommandView.Equals(event) {
 		window.SetCommandModeEnabled(!window.commandMode)
@@ -2326,7 +2325,6 @@ func (window *Window) ShowTFASetup() error {
 
 		if event.Key() == tcell.KeyESC {
 			window.app.SetRoot(window.rootContainer, true)
-			window.app.ForceDraw()
 			return nil
 		}
 
@@ -2498,13 +2496,7 @@ func (window *Window) updateUserList() {
 		window.app.SetFocus(window.messageInput.GetPrimitive())
 	}
 
-	previousVisibleState := window.userList.internalTreeView.IsVisible()
 	window.userList.internalTreeView.SetVisible(showUserList)
-	if previousVisibleState != showUserList {
-		//We make sure relayouting happens right now, so that things like the
-		//chatview can correctly adapt to the new layout.
-		window.ForceRedraw()
-	}
 
 	if showUserList {
 		if selectedChannel != nil && selectedChannel.Type == discordgo.ChannelTypeGroupDM {
