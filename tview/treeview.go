@@ -801,11 +801,7 @@ func (t *TreeView) Draw(screen tcell.Screen) bool {
 			if node.textX+bulletCharacterWidth < width {
 				style := tcell.StyleDefault.Foreground(node.color)
 				if node == t.currentNode {
-					if IsVtxxx {
-						style = tcell.StyleDefault.Reverse(true)
-					} else {
-						style = tcell.StyleDefault.Background(node.color).Foreground(t.backgroundColor)
-					}
+					style = tcell.StyleDefault.Reverse(true)
 				}
 				if node.blinking {
 					style = style.Blink(true)
