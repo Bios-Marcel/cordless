@@ -2171,7 +2171,7 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 		window.SwitchToGuildsPage()
 		window.app.SetFocus(window.guildList)
 	} else if shortcuts.FocusUserContainer.Equals(event) {
-		if window.activeView == Guilds && window.userList.internalTreeView.IsVisible() {
+		if window.userList.internalTreeView.IsVisible() {
 			window.app.SetFocus(window.userList.internalTreeView)
 		}
 	} else {
