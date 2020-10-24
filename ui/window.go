@@ -2383,8 +2383,8 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 			window.messageInput.SetText("")
 		})
 		_, discordError := window.session.ChannelMessageEdit(channelID, messageID, messageEdited)
-		window.app.QueueUpdateDraw(func() {
-			if discordError != nil {
+		if discordError != nil {
+			window.app.QueueUpdateDraw(func() {
 				retry := "Retry sending"
 				edit := "Edit"
 				cancel := "Cancel"
@@ -2398,8 +2398,8 @@ func (window *Window) editMessage(channelID, messageID, messageEdited string) {
 							window.messageInput.SetText(messageEdited)
 						}
 					}, retry, edit, cancel)
-			}
-		})
+			})
+		}
 	}()
 }
 
