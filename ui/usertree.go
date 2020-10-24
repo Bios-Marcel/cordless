@@ -10,7 +10,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/Bios-Marcel/discordgo"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 // UserTree represents the visual list of users in a guild.

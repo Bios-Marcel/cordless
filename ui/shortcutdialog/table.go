@@ -6,7 +6,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 const (
@@ -35,9 +35,6 @@ func NewShortcutTable() *ShortcutTable {
 
 	table.SetSelectable(true, false)
 	table.SetBorder(true)
-	if tview.IsVtxxx {
-		table.SetSelectedStyle(tcell.ColorBlack, tcell.ColorWhite, tcell.AttrReverse)
-	}
 
 	//Header + emptyrow
 	table.SetFixed(2, 3)

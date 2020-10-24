@@ -26,7 +26,7 @@ import (
 	"github.com/atotto/clipboard"
 
 	"github.com/Bios-Marcel/discordgo"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 	"github.com/gen2brain/beeep"
 
 	"github.com/Bios-Marcel/cordless/tview"
@@ -38,6 +38,7 @@ import (
 	"github.com/Bios-Marcel/cordless/scripting"
 	"github.com/Bios-Marcel/cordless/scripting/js"
 	"github.com/Bios-Marcel/cordless/shortcuts"
+	"github.com/Bios-Marcel/cordless/ui/components"
 	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/maths"
@@ -861,7 +862,7 @@ func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.S
 	window.rootContainer.AddItem(window.dialogReplacement, 2, 0, false)
 
 	if config.Current.ShowBottomBar {
-		bottomBar := NewBottomBar()
+		bottomBar := components.NewBottomBar()
 		bottomBar.AddItem(fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.Username)))
 		bottomBar.AddItem(fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut)))
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
@@ -2343,9 +2344,8 @@ func (window *Window) startEditingMessage(message *discordgo.Message) {
 		window.messageInput.SetText(message.Content)
 		window.messageInput.SetBorderColor(tcell.ColorYellow)
 		window.messageInput.SetBorderFocusColor(tcell.ColorYellow)
-		if tview.IsVtxxx {
-			window.messageInput.SetBorderFocusAttributes(tcell.AttrBlink | tcell.AttrBold)
-		}
+		//On Vtxxx the yellow color won't work, so we blink instead.
+		window.messageInput.SetBorderBlinking(tview.IsVtxxx)
 		window.editingMessageID = &message.ID
 		window.app.SetFocus(window.messageInput.GetPrimitive())
 	}
@@ -2360,12 +2360,10 @@ func (window *Window) exitMessageEditMode() {
 
 func (window *Window) exitMessageEditModeAndKeepText() {
 	window.editingMessageID = nil
+	//On Vtxxx the yellow color won't work, so we blink instead.
+	window.messageInput.SetBorderBlinking(false)
 	window.messageInput.SetBorderColor(tview.Styles.BorderColor)
 	window.messageInput.SetBorderFocusColor(tview.Styles.BorderFocusColor)
-	if tview.IsVtxxx {
-		window.messageInput.SetBorderFocusAttributes(tcell.AttrBold)
-		window.messageInput.SetBorderAttributes(tcell.AttrNone)
-	}
 }
 
 // ShowErrorDialog shows a simple error dialog that has only an Okay button,

@@ -5,15 +5,13 @@ import (
 
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
-	"github.com/gdamore/tcell"
-
-	"github.com/Bios-Marcel/cordless/config"
-	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+	"github.com/Bios-Marcel/cordless/ui/components"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	var table *ShortcutTable
-	var shortcutDescription *tview.TextView
+	var shortcutDescription *components.BottomBar
 	var exitButton *tview.Button
 	var resetButton *tview.Button
 
@@ -55,22 +53,14 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 		return nil
 	})
 
-	primitiveBGColor := tviewutil.ColorToHex(config.GetTheme().PrimitiveBackgroundColor)
-	primaryTextColor := tviewutil.ColorToHex(config.GetTheme().PrimaryTextColor)
+	shortcutDescription = components.NewBottomBar()
+	shortcutDescription.SetBorderPadding(1, 0, 0, 0)
 
-	shortcutDescription = tview.NewTextView()
-	shortcutDescription.SetDynamicColors(true).SetBorderPadding(1, 0, 0, 0)
-	if tview.IsVtxxx {
-		shortcutDescription.SetText("R [::r]Reset shortcut[::-]" +
-			"[::-]  Backspace [::r]Delete shortcut" +
-			"[::-]  Enter [::r]Change shortcut" +
-			"[::-]  Esc [::r]Close dialog")
-	} else {
-		shortcutDescription.SetText("[" + primaryTextColor + "][:" + primitiveBGColor + "]R [:" + primaryTextColor + "][" + primitiveBGColor + "]Reset shortcut" +
-			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Backspace [:" + primaryTextColor + "][" + primitiveBGColor + "]Delete shortcut" +
-			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Enter [:" + primaryTextColor + "][" + primitiveBGColor + "]Change shortcut" +
-			"[" + primaryTextColor + "][:" + primitiveBGColor + "]  Esc [:" + primaryTextColor + "][" + primitiveBGColor + "]Close dialog")
-	}
+	shortcutDescription.AddItem("R - Reset shortcut")
+	shortcutDescription.AddItem("Backspace - Delete shortcut")
+	shortcutDescription.AddItem("Enter - Change shortcut")
+	shortcutDescription.AddItem("ESC - Close dialog")
+
 	table.SetFocusNext(func() { app.SetFocus(resetButton) })
 	table.SetFocusPrevious(func() { app.SetFocus(exitButton) })
 

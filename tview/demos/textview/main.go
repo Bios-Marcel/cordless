@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 	"github.com/Bios-Marcel/cordless/tview"
 )
 

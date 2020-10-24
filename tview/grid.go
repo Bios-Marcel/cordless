@@ -3,7 +3,7 @@ package tview
 import (
 	"math"
 
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 // gridItem represents one primitive and its possible position on a grid.

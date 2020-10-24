@@ -4,7 +4,7 @@ import (
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/atotto/clipboard"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 // PrompSecretSingleLineInput shows a fullscreen input dialog that masks the
