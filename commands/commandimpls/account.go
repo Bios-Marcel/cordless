@@ -36,7 +36,7 @@ type Account struct {
 // in the users folder.
 type AccountLogout struct {
 	window  *ui.Window
-	runNext chan bool
+	restart func()
 }
 
 // NewAccount creates a ready-to-use Account command.
@@ -45,8 +45,8 @@ func NewAccount(accountLogout *AccountLogout, window *ui.Window) *Account {
 }
 
 // NewAccountLogout creates a ready-to-use Logout command.
-func NewAccountLogout(runNext chan bool, window *ui.Window) *AccountLogout {
-	return &AccountLogout{window: window, runNext: runNext}
+func NewAccountLogout(restart func(), window *ui.Window) *AccountLogout {
+	return &AccountLogout{window: window, restart: restart}
 }
 
 // Execute runs the command piping its output into the supplied writer.
@@ -252,8 +252,8 @@ func (accountLogout *AccountLogout) saveAndRestart(writer io.Writer) error {
 	}
 
 	//Using a go routine, so this instance doesn't stay alive and pollutes the memory.
-	accountLogout.runNext <- true
 	accountLogout.window.Shutdown()
+	accountLogout.restart()
 
 	return nil
 }

@@ -5,11 +5,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/Bios-Marcel/cordless/app"
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/logging"
+	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
 	"github.com/Bios-Marcel/cordless/version"
 )
@@ -43,15 +45,35 @@ func main() {
 		config.SetConfigFile(*setConfigFilePath)
 	}
 
+	//Making sure both the main app and the shortcuts dialog have the
+	//correct theme and configuration files.
+	configLoadError := config.LoadConfig()
+	if configLoadError != nil {
+		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
+	}
+	themeLoadingError := config.LoadTheme()
+	if themeLoadingError != nil {
+		panic(themeLoadingError)
+	}
+	tview.Styles = *config.GetTheme().Theme
+
 	if showShortcutsDialog != nil && *showShortcutsDialog {
 		shortcutdialog.RunShortcutsDialogStandalone()
 	} else if showVersion != nil && *showVersion {
 		fmt.Printf("You are running cordless version %s\nKeep in mind that this version might not be correct for manually built versions, as those can contain additional commits.\n", version.Version)
 	} else {
+		//App that will be reused throughout the process runtime.
+		tviewApp := tview.NewApplication()
+
 		if accountToUse != nil && *accountToUse != "" {
-			app.RunWithAccount(*accountToUse)
+			app.SetupApplicationWithAccount(tviewApp, *accountToUse)
 		} else {
-			app.Run()
+			app.SetupApplication(tviewApp)
+		}
+
+		runError := tviewApp.Run()
+		if runError != nil {
+			log.Fatalf("Error launching View (%v).\n", runError)
 		}
 	}
 }
