@@ -58,7 +58,7 @@ func Test_isCurrentOlder(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isCurrentOlder(tt.args.current, tt.args.other); got != tt.want {
+			if got := isLocalOlderThanRemote(tt.args.current, tt.args.other); got != tt.want {
 				t.Errorf("isCurrentOlder() = %v, want %v", got, tt.want)
 			}
 		})

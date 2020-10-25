@@ -4,8 +4,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/gdamore/tcell"
-
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 
 	"github.com/Bios-Marcel/cordless/tview"
@@ -295,7 +293,8 @@ func (channelTree *ChannelTree) MarkAsUnread(channelID string) {
 
 func (channelTree *ChannelTree) markNodeAsUnread(node *tview.TreeNode) {
 	if tview.IsVtxxx {
-		node.SetAttributes(tcell.AttrBlink)
+		node.SetBlinking(true)
+		node.SetUnderline(false)
 	} else {
 		node.SetColor(config.GetTheme().AttentionColor)
 	}
@@ -312,7 +311,8 @@ func (channelTree *ChannelTree) MarkAsRead(channelID string) {
 
 func (channelTree *ChannelTree) markNodeAsRead(node *tview.TreeNode) {
 	if tview.IsVtxxx {
-		node.SetAttributes(tcell.AttrNone)
+		node.SetBlinking(false)
+		node.SetUnderline(false)
 	} else {
 		node.SetColor(config.GetTheme().PrimaryTextColor)
 	}
@@ -371,7 +371,8 @@ func (channelTree *ChannelTree) MarkAsLoaded(channelID string) {
 
 func (channelTree *ChannelTree) markNodeAsLoaded(node *tview.TreeNode) {
 	if tview.IsVtxxx {
-		node.SetAttributes(tcell.AttrUnderline)
+		node.SetUnderline(true)
+		node.SetBlinking(false)
 	} else {
 		node.SetColor(tview.Styles.ContrastBackgroundColor)
 	}

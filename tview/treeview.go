@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 // Tree navigation events.
@@ -36,8 +36,9 @@ type TreeNode struct {
 	// The text color.
 	color tcell.Color
 
-	// The text attributes.
-	attr tcell.AttrMask
+	blinking bool
+
+	underline bool
 
 	// Whether or not this node can be selected.
 	selectable bool
@@ -263,15 +264,12 @@ func (n *TreeNode) SetColor(color tcell.Color) *TreeNode {
 	return n
 }
 
-// GetAttributes gets the node's attributes.
-func (n *TreeNode) GetAttributes() tcell.AttrMask {
-	return n.attr
+func (n *TreeNode) SetUnderline(underline bool) {
+	n.underline = underline
 }
 
-// SetAttributes sets the node's attributes.
-func (n *TreeNode) SetAttributes(attr tcell.AttrMask) *TreeNode {
-	n.attr = attr
-	return n
+func (n *TreeNode) SetBlinking(blinking bool) {
+	n.blinking = blinking
 }
 
 // SetIndent sets an additional indentation for this node's text. A value of 0
@@ -801,13 +799,18 @@ func (t *TreeView) Draw(screen tcell.Screen) bool {
 
 			// Text.
 			if node.textX+bulletCharacterWidth < width {
-				style := tcell.StyleDefault.Foreground(node.color) | tcell.Style(node.attr)
+				style := tcell.StyleDefault
+				if !IsVtxxx {
+					style = style.Foreground(node.color)
+				}
 				if node == t.currentNode {
-					if IsVtxxx {
-						style = tcell.StyleDefault.Reverse(true)
-					} else {
-						style = tcell.StyleDefault.Background(node.color).Foreground(t.backgroundColor) | tcell.Style(node.attr)
-					}
+					style = style.Reverse(true)
+				}
+				if node.blinking {
+					style = style.Blink(true)
+				}
+				if node.underline {
+					style = style.Underline(true)
 				}
 				var fullPrefix string
 				for _, prefix := range node.prefixes {

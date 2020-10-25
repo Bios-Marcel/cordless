@@ -7,7 +7,7 @@ import (
 	"github.com/Bios-Marcel/cordless/windowman"
 	"github.com/Bios-Marcel/discordgo"
 	"github.com/atotto/clipboard"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/text"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 
 	"github.com/Bios-Marcel/cordless/discordutil"
 	"github.com/Bios-Marcel/cordless/readstate"
@@ -132,7 +132,7 @@ func (privateList *PrivateChatList) addChannel(channel *discordgo.Channel) {
 	if !readstate.HasBeenRead(channel, channel.LastMessageID) {
 		privateList.privateChannelStates[newNode] = unread
 		if tview.IsVtxxx {
-			newNode.SetAttributes(tcell.AttrBlink)
+			newNode.SetBlinking(true)
 		} else {
 			newNode.SetColor(config.GetTheme().AttentionColor)
 		}
@@ -228,7 +228,7 @@ func (privateList *PrivateChatList) MarkAsUnread(channelID string) {
 		privateList.privateChannelStates[node] = unread
 		privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 		if tview.IsVtxxx {
-			node.SetAttributes(tcell.AttrBlink)
+			node.SetBlinking(true)
 		} else {
 			node.SetColor(config.GetTheme().AttentionColor)
 		}
@@ -253,7 +253,8 @@ func (privateList *PrivateChatList) MarkAsRead(channelID string) {
 		privateList.setNotificationCount(privateList.amountOfUnreadChannels())
 		privateList.privateChannelStates[node] = read
 		if tview.IsVtxxx {
-			node.SetAttributes(tcell.AttrNone)
+			node.SetBlinking(false)
+			node.SetUnderline(false)
 		} else {
 			node.SetColor(config.GetTheme().PrimaryTextColor)
 		}
@@ -297,7 +298,8 @@ func (privateList *PrivateChatList) MarkAsLoaded(channelID string) {
 		if state == loaded {
 			privateList.privateChannelStates[node] = read
 			if tview.IsVtxxx {
-				node.SetAttributes(tcell.AttrNone)
+				node.SetBlinking(false)
+				node.SetUnderline(false)
 			} else {
 				node.SetColor(config.GetTheme().PrimaryTextColor)
 			}
@@ -309,8 +311,8 @@ func (privateList *PrivateChatList) MarkAsLoaded(channelID string) {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channelID {
 			privateList.privateChannelStates[node] = loaded
-			if tview.IsVtxxx {
-				node.SetAttributes(tcell.AttrUnderline)
+			if !tview.IsVtxxx {
+				node.SetUnderline(true)
 			} else {
 				node.SetColor(tview.Styles.ContrastBackgroundColor)
 			}

@@ -4,13 +4,17 @@
 # This tiny script helps me not to mess up the procedure of releasing a new
 # version of cordless.
 #
-# Dependencies:
+# Build dependencies:
 #   * sha256sum
 #   * envsubst
 #   * git
 #   * date
 #   * go
-#   * xclip
+#
+# While this script runs on Linux, it creates binaries for Linux, Windows and
+# MacOS. On top of that, new manifests for brew and scoop are created.
+# The binaries get pushed into a new GitHub release, using the previous commits
+# as the tag message. The scoop and brew manifests have to be uplaod manually.
 #
 
 #
@@ -78,18 +82,10 @@ export EXE_32_HASH
 envsubst < cordless.json_template > cordless.json
 
 #
-# Commit and push the new scoop manifest.
-#
-
-git commit cordless.json -m "Bump scoop package to version $RELEASE_DATE"
-git push
-
-#
 # Create a new tag and push it.
 #
 
-git tag -s "$RELEASE_DATE" -m "Update scoop package to version ${RELEASE_DATE}"
-git push --tags
+git tag -s "$RELEASE_DATE"
 
 #
 # Copies the changelog for pasting into the github release. The changes will
@@ -97,6 +93,14 @@ git push --tags
 #
 
 RELEASE_BODY="$(git log --pretty=oneline --abbrev-commit "$(git describe --abbrev=0 "$(git describe --abbrev=0)"^)".."$(git describe --abbrev=0)")"
+
+#
+# Push both previously created commits and the tag.
+# We push as late as possible, to avoid pushing with
+# errors happening afterwards.
+#
+
+git push --follow-tags
 
 #
 # Temporarily disable that the script exists on subcommand failure.

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/Bios-Marcel/cordless/tview"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 func main() {

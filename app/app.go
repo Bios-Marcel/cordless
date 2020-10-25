@@ -46,15 +46,7 @@ func RunWithAccount(account string) {
 		configuration.Token = configuration.GetAccountToken(account)
 	}
 
-	updateAvailableChannel := make(chan bool, 1)
-	if configuration.ShowUpdateNotifications {
-		go func() {
-			updateAvailableChannel <- version.IsLocalOutdated(configuration.DontShowUpdateNotificationFor)
-		}()
-	} else {
-		updateAvailableChannel <- false
-	}
-
+	updateAvailableChannel := version.CheckForUpdate(configuration.DontShowUpdateNotificationFor)
 	app.MouseEnabled = configuration.MouseEnabled
 
 	go func() {
@@ -79,13 +71,11 @@ func RunWithAccount(account string) {
 
 		readstate.Load(discord.State)
 
-		isUpdateAvailable := <-updateAvailableChannel
-		close(updateAvailableChannel)
-		if isUpdateAvailable {
+		if isUpdateAvailable := <-updateAvailableChannel; isUpdateAvailable {
 			waitForUpdateDialogChannel := make(chan bool, 1)
 
 			dialog := tview.NewModal()
-			dialog.SetText(fmt.Sprintf("Version %s of cordless is available!\nYou are currently running version %s.\n\nUpdates have to be installed manually or via your package manager.", version.GetLatestRemoteVersion(), version.Version))
+			dialog.SetText(fmt.Sprintf("Version %s of cordless is available!\nYou are currently running version %s.\n\nUpdates have to be installed manually or via your package manager.\n\nThe snap package manager isn't supported by cordless anymore!", version.GetLatestRemoteVersion(), version.Version))
 			buttonOk := "Thanks for the info"
 			buttonDontRemindAgainForThisVersion := fmt.Sprintf("Skip reminders for %s", version.GetLatestRemoteVersion())
 			buttonNeverRemindMeAgain := "Never remind me again"

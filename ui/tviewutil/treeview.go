@@ -2,7 +2,7 @@ package tviewutil
 
 import (
 	"github.com/Bios-Marcel/cordless/tview"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 func CreateFocusTextViewOnTypeInputHandler(app *tview.Application, component *tview.TextView) func(event *tcell.EventKey) *tcell.EventKey {

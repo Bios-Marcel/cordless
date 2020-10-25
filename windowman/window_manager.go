@@ -1,9 +1,10 @@
 package windowman
 
 import (
+	tcell "github.com/gdamore/tcell/v2"
+
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
-	"github.com/gdamore/tcell"
 )
 
 var (

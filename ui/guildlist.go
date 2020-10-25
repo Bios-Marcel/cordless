@@ -6,7 +6,6 @@ import (
 	"github.com/Bios-Marcel/cordless/readstate"
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/Bios-Marcel/discordgo"
-	"github.com/gdamore/tcell"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
@@ -77,14 +76,18 @@ func (g *GuildList) updateNodeState(guild *discordgo.Guild, node *tview.TreeNode
 	if loaded {
 		g.markNodeAsLoaded(node)
 	} else {
+		//Reset to avoid mistakes
+		if tview.IsVtxxx {
+			node.SetBlinking(false)
+			node.SetUnderline(false)
+		}
 		if !readstate.HasGuildBeenRead(guild.ID) {
 			if tview.IsVtxxx {
-				node.SetAttributes(tcell.AttrBlink)
+				node.SetBlinking(true)
 			} else {
 				node.SetColor(config.GetTheme().AttentionColor)
 			}
 		} else {
-			node.SetAttributes(tcell.AttrNone)
 			node.SetColor(tview.Styles.PrimaryTextColor)
 		}
 	}
@@ -164,9 +167,11 @@ func (g *GuildList) MarkAsLoaded(guildID string) {
 }
 
 func (g *GuildList) markNodeAsLoaded(node *tview.TreeNode) {
+	node.SetBlinking(false)
 	if tview.IsVtxxx {
-		node.SetAttributes(tcell.AttrUnderline)
+		node.SetUnderline(true)
 	} else {
+		node.SetUnderline(false)
 		node.SetColor(tview.Styles.ContrastBackgroundColor)
 	}
 }

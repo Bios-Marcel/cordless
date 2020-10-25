@@ -1,10 +1,10 @@
-package ui
+package components
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 func TestBottomBar(t *testing.T) {
@@ -54,4 +54,11 @@ func TestBottomBar(t *testing.T) {
 	//Nor do we intend to crash with a zero height.
 	bottomBar.SetRect(0, 0, width, 0)
 	bottomBar.Draw(simScreen)
+}
+
+func expectCell(expected rune, column, row int, screen tcell.SimulationScreen, t *testing.T) {
+	cell, _, _, _ := screen.GetContent(column, row)
+	if cell != expected {
+		t.Errorf("Cell missmatch. Was '%c' instead of '%c'.", cell, expected)
+	}
 }

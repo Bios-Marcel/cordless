@@ -5,7 +5,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/atotto/clipboard"
-	"github.com/gdamore/tcell"
+	tcell "github.com/gdamore/tcell/v2"
 
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/femto"
@@ -599,16 +599,9 @@ func (editor *Editor) SetBorderColor(color tcell.Color) {
 	editor.internalTextView.SetBorderColor(color)
 }
 
-// SetBorderAttributes delegates to the underlying components SetBorderAttributes
-// method.
-func (editor *Editor) SetBorderAttributes(attr tcell.AttrMask) {
-	editor.internalTextView.SetBorderAttributes(attr)
-}
-
-// SetBorderFocusAttributes delegates to the underlying components SetBorderFocusAttributes
-// method.
-func (editor *Editor) SetBorderFocusAttributes(attr tcell.AttrMask) {
-	editor.internalTextView.SetBorderFocusAttributes(attr)
+// SetBorderBlinking sets the blinking attribute of the border in tview.
+func (editor *Editor) SetBorderBlinking(blinking bool) {
+	editor.internalTextView.SetBorderBlinking(blinking)
 }
 
 // SetInputCapture sets the alternative input capture that will be used if the
