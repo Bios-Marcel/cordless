@@ -957,6 +957,10 @@ important changes of the last two versions officially released.
 
 [::b]THIS VERSION
 	- Features
+	- Changes
+	- Bugfixes
+[::b]2020-10-24
+	- Features
 		- DM people via "p" in the chatview or use the dm-open command
 		- Mark guilds as read
 		- Mark guild channels as read
