@@ -5,7 +5,7 @@ cordless_linux_64
 cordless
 cordless_64.exe
 cordless_32.exe
-.vscode/
+cordless_debug
 .idea/
 *.log
 theme.json
