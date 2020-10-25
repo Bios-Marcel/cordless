@@ -47,15 +47,7 @@ func RunWithAccount(account string) {
 		configuration.Token = configuration.GetAccountToken(account)
 	}
 
-	updateAvailableChannel := make(chan bool, 1)
-	if configuration.ShowUpdateNotifications {
-		go func() {
-			updateAvailableChannel <- version.IsLocalOutdated(configuration.DontShowUpdateNotificationFor)
-		}()
-	} else {
-		updateAvailableChannel <- false
-	}
-
+	updateAvailableChannel := version.CheckForUpdate(configuration.DontShowUpdateNotificationFor)
 	app.MouseEnabled = configuration.MouseEnabled
 
 	go func() {
@@ -78,9 +70,7 @@ func RunWithAccount(account string) {
 
 		readstate.Load(discord.State)
 
-		isUpdateAvailable := <-updateAvailableChannel
-		close(updateAvailableChannel)
-		if isUpdateAvailable {
+		if isUpdateAvailable := <-updateAvailableChannel; isUpdateAvailable {
 			waitForUpdateDialogChannel := make(chan bool, 1)
 
 			dialog := tview.NewModal()
