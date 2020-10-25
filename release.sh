@@ -82,7 +82,6 @@ envsubst < cordless.json_template > cordless.json
 #
 
 git tag -s "$RELEASE_DATE"
-git push --tags
 
 #
 # Copies the changelog for pasting into the github release. The changes will
@@ -90,6 +89,14 @@ git push --tags
 #
 
 RELEASE_BODY="$(git log --pretty=oneline --abbrev-commit "$(git describe --abbrev=0 "$(git describe --abbrev=0)"^)".."$(git describe --abbrev=0)")"
+
+#
+# Push both previously created commits and the tag.
+# We push as late as possible, to avoid pushing with
+# errors happening afterwards.
+#
+
+git push --follow-tags
 
 #
 # Temporarily disable that the script exists on subcommand failure.
