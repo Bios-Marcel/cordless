@@ -99,6 +99,14 @@ func RunShortcutsDialogStandalone() {
 		log.Fatalf("Error loading shortcuts: %s\n", loadError)
 	}
 	app := tview.NewApplication()
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if shortcuts.ExitApplication.Equals(event) {
+			app.Stop()
+			return nil
+		}
+
+		return event
+	})
 	ShowShortcutsDialog(app, func() {
 		app.Stop()
 	})
