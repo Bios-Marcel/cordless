@@ -19,38 +19,30 @@ import (
 	"github.com/Bios-Marcel/cordless/version"
 )
 
-// RunWithAccount launches the whole application and might
+// SetupApplicationWithAccount launches the whole application and might
 // abort in case it encounters an error. The login will attempt
 // using the account specified, unless the argument is empty.
 // If the account can't be found, the login page will be shown.
-func RunWithAccount(account string) {
-	configDir, configErr := config.GetConfigDirectory()
+func SetupApplicationWithAccount(app *tview.Application, account string) windowman.Window {
+	configuration := config.Current
 
+	//We do this right after loading the configuration, as this might take
+	//longer than all following calls.
+	updateAvailableChannel := version.CheckForUpdate(configuration.DontShowUpdateNotificationFor)
+
+	configDir, configErr := config.GetConfigDirectory()
 	if configErr != nil {
 		log.Fatalf("Unable to determine configuration directory (%s)\n", configErr.Error())
 	}
 
-	windowManager := windowman.GetWindowManager()
 	loginWindow := login.NewLoginWindow(configDir)
-
-	app := tview.NewApplication()
 	loginScreen := loginWindow.LoginWindowComponent
-	runNext := make(chan bool, 1)
-
-	configuration, configLoadError := config.LoadConfig()
-	if configLoadError != nil {
-		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
-	}
 
 	if strings.TrimSpace(account) != "" {
 		configuration.Token = configuration.GetAccountToken(account)
 	}
 
-	updateAvailableChannel := version.CheckForUpdate(configuration.DontShowUpdateNotificationFor)
-	app.MouseEnabled = configuration.MouseEnabled
-
 	go func() {
-		log.Println("entered goroutine")
 		shortcutsLoadError := shortcuts.Load()
 		if shortcutsLoadError != nil {
 			panic(shortcutsLoadError)
@@ -101,7 +93,7 @@ func RunWithAccount(account string) {
 		}
 
 		app.QueueUpdateDraw(func() {
-			window, createError := ui.NewWindow(runNext, app, discord, readyEvent)
+			window, createError := ui.NewWindow(app, discord, readyEvent)
 
 			if createError != nil {
 				app.Stop()
@@ -119,7 +111,7 @@ func RunWithAccount(account string) {
 			window.RegisterCommand(statusSetCustomCmd)
 			window.RegisterCommand(commandimpls.NewStatusCommand(statusGetCmd, statusSetCmd, statusSetCustomCmd))
 			window.RegisterCommand(commandimpls.NewFileSendCommand(discord, window))
-			accountLogout := commandimpls.NewAccountLogout(runNext, window)
+			accountLogout := commandimpls.NewAccountLogout(func() { SetupApplication(app) }, window)
 			window.RegisterCommand(accountLogout)
 			window.RegisterCommand(commandimpls.NewAccount(accountLogout, window))
 			window.RegisterCommand(commandimpls.NewManualCommand(window))
@@ -151,22 +143,13 @@ func RunWithAccount(account string) {
 		})
 	}()
 
-	log.Println("running")
-	runError := windowManager.Run(&loginWindow)
-	if runError != nil {
-		log.Fatalf("Error launching View (%v).\n", runError)
-	}
-
-	run := <-runNext
-	if run {
-		Run()
-	}
+	return &loginWindow
 }
 
-// Run launches the whole application and might abort in case
+// SetupApplication launches the whole application and might abort in case
 // it encounters an error.
-func Run() {
-	RunWithAccount("")
+func SetupApplication(app *tview.Application) windowman.Window {
+	return SetupApplicationWithAccount(app, "")
 }
 
 func attemptLogin(loginScreen *login.Login, loginMessage string, configuration *config.Config) (*discordgo.Session, *discordgo.Ready) {

@@ -113,7 +113,7 @@ type ShortcutDialog struct {
 	ShortcutWindow
 
 	closer windowman.DialogCloser
-} 
+}
 
 func (sd *ShortcutDialog) Open(close windowman.DialogCloser) error {
 	sd.closer = close

@@ -5,6 +5,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/Bios-Marcel/cordless/app"
@@ -46,6 +47,12 @@ func main() {
 		config.SetConfigFile(*setConfigFilePath)
 	}
 
+	//Making sure both the main app and the shortcuts dialog have the
+	//correct theme and configuration files.
+	configLoadError := config.LoadConfig()
+	if configLoadError != nil {
+		log.Fatalf("Error loading configuration file (%s).\n", configLoadError.Error())
+	}
 	themeLoadingError := config.LoadTheme()
 	if themeLoadingError != nil {
 		panic(themeLoadingError)
@@ -64,10 +71,20 @@ func main() {
 	} else if uiPrototype != nil && *uiPrototype {
 		fmt.Println("You've started up using the prototype UI. There's nothing to see here yet.")
 	} else {
+		windowManager := windowman.GetWindowManager()
+		//App that will be reused throughout the process runtime.
+		tviewApp := windowManager.GetUnderlyingApp()
+
+		var firstWindow windowman.Window
 		if accountToUse != nil && *accountToUse != "" {
-			app.RunWithAccount(*accountToUse)
+			firstWindow = app.SetupApplicationWithAccount(tviewApp, *accountToUse)
 		} else {
-			app.Run()
+			firstWindow = app.SetupApplication(tviewApp)
+		}
+
+		runError := windowman.GetWindowManager().Run(firstWindow)
+		if runError != nil {
+			log.Fatalf("Error launching View (%v).\n", runError)
 		}
 	}
 }

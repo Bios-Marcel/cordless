@@ -3,6 +3,7 @@ package windowman
 import (
 	tcell "github.com/gdamore/tcell/v2"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
 )
@@ -17,6 +18,9 @@ type WindowManager interface {
 	Show(window Window) error
 	Dialog(dialog Dialog) error
 	Run(window Window) error
+
+	// FIXME Temporary solution.
+	GetUnderlyingApp() *tview.Application
 }
 
 type ApplicationControl interface {
@@ -44,6 +48,8 @@ func newWindowManager() WindowManager {
 		tviewApp: tview.NewApplication(),
 	}
 
+	wm.tviewApp.MouseEnabled = config.Current.MouseEnabled
+
 	// WindowManager sets the root input handler.
 	// It captures exit application shortcuts, and exits the application,
 	// or otherwise allows the event to bubble down.
@@ -58,6 +64,10 @@ func (wm *concreteWindowManager) exitApplicationEventHandler(event *tcell.EventK
 		return nil
 	}
 	return event
+}
+
+func (wm *concreteWindowManager) GetUnderlyingApp() *tview.Application {
+	return wm.tviewApp
 }
 
 func stackEventHandler(root EventHandler, new EventHandler) EventHandler {

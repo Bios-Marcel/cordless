@@ -89,8 +89,6 @@ type Window struct {
 	userActive      bool
 	userActiveTimer *time.Timer
 
-	doRestart chan bool
-
 	bareChat   bool
 	activeView ActiveView
 }
@@ -103,9 +101,8 @@ const Dms ActiveView = false
 //NewWindow constructs the whole application window and also registers all
 //necessary handlers and functions. If this function returns an error, we can't
 //start the application.
-func NewWindow(doRestart chan bool, app *tview.Application, session *discordgo.Session, readyEvent *discordgo.Ready) (*Window, error) {
+func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *discordgo.Ready) (*Window, error) {
 	window := &Window{
-		doRestart:        doRestart,
 		session:          session,
 		app:              app,
 		activeView:       Guilds,
@@ -2110,7 +2107,7 @@ func (window *Window) SetCommandModeEnabled(enabled bool) {
 
 func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventKey {
 	if shortcuts.ExitApplication.Equals(event) {
-		window.doRestart <- false
+		//window#Shutdown unnecessary, as we shut the whole process down.
 		window.app.Stop()
 		return nil
 	}
@@ -2695,5 +2692,4 @@ func (window *Window) Shutdown() {
 		window.chatView.shortener.Close()
 	}
 	window.session.Close()
-	window.app.Stop()
 }

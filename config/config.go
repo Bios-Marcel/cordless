@@ -330,21 +330,22 @@ func getAbsolutePath(directoryPath string) (string, error) {
 	return absolutePath, resolveError
 }
 
-//LoadConfig loads the configuration initially and returns it.
-func LoadConfig() (*Config, error) {
+// LoadConfig loads the configuration. After loading the configuration, it can
+// be accessed via config.Current.
+func LoadConfig() error {
 	configFilePath, configError := GetConfigFile()
 	if configError != nil {
-		return nil, configError
+		return configError
 	}
 
 	configFile, openError := os.Open(configFilePath)
 
 	if os.IsNotExist(openError) {
-		return Current, nil
+		return nil
 	}
 
 	if openError != nil {
-		return nil, openError
+		return openError
 	}
 
 	defer configFile.Close()
@@ -353,10 +354,10 @@ func LoadConfig() (*Config, error) {
 
 	//io.EOF would mean empty, therefore we use defaults.
 	if configLoadError != nil && configLoadError != io.EOF {
-		return nil, configLoadError
+		return configLoadError
 	}
 
-	return Current, nil
+	return nil
 }
 
 // UpdateCurrentToken updates the current token and all accounts where the
