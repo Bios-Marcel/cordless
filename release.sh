@@ -4,13 +4,17 @@
 # This tiny script helps me not to mess up the procedure of releasing a new
 # version of cordless.
 #
-# Dependencies:
+# Build dependencies:
 #   * sha256sum
 #   * envsubst
 #   * git
 #   * date
 #   * go
-#   * xclip
+#
+# While this script runs on Linux, it creates binaries for Linux, Windows and
+# MacOS. On top of that, new manifests for brew and scoop are created.
+# The binaries get pushed into a new GitHub release, using the previous commits
+# as the tag message. The scoop and brew manifests have to be uplaod manually.
 #
 
 #
