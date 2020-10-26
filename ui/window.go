@@ -950,17 +950,36 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	return window, nil
 }
 
-func getWelcomeText() string {
-	return fmt.Sprintf(splashText+`
+func getWelcomeText() []*TextBlock {
+	bold := tcell.StyleDefault.Bold(true)
+	return []*TextBlock{
+		{
+			content: splashText,
+			style:   tcell.StyleDefault,
+		}, {
+			content: fmt.Sprintf(
+				`
 
 Welcome to version %s of Cordless. Below you can see the most
 important changes of the last two versions officially released.
 
-[::b]THIS VERSION
+`, version.Version),
+			style: tcell.StyleDefault,
+		}, {
+			content: "THIS VERSION",
+			style:   bold,
+		}, {
+			content: `
 	- Features
 	- Changes
 	- Bugfixes
-[::b]2020-10-24
+`,
+			style: tcell.StyleDefault,
+		}, {
+			content: "2020-10-24",
+			style:   bold,
+		}, {
+			content: `
 	- Features
 		- DM people via "p" in the chatview or use the dm-open command
 		- Mark guilds as read
@@ -976,17 +995,23 @@ important changes of the last two versions officially released.
 		- Guilds and channels were sometimes falsely seen as muted
 		- Deleting / Leaving guilds now properly deletes them from the UI
 		- Jumping to guilds / channels you were mentioned in, now works by
-		  by typing their name again
+		by typing their name again
 		- Fixed deadlock when spamming "Switch to previous channel"
 		- "Switch to previous channel" doesn't jumble the state anymore
-		  when switching between different guilds and DMs
+		when switching between different guilds and DMs
 		- Muted guilds, channels and categories shouldn't be displayed as
-		  unread anymore
+		unread anymore
 		- @everyone works again, so you can piss of others again
 		- Messages containing links won't disappear anymore after sending
 		- Messages from blocked users won't trigger notifications anymore
 		- No more spammed empty error messages when receiving notifications
-[::b]2020-08-30
+`,
+			style: tcell.StyleDefault,
+		}, {
+			content: "2020-08-30",
+			style:   bold,
+		}, {
+			content: `
 	- Features
 		- Nicknames can now be disabled via the configuration
 		- Files from messages can now be downloaded (key d) or opened (key o)
@@ -1005,26 +1030,38 @@ important changes of the last two versions officially released.
 		- Names with role colors now respect their role order
 		- Unread message numbers now always update when loading a channel instead of when leaving it
 		- UTF-8 disabling wasn't taken into account when rendering the channel tree
-[::b]2020-08-11 - 2020-06-30
+`,
+			style: tcell.StyleDefault,
+		}, {
+			content: "2020-08-11 - 2020-06-30",
+			style:   bold,
+		}, {
+			content: `
 	- Features
-		- Notifications for servers and DMs are now displayed in the containers header row 
+		- Notifications for servers and DMs are now displayed in the containers header row
 		- Embeds can now be rendered
 		- Usernames can now be rendered with their respective role color.
-		  Bots however can't have colors, to avoid confusion with real users.
-		  The default is set to "single", meaning it uses the default user
-		  color from the specified theme. The setting "UseRandomUserColors" has
-		  been removed.
+			Bots however can't have colors, to avoid confusion with real users.
+			The default is set to "single", meaning it uses the default user
+			color from the specified theme. The setting "UseRandomUserColors" has
+			been removed.
 	- Changes
 		- The button to switch between DMs and servers is gone. Instead you can
-		  click the containers, since the header row is always visible now
+			click the containers, since the header row is always visible now
 		- Token input now ingores surrounding spaces
 		- Bot token syntax is more lenient now
 	-  Bugfixes
 		- Bot login works again
 		- Holding down your left mouse and moving it on the chatview won't
-		  cause lags anymore
+			cause lags anymore
 		- No more false positives for unread dm-channels
-[::b]20-06-26
+`,
+			style: tcell.StyleDefault,
+		}, {
+			content: "2020-06-26",
+			style:   bold,
+		}, {
+			content: `
 	- Features
 		- you can now define a custom status
 		- shortened URLs optionally can display a file suffix (extension)
@@ -1037,7 +1074,13 @@ important changes of the last two versions officially released.
 		- several typos have been corrected
 		- the "version" command printed it's help output to stdout
 		- the "man" command now searches through the content of pages and suggests those
-[::b]2020-01-05
+`,
+			style: tcell.StyleDefault,
+		}, {
+			content: "2020-01-05",
+			style:   bold,
+		}, {
+			content: `
 	- Features
 		- VT320 terminals are now supported
 		- quoted messages now preserve attachment URLs
@@ -1063,8 +1106,10 @@ important changes of the last two versions officially released.
 		- tokeninput on login is now masked
 		- Docs have been improved
 	- JS API
-		- there's now an "init" function that gets called on script load
-`, version.Version)
+		- there's now an "init" function that gets called on script load`,
+			style: tcell.StyleDefault,
+		},
+	}
 }
 
 // initExtensionEngine injections necessary functions into the engine.

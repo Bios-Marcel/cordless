@@ -13,7 +13,7 @@ type ChatView interface {
 	sync.Locker
 
 	SetOnMessageAction(func(*discordgo.Message, *tcell.EventKey) *tcell.EventKey)
-	SetText(string)
+	SetText([]*TextBlock)
 	AddMessage(*discordgo.Message)
 	SetMessages([]*discordgo.Message)
 	UpdateMessage(*discordgo.Message)
@@ -36,4 +36,9 @@ type ChatView interface {
 	SetNextFocusableComponents(tview.FocusDirection, ...tview.Primitive)
 	SetBorderSides(top, left, bottom, right bool)
 	Dispose()
+}
+
+type TextBlock struct {
+	content  string
+	style tcell.Style
 }

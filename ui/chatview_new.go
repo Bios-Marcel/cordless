@@ -9,6 +9,8 @@ import (
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/Bios-Marcel/discordgo"
 	tcell "github.com/gdamore/tcell/v2"
+	"github.com/mattn/go-runewidth"
+	"github.com/rivo/uniseg"
 )
 
 type revampedChatView struct {
@@ -16,6 +18,8 @@ type revampedChatView struct {
 	Box *tview.Box
 
 	onMessageInteraction func(*discordgo.Message, *tcell.EventKey) *tcell.EventKey
+	data                 []*discordgo.Message
+	text                 []*TextBlock
 }
 
 func NewChatView(state *discordgo.State, ownUserID string) ChatView {
@@ -41,7 +45,62 @@ func (chatView *revampedChatView) Draw(screen tcell.Screen) bool {
 		return false
 	}
 
-	//TODO Draw
+	x, y, width, height := chatView.Box.GetInnerRect()
+	if width < 1 || height < 1 {
+		return true
+	}
+
+	if len(chatView.text) > 0 {
+		xDraw := x
+		yDraw := y
+		xOverflown := x + width
+		yOverflown := y + height
+		for _, block := range chatView.text {
+			gr := uniseg.NewGraphemes(block.content)
+			for gr.Next() {
+				if yDraw >= yOverflown {
+					break
+				}
+
+				r := gr.Runes()
+				runesAsString := gr.Str()
+				drawWidth := runewidth.StringWidth(runesAsString)
+				var comb []rune
+				if len(r) > 1 {
+					comb = r[1:]
+				}
+
+				if runesAsString == "\t" {
+					xDraw += 4
+					if xDraw >= xOverflown {
+						if x+4 >= xOverflown {
+							//SKIP Drawing, we don't have space for a tab character.
+							continue
+						}
+						xDraw = x + 4
+						yDraw++
+					}
+					continue
+				}
+				screen.SetContent(xDraw, yDraw, r[0], comb, block.style)
+
+				if runesAsString == "\n" {
+					yDraw++
+					xDraw = x
+				} else {
+					xDraw += drawWidth
+					if xDraw >= xOverflown {
+						xDraw = x
+						yDraw++
+					}
+				}
+			}
+		}
+	} else {
+		//for _, message := range chatView.data {
+
+		//}
+	}
 
 	return true
 }
@@ -50,8 +109,8 @@ func (chatView *revampedChatView) SetOnMessageAction(onMessageInteraction func(*
 	chatView.onMessageInteraction = onMessageInteraction
 }
 
-func (chatView *revampedChatView) SetText(_ string) {
-	//TODO
+func (chatView *revampedChatView) SetText(text []*TextBlock) {
+	chatView.text = text
 }
 
 func (chatView *revampedChatView) AddMessage(_ *discordgo.Message) {
@@ -93,8 +152,8 @@ func (chatView *revampedChatView) ClearSelection() {
 	//TODO
 }
 
-func (chatView *revampedChatView) SetTitle(_ string) {
-	//TODO
+func (chatView *revampedChatView) SetTitle(title string) {
+	chatView.Box.SetTitle(title)
 }
 
 func (chatView *revampedChatView) Reprint() {

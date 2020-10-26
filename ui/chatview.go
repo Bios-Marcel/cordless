@@ -1168,8 +1168,41 @@ func (chatView *legacyChatView) NextFocusableComponent(direction tview.FocusDire
 	return chatView.internalTextView.NextFocusableComponent(direction)
 }
 
-func (chatView *legacyChatView) SetText(text string) {
-	chatView.internalTextView.SetText(text)
+func (chatView *legacyChatView) SetText(text []*TextBlock) {
+	var stringBuilder strings.Builder
+	for _, block := range text {
+		block.content = tviewutil.Escape(block.content)
+		stringBuilder.Grow(len(block.content))
+	}
+	//Maxlength of attribute overhead.[::bu][::-]
+	stringBuilder.Grow(len(text) * 11)
+	for _, block := range text {
+		formatting := styleToTviewFormatting(block.style)
+		stringBuilder.WriteString(formatting)
+		stringBuilder.WriteString(block.content)
+		if formatting != "" {
+			stringBuilder.WriteString("[::-]")
+		}
+	}
+	chatView.internalTextView.SetText(stringBuilder.String())
+}
+
+func styleToTviewFormatting(style tcell.Style) string {
+	var stringBuilder strings.Builder
+	_, _, attributes := style.Decompose()
+	bold := attributes&tcell.AttrBold == tcell.AttrBold
+	underline := attributes&tcell.AttrUnderline == tcell.AttrUnderline
+	if bold || underline {
+		stringBuilder.WriteString("[::")
+		if bold {
+			stringBuilder.WriteRune('b')
+		}
+		if underline {
+			stringBuilder.WriteRune('u')
+		}
+		stringBuilder.WriteRune(']')
+	}
+	return stringBuilder.String()
 }
 
 func (chatView *legacyChatView) Dispose() {
