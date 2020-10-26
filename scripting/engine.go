@@ -35,5 +35,5 @@ type Engine interface {
 	SetGetCurrentGuildFunction(func() string)
 	SetGetCurrentChannelFunction(func() string)
 
-	SetReplyMessageFunction(func(string, string))
+	SetReplyMessageFunction(func(discordgo.Message, string))
 }

@@ -6,6 +6,7 @@
 package js
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -307,9 +308,9 @@ func (engine *JavaScriptEngine) SetTriggerNotificationFunction(function func(tit
 }
 
 // SetReplyMessageFunction implements Engine
-func (engine *JavaScriptEngine) SetReplyMessageFunction(function func(channelID string, text string)) {
-	triggerNotification := func(call otto.FunctionCall) otto.Value {
-		channelID, argError := call.Argument(0).ToString()
+func (engine *JavaScriptEngine) SetReplyMessageFunction(function func(message discordgo.Message, text string)) {
+	replyMessage := func(call otto.FunctionCall) otto.Value {
+		exported, argError := call.Argument(0).Export()
 		if argError != nil {
 			log.Printf("Error invoking replyMessageFunction in JS engine: %s\n", argError)
 			return nullValue
@@ -319,10 +320,23 @@ func (engine *JavaScriptEngine) SetReplyMessageFunction(function func(channelID 
 			log.Printf("Error invoking replyMessageFunction in JS engine: %s\n", argError)
 			return nullValue
 		}
-		function(channelID, text)
+
+		jsonBody, parseError := json.Marshal(exported)
+		if parseError != nil {
+			log.Printf("Error invoking replyMessageFunction in JS engine: %s\n", parseError)
+			return nullValue
+		}
+
+		message := discordgo.Message{}
+		if parseError := json.Unmarshal(jsonBody, &message); parseError != nil {
+			log.Printf("Error invoking replyMessageFunction in JS engine: %s\n", parseError)
+			return nullValue
+		}
+
+		function(message, text)
 		return nullValue
 	}
-	engine.setFunctionOnVMs("replyMessage", triggerNotification)
+	engine.setFunctionOnVMs("replyMessage", replyMessage)
 }
 
 // SetPrintToConsoleFunction implements Engine
