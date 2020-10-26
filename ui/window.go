@@ -1225,7 +1225,8 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 	}
 
 	if window.editingMessageID != nil {
-		window.editMessage(targetChannel.ID, *window.editingMessageID, message)
+		messagePrepared := window.prepareMessage(targetChannel, message)
+		window.editMessage(targetChannel.ID, *window.editingMessageID, messagePrepared)
 		return
 	}
 
