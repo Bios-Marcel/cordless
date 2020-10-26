@@ -1,3 +1,5 @@
+// +build !chatview_revamp
+
 package ui
 
 import (
@@ -40,47 +42,11 @@ const embedTimestampFormat = "2006-01-02 15:04"
 var (
 	successiveCustomEmojiRegex = regexp.MustCompile("<a?:.+?:\\d+(><)a?:.+?:\\d+>")
 	customEmojiRegex           = regexp.MustCompile("(?sm)(.?)<(a?):(.+?):(\\d+)>(.?)")
-	codeBlockRegex             = regexp.MustCompile("(?sm)(^|.)?(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
 	colorRegex                 = regexp.MustCompile("\\[#.{6}\\]")
 	channelMentionRegex        = regexp.MustCompile(`<#\d*>`)
-	urlRegex                   = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
 	spoilerRegex               = regexp.MustCompile(`(?s)\|\|(.+?)\|\|`)
 	roleMentionRegex           = regexp.MustCompile(`<@&\d*>`)
 )
-
-// ChatView is using a tview.internalTextView in order to be able to display messages
-// in a simple way. It supports highlighting specific element types and it
-// also supports multiline.
-
-type ChatView interface {
-	tview.Primitive
-	sync.Locker
-
-	SetOnMessageAction(func(*discordgo.Message, *tcell.EventKey) *tcell.EventKey)
-	SetText(string)
-	AddMessage(*discordgo.Message)
-	SetMessages([]*discordgo.Message)
-	UpdateMessage(*discordgo.Message)
-	GetData() []*discordgo.Message
-	MessageCount() int
-	DeleteMessage(*discordgo.Message)
-	//FIXME []string is an API inconsistency
-	DeleteMessages([]string)
-	ClearViewAndCache()
-	ClearSelection()
-	SetTitle(string)
-	Reprint()
-	SignalSelectionDeleted()
-	ScrollUp()
-	ScrollDown()
-	ScrollToStart()
-	ScrollToEnd()
-	SetInputCapture(func(*tcell.EventKey) *tcell.EventKey)
-	SetMouseHandler(func(*tcell.EventMouse) bool)
-	SetNextFocusableComponents(tview.FocusDirection, ...tview.Primitive)
-	SetBorderSides(top, left, bottom, right bool)
-	Dispose()
-}
 
 type legacyChatView struct {
 	*sync.Mutex

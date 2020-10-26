@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -46,6 +47,8 @@ import (
 
 var (
 	shortcutsDialogShortcut = tcell.NewEventKey(tcell.KeyCtrlK, rune(tcell.KeyCtrlK), tcell.ModCtrl)
+	codeBlockRegex          = regexp.MustCompile("(?sm)(^|.)?(\x60\x60\x60(.*?)?\n(.+?)\x60\x60\x60)($|.)")
+	urlRegex                = regexp.MustCompile(`<?(https?://)(.+?)(/.+?)?($|\s|\||>)`)
 )
 
 // Window is basically the whole application, as it contains all the
