@@ -48,10 +48,41 @@ var (
 	roleMentionRegex           = regexp.MustCompile(`<@&\d*>`)
 )
 
-// ChatView is using a tview.TextView in order to be able to display messages
+// ChatView is using a tview.internalTextView in order to be able to display messages
 // in a simple way. It supports highlighting specific element types and it
 // also supports multiline.
-type ChatView struct {
+
+type ChatView interface {
+	tview.Primitive
+	sync.Locker
+
+	SetOnMessageAction(func(*discordgo.Message, *tcell.EventKey) *tcell.EventKey)
+	SetText(string)
+	AddMessage(*discordgo.Message)
+	SetMessages([]*discordgo.Message)
+	UpdateMessage(*discordgo.Message)
+	GetData() []*discordgo.Message
+	MessageCount() int
+	DeleteMessage(*discordgo.Message)
+	//FIXME []string is an API inconsistency
+	DeleteMessages([]string)
+	ClearViewAndCache()
+	ClearSelection()
+	SetTitle(string)
+	Reprint()
+	SignalSelectionDeleted()
+	ScrollUp()
+	ScrollDown()
+	ScrollToStart()
+	ScrollToEnd()
+	SetInputCapture(func(*tcell.EventKey) *tcell.EventKey)
+	SetMouseHandler(func(*tcell.EventMouse) bool)
+	SetNextFocusableComponents(tview.FocusDirection, ...tview.Primitive)
+	SetBorderSides(top, left, bottom, right bool)
+	Dispose()
+}
+
+type legacyChatView struct {
 	*sync.Mutex
 
 	internalTextView *tview.TextView
@@ -77,8 +108,8 @@ type ChatView struct {
 }
 
 // NewChatView constructs a new ready to use ChatView.
-func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
-	chatView := ChatView{
+func NewChatView(state *discordgo.State, ownUserID string) ChatView {
+	chatView := &legacyChatView{
 		data:             make([]*discordgo.Message, 0, 100),
 		internalTextView: tview.NewTextView(),
 		state:            state,
@@ -198,17 +229,17 @@ func NewChatView(state *discordgo.State, ownUserID string) *ChatView {
 		SetBorder(true).
 		SetTitleColor(config.GetTheme().InverseTextColor)
 
-	return &chatView
+	return chatView
 }
 
 // SetTitle sets the border text of the chatview.
-func (chatView *ChatView) SetTitle(text string) {
+func (chatView *legacyChatView) SetTitle(text string) {
 	chatView.internalTextView.SetTitle(text)
 }
 
 // SetOnMessageAction sets the handler that will get called if the user tries
 // to interact with a selected message.
-func (chatView *ChatView) SetOnMessageAction(onMessageAction func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey) {
+func (chatView *legacyChatView) SetOnMessageAction(onMessageAction func(message *discordgo.Message, event *tcell.EventKey) *tcell.EventKey) {
 	chatView.onMessageAction = onMessageAction
 }
 
@@ -216,7 +247,7 @@ func intToString(value int) string {
 	return strconv.FormatInt(int64(value), 10)
 }
 
-func (chatView *ChatView) refreshSelectionAndScrollToSelection() {
+func (chatView *legacyChatView) refreshSelectionAndScrollToSelection() {
 	if chatView.selection == -1 {
 		//Empty basically clears the highlights
 		chatView.internalTextView.Highlight("")
@@ -226,15 +257,9 @@ func (chatView *ChatView) refreshSelectionAndScrollToSelection() {
 	}
 }
 
-// GetPrimitive returns the component that can be added to a layout, since
-// the ChatView itself is not a component.
-func (chatView *ChatView) GetPrimitive() tview.Primitive {
-	return chatView.internalTextView
-}
-
 // UpdateMessage reformats the passed message, updates the cache and triggers
 // a reprint.
-func (chatView *ChatView) UpdateMessage(updatedMessage *discordgo.Message) {
+func (chatView *legacyChatView) UpdateMessage(updatedMessage *discordgo.Message) {
 	for _, message := range chatView.data {
 		if message.ID == updatedMessage.ID {
 			chatView.formattedMessages[updatedMessage.ID] = chatView.formatMessage(updatedMessage)
@@ -245,7 +270,7 @@ func (chatView *ChatView) UpdateMessage(updatedMessage *discordgo.Message) {
 }
 
 // DeleteMessage drops the message from the cache and triggers a reprint
-func (chatView *ChatView) DeleteMessage(deletedMessage *discordgo.Message) {
+func (chatView *legacyChatView) DeleteMessage(deletedMessage *discordgo.Message) {
 	delete(chatView.showSpoilerContent, deletedMessage.ID)
 	delete(chatView.formattedMessages, deletedMessage.ID)
 
@@ -259,7 +284,7 @@ func (chatView *ChatView) DeleteMessage(deletedMessage *discordgo.Message) {
 }
 
 // DeleteMessages drops the messages from the cache and triggers a reprint
-func (chatView *ChatView) DeleteMessages(deletedMessages []string) {
+func (chatView *legacyChatView) DeleteMessages(deletedMessages []string) {
 	for _, message := range deletedMessages {
 		delete(chatView.showSpoilerContent, message)
 		delete(chatView.formattedMessages, message)
@@ -285,7 +310,7 @@ OUTER_LOOP:
 
 // ClearViewAndCache clears the TextView buffer and removes all data for
 // all messages.
-func (chatView *ChatView) ClearViewAndCache() {
+func (chatView *legacyChatView) ClearViewAndCache() {
 	//100 as default size, as we usually have message. Even if not, this
 	//is worth the memory overhead.
 	chatView.data = make([]*discordgo.Message, 0, 100)
@@ -298,7 +323,7 @@ func (chatView *ChatView) ClearViewAndCache() {
 
 // addMessageInternal prints a new message to the textview or triggers a
 // rerender. It also takes the blocked relation into consideration.
-func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
+func (chatView *legacyChatView) addMessageInternal(message *discordgo.Message) {
 	isBlocked := discordutil.IsBlocked(chatView.state, message.Author)
 
 	if !config.Current.ShowPlaceholderForBlockedMessages && isBlocked {
@@ -342,7 +367,7 @@ func (chatView *ChatView) addMessageInternal(message *discordgo.Message) {
 }
 
 //AddMessage add an additional message to the ChatView.
-func (chatView *ChatView) AddMessage(message *discordgo.Message) {
+func (chatView *legacyChatView) AddMessage(message *discordgo.Message) {
 	wasScrolledToTheEnd := chatView.internalTextView.IsScrolledToEnd()
 
 	newMessageTime, _ := message.Timestamp.Parse()
@@ -359,12 +384,12 @@ func (chatView *ChatView) AddMessage(message *discordgo.Message) {
 	chatView.addMessageInternal(message)
 	chatView.refreshSelectionAndScrollToSelection()
 	if wasScrolledToTheEnd {
-		chatView.internalTextView.ScrollToEnd()
+		chatView.ScrollToEnd()
 	}
 }
 
 // createDateDelimiter creates a date delimiter between messages to mark the date and returns it
-func (chatView *ChatView) createDateDelimiter(date string) string {
+func (chatView *legacyChatView) createDateDelimiter(date string) string {
 	_, _, width, _ := chatView.internalTextView.GetInnerRect()
 	characterAmountLeftForDashes := width - len(date) - 2 /* Because of the spaces */
 	amountDashesLeft := characterAmountLeftForDashes / 2
@@ -375,7 +400,7 @@ func (chatView *ChatView) createDateDelimiter(date string) string {
 
 // createDateDelimiterIfNecessary creates a delimiter in case that the dates
 // between two messages differ.
-func (chatView *ChatView) createDateDelimiterIfNecessary(messages []*discordgo.Message, index int) string {
+func (chatView *legacyChatView) createDateDelimiterIfNecessary(messages []*discordgo.Message, index int) string {
 	messageTime, _ := messages[index].Timestamp.Parse()
 	messageTimeLocal := messageTime.Local()
 	if index == 0 {
@@ -392,7 +417,7 @@ func (chatView *ChatView) createDateDelimiterIfNecessary(messages []*discordgo.M
 
 // printDateDelimiterIfNecessary prints a date delimiter if the message is the
 // first message or if the dates are different between the current a
-func (chatView *ChatView) printDateDelimiterIfNecessary(messages []*discordgo.Message, index int) {
+func (chatView *legacyChatView) printDateDelimiterIfNecessary(messages []*discordgo.Message, index int) {
 	delimiter := chatView.createDateDelimiterIfNecessary(messages, index)
 	if delimiter != "" {
 		fmt.Fprint(chatView.internalTextView, delimiter)
@@ -405,7 +430,7 @@ func (chatView *ChatView) printDateDelimiterIfNecessary(messages []*discordgo.Me
 // ForceDraw ,QueueUpdateDraw or user events. Calling this method is
 // necessary if previously added content has changed or has been removed, since
 // can only append to the TextViews buffers, but not cut parts out.
-func (chatView *ChatView) Reprint() {
+func (chatView *legacyChatView) Reprint() {
 	var newContent strings.Builder
 	for index, message := range chatView.data {
 		formattedMessage, contains := chatView.formattedMessages[message.ID]
@@ -424,14 +449,14 @@ func (chatView *ChatView) Reprint() {
 	chatView.internalTextView.SetText(newContent.String())
 }
 
-func (chatView *ChatView) formatMessage(message *discordgo.Message) string {
+func (chatView *legacyChatView) formatMessage(message *discordgo.Message) string {
 	return chatView.messagePartsToColouredString(
 		message.Timestamp,
 		chatView.formatMessageAuthor(message),
 		chatView.formatMessageText(message))
 }
 
-func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string {
+func (chatView *legacyChatView) formatMessageAuthor(message *discordgo.Message) string {
 	var member *discordgo.Member
 	if message.GuildID != "" {
 		member, _ = chatView.state.Member(message.GuildID, message.Author.ID)
@@ -451,7 +476,7 @@ func (chatView *ChatView) formatMessageAuthor(message *discordgo.Message) string
 	return "[::b][" + userColor + "]" + messageAuthor + ":[::-]"
 }
 
-func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
+func (chatView *legacyChatView) formatMessageText(message *discordgo.Message) string {
 	if message.Type == discordgo.MessageTypeDefault {
 		return chatView.formatDefaultMessageText(message)
 	} else if message.Type == discordgo.MessageTypeGuildMemberJoin {
@@ -483,7 +508,7 @@ func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 	return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]message couldn't be rendered."
 }
 
-func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) string {
+func (chatView *legacyChatView) formatDefaultMessageText(message *discordgo.Message) string {
 	messageText := tviewutil.Escape(message.Content)
 
 	//Message.MentionRoles only contains the mentions for mentionable.
@@ -889,7 +914,7 @@ func removeLeadingWhitespaceInCode(code string) string {
 	return tabsTrimmed
 }
 
-func (chatView *ChatView) messagePartsToColouredString(timestamp discordgo.Timestamp, author, message string) string {
+func (chatView *legacyChatView) messagePartsToColouredString(timestamp discordgo.Timestamp, author, message string) string {
 	time, parseError := timestamp.Parse()
 	var timeCellText string
 	if parseError == nil {
@@ -1017,14 +1042,14 @@ func parseBoldAndUnderline(messageText string) string {
 }
 
 // ClearSelection clears the current selection of messages.
-func (chatView *ChatView) ClearSelection() {
+func (chatView *legacyChatView) ClearSelection() {
 	chatView.selection = -1
 	chatView.refreshSelectionAndScrollToSelection()
 }
 
 // SignalSelectionDeleted notifies the ChatView that its currently selected
 // message doesn't exist anymore, moving the selection up by a row if possible.
-func (chatView *ChatView) SignalSelectionDeleted() {
+func (chatView *legacyChatView) SignalSelectionDeleted() {
 	if chatView.selection > 0 {
 		chatView.selection--
 	}
@@ -1032,7 +1057,7 @@ func (chatView *ChatView) SignalSelectionDeleted() {
 
 // SetMessages defines all currently displayed messages. Parsing and
 // manipulation of single message elements happens in this function.
-func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
+func (chatView *legacyChatView) SetMessages(messages []*discordgo.Message) {
 	chatView.data = make([]*discordgo.Message, 0, len(messages))
 	chatView.internalTextView.Clear()
 
@@ -1045,6 +1070,144 @@ func (chatView *ChatView) SetMessages(messages []*discordgo.Message) {
 
 	chatView.refreshSelectionAndScrollToSelection()
 	if wasScrolledToTheEnd {
-		chatView.internalTextView.ScrollToEnd()
+		chatView.ScrollToEnd()
+	}
+}
+
+func (chatView *legacyChatView) GetData() []*discordgo.Message {
+	return chatView.data
+}
+
+func (chatView *legacyChatView) MessageCount() int {
+	return len(chatView.data)
+}
+
+func (chatView *legacyChatView) ScrollUp() {
+	chatView.internalTextView.ScrollUp()
+}
+
+func (chatView *legacyChatView) ScrollDown() {
+	chatView.internalTextView.ScrollDown()
+}
+
+func (chatView *legacyChatView) ScrollToStart() {
+	chatView.internalTextView.ScrollToBeginning()
+}
+
+func (chatView *legacyChatView) ScrollToEnd() {
+	chatView.internalTextView.ScrollToEnd()
+}
+
+func (chatView *legacyChatView) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventKey) {
+	chatView.internalTextView.SetInputCapture(capture)
+}
+
+func (chatView *legacyChatView) SetNextFocusableComponents(direction tview.FocusDirection, components ...tview.Primitive) {
+	chatView.internalTextView.SetNextFocusableComponents(direction, components...)
+}
+
+func (chatView *legacyChatView) SetBorderSides(top, left, bottom, right bool) {
+	chatView.internalTextView.SetBorderSides(top, left, bottom, right)
+}
+
+func (chatView *legacyChatView) SetMouseHandler(handler func(event *tcell.EventMouse) bool) {
+	chatView.internalTextView.SetMouseHandler(handler)
+}
+
+// Draw draws this primitive onto the screen. Implementers can call the
+// screen's ShowCursor() function but should only do so when they have focus.
+// (They will need to keep track of this themselves.)
+func (chatView *legacyChatView) Draw(screen tcell.Screen) bool {
+	return chatView.internalTextView.Draw(screen)
+}
+
+// Sets whether the primitive should be drawn onto the screen.
+func (chatView *legacyChatView) SetVisible(visible bool) {
+	chatView.internalTextView.SetVisible(visible)
+}
+
+// Gets whether the primitive should be drawn onto the screen.
+func (chatView *legacyChatView) IsVisible() bool {
+	return chatView.internalTextView.IsVisible()
+}
+
+// GetRect returns the current position of the primitive, x, y, width, and
+// height.
+func (chatView *legacyChatView) GetRect() (int, int, int, int) {
+	return chatView.internalTextView.GetRect()
+}
+
+// SetRect sets a new position of the primitive.
+func (chatView *legacyChatView) SetRect(x int, y int, width int, height int) {
+	chatView.internalTextView.SetRect(x, y, width, height)
+}
+
+func (chatView *legacyChatView) SetParent(parent tview.Primitive) {
+	chatView.internalTextView.SetParent(parent)
+}
+
+func (chatView *legacyChatView) GetParent() tview.Primitive {
+	return chatView.internalTextView.GetParent()
+}
+
+// InputHandler returns a handler which receives key events when it has focus.
+// It is called by the Application class.
+//
+// A value of nil may also be returned, in which case this primitive cannot
+// receive focus and will not process any key events.
+//
+// The handler will receive the key event and a function that allows it to
+// set the focus to a different primitive, so that future key events are sent
+// to that primitive.
+//
+// The Application's Draw() function will be called automatically after the
+// handler returns.
+//
+// The Box class provides functionality to intercept keyboard input. If you
+// subclass from Box, it is recommended that you wrap your handler using
+// Box.WrapInputHandler() so you inherit that functionality.
+func (chatView *legacyChatView) InputHandler() tview.InputHandlerFunc {
+	return chatView.internalTextView.InputHandler()
+}
+
+// Focus is called by the application when the primitive receives focus.
+// Implementers may call delegate() to pass the focus on to another primitive.
+func (chatView *legacyChatView) Focus(delegate func(p tview.Primitive)) {
+	chatView.internalTextView.Focus(delegate)
+}
+
+// Blur is called by the application when the primitive loses focus.
+func (chatView *legacyChatView) Blur() {
+	chatView.internalTextView.Blur()
+}
+
+// SetOnFocus sets the handler that gets called when Focus() gets called.
+func (chatView *legacyChatView) SetOnFocus(handler func()) {
+	chatView.internalTextView.SetOnFocus(handler)
+}
+
+// SetOnBlur sets the handler that gets called when Blur() gets called.
+func (chatView *legacyChatView) SetOnBlur(handler func()) {
+	chatView.internalTextView.SetOnBlur(handler)
+}
+
+// GetFocusable returns the item's Focusable.
+func (chatView *legacyChatView) GetFocusable() tview.Focusable {
+	return chatView.internalTextView.GetFocusable()
+}
+
+// NextFocusableComponent decides which component should receive focus next.
+// If nil is returned, the focus is retained.
+func (chatView *legacyChatView) NextFocusableComponent(direction tview.FocusDirection) tview.Primitive {
+	return chatView.internalTextView.NextFocusableComponent(direction)
+}
+
+func (chatView *legacyChatView) SetText(text string) {
+	chatView.internalTextView.SetText(text)
+}
+
+func (chatView *legacyChatView) Dispose() {
+	if chatView.shortener != nil {
+		chatView.shortener.Close()
 	}
 }

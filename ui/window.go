@@ -65,7 +65,7 @@ type Window struct {
 	privateList *PrivateChatList
 
 	chatArea         *tview.Flex
-	chatView         *ChatView
+	chatView         ChatView
 	messageContainer tview.Primitive
 	messageInput     *Editor
 
@@ -397,12 +397,12 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 		return event
 	})
-	window.messageContainer = window.chatView.GetPrimitive()
+	window.messageContainer = window.chatView
 
 	window.messageInput = NewEditor()
 	window.messageInput.internalTextView.SetIndicateOverflow(true)
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
-		_, _, _, chatViewHeight := window.chatView.internalTextView.GetRect()
+		_, _, _, chatViewHeight := window.chatView.GetRect()
 		newHeight := maths.Min(height, chatViewHeight/2)
 
 		window.chatArea.ResizeItem(window.messageInput.GetPrimitive(), newHeight, 0)
@@ -610,30 +610,31 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	window.messageInput.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers() == tcell.ModCtrl {
 			if event.Key() == tcell.KeyUp {
-				window.chatView.internalTextView.ScrollUp()
+				window.chatView.ScrollUp()
 				return nil
 			}
 
 			if event.Key() == tcell.KeyDown {
-				window.chatView.internalTextView.ScrollDown()
+				window.chatView.ScrollDown()
 				return nil
 			}
 		}
 
 		if event.Key() == tcell.KeyPgUp {
-			handler := window.chatView.internalTextView.InputHandler()
+			handler := window.chatView.InputHandler()
 			handler(tcell.NewEventKey(tcell.KeyPgUp, 0, tcell.ModNone), nil)
 			return nil
 		}
 
 		if event.Key() == tcell.KeyPgDn {
-			handler := window.chatView.internalTextView.InputHandler()
+			handler := window.chatView.InputHandler()
 			handler(tcell.NewEventKey(tcell.KeyPgDn, 0, tcell.ModNone), nil)
 			return nil
 		}
 
 		chooseNextMessageToEdit := func(loopStart, loopEnd int, iterNext func(int) int) *discordgo.Message {
-			if len(window.chatView.data) == 0 {
+			chatViewData := window.chatView.GetData()
+			if len(chatViewData) == 0 {
 				return nil
 			}
 
@@ -642,7 +643,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 			var chooseNextMatch bool
 			for i := loopStart; i != loopEnd; i = iterNext(i) {
-				message := window.chatView.data[i]
+				message := chatViewData[i]
 				if message.Author.ID == window.session.State.User.ID {
 					if !chooseNextMatch && window.editingMessageID != nil && *window.editingMessageID == message.ID {
 						chooseNextMatch = true
@@ -662,7 +663,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		if event.Key() == tcell.KeyUp {
 			messageToSend := window.messageInput.GetText()
 			if messageToSend == "" || window.editingMessageID != nil {
-				messageToEdit := chooseNextMessageToEdit(len(window.chatView.data)-1, -1, func(i int) int { return i - 1 })
+				messageToEdit := chooseNextMessageToEdit(window.chatView.MessageCount()-1, -1, func(i int) int { return i - 1 })
 				if messageToEdit != nil {
 					window.startEditingMessage(messageToEdit)
 				}
@@ -672,7 +673,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		}
 
 		if event.Key() == tcell.KeyDown && window.editingMessageID != nil {
-			messageToEdit := chooseNextMessageToEdit(0, len(window.chatView.data), func(i int) int { return i + 1 })
+			messageToEdit := chooseNextMessageToEdit(0, window.chatView.MessageCount(), func(i int) int { return i + 1 })
 			if messageToEdit != nil {
 				window.startEditingMessage(messageToEdit)
 			}
@@ -754,7 +755,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		channelTree.SetInputCapture(focusTextViewOnTypeInputHandler)
 		window.userList.SetInputCapture(focusTextViewOnTypeInputHandler)
 		window.privateList.SetInputCapture(focusTextViewOnTypeInputHandler)
-		window.chatView.internalTextView.SetInputCapture(focusTextViewOnTypeInputHandler)
+		window.chatView.SetInputCapture(focusTextViewOnTypeInputHandler)
 	}
 
 	newGuildHandler := func(event *tcell.EventKey) *tcell.EventKey {
@@ -902,8 +903,8 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 	window.SwitchToGuildsPage()
 
-	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Up, window.chatView.internalTextView)
-	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Down, window.commandView.commandOutput, window.chatView.internalTextView)
+	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Up, window.chatView)
+	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Down, window.commandView.commandOutput, window.chatView)
 	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.channelTree, window.privateList.internalTreeView)
 	window.messageInput.internalTextView.SetNextFocusableComponents(tview.Left, window.channelTree, window.privateList.internalTreeView)
 
@@ -914,19 +915,19 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 	window.guildList.SetNextFocusableComponents(tview.Up, window.channelTree)
 	window.guildList.SetNextFocusableComponents(tview.Down, window.channelTree)
-	window.guildList.SetNextFocusableComponents(tview.Left, window.userList.internalTreeView, window.chatView.GetPrimitive())
-	window.guildList.SetNextFocusableComponents(tview.Right, window.chatView.GetPrimitive(), window.userList.internalTreeView)
+	window.guildList.SetNextFocusableComponents(tview.Left, window.userList.internalTreeView, window.chatView)
+	window.guildList.SetNextFocusableComponents(tview.Right, window.chatView, window.userList.internalTreeView)
 
-	window.privateList.internalTreeView.SetNextFocusableComponents(tview.Right, window.chatView.GetPrimitive())
-	window.privateList.internalTreeView.SetNextFocusableComponents(tview.Left, window.userList.internalTreeView, window.chatView.GetPrimitive())
+	window.privateList.internalTreeView.SetNextFocusableComponents(tview.Right, window.chatView)
+	window.privateList.internalTreeView.SetNextFocusableComponents(tview.Left, window.userList.internalTreeView, window.chatView)
 
-	window.userList.internalTreeView.SetNextFocusableComponents(tview.Left, window.chatView.GetPrimitive())
+	window.userList.internalTreeView.SetNextFocusableComponents(tview.Left, window.chatView)
 
-	window.chatView.internalTextView.SetNextFocusableComponents(tview.Down, window.messageInput.GetPrimitive())
-	window.chatView.internalTextView.SetNextFocusableComponents(tview.Up, window.commandView.commandInput.internalTextView, window.messageInput.GetPrimitive())
+	window.chatView.SetNextFocusableComponents(tview.Down, window.messageInput.GetPrimitive())
+	window.chatView.SetNextFocusableComponents(tview.Up, window.commandView.commandInput.internalTextView, window.messageInput.GetPrimitive())
 
 	window.commandView.commandInput.internalTextView.SetNextFocusableComponents(tview.Up, window.commandView.commandOutput)
-	window.commandView.commandInput.internalTextView.SetNextFocusableComponents(tview.Down, window.chatView.GetPrimitive())
+	window.commandView.commandInput.internalTextView.SetNextFocusableComponents(tview.Down, window.chatView)
 	window.commandView.commandInput.internalTextView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.channelTree, window.privateList.internalTreeView)
 	window.commandView.commandInput.internalTextView.SetNextFocusableComponents(tview.Left, window.channelTree, window.privateList.internalTreeView)
 
@@ -941,7 +942,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		window.registerMouseFocusListeners()
 	}
 
-	window.chatView.internalTextView.SetText(getWelcomeText())
+	window.chatView.SetText(getWelcomeText())
 
 	return window, nil
 }
@@ -1297,7 +1298,7 @@ func (window *Window) sendMessageAsFile(message string, channel string) {
 func (window *Window) sendMessage(targetChannelID, message string) {
 	window.app.QueueUpdateDraw(func() {
 		window.messageInput.SetText("")
-		window.chatView.internalTextView.ScrollToEnd()
+		window.chatView.ScrollToEnd()
 	})
 	_, sendError := window.session.ChannelMessageSend(targetChannelID, message)
 	if sendError != nil {
@@ -1510,13 +1511,13 @@ func (window *Window) ShowDialog(color tcell.Color, text string, buttonHandler f
 }
 
 func (window *Window) registerMouseFocusListeners() {
-	window.chatView.internalTextView.SetMouseHandler(func(event *tcell.EventMouse) bool {
+	window.chatView.SetMouseHandler(func(event *tcell.EventMouse) bool {
 		if event.Buttons() == tcell.Button1 {
-			window.app.SetFocus(window.chatView.internalTextView)
+			window.app.SetFocus(window.chatView)
 		} else if event.Buttons() == tcell.WheelDown {
-			window.chatView.internalTextView.ScrollDown()
+			window.chatView.ScrollDown()
 		} else if event.Buttons() == tcell.WheelUp {
-			window.chatView.internalTextView.ScrollUp()
+			window.chatView.ScrollUp()
 		} else {
 			return false
 		}
@@ -1787,7 +1788,7 @@ func (window *Window) startMessageHandlerRoutines(input, edit, delete chan *disc
 			}
 			window.chatView.Lock()
 			if window.selectedChannel != nil && window.selectedChannel.ID == tempMessageEdited.ChannelID {
-				for _, message := range window.chatView.data {
+				for _, message := range window.chatView.GetData() {
 					if message.ID == tempMessageEdited.ID {
 						//FIXME Workaround for the fact that discordgo doesn't update already filled fields.
 
@@ -2131,7 +2132,7 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 	} else if shortcuts.FocusMessageInput.Equals(event) {
 		window.app.SetFocus(window.messageInput.GetPrimitive())
 	} else if shortcuts.FocusMessageContainer.Equals(event) {
-		window.app.SetFocus(window.chatView.internalTextView)
+		window.app.SetFocus(window.chatView)
 	} else if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
 		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
@@ -2196,7 +2197,7 @@ func (window *Window) toggleUserContainer() {
 func (window *Window) toggleBareChat() {
 	window.bareChat = !window.bareChat
 	if window.bareChat {
-		window.chatView.internalTextView.SetBorderSides(true, false, true, false)
+		window.chatView.SetBorderSides(true, false, true, false)
 		window.commandView.commandOutput.SetBorderSides(true, false, true, false)
 
 		//Initially this should be gone. Reaccessing it with the normal
@@ -2207,7 +2208,7 @@ func (window *Window) toggleBareChat() {
 		window.app.SetRoot(window.chatArea, true)
 		window.app.SetFocus(previousFocus)
 	} else {
-		window.chatView.internalTextView.SetBorderSides(true, true, true, true)
+		window.chatView.SetBorderSides(true, true, true, true)
 		window.commandView.commandOutput.SetBorderSides(true, true, true, true)
 
 		window.app.SetRoot(window.rootContainer, true)
@@ -2415,8 +2416,8 @@ func (window *Window) SwitchToGuildsPage() {
 	window.activeView = Guilds
 
 	window.userList.internalTreeView.SetNextFocusableComponents(tview.Right, window.guildList)
-	window.chatView.internalTextView.SetNextFocusableComponents(tview.Left, window.guildList)
-	window.chatView.internalTextView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.guildList)
+	window.chatView.SetNextFocusableComponents(tview.Left, window.guildList)
+	window.chatView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.guildList)
 }
 
 //SwitchToFriendsPage switches the left side of the layout over to the view
@@ -2429,8 +2430,8 @@ func (window *Window) SwitchToFriendsPage() {
 	window.activeView = Dms
 
 	window.userList.internalTreeView.SetNextFocusableComponents(tview.Right, window.privateList.internalTreeView)
-	window.chatView.internalTextView.SetNextFocusableComponents(tview.Left, window.privateList.internalTreeView)
-	window.chatView.internalTextView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.privateList.internalTreeView)
+	window.chatView.SetNextFocusableComponents(tview.Left, window.privateList.internalTreeView)
+	window.chatView.SetNextFocusableComponents(tview.Right, window.userList.internalTreeView, window.privateList.internalTreeView)
 }
 
 // SwitchToPreviousChannel loads the previously loaded channel and focuses it
@@ -2588,7 +2589,7 @@ func (window *Window) LoadChannel(channel *discordgo.Channel) error {
 	//FIXME Only slow function here. 200-500 MS depending on content.
 	//That's horrible!
 	window.chatView.SetMessages(messages)
-	window.chatView.internalTextView.ScrollToEnd()
+	window.chatView.ScrollToEnd()
 	window.UpdateChatHeader(channel)
 
 	if channel.Type == discordgo.ChannelTypeDM || channel.Type == discordgo.ChannelTypeGroupDM {
@@ -2681,8 +2682,6 @@ func (window *Window) Run() error {
 
 // Shutdown disconnects from the discord API and stops the tview application.
 func (window *Window) Shutdown() {
-	if config.Current.ShortenLinks {
-		window.chatView.shortener.Close()
-	}
+	window.chatView.Dispose()
 	window.session.Close()
 }

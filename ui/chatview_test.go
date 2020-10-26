@@ -102,7 +102,7 @@ func TestParseBoldAndUnderline(t *testing.T) {
 }
 
 func TestChatView_formatMessageText(t *testing.T) {
-	defaultChatView := &ChatView{
+	defaultChatView := &legacyChatView{
 		showSpoilerContent: make(map[string]bool),
 		state:              &discordgo.State{},
 		shortenLinks:       false,
@@ -111,7 +111,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 		name     string
 		input    *discordgo.Message
 		want     string
-		chatView *ChatView
+		chatView *legacyChatView
 	}{
 		{
 			name: "empty message",
@@ -339,7 +339,7 @@ func TestChatView_formatMessageText(t *testing.T) {
 				Content: "||```\nowo\n```||",
 			},
 			want: "||\n[#c9dddc]▐ [#ffffff]owo\n||",
-			chatView: &ChatView{
+			chatView: &legacyChatView{
 				showSpoilerContent: map[string]bool{
 					"OwO": true,
 				},
