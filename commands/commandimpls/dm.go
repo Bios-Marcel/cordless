@@ -37,6 +37,7 @@ func (cmd *DMOpenCmd) Execute(writer io.Writer, parameters []string) {
 	//We expect exactly one user
 	if len(parameters) != 1 {
 		cmd.PrintHelp(writer)
+		return
 	}
 
 	//FIXME Pretty much copied from friends.go. Can i somehow abstract this away?
@@ -90,7 +91,7 @@ func (cmd *DMOpenCmd) Execute(writer io.Writer, parameters []string) {
 
 // PrintHelp prints a static help page for this command
 func (cmd *DMOpenCmd) PrintHelp(writer io.Writer) {
-
+	fmt.Fprintln(writer, dmOpenHelpPage)
 }
 
 // Name returns the primary name for this command. This name will also be
