@@ -1104,6 +1104,13 @@ func (window *Window) initExtensionEngine(engine scripting.Engine) error {
 		fmt.Fprintln(window.commandView, text)
 	})
 
+	engine.SetReplyMessageFunction(func(channelID string, text string) {
+		channel, cacheError := window.session.State.Channel(channelID)
+		if cacheError == nil && channel.Type != discordgo.ChannelTypeGuildCategory {
+			window.TrySendMessage(channel, text)
+		}
+	})
+
 	return nil
 }
 

@@ -306,6 +306,25 @@ func (engine *JavaScriptEngine) SetTriggerNotificationFunction(function func(tit
 	engine.setFunctionOnVMs("triggerNotification", triggerNotification)
 }
 
+// SetReplyMessageFunction implements Engine
+func (engine *JavaScriptEngine) SetReplyMessageFunction(function func(channelID string, text string)) {
+	triggerNotification := func(call otto.FunctionCall) otto.Value {
+		channelID, argError := call.Argument(0).ToString()
+		if argError != nil {
+			log.Printf("Error invoking replyMessageFunction in JS engine: %s\n", argError)
+			return nullValue
+		}
+		text, argError := call.Argument(1).ToString()
+		if argError != nil {
+			log.Printf("Error invoking replyMessageFunction in JS engine: %s\n", argError)
+			return nullValue
+		}
+		function(channelID, text)
+		return nullValue
+	}
+	engine.setFunctionOnVMs("replyMessage", triggerNotification)
+}
+
 // SetPrintToConsoleFunction implements Engine
 func (engine *JavaScriptEngine) SetPrintToConsoleFunction(function func(text string)) {
 	printToConsole := func(call otto.FunctionCall) otto.Value {
