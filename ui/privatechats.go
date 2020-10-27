@@ -311,7 +311,7 @@ func (privateList *PrivateChatList) MarkAsLoaded(channelID string) {
 		referenceChannelID, ok := node.GetReference().(string)
 		if ok && referenceChannelID == channelID {
 			privateList.privateChannelStates[node] = loaded
-			if !tview.IsVtxxx {
+			if tview.IsVtxxx {
 				node.SetUnderline(true)
 			} else {
 				node.SetColor(tview.Styles.ContrastBackgroundColor)
