@@ -232,3 +232,16 @@ func ResolveFilePathAndSendFile(session *discordgo.Session, message, targetChann
 	_, sendError := session.ChannelFileSend(targetChannelID, filepath.Base(message), reader)
 	return sendError
 }
+
+// ReplaceMentions replaces both user mentions and global mentions like @here
+// and @everyone.
+func ReplaceMentions(message *discordgo.Message) string {
+	replaceInstructions := make([]string, 0, len(message.Mentions)+4)
+	replaceInstructions = append(replaceInstructions, "@here", "@\u200Bhere", "@everyone", "@\u200Beveryone")
+	for _, user := range message.Mentions {
+		replaceInstructions = append(replaceInstructions,
+			"<@"+user.ID+">", "@"+user.Username,
+			"<@!"+user.ID+">", "@"+user.Username)
+	}
+	return strings.NewReplacer(replaceInstructions...).Replace(message.Content)
+}

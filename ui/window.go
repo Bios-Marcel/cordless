@@ -1194,7 +1194,9 @@ func getUsernameForQuote(state *discordgo.State, message *discordgo.Message) str
 
 func (window *Window) insertQuoteOfMessage(message *discordgo.Message) {
 	username := getUsernameForQuote(window.session.State, message)
-	quotedMessage, generateError := discordutil.GenerateQuote(message.ContentWithMentionsReplaced(), username, message.Timestamp, message.Attachments, window.messageInput.GetText())
+	quotedMessage, generateError := discordutil.GenerateQuote(
+		discordutil.ReplaceMentions(message), username, message.Timestamp,
+		message.Attachments, window.messageInput.GetText())
 	if generateError == nil {
 		window.messageInput.SetText(quotedMessage)
 		window.app.SetFocus(window.messageInput.GetPrimitive())
