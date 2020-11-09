@@ -164,8 +164,14 @@ func (userTree *UserTree) loadGuildRoles(guild *discordgo.Guild) ([]*discordgo.R
 
 	for _, role := range guildRoles {
 		if role.Hoist {
-			roleNode := tview.NewTreeNode("[" + discordutil.GetRoleColor(role) +
-				"]" + tviewutil.Escape(role.Name))
+			roleColor := discordutil.GetRoleColor(role)
+			roleName := tviewutil.Escape(role.Name)
+			var roleNode *tview.TreeNode
+			if roleColor != "" {
+				roleNode = tview.NewTreeNode("[" + roleColor + "]" + roleName)
+			} else {
+				roleNode = tview.NewTreeNode(roleName)
+			}
 			roleNode.SetSelectable(false)
 			userTree.roleNodes[role.ID] = roleNode
 			userTree.rootNode().AddChild(roleNode)
