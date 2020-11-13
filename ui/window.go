@@ -1210,6 +1210,8 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 		return
 	}
 
+	//Deleting everything means we wanna delete the messages. This is what
+	//the official discord client and it's quite useful.
 	if len(message) == 0 {
 		if window.editingMessageID != nil {
 			msgIDCopy := *window.editingMessageID
@@ -1219,6 +1221,8 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 	}
 
 	message = strings.TrimSpace(message)
+	//If the message is empty after trimming spaces, we assume it was an
+	//accidental send and clear the input box.
 	if len(message) == 0 {
 		window.app.QueueUpdateDraw(func() {
 			window.messageInput.SetText("")
@@ -1226,20 +1230,25 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 		return
 	}
 
+	//Prepare message first, so we can potentially make use of scripting to
+	//for example send a file.
+	messagePrepared := window.prepareMessage(targetChannel, message)
+
+	//If we are currently editing a message, we won't allow attachig a file afterwards.
+	//FIXME But should we?
 	if window.editingMessageID != nil {
-		messagePrepared := window.prepareMessage(targetChannel, message)
 		window.editMessage(targetChannel.ID, *window.editingMessageID, messagePrepared)
 		return
 	}
 
-	if strings.HasPrefix(message, "file://") {
+	if strings.HasPrefix(messagePrepared, "file://") {
 		window.app.QueueUpdateDraw(func() {
 			yesButton := "Yes"
 			window.ShowDialog(config.GetTheme().PrimitiveBackgroundColor, "Resolve filepath and send a file instead?", func(button string) {
 				if button == yesButton {
 					window.messageInput.SetText("")
 					go func() {
-						sendError := discordutil.ResolveFilePathAndSendFile(window.session, message, targetChannel.ID)
+						sendError := discordutil.ResolveFilePathAndSendFile(window.session, messagePrepared, targetChannel.ID)
 						if sendError != nil {
 							window.app.QueueUpdateDraw(func() {
 								window.ShowErrorDialog(sendError.Error())
@@ -1247,18 +1256,17 @@ func (window *Window) TrySendMessage(targetChannel *discordgo.Channel, message s
 						}
 					}()
 				} else {
-					window.sendMessageWithLengthCheck(targetChannel, message)
+					window.sendMessageWithLengthCheck(targetChannel, messagePrepared)
 				}
 			}, yesButton, "No")
 		})
 		return
 	}
 
-	window.sendMessageWithLengthCheck(targetChannel, message)
+	window.sendMessageWithLengthCheck(targetChannel, messagePrepared)
 }
 
 func (window *Window) sendMessageWithLengthCheck(targetChannel *discordgo.Channel, message string) {
-	message = window.prepareMessage(targetChannel, message)
 	overlength := len(message) - 2000
 	if overlength > 0 {
 		window.app.QueueUpdateDraw(func() {
