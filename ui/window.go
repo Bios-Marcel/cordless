@@ -42,6 +42,7 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/maths"
+	"github.com/Bios-Marcel/cordless/util/vim"
 )
 
 var (
@@ -91,6 +92,7 @@ type Window struct {
 
 	bareChat   bool
 	activeView ActiveView
+
 }
 
 type ActiveView bool

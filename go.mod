@@ -1,3 +1,5 @@
+replace github.com/Bios-Marcel/cordless => /home/gamb1t/Projects/go/src/cordless
+
 module github.com/Bios-Marcel/cordless
 
 go 1.12
@@ -20,6 +22,8 @@ require (
 	github.com/robertkrimen/otto v0.0.0-20200922221731-ef014fd054ac
 	github.com/sergi/go-diff v1.1.0
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
+	golang.org/x/tools v0.0.0-20201112171726-b38955972a18 // indirect
+	golang.org/x/tools/gopls v0.5.2 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	rsc.io/qr v0.2.0
 )

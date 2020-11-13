@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Bios-Marcel/cordless/util/files"
+	"github.com/Bios-Marcel/cordless/util/vim"
 )
 
 const (
@@ -155,6 +156,8 @@ type Config struct {
 	// download files to. If FileOpenSaveFilesPermanently has been set to
 	// true, then all opened files are saved in this folder for example.
 	FileDownloadSaveLocation string
+
+	VimMode *vim.Vim
 }
 
 // Account has a name and a token. The name is just for the users recognition.
@@ -211,6 +214,7 @@ func createDefaultConfig() *Config {
 		FileOpenHandlers:                            make(map[string]string),
 		FileOpenSaveFilesPermanently:                false,
 		FileDownloadSaveLocation:                    "~/Downloads",
+		VimMode: 								vim.Vim{},
 	}
 }
 

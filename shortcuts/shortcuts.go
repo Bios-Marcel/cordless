@@ -13,6 +13,7 @@ import (
 	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
+	"github.com/Bios-Marcel/cordless/util/vim"
 )
 
 var (
@@ -23,19 +24,41 @@ var (
 	channeltree        = addScope("channeltree", "Channeltree", globalScope)
 
 	QuoteSelectedMessage = addShortcut("quote_selected_message", "Quote selected message",
-		chatview, tcell.NewEventKey(tcell.KeyRune, 'q', tcell.ModNone))
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'q', tcell.ModNone),
+		addVimEvent(NullVimEvent,NullVimEvent,nil)
+	//				Normal		Insert		  Visual
+	)
+
 	EditSelectedMessage = addShortcut("edit_selected_message", "Edit selected message",
-		chatview, tcell.NewEventKey(tcell.KeyRune, 'e', tcell.ModNone))
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'e', tcell.ModNone)
+		addVimEvent(NullVimEvent,nil,nil)
+	)
+
 	DownloadMessageFiles = addShortcut("dowbload_message_files", "Download all files in selected message",
-		chatview, tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone))
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone)
+		addVimEvent(NullVimEvent,NullVimEvent,nil)
+	)
+
 	ReplySelectedMessage = addShortcut("reply_selected_message", "Reply to author selected message",
-		chatview, tcell.NewEventKey(tcell.KeyRune, 'r', tcell.ModNone))
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'r', tcell.ModNone)
+		addVimEvent(NullVimEvent,NullVimEvent,nil)
+	)
+
 	NewDirectMessage = addShortcut("new_direct_message", "Create a new direct message channel with this user",
-		chatview, tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModNone))
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModNone)
+		addVimEvent(NullVimEvent,NullVimEvent,tcell.KeyEnter)
+	)
+
 	CopySelectedMessageLink = addShortcut("copy_selected_message_link", "Copy link to selected message",
-		chatview, tcell.NewEventKey(tcell.KeyRune, 'l', tcell.ModNone))
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'l', tcell.ModNone)
+		addVimEvent(NullVimEvent,NullVimEvent,nil)
+	)
+
 	CopySelectedMessage = addShortcut("copy_selected_message", "Copy content of selected message",
-		chatview, tcell.NewEventKey(tcell.KeyRune, 'c', tcell.ModNone))
+		chatview, tcell.NewEventKey(tcell.KeyRune, 'c', tcell.ModNone)
+		addVimEvent(NullVimEvent,NullVimEvent, tcell.NewEventKey(tcell.KeyRune, 'y', tcell.ModNone))
+	)
+
 	ToggleSelectedMessageSpoilers = addShortcut("toggle_selected_message_spoilers", "Toggle spoilers in selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModNone))
 	DeleteSelectedMessage = addShortcut("delete_selected_message", "Delete the selected message",
@@ -153,9 +176,27 @@ var (
 	ChannelTreeMarkRead = addShortcut("channel_mark_read", "Mark channel as read",
 		channeltree, tcell.NewEventKey(tcell.KeyCtrlR, rune(tcell.KeyCtrlR), tcell.ModCtrl))
 
+
 	scopes    []*Scope
 	Shortcuts []*Shortcut
 )
+
+// Vim event holds possible modifiers for keys. They can be nil. In that case, they will default
+// to the original binding. If the event is associated to NullVimEvent, any events while in that mode
+// will be ignored.
+type VimEvent struct {
+	NormalEvent *tcell.EventKey
+	InsertEvent *tcell.EventKey
+	VisualEvent *tcell.EventKey
+}
+
+// NullVimEvent is the null event for the current vim mode. Any events that have this constant will be ignored.
+const NullVimEvent = -1
+
+func addVimEvent(events *tcell.EventKey...) *VimEvent {
+	vimE := VimEvent{NormalEvent: events[0], InsertEvent: events[1], VisualEvent: events[2]}
+	return vimE
+}
 
 func addScope(identifier, name string, parent *Scope) *Scope {
 	scope := &Scope{
@@ -169,13 +210,14 @@ func addScope(identifier, name string, parent *Scope) *Scope {
 	return scope
 }
 
-func addShortcut(identifier, name string, scope *Scope, event *tcell.EventKey) *Shortcut {
+func addShortcut(identifier, name string, scope *Scope, event *tcell.EventKey, vimEvent *VimEvent) *Shortcut {
 	shortcut := &Shortcut{
 		Identifier:   identifier,
 		Name:         name,
 		Scope:        scope,
 		Event:        event,
 		defaultEvent: event,
+		VimModifier:  vimEvent,
 	}
 
 	Shortcuts = append(Shortcuts, shortcut)
@@ -200,6 +242,9 @@ type Shortcut struct {
 
 	//This shortcuts default, in order to be able to reset it.
 	defaultEvent *tcell.EventKey
+
+	// VimModifier is the shortcut that will be used inside vim mode.
+	VimModifier VimEvent
 }
 
 // Equals compares the given EventKey with the Shortcuts Event.
@@ -377,6 +422,21 @@ func Persist() error {
 
 func DirectionalFocusHandling(event *tcell.EventKey, app *tview.Application) *tcell.EventKey {
 	focused := app.GetFocus()
+	if config.VimMode.CurrentMode == vim.NormalMode {
+		if VimFocusUp.Equals(event) {
+			tviewutil.FocusNextIfPossible(tview.Up, app, focused)
+		} else if VimFocusDown.Equals(event) {
+			tviewutil.FocusNextIfPossible(tview.Down, app, focused)
+		} else if VimFocusRight.Equals(event) {
+			tviewutil.FocusNextIfPossible(tview.Right, app, focused)
+		} else if VimFocusLeft.Equals(event) {
+			tviewutil.FocusNextIfPossible(tview.Left, app, focused)
+		} else {
+			return event
+		}
+		return nil
+	}
+
 	if FocusUp.Equals(event) {
 		tviewutil.FocusNextIfPossible(tview.Up, app, focused)
 	} else if FocusDown.Equals(event) {
