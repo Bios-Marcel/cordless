@@ -417,6 +417,18 @@ func NewEditor() *Editor {
 
 		if shortcuts.MoveCursorLeft.Equals(event) {
 			editor.MoveCursorLeft()
+
+			// Vim mode shortcuts
+		} else if shortcuts.VimInsertMode.Equals(event) {
+			config.Current.VimMode.Insert()
+			return nil
+		} else if shortcuts.VimVisualMode.Equals(event) {
+			config.Current.VimMode.Visual()
+			return nil
+		} else if shortcuts.VimNormalMode.Equals(event) {
+			config.Current.VimMode.Normal()
+
+
 		} else if shortcuts.ExpandSelectionToLeft.Equals(event) {
 			editor.SelectionToLeft()
 		} else if shortcuts.MoveCursorRight.Equals(event) {

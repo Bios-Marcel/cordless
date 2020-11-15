@@ -18,6 +18,7 @@ import (
 	"github.com/Bios-Marcel/cordless/util/files"
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/text"
+	"github.com/Bios-Marcel/cordless/util/vim"
 	"github.com/Bios-Marcel/cordless/version"
 
 	"github.com/Bios-Marcel/discordemojimap"
@@ -42,7 +43,7 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/maths"
-	"github.com/Bios-Marcel/cordless/util/vim"
+	//"github.com/Bios-Marcel/cordless/util/vim"
 )
 
 var (
@@ -744,7 +745,13 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 	window.userList = NewUserTree(window.session.State)
 
-	if config.Current.OnTypeInListBehaviour == config.SearchOnTypeInList {
+	// Disable search on type when in Vim mode. TODO add / shourtcut to search.
+	if config.Current.VimMode.CurrentMode != vim.Disabled {
+		guildList.SetSearchOnTypeEnabled(false)
+		channelTree.SetSearchOnTypeEnabled(false)
+		window.userList.internalTreeView.SetSearchOnTypeEnabled(false)
+		window.privateList.internalTreeView.SetSearchOnTypeEnabled(false)
+	} else if config.Current.OnTypeInListBehaviour == config.SearchOnTypeInList {
 		guildList.SetSearchOnTypeEnabled(true)
 		channelTree.SetSearchOnTypeEnabled(true)
 		window.userList.internalTreeView.SetSearchOnTypeEnabled(true)
@@ -760,6 +767,11 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	}
 
 	newGuildHandler := func(event *tcell.EventKey) *tcell.EventKey {
+		if shortcuts.VimNormalMode.Equals(event) {
+			config.Current.VimMode.Normal()
+			return nil
+		}
+
 		if shortcuts.GuildListMarkRead.Equals(event) {
 			selectedGuildNode := guildList.GetCurrentNode()
 			if selectedGuildNode != nil && !readstate.HasGuildBeenRead(selectedGuildNode.GetReference().(string)) {
@@ -789,6 +801,10 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	}
 
 	newChannelListHandler := func(event *tcell.EventKey) *tcell.EventKey {
+		if shortcuts.VimNormalMode.Equals(event) {
+			config.Current.VimMode.Normal()
+			return nil
+		}
 		if shortcuts.ChannelTreeMarkRead.Equals(event) {
 			selectedChannelNode := channelTree.GetCurrentNode()
 			if selectedChannelNode != nil {
@@ -864,6 +880,9 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		bottomBar := components.NewBottomBar()
 		bottomBar.AddItem(fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.Username)))
 		bottomBar.AddItem(fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut)))
+		// FIXME
+		//bottomBar.AddItem(fmt.Sprintf("Focused: %s", app.GetFocus()))
+		bottomBar.AddItem(fmt.Sprintf("Vim: %s", config.Current.VimMode.CurrentModeString()))
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
 
@@ -2107,6 +2126,14 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		//window#Shutdown unnecessary, as we shut the whole process down.
 		window.app.Stop()
 		return nil
+	} else if shortcuts.VimInsertMode.Equals(event) {
+		config.Current.VimMode.Insert()
+		return nil
+	} else if shortcuts.VimVisualMode.Equals(event) {
+		config.Current.VimMode.Visual()
+		return nil
+	} else if shortcuts.VimNormalMode.Equals(event) {
+		config.Current.VimMode.SetMode(vim.NormalMode)
 	}
 
 	// Maybe compare directly to table?
@@ -2132,6 +2159,14 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 
 	if shortcuts.ToggleBareChat.Equals(event) {
 		window.toggleBareChat()
+	} else if shortcuts.VimInsertMode.Equals(event) {
+		config.Current.VimMode.Insert()
+		return nil
+	} else if shortcuts.VimVisualMode.Equals(event) {
+		config.Current.VimMode.Visual()
+		return nil
+	} else if shortcuts.VimNormalMode.Equals(event) {
+		config.Current.VimMode.Normal()
 	} else if shortcuts.FocusMessageInput.Equals(event) {
 		window.app.SetFocus(window.messageInput.GetPrimitive())
 	} else if shortcuts.FocusMessageContainer.Equals(event) {

@@ -214,7 +214,7 @@ func createDefaultConfig() *Config {
 		FileOpenHandlers:                            make(map[string]string),
 		FileOpenSaveFilesPermanently:                false,
 		FileDownloadSaveLocation:                    "~/Downloads",
-		VimMode: 								vim.Vim{},
+		VimMode: 								&vim.Vim{CurrentMode: vim.Disabled},
 	}
 }
 

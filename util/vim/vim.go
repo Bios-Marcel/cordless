@@ -9,12 +9,17 @@ const (
 	InsertMode				// 1
 	// TODO
 	VisualMode				// 2
+
+	// Default: disabled
+	Disabled = -1
 )
 
 // Vim stores information about vim-mode, such as
 // current mode.
 type Vim struct {
+	// CurrentMode holds the integer value of the current vim mode.
 	CurrentMode int
+	IsRoot bool
 }
 
 // SetMode sets new vim mode. If provided mode falls out
@@ -28,6 +33,29 @@ func (v *Vim) SetMode(mode int) {
 	v.CurrentMode = mode
 }
 
+// Quick mode switch
+
+// SetRoot stores whether we are currently in the root window,
+// because we have to manage some keys differently inside it.
+func (v *Vim) SetRoot(s bool) {
+	v.IsRoot = s
+}
+
+// Normal quickly switches to normal mode.
+func (v *Vim) Normal() {
+	v.CurrentMode = NormalMode
+}
+
+// Insert quickly switches to insert mode.
+func (v *Vim) Insert() {
+	v.CurrentMode = InsertMode
+}
+
+// Visual quickly switches to visual mode.
+func (v *Vim) Visual() {
+	v.CurrentMode = VisualMode
+}
+
 // CurrentModeString returns a stringified version
 // of the current mode. (Useful for visual feedback to user)
 func (v *Vim) CurrentModeString() string {
@@ -38,7 +66,10 @@ func (v *Vim) CurrentModeString() string {
 		return "Insert"
 	case VisualMode:
 		return "Visual"
+	case Disabled:
+		return "Disabled"
+	// Should not be needed, but better to always add a default case.
 	default:
-		return "Err"
+		return "Disabled"
 	}
 }
