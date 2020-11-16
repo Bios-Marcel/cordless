@@ -24,19 +24,19 @@ var (
 	guildlist          = addScope("guildlist", "Guildlist", globalScope)
 	channeltree        = addScope("channeltree", "Channeltree", globalScope)
 
-	// Normal mode will always prevail in any scope. To go to parent scope press ESC. If you are inside
-	// insert or visual mode, pressing ESC will only return to normal mode in the same scope you were in.
+	// Normal mode will always prevail in any scope. To exit insert or visual mode press ESC.
 	//
 	// A nil VimEvent means the original non-vim key will be used.
+	// A NullVimEvent will ignore that mapping inside the selected mode.
 	QuoteSelectedMessage = addShortcut("quote_selected_message", "Quote selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'q', tcell.ModNone),
-		addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,nil,NullVimEvent),
 	//				Normal		Insert		  Visual
 	)
 
 	EditSelectedMessage = addShortcut("edit_selected_message", "Edit selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'e', tcell.ModNone),
-		addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'i', tcell.ModNone),NullVimEvent),
 	)
 
 	DownloadMessageFiles = addShortcut("download_message_files", "Download all files in selected message",
@@ -47,7 +47,7 @@ var (
 
 	ReplySelectedMessage = addShortcut("reply_selected_message", "Reply to author selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'r', tcell.ModNone),
-		addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'a', tcell.ModNone),NullVimEvent),
 	)
 
 	NewDirectMessage = addShortcut("new_direct_message", "Create a new direct message channel with this user",
@@ -57,17 +57,17 @@ var (
 
 	CopySelectedMessageLink = addShortcut("copy_selected_message_link", "Copy link to selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'l', tcell.ModNone),
-		addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,nil,NullVimEvent),
 	)
 
 	CopySelectedMessage = addShortcut("copy_selected_message", "Copy content of selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'c', tcell.ModNone),
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'y', tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'y', tcell.ModNone),NullVimEvent),
 	)
 
 	ToggleSelectedMessageSpoilers = addShortcut("toggle_selected_message_spoilers", "Toggle spoilers in selected message",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 's', tcell.ModNone),
-		addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,nil,NullVimEvent),
 	)
 
 	DeleteSelectedMessage = addShortcut("delete_selected_message", "Delete the selected message",
@@ -77,27 +77,27 @@ var (
 
 	ViewSelectedMessageImages = addShortcut("view_selected_message_images", "View selected message's attached files",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'o', tcell.ModNone),
-		addVimEvent(NullVimEvent, NullVimEvent, NullVimEvent),
+		addVimEvent(NullVimEvent, nil, NullVimEvent),
 	)
 
 	ChatViewSelectionUp = addShortcut("selection_up", "Move selection up by one",
 		chatview, tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone),
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'k', tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'k', tcell.ModNone),NullVimEvent),
 	)
 
 	ChatViewSelectionDown = addShortcut("selection_down", "Move selection down by one",
 		chatview, tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone),
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'j', tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'j', tcell.ModNone),NullVimEvent),
 	)
 
 	ChatViewSelectionTop = addShortcut("selection_top", "Move selection to the upmost message",
 		chatview, tcell.NewEventKey(tcell.KeyHome, 0, tcell.ModNone),
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'g', tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'g', tcell.ModNone),NullVimEvent),
 	)
 
 	ChatViewSelectionBottom = addShortcut("selection_bottom", "Move selection to the downmost message",
 		chatview, tcell.NewEventKey(tcell.KeyEnd, 0, tcell.ModNone),
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'G', tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'G', tcell.ModNone),NullVimEvent),
 	)
 
 	// START OF INPUT
@@ -113,7 +113,7 @@ var (
 
 	SelectAll = addShortcut("select_all", "Select all",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyCtrlA, rune(tcell.KeyCtrlA), tcell.ModCtrl),
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'v', tcell.ModNone),NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'V', tcell.ModNone)),
+		addVimEvent(NullVimEvent, NullVimEvent, tcell.NewEventKey(tcell.KeyRune, 'V', tcell.ModNone)),
 	)
 
 	SelectWordLeft = addShortcut("select_word_to_left", "Select word to left",
@@ -149,12 +149,12 @@ var (
 
 	MoveCursorLeft = addShortcut("move_cursor_to_left", "Move cursor to left",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone),
-		addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,nil,NullVimEvent),
 	)
 
 	MoveCursorRight = addShortcut("move_cursor_to_right", "Move cursor to right",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone),
-		addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,nil,NullVimEvent),
 	)
 
 	MoveCursorWordLeft = addShortcut("move_cursor_to_word_left", "Move cursor to word left",

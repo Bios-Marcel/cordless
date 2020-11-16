@@ -767,10 +767,6 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	}
 
 	newGuildHandler := func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.VimNormalMode.Equals(event) {
-			config.Current.VimMode.Normal()
-			return nil
-		}
 
 		if shortcuts.GuildListMarkRead.Equals(event) {
 			selectedGuildNode := guildList.GetCurrentNode()
@@ -801,10 +797,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	}
 
 	newChannelListHandler := func(event *tcell.EventKey) *tcell.EventKey {
-		if shortcuts.VimNormalMode.Equals(event) {
-			config.Current.VimMode.Normal()
-			return nil
-		}
+
 		if shortcuts.ChannelTreeMarkRead.Equals(event) {
 			selectedChannelNode := channelTree.GetCurrentNode()
 			if selectedChannelNode != nil {
@@ -2159,14 +2152,6 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 
 	if shortcuts.ToggleBareChat.Equals(event) {
 		window.toggleBareChat()
-	} else if shortcuts.VimInsertMode.Equals(event) {
-		config.Current.VimMode.Insert()
-		return nil
-	} else if shortcuts.VimVisualMode.Equals(event) {
-		config.Current.VimMode.Visual()
-		return nil
-	} else if shortcuts.VimNormalMode.Equals(event) {
-		config.Current.VimMode.Normal()
 	} else if shortcuts.FocusMessageInput.Equals(event) {
 		window.app.SetFocus(window.messageInput.GetPrimitive())
 	} else if shortcuts.FocusMessageContainer.Equals(event) {
