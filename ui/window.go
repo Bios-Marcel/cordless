@@ -991,8 +991,16 @@ important changes of the last two versions officially released.
 
 [::b]THIS VERSION
 	- Features
-	- Changes
-	- Bugfixes
+[::b]2020-11-16
+	- Features
+		- Added Vim mode
+		- Enable vim mode in your config file, setting VimMode to 0.
+		- Navigate menus with h j k l in normal mode, enter focus with either
+		- insert mode or visual mode.
+		- Navigate inside lists with vim keys.
+		- Use some of your known bindings inside chat view, or selection mode.
+		- More vim features will be added in next updates, and bugs will try to be
+		- fixed :)
 [::b]2020-10-24
 	- Features
 		- DM people via "p" in the chatview or use the dm-open command
