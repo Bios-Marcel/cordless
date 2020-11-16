@@ -87,9 +87,6 @@ var (
 	MoveCursorEndOfText = addShortcut("move_cursor_to_end_of_text", "Move cursor to end of text",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyEnd, 0, tcell.ModCtrl))
 
-	// FIXME Gotta add this later, as there is Backspace and Backspace and those differ on linux.
-	// DeleteLeft = addShortcut("delete_left","Delete left",multilineTextInput,tcell.NewEventKey(tcell.KeyBackspace2, rune(tcell.KeyBackspace2), tcell.ModNone))
-
 	DeleteRight = addShortcut("delete_right", "Delete right",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone))
 	DeleteWordLeft = addShortcut("delete_word_left", "Delete word left",

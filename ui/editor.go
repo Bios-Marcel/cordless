@@ -451,9 +451,7 @@ func NewEditor() *Editor {
 			editor.MoveCursorEndOfText()
 		} else if shortcuts.DeleteRight.Equals(event) {
 			editor.DeleteRight()
-		} else if event.Key() == tcell.KeyBackspace2 ||
-			event.Key() == tcell.KeyBackspace {
-			// FIXME Legacy, has to be replaced when there is N-1 Keybind-Mapping.
+		} else if shortcuts.DeleteLeft.Equals(event) {
 			editor.Backspace()
 		} else if shortcuts.DeleteWordLeft.Equals(event) {
 			editor.DeleteWordLeft()

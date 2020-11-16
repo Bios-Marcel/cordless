@@ -881,6 +881,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	window.updateUserList()
 
 	autocompleteView.SetVisible(false)
+	//FIXME this probably needs to be adapted to custom bindings
 	autocompleteView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch key := event.Key(); key {
 		case tcell.KeyRune, tcell.KeyDelete, tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyLeft, tcell.KeyRight, tcell.KeyCtrlA, tcell.KeyCtrlV:
