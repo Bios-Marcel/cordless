@@ -19,7 +19,6 @@ const (
 type Vim struct {
 	// CurrentMode holds the integer value of the current vim mode.
 	CurrentMode int
-	IsRoot bool
 }
 
 // SetMode sets new vim mode. If provided mode falls out
@@ -34,12 +33,6 @@ func (v *Vim) SetMode(mode int) {
 }
 
 // Quick mode switch
-
-// SetRoot stores whether we are currently in the root window,
-// because we have to manage some keys differently inside it.
-func (v *Vim) SetRoot(s bool) {
-	v.IsRoot = s
-}
 
 // Normal quickly switches to normal mode.
 func (v *Vim) Normal() {
@@ -71,5 +64,13 @@ func (v *Vim) CurrentModeString() string {
 	// Should not be needed, but better to always add a default case.
 	default:
 		return "Disabled"
+	}
+}
+
+func (v *Vim) EnabledString() string {
+	if v.CurrentMode == Disabled {
+		return "Disabled"
+	} else {
+		return "Enabled"
 	}
 }

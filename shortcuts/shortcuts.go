@@ -330,6 +330,21 @@ var (
 		addVimEvent(tcell.NewEventKey(tcell.KeyRune, '-', tcell.ModNone),tcell.NewEventKey(tcell.KeyRune, '-', tcell.ModNone),tcell.NewEventKey(tcell.KeyRune, '-', tcell.ModNone)),
 	)
 
+	VimSimKeyUp = addShortcut("vim_sim_up", "Simulate an arrow key press in vim mode.",
+		globalScope, nil,
+		addVimEvent(NullVimEvent,NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'k', tcell.ModNone)))
+
+	VimSimKeyDown = addShortcut("vim_sim_down", "Simulate an arrow key press in vim mode.",
+		globalScope, nil,
+		addVimEvent(NullVimEvent,NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'j', tcell.ModNone)))
+
+	VimSimKeyLeft = addShortcut("vim_sim_left", "Simulate an arrow key press in vim mode.",
+		globalScope, nil,
+		addVimEvent(NullVimEvent,NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'h', tcell.ModNone)))
+
+	VimSimKeyRight = addShortcut("vim_sim_right", "Simulate an arrow key press in vim mode.",
+		globalScope, nil,
+		addVimEvent(NullVimEvent,NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'l', tcell.ModNone)))
 	scopes    []*Scope
 	Shortcuts []*Shortcut
 )

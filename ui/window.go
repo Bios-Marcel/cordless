@@ -768,6 +768,16 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 	newGuildHandler := func(event *tcell.EventKey) *tcell.EventKey {
 
+	// Workaround for vim bindings inside list
+	if shortcuts.VimSimKeyDown.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyDown, rune(tcell.KeyDown), tcell.ModNone)
+	} else if shortcuts.VimSimKeyUp.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyUp, rune(tcell.KeyUp), tcell.ModNone)
+	} else if shortcuts.VimSimKeyRight.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyRight, rune(tcell.KeyRight), tcell.ModNone)
+	} else if shortcuts.VimSimKeyLeft.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyLeft, rune(tcell.KeyLeft), tcell.ModNone)
+	}
 		if shortcuts.GuildListMarkRead.Equals(event) {
 			selectedGuildNode := guildList.GetCurrentNode()
 			if selectedGuildNode != nil && !readstate.HasGuildBeenRead(selectedGuildNode.GetReference().(string)) {
@@ -798,6 +808,16 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 	newChannelListHandler := func(event *tcell.EventKey) *tcell.EventKey {
 
+	// Workaround for vim bindings inside list
+	if shortcuts.VimSimKeyDown.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyDown, rune(tcell.KeyDown), tcell.ModNone)
+	} else if shortcuts.VimSimKeyUp.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyUp, rune(tcell.KeyUp), tcell.ModNone)
+	} else if shortcuts.VimSimKeyRight.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyRight, rune(tcell.KeyRight), tcell.ModNone)
+	} else if shortcuts.VimSimKeyLeft.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyLeft, rune(tcell.KeyLeft), tcell.ModNone)
+	}
 		if shortcuts.ChannelTreeMarkRead.Equals(event) {
 			selectedChannelNode := channelTree.GetCurrentNode()
 			if selectedChannelNode != nil {
@@ -873,9 +893,9 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		bottomBar := components.NewBottomBar()
 		bottomBar.AddItem(fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.Username)))
 		bottomBar.AddItem(fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut)))
+		bottomBar.AddItem(fmt.Sprintf("Vim: %s", config.Current.VimMode.EnabledString()))
 		// FIXME
-		//bottomBar.AddItem(fmt.Sprintf("Focused: %s", app.GetFocus()))
-		bottomBar.AddItem(fmt.Sprintf("Vim: %s", config.Current.VimMode.CurrentModeString()))
+		//bottomBar.AddItem(fmt.Sprintf("Vim Mode: %s", config.Current.VimMode.CurrentModeString()))
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
 
@@ -2126,8 +2146,11 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		config.Current.VimMode.Visual()
 		return nil
 	} else if shortcuts.VimNormalMode.Equals(event) {
-		config.Current.VimMode.SetMode(vim.NormalMode)
+		config.Current.VimMode.Normal()
 	}
+
+	window.app.QueueUpdateDraw(func() {
+	})
 
 	// Maybe compare directly to table?
 	if config.Current.DesktopNotificationsUserInactivityThreshold > 0 {
@@ -2144,6 +2167,17 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 		//We do this, cause we don't want people to focus anything else than
 		//the dialog.
 		return event
+	}
+
+	// Workaround for vim bindings inside list
+	if shortcuts.VimSimKeyDown.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyDown, rune(tcell.KeyDown), tcell.ModNone)
+	} else if shortcuts.VimSimKeyUp.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyUp, rune(tcell.KeyUp), tcell.ModNone)
+	} else if shortcuts.VimSimKeyRight.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyRight, rune(tcell.KeyRight), tcell.ModNone)
+	} else if shortcuts.VimSimKeyLeft.Equals(event) {
+		return tcell.NewEventKey(tcell.KeyLeft, rune(tcell.KeyLeft), tcell.ModNone)
 	}
 
 	if shortcuts.DirectionalFocusHandling(event, window.app) == nil {
