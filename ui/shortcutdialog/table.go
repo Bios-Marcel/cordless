@@ -101,6 +101,7 @@ func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*shortcuts.Shortcut
 		insertKey := ""
 		visualKey := ""
 
+		// HACK
 		// Empty tcell EventKey corresponds to Ctrl-Space
 		if shortcut.VimModifier.NormalEvent == nil {
 			normalKey = EventToString(shortcut.Event)
