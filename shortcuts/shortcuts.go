@@ -87,6 +87,7 @@ var (
 	MoveCursorEndOfText = addShortcut("move_cursor_to_end_of_text", "Move cursor to end of text",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyEnd, 0, tcell.ModCtrl))
 
+	DeleteLeft  = addDeleteLeftShortcut()
 	DeleteRight = addShortcut("delete_right", "Delete right",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone))
 	DeleteWordLeft = addShortcut("delete_word_left", "Delete word left",
