@@ -189,10 +189,10 @@ var (
 
 
 
-	// FIXME Gotta add this later, as there is Backspace and Backspace and those differ on linux.
-	// DeleteLeft = addShortcut("delete_left","Delete left",multilineTextInput,tcell.NewEventKey(tcell.KeyBackspace2, rune(tcell.KeyBackspace2), tcell.ModNone))
+	DeleteLeft  = addDeleteLeftShortcut()
 
-	// TODO section
+
+
 
 	DeleteRight = addShortcut("delete_right", "Delete right",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone),addVimEvent(NullVimEvent,nil,NullVimEvent))
