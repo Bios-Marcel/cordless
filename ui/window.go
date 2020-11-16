@@ -94,6 +94,7 @@ type Window struct {
 	bareChat   bool
 	activeView ActiveView
 
+	vimStatus *components.BottomBarItem
 }
 
 type ActiveView bool
@@ -893,9 +894,10 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		bottomBar := components.NewBottomBar()
 		bottomBar.AddItem(fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.Username)))
 		bottomBar.AddItem(fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut)))
-		bottomBar.AddItem(fmt.Sprintf("Vim: %s", config.Current.VimMode.EnabledString()))
-		// FIXME
-		//bottomBar.AddItem(fmt.Sprintf("Vim Mode: %s", config.Current.VimMode.CurrentModeString()))
+		// bottomBar.AddItem(fmt.Sprintf("Vim: %s", config.Current.VimMode.EnabledString()))
+		window.vimStatus = bottomBar.AddDynamicItem()
+		// Default content
+		window.vimStatus.Content = fmt.Sprintf("Vim: %s", config.Current.VimMode.CurrentModeString())
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
 
@@ -2141,12 +2143,16 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	} else if shortcuts.VimInsertMode.Equals(event) {
 		config.Current.VimMode.Insert()
+		window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
 		return nil
 	} else if shortcuts.VimVisualMode.Equals(event) {
 		config.Current.VimMode.Visual()
+		window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
 		return nil
 	} else if shortcuts.VimNormalMode.Equals(event) {
 		config.Current.VimMode.Normal()
+		window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
+		return nil
 	}
 
 	window.app.QueueUpdateDraw(func() {

@@ -15,11 +15,13 @@ import (
 type BottomBar struct {
 	*sync.Mutex
 	*tview.Box
-	items []*bottomBarItem
+	items []*BottomBarItem
 }
 
-type bottomBarItem struct {
-	content string
+// BottomBarItem represents an entry in a BottomBar. It simply holds a static
+// text that can technically be changed after adding the item.
+type BottomBarItem struct {
+	Content string
 }
 
 // Draw draws this primitive onto the screen. Implementers can call the
@@ -45,7 +47,7 @@ func (b *BottomBar) Draw(screen tcell.Screen) bool {
 
 	xPos, yPos, _, _ := b.GetInnerRect()
 	for _, item := range b.items {
-		gr := uniseg.NewGraphemes(item.content)
+		gr := uniseg.NewGraphemes(item.Content)
 		for gr.Next() {
 			r := gr.Runes()
 			width := runewidth.StringWidth(gr.Str())
@@ -69,7 +71,7 @@ func (b *BottomBar) Draw(screen tcell.Screen) bool {
 func (b *BottomBar) AddItem(text string) {
 	b.Lock()
 	defer b.Unlock()
-	b.items = append(b.items, &bottomBarItem{text})
+	b.items = append(b.items, &BottomBarItem{text})
 }
 
 // NewBottomBar creates a new bar to be put at the bottom aplication.
@@ -82,4 +84,14 @@ func NewBottomBar() *BottomBar {
 	bottomBar.SetBorder(false)
 
 	return bottomBar
+}
+
+// AddDynamicItem adds and item without content that can be filled from outside
+// by assigning a new value to the Content field of the returned item.
+func (b *BottomBar) AddDynamicItem() *BottomBarItem {
+	newItem := &BottomBarItem{}
+	b.Lock()
+	defer b.Unlock()
+	b.items = append(b.items, newItem)
+	return newItem
 }
