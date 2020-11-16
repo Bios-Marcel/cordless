@@ -1,5 +1,3 @@
-replace github.com/Bios-Marcel/cordless => /home/gamb1t/Projects/go/src/cordless
-
 module github.com/Bios-Marcel/cordless
 
 go 1.12
