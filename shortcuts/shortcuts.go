@@ -52,7 +52,7 @@ var (
 
 	NewDirectMessage = addShortcut("new_direct_message", "Create a new direct message channel with this user",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModNone),
-		addVimEvent(tcell.NewEventKey(tcell.KeyEnter,rune(tcell.KeyEnter),tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyEnter,rune(tcell.KeyEnter),tcell.ModNone),NullVimEvent),
 	)
 
 	CopySelectedMessageLink = addShortcut("copy_selected_message_link", "Copy link to selected message",
@@ -72,7 +72,7 @@ var (
 
 	DeleteSelectedMessage = addShortcut("delete_selected_message", "Delete the selected message",
 		chatview, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone),
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone),NullVimEvent),
 	)
 
 	ViewSelectedMessageImages = addShortcut("view_selected_message_images", "View selected message's attached files",
@@ -195,11 +195,11 @@ var (
 	// TODO section
 
 	DeleteRight = addShortcut("delete_right", "Delete right",
-		multilineTextInput, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone),addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent))
+		multilineTextInput, tcell.NewEventKey(tcell.KeyDelete, 0, tcell.ModNone),addVimEvent(NullVimEvent,nil,NullVimEvent))
 	DeleteWordLeft = addShortcut("delete_word_left", "Delete word left",
-		multilineTextInput, tcell.NewEventKey(tcell.KeyCtrlW, rune(tcell.KeyCtrlW), tcell.ModCtrl),addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent))
+		multilineTextInput, tcell.NewEventKey(tcell.KeyCtrlW, rune(tcell.KeyCtrlW), tcell.ModCtrl),addVimEvent(NullVimEvent,nil,NullVimEvent))
 	InputNewLine = addShortcut("add_new_line_character", "Add new line character",
-		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModAlt),addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent))
+		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModAlt),addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'o', tcell.ModNone),NullVimEvent,NullVimEvent))
 
 
 	CopySelection = addShortcut("copy_selection", "Copy selected text",
@@ -214,12 +214,12 @@ var (
 
 	SendMessage = addShortcut("send_message", "Sends the typed message",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone),
-		addVimEvent(NullVimEvent,nil,nil),
+		addVimEvent(NullVimEvent,nil,NullVimEvent),
 	)
 
 	AddNewLineInCodeBlock = addShortcut("add_new_line_in_code_block", "Adds a new line inside a code block",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyEnter, rune(tcell.KeyEnter), tcell.ModNone),
-		addVimEvent(NullVimEvent,nil,NullVimEvent),
+		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'o', tcell.ModNone),NullVimEvent,NullVimEvent),
 	)
 
 	ExitApplication = addShortcut("exit_application", "Exit application",
@@ -264,7 +264,7 @@ var (
 
 	FocusPrivateChatPage = addShortcut("focus_private_chat_page", "Focus private chat page",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModAlt),
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'p', tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'P', tcell.ModNone),NullVimEvent,NullVimEvent),
 	)
 
 	SwitchToPreviousChannel = addShortcut("switch_to_previous_channel", "Switch to previous channel",
@@ -276,7 +276,7 @@ var (
 	FocusMessageInput = addShortcut("focus_message_input", "Focus message input",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModAlt),
 		// Toggle insert mode
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'i', tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'I', tcell.ModNone),NullVimEvent,NullVimEvent),
 	)
 
 	FocusMessageContainer = addShortcut("focus_message_container", "Focus message container",
@@ -285,13 +285,15 @@ var (
 	)
 
 	FocusCommandInput = addShortcut("focus_command_input", "Focus command input",
+		// FIXME unbound
 		globalScope, nil, addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent))
 	FocusCommandOutput = addShortcut("focus_command_output", "Focus command output",
+		// FIXME unbound
 		globalScope, nil, addVimEvent(NullVimEvent,NullVimEvent,NullVimEvent))
 
 	ToggleUserContainer = addShortcut("toggle_user_container", "Toggle user container",
 		globalScope, tcell.NewEventKey(tcell.KeyRune, 'U', tcell.ModAlt),
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, 'U', tcell.ModNone),NullVimEvent,NullVimEvent),
+		addVimEvent(nil,NullVimEvent,NullVimEvent),
 	)
 
 	ToggleCommandView = addShortcut("toggle_command_view", "Toggle command view",
@@ -307,12 +309,12 @@ var (
 
 	GuildListMarkRead = addShortcut("guild_mark_read", "Mark server as read",
 		guildlist, tcell.NewEventKey(tcell.KeyCtrlR, rune(tcell.KeyCtrlR), tcell.ModCtrl),
-		addVimEvent(NullVimEvent,NullVimEvent, tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModNone)),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModNone), tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModNone)),
 	)
 
 	ChannelTreeMarkRead = addShortcut("channel_mark_read", "Mark channel as read",
 		channeltree, tcell.NewEventKey(tcell.KeyCtrlR, rune(tcell.KeyCtrlR), tcell.ModCtrl),
-		addVimEvent(NullVimEvent,NullVimEvent, tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModNone)),
+		addVimEvent(NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModNone), tcell.NewEventKey(tcell.KeyRune, 'm', tcell.ModNone)),
 	)
 
 	VimInsertMode = addShortcut("vim_insert_mode", "Change to Vim insert mode",
@@ -327,6 +329,7 @@ var (
 
 	VimNormalMode = addShortcut("vim_normal_mode", "Return to vim normal mode",
 		globalScope, nil,
+		// FIXME escape key not working in my machine. Using hyphen instead temporarily.
 		addVimEvent(tcell.NewEventKey(tcell.KeyRune, '-', tcell.ModNone),tcell.NewEventKey(tcell.KeyRune, '-', tcell.ModNone),tcell.NewEventKey(tcell.KeyRune, '-', tcell.ModNone)),
 	)
 
