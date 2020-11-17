@@ -4,6 +4,7 @@ import (
 	"unicode"
 
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/cordless/util/vim"
 	"github.com/atotto/clipboard"
 	tcell "github.com/gdamore/tcell/v2"
 
@@ -418,17 +419,6 @@ func NewEditor() *Editor {
 		if shortcuts.MoveCursorLeft.Equals(event) {
 			editor.MoveCursorLeft()
 
-			// Vim mode shortcuts
-		} else if shortcuts.VimInsertMode.Equals(event) {
-			config.Current.VimMode.Insert()
-			return nil
-		} else if shortcuts.VimVisualMode.Equals(event) {
-			config.Current.VimMode.Visual()
-			return nil
-		} else if shortcuts.VimNormalMode.Equals(event) {
-			config.Current.VimMode.Normal()
-
-
 		} else if shortcuts.ExpandSelectionToLeft.Equals(event) {
 			editor.SelectionToLeft()
 		} else if shortcuts.MoveCursorRight.Equals(event) {
@@ -479,6 +469,9 @@ func NewEditor() *Editor {
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter('\n')
 		} else if event.Rune() != 0 {
+			if config.Current.VimMode.CurrentMode != vim.Disabled && config.Current.VimMode.CurrentMode != vim.InsertMode {
+				return nil
+			}
 			editor.InsertCharacter(event.Rune())
 		}
 

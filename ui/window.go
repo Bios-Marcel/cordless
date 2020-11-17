@@ -2197,7 +2197,6 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 	} else if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
 		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
-			// FIXME
 			window.app.SetFocus(window.chatView.GetPrimitive())
 		})
 	} else if shortcuts.ToggleCommandView.Equals(event) {
