@@ -1,5 +1,3 @@
-replace github.com/Bios-Marcel/cordless => github.com/0xSteeW/cordless v0.0.0-20201117104521-a2cc7de4b6dd
-
 module github.com/Bios-Marcel/cordless
 
 go 1.12
