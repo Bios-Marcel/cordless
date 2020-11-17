@@ -330,7 +330,7 @@ var (
 	VimNormalMode = addShortcut("vim_normal_mode", "Return to vim normal mode",
 		globalScope, nil,
 		// FIXME escape key not working in my machine. Using hyphen instead temporarily.
-		addVimEvent(tcell.NewEventKey(tcell.KeyEscape, rune(tcell.KeyEscape), tcell.ModNone),tcell.NewEventKey(tcell.KeyEscape, rune(tcell.KeyEscape), tcell.ModNone),tcell.NewEventKey(tcell.KeyEscape, rune(tcell.KeyEscape), tcell.ModNone)),
+		addVimEvent(tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone),tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone),tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone)),
 	)
 
 	VimSimKeyUp = addShortcut("vim_sim_up", "Simulate an arrow key press in vim mode.",
@@ -351,6 +351,9 @@ var (
 
 	scopes    []*Scope
 	Shortcuts []*Shortcut
+	// VimKeyStore is needed to fix normal mode and visual mode accidentally typing inside the text box.
+	VimKeyStore  map[string]string
+	//				Key     Mode
 )
 
 // Vim event holds possible modifiers for keys. They can be nil. In that case, they will default
