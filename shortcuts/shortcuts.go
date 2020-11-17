@@ -330,7 +330,7 @@ var (
 	VimNormalMode = addShortcut("vim_normal_mode", "Return to vim normal mode",
 		globalScope, nil,
 		// FIXME escape key not working in my machine. Using hyphen instead temporarily.
-		addVimEvent(tcell.NewEventKey(tcell.KeyRune, '-', tcell.ModNone),tcell.NewEventKey(tcell.KeyRune, '-', tcell.ModNone),tcell.NewEventKey(tcell.KeyRune, '-', tcell.ModNone)),
+		addVimEvent(tcell.NewEventKey(tcell.KeyEscape, rune(tcell.KeyEscape), tcell.ModNone),tcell.NewEventKey(tcell.KeyEscape, rune(tcell.KeyEscape), tcell.ModNone),tcell.NewEventKey(tcell.KeyEscape, rune(tcell.KeyEscape), tcell.ModNone)),
 	)
 
 	VimSimKeyUp = addShortcut("vim_sim_up", "Simulate an arrow key press in vim mode.",
