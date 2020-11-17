@@ -2138,7 +2138,9 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		//window#Shutdown unnecessary, as we shut the whole process down.
 		window.app.Stop()
 		return nil
-	} else if shortcuts.VimInsertMode.Equals(event) {
+	}
+
+	if shortcuts.VimInsertMode.Equals(event) {
 		config.Current.VimMode.Insert()
 		window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
 		return nil
@@ -2146,7 +2148,7 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		config.Current.VimMode.Visual()
 		window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
 		return nil
-	} else if shortcuts.VimNormalMode.Equals(event) {
+	} else if shortcuts.VimNormalMode.Equals(event) && window.app.GetRoot() == window.rootContainer {
 		config.Current.VimMode.Normal()
 		window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
 		return nil
@@ -2195,6 +2197,8 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 	} else if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
 		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
+			// FIXME
+			window.app.SetFocus(window.chatView.GetPrimitive())
 		})
 	} else if shortcuts.ToggleCommandView.Equals(event) {
 		window.SetCommandModeEnabled(!window.commandMode)

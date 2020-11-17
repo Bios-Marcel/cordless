@@ -535,8 +535,6 @@ func (a *Application) SetRoot(root Primitive, fullscreen bool) *Application {
 	}
 	a.Unlock()
 
-	a.SetFocus(root)
-
 	return a
 }
 
