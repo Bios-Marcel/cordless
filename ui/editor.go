@@ -467,7 +467,12 @@ func NewEditor() *Editor {
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter('\n')
 		} else if event.Rune() != 0 {
-			editor.InsertCharacter(event.Rune())
+			//Workaround, since Alt+Backspace and Ctrl+Backspace will insert
+			//invalid characters if they aren't used as shortcuts anywhere.
+			if event.Key() == tcell.KeyRune ||
+				(event.Key() != tcell.KeyBackspace2 && event.Key() != tcell.KeyBackspace) {
+				editor.InsertCharacter(event.Rune())
+			}
 		}
 
 		editor.TriggerHeightRequestIfNecessary()
