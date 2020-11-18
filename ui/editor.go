@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+	"log"
 	"unicode"
 
 	"github.com/Bios-Marcel/cordless/tview"
@@ -407,6 +409,8 @@ func NewEditor() *Editor {
 	editor.buffer.Cursor.SetSelectionEnd(editor.buffer.End())
 
 	editor.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		log.Println(fmt.Sprintf("Key: %v, Modifier: %v, Rune: %v, When: %v", event.Key(), event.Modifiers(), event.Rune(), event.When()))
+
 		inputCapture := editor.inputCapture
 		if inputCapture != nil {
 			event = inputCapture(event)
@@ -466,12 +470,10 @@ func NewEditor() *Editor {
 			return nil
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter('\n')
-		} else if event.Rune() != 0 {
-			//Workaround, since Alt+Backspace and Ctrl+Backspace will insert
-			//invalid characters if they aren't used as shortcuts anywhere.
-			if event.Key() == tcell.KeyRune ||
-				(event.Key() != tcell.KeyBackspace2 && event.Key() != tcell.KeyBackspace) {
-				editor.InsertCharacter(event.Rune())
+		} else {
+			mappedRune := mapInputToRune(event)
+			if mappedRune != 0 {
+				editor.InsertCharacter(mappedRune)
 			}
 		}
 
@@ -480,6 +482,34 @@ func NewEditor() *Editor {
 		return nil
 	})
 	return &editor
+}
+
+// mapInputToRune makes sure no invalid characters get inserted into the
+// editor. All exceptions that aren't specifically declared as
+// Key type 'tcell.KeyRune' have to be defined here. A prominent example
+// is the newline character. This was initially added to avoid inserting
+// the characters produces by Ctrl+Backspace, Alt+Backspace, Ctrl+W and so
+// on and so forth. These are all control characters which we don't always
+// react to, since the shortcuts are configurably from within the app.
+// A return value of 0 is to be treated as 'no rune'.
+func mapInputToRune(event *tcell.EventKey) rune {
+	//If something is specifically defined as a rune, we won't question whether
+	//it's valid input, as it's generally not deemed a control character.
+	if event.Key() == tcell.KeyRune {
+		return event.Rune()
+	}
+
+	//While '\n' is treated as newline, we'll ignore '\r', as it's useless.
+	if event.Rune() == '\n' {
+		return '\n'
+	}
+
+	//Handles Tab + Ctrl+H
+	if event.Rune() == '\t' {
+		return '\t'
+	}
+
+	return 0
 }
 
 func (editor *Editor) GetTextLeftOfSelection() string {
@@ -515,9 +545,7 @@ func (editor *Editor) TriggerHeightRequestIfNecessary() {
 		return
 	}
 
-	rowAmount := editor.countRows(editor.GetText())
-
-	newRequestedHeight := rowAmount
+	newRequestedHeight := editor.countRows(editor.GetText())
 	if editor.internalTextView.IsBorderTop() {
 		newRequestedHeight++
 	}
