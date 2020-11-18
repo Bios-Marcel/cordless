@@ -22,8 +22,12 @@ type Primitive interface {
 	// SetRect sets a new position of the primitive.
 	SetRect(x, y, width, height int)
 
+	// SetParent defines which component this primitive is currently being
+	// treated as a child of. This should never be called manually.
 	SetParent(Primitive)
 
+	// GetParent returns the current parent or nil if the parent hasn't been
+	// set yet.
 	GetParent() Primitive
 
 	// InputHandler returns a handler which receives key events when it has focus.
