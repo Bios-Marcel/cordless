@@ -103,12 +103,12 @@ var (
 	// START OF INPUT
 	ExpandSelectionToLeft = addShortcut("expand_selection_word_to_left", "Expand selection word to left",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModShift),
-		addVimEvent(NullVimEvent,NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'h', tcell.ModNone)),
+		addVimEvent(NullVimEvent,NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'H', tcell.ModNone)),
 	)
 
 	ExpandSelectionToRight = addShortcut("expand_selection_word_to_right", "Expand selection word to right",
 		multilineTextInput, tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModShift),
-		addVimEvent(NullVimEvent,NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'l', tcell.ModNone)),
+		addVimEvent(NullVimEvent,NullVimEvent,tcell.NewEventKey(tcell.KeyRune, 'L', tcell.ModNone)),
 	)
 
 	SelectAll = addShortcut("select_all", "Select all",
