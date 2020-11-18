@@ -2140,28 +2140,30 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
-	if shortcuts.VimInsertMode.Equals(event) {
-		config.Current.VimMode.Insert()
-		window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
-		return nil
-	} else if shortcuts.VimVisualMode.Equals(event) {
-		config.Current.VimMode.Visual()
-		window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
-		return nil
-	} else if shortcuts.VimNormalMode.Equals(event) && window.app.GetRoot() == window.rootContainer {
-		config.Current.VimMode.Normal()
-		window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
-		return nil
-	}
+	if config.Current.VimMode.CurrentMode != vim.Disabled {
+		if shortcuts.VimInsertMode.Equals(event) {
+			config.Current.VimMode.Insert()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
+			return nil
+		} else if shortcuts.VimVisualMode.Equals(event) {
+			config.Current.VimMode.Visual()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
+			return nil
+		} else if shortcuts.VimNormalMode.Equals(event) && window.app.GetRoot() == window.rootContainer {
+			config.Current.VimMode.Normal()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
+			return nil
+		}
 
-	if shortcuts.VimSimKeyDown.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
-		return tcell.NewEventKey(tcell.KeyDown, rune(tcell.KeyDown), tcell.ModNone)
-	} else if shortcuts.VimSimKeyUp.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
-		return tcell.NewEventKey(tcell.KeyUp, rune(tcell.KeyUp), tcell.ModNone)
-	} else if shortcuts.VimSimKeyLeft.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
-		return tcell.NewEventKey(tcell.KeyLeft, rune(tcell.KeyLeft), tcell.ModNone)
-	} else if shortcuts.VimSimKeyRight.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
-		return tcell.NewEventKey(tcell.KeyRight, rune(tcell.KeyRight), tcell.ModNone)
+		if shortcuts.VimSimKeyDown.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
+			return tcell.NewEventKey(tcell.KeyDown, rune(tcell.KeyDown), tcell.ModNone)
+		} else if shortcuts.VimSimKeyUp.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
+			return tcell.NewEventKey(tcell.KeyUp, rune(tcell.KeyUp), tcell.ModNone)
+		} else if shortcuts.VimSimKeyLeft.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
+			return tcell.NewEventKey(tcell.KeyLeft, rune(tcell.KeyLeft), tcell.ModNone)
+		} else if shortcuts.VimSimKeyRight.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
+			return tcell.NewEventKey(tcell.KeyRight, rune(tcell.KeyRight), tcell.ModNone)
+		}
 	}
 
 	window.app.QueueUpdateDraw(func() {

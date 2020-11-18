@@ -128,7 +128,7 @@ func SetupApplicationWithAccount(app *tview.Application, account string) {
 			window.RegisterCommand(serverCreateCmd)
 			window.RegisterCommand(commandimpls.NewServerCommand(serverJoinCmd, serverLeaveCmd, serverCreateCmd))
 			window.RegisterCommand(commandimpls.NewNickSetCmd(discord, window))
-			window.RegisterCommand(commandimpls.NewVimCmd())
+			window.RegisterCommand(commandimpls.NewVimCmd(config.Current))
 			tfaEnableCmd := commandimpls.NewTFAEnableCommand(window, discord)
 			tfaDisableCmd := commandimpls.NewTFADisableCommand(discord)
 			tfaBackupGetCmd := commandimpls.NewTFABackupGetCmd(discord, window)

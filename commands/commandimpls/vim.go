@@ -32,10 +32,11 @@ const (
 )
 
 type VimHelp struct {
+	Config *config.Config
 }
 
-func NewVimCmd() *VimHelp {
-	return new(VimHelp)
+func NewVimCmd(c *config.Config) *VimHelp {
+	return &VimHelp{Config: c}
 }
 
 // PrintHelp prints a static help page for this command
@@ -44,14 +45,21 @@ func (v VimHelp) PrintHelp(writer io.Writer) {
 }
 
 func (v VimHelp) Execute(writer io.Writer, parameters []string) {
-	if config.Current.VimMode.CurrentMode == vim.Disabled {
-		config.Current.VimMode.Normal()
-		fmt.Fprintf(writer, "Vim mode enabled")
-	} else {
-		config.Current.VimMode.SetMode(vim.Disabled)
-		fmt.Fprintf(writer, "Vim mode disabled")
+	if len(parameters) < 1 {
+		fmt.Fprintf(writer, "You did not specify any parameter for this command.")
+		return
 	}
-	config.PersistConfig()
+	switch parameters[0] {
+	case "on","enable":
+		v.Config.VimMode.CurrentMode = vim.NormalMode
+		fmt.Fprintf(writer, "Vim mode has been enabled.")
+	case "off","disable":
+		v.Config.VimMode.CurrentMode = vim.NormalMode
+		v.Config.VimMode.CurrentMode = vim.Disabled
+		fmt.Fprintf(writer, "Vim mode has been disabled.")
+	default:
+		fmt.Fprintf(writer, "Parameter %s not recognized.", parameters[0])
+	}
 }
 
 // Name returns the primary name for this command. This name will also be
