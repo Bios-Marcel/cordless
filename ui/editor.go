@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"fmt"
-	"log"
 	"unicode"
 
 	"github.com/Bios-Marcel/cordless/tview"
@@ -29,6 +27,10 @@ type Editor struct {
 	heightRequestHandler func(requestHeight int)
 	requestedHeight      int
 	autocompleteFrom     *femto.Loc
+
+	// App is the tview Application this editor is used in. The reference is
+	// required to query the current bracketed paste state.
+	App *tview.Application
 }
 
 func (editor *Editor) applyBuffer() {
@@ -376,6 +378,17 @@ func (editor *Editor) Paste(event *tcell.EventKey) {
 	}
 }
 
+func (editor *Editor) insertCharacterWithoutApply(character rune) {
+	selectionEnd := editor.buffer.Cursor.CurSelection[1]
+	selectionStart := editor.buffer.Cursor.CurSelection[0]
+	if editor.buffer.Cursor.HasSelection() {
+		editor.buffer.Replace(selectionStart, selectionEnd, string(character))
+	} else {
+		editor.buffer.Insert(editor.buffer.Cursor.Loc, string(character))
+	}
+	editor.buffer.Cursor.ResetSelection()
+}
+
 func (editor *Editor) InsertCharacter(character rune) {
 	selectionEnd := editor.buffer.Cursor.CurSelection[1]
 	selectionStart := editor.buffer.Cursor.CurSelection[0]
@@ -389,12 +402,13 @@ func (editor *Editor) InsertCharacter(character rune) {
 }
 
 // NewEditor instantiates a ready to use text editor.
-func NewEditor() *Editor {
+func NewEditor(app *tview.Application) *Editor {
 	editor := Editor{
 		internalTextView: tview.NewTextView(),
 		requestedHeight:  3,
 		buffer:           femto.NewBufferFromString("", ""),
 		tempBuffer:       femto.NewBufferFromString("", ""),
+		App:              app,
 	}
 
 	editor.internalTextView.SetWrap(true)
@@ -408,9 +422,29 @@ func NewEditor() *Editor {
 	editor.buffer.Cursor.SetSelectionStart(editor.buffer.Start())
 	editor.buffer.Cursor.SetSelectionEnd(editor.buffer.End())
 
+	if editor.App != nil {
+		editor.internalTextView.SetOnPaste(func(pastedRunes []rune) {
+			var wasLastCharacterSlashR bool
+			for _, r := range pastedRunes {
+				//Workaround! Sometimes no \n is received, but only \r. Why? Unsure.
+				if r == '\r' {
+					wasLastCharacterSlashR = true
+					editor.insertCharacterWithoutApply('\n')
+				} else {
+					if wasLastCharacterSlashR {
+						wasLastCharacterSlashR = false
+					}
+					if r != '\n' {
+						editor.insertCharacterWithoutApply(r)
+					}
+				}
+			}
+			editor.applyBuffer()
+			editor.TriggerHeightRequestIfNecessary()
+			editor.internalTextView.ScrollToHighlight()
+		})
+	}
 	editor.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		log.Println(fmt.Sprintf("Key: %v, Modifier: %v, Rune: %v, When: %v", event.Key(), event.Modifiers(), event.Rune(), event.When()))
-
 		inputCapture := editor.inputCapture
 		if inputCapture != nil {
 			event = inputCapture(event)
