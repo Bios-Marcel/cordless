@@ -426,6 +426,10 @@ type Shortcut struct {
 	//This shortcuts default, in order to be able to reset it.
 	defaultEvent *tcell.EventKey
 
+	// Every shortcut receives a pointer to vimMode, therefore not
+	// wasting memory
+	VimStatus	*vim.Vim
+
 	// VimModifier is the shortcut that will be used inside vim mode.
 	VimModifier *VimEvent
 }
@@ -433,19 +437,19 @@ type Shortcut struct {
 // Equals compares the given EventKey with the Shortcuts Event.
 // If any vim mode is enabled, it will replace the default event.
 func (shortcut *Shortcut) Equals(event *tcell.EventKey) bool {
-	if config.Current.VimMode.CurrentMode == vim.NormalMode {
+	if shortcut.VimStatus.CurrentMode == vim.NormalMode {
 		selectedEvent := shortcut.VimModifier.NormalEvent
 		if selectedEvent == nil {
 			selectedEvent = shortcut.Event
 		}
 		return EventsEqual(selectedEvent, event)
-	} else if config.Current.VimMode.CurrentMode == vim.InsertMode {
+	} else if shortcut.VimStatus.CurrentMode == vim.InsertMode {
 		selectedEvent := shortcut.VimModifier.InsertEvent
 		if selectedEvent == nil {
 			selectedEvent = shortcut.Event
 		}
 		return EventsEqual(selectedEvent, event)
-	} else if config.Current.VimMode.CurrentMode == vim.VisualMode {
+	} else if shortcut.VimStatus.CurrentMode == vim.VisualMode {
 		selectedEvent := shortcut.VimModifier.VisualEvent
 		if selectedEvent == nil {
 			selectedEvent = shortcut.Event
@@ -560,7 +564,7 @@ func getShortcutsPath() (string, error) {
 
 // Load loads the shortcuts and copies the events to the correct shortcuts
 // that reside inside of the memory.
-func Load() error {
+func Load(vimMode *vim.Vim) error {
 	shortcutsPath, pathError := getShortcutsPath()
 	if pathError != nil {
 		return pathError
@@ -596,6 +600,7 @@ OUTER_LOOP:
 			if otherShortcut.Identifier == shortcut.Identifier &&
 				otherShortcut.Scope.Identifier == shortcut.Scope.Identifier {
 				otherShortcut.Event = shortcut.Event
+				otherShortcut.VimStatus = vimMode
 				continue OUTER_LOOP
 			}
 		}

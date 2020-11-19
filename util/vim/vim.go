@@ -21,6 +21,14 @@ type Vim struct {
 	CurrentMode int
 }
 
+func NewVim(enabled bool) *Vim {
+	if enabled {
+		return &Vim{CurrentMode: NormalMode}
+	} else {
+		return &Vim{CurrentMode: Disabled}
+	}
+}
+
 // SetMode sets new vim mode. If provided mode falls out
 // the defined range 0-2 it will fall back to normal mode.
 func (v *Vim) SetMode(mode int) {

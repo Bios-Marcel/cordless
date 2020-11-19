@@ -28,6 +28,8 @@ type Editor struct {
 	heightRequestHandler func(requestHeight int)
 	requestedHeight      int
 	autocompleteFrom     *femto.Loc
+
+	vimMode			*int
 }
 
 func (editor *Editor) applyBuffer() {
@@ -388,12 +390,13 @@ func (editor *Editor) InsertCharacter(character rune) {
 }
 
 // NewEditor instantiates a ready to use text editor.
-func NewEditor() *Editor {
+func NewEditor(vimMode *int) *Editor {
 	editor := Editor{
 		internalTextView: tview.NewTextView(),
 		requestedHeight:  3,
 		buffer:           femto.NewBufferFromString("", ""),
 		tempBuffer:       femto.NewBufferFromString("", ""),
+		vimMode: vimMode,
 	}
 
 	editor.internalTextView.SetWrap(true)
@@ -469,7 +472,7 @@ func NewEditor() *Editor {
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter('\n')
 		} else if event.Rune() != 0 {
-			if config.Current.VimMode.CurrentMode != vim.Disabled && config.Current.VimMode.CurrentMode != vim.InsertMode {
+			if *editor.vimMode != vim.Disabled && *editor.vimMode != vim.InsertMode {
 				return nil
 			}
 			editor.InsertCharacter(event.Rune())

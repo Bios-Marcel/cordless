@@ -124,7 +124,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		}()
 	}
 
-	window.commandView = NewCommandView(window.ExecuteCommand)
+	window.commandView = NewCommandView(&window.app.VimMode.CurrentMode,window.ExecuteCommand)
 	logging.SetAdditionalOutput(window.commandView)
 
 	for _, engine := range window.extensionEngines {
@@ -403,7 +403,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	})
 	window.messageContainer = window.chatView.GetPrimitive()
 
-	window.messageInput = NewEditor()
+	window.messageInput = NewEditor(&window.app.VimMode.CurrentMode)
 	window.messageInput.internalTextView.SetIndicateOverflow(true)
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
 		_, _, _, chatViewHeight := window.chatView.internalTextView.GetRect()
@@ -747,7 +747,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	window.userList = NewUserTree(window.session.State)
 
 	// Disable search on type when in Vim mode. TODO add / shourtcut to search.
-	if config.Current.VimMode.CurrentMode != vim.Disabled {
+	if window.app.VimMode.CurrentMode != vim.Disabled {
 		guildList.SetSearchOnTypeEnabled(false)
 		channelTree.SetSearchOnTypeEnabled(false)
 		window.userList.internalTreeView.SetSearchOnTypeEnabled(false)
@@ -874,10 +874,10 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		bottomBar := components.NewBottomBar()
 		bottomBar.AddItem(fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.Username)))
 		bottomBar.AddItem(fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut)))
-		// bottomBar.AddItem(fmt.Sprintf("Vim: %s", config.Current.VimMode.EnabledString()))
+		// bottomBar.AddItem(fmt.Sprintf("Vim: %s", window.app.VimMode.EnabledString()))
 		window.vimStatus = bottomBar.AddDynamicItem()
 		// Default content
-		window.vimStatus.Content = fmt.Sprintf("Vim: %s", config.Current.VimMode.CurrentModeString())
+		window.vimStatus.Content = fmt.Sprintf("Vim: %s", window.app.VimMode.CurrentModeString())
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
 
@@ -2140,28 +2140,28 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
-	if config.Current.VimMode.CurrentMode != vim.Disabled {
+	if window.app.VimMode.CurrentMode != vim.Disabled {
 		if shortcuts.VimInsertMode.Equals(event) {
-			config.Current.VimMode.Insert()
-			window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
+			window.app.VimMode.Insert()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s",window.app.VimMode.CurrentModeString())
 			return nil
 		} else if shortcuts.VimVisualMode.Equals(event) {
-			config.Current.VimMode.Visual()
-			window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
+			window.app.VimMode.Visual()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s",window.app.VimMode.CurrentModeString())
 			return nil
 		} else if shortcuts.VimNormalMode.Equals(event) && window.app.GetRoot() == window.rootContainer {
-			config.Current.VimMode.Normal()
-			window.vimStatus.Content = fmt.Sprintf("Vim: %s",config.Current.VimMode.CurrentModeString())
+			window.app.VimMode.Normal()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s",window.app.VimMode.CurrentModeString())
 			return nil
 		}
 
-		if shortcuts.VimSimKeyDown.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
+		if shortcuts.VimSimKeyDown.Equals(event) && window.app.VimMode.CurrentMode == vim.VisualMode {
 			return tcell.NewEventKey(tcell.KeyDown, rune(tcell.KeyDown), tcell.ModNone)
-		} else if shortcuts.VimSimKeyUp.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
+		} else if shortcuts.VimSimKeyUp.Equals(event) && window.app.VimMode.CurrentMode == vim.VisualMode {
 			return tcell.NewEventKey(tcell.KeyUp, rune(tcell.KeyUp), tcell.ModNone)
-		} else if shortcuts.VimSimKeyLeft.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
+		} else if shortcuts.VimSimKeyLeft.Equals(event) && window.app.VimMode.CurrentMode == vim.VisualMode {
 			return tcell.NewEventKey(tcell.KeyLeft, rune(tcell.KeyLeft), tcell.ModNone)
-		} else if shortcuts.VimSimKeyRight.Equals(event) && config.Current.VimMode.CurrentMode == vim.VisualMode {
+		} else if shortcuts.VimSimKeyRight.Equals(event) && window.app.VimMode.CurrentMode == vim.VisualMode {
 			return tcell.NewEventKey(tcell.KeyRight, rune(tcell.KeyRight), tcell.ModNone)
 		}
 	}
@@ -2197,7 +2197,7 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 	} else if shortcuts.FocusMessageContainer.Equals(event) {
 		window.app.SetFocus(window.chatView.internalTextView)
 	} else if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
-		shortcutdialog.ShowShortcutsDialog(window.app, func() {
+		shortcutdialog.ShowShortcutsDialog(window.app,func() {
 			window.app.SetRoot(window.rootContainer, true)
 			window.app.SetFocus(window.chatView.GetPrimitive())
 		})

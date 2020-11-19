@@ -3,6 +3,7 @@ package tview
 import (
 	"sync"
 
+	"github.com/Bios-Marcel/cordless/util/vim"
 	tcell "github.com/gdamore/tcell/v2"
 )
 
@@ -66,15 +67,18 @@ type Application struct {
 	// (screen.Init() and draw() will be called implicitly). A value of nil will
 	// stop the application.
 	screenReplacement chan tcell.Screen
+
+	VimMode	*vim.Vim
 }
 
 // NewApplication creates and returns a new application.
-func NewApplication() *Application {
+func NewApplication(vimEnabled bool) *Application {
 	return &Application{
 		events:            make(chan tcell.Event, queueSize),
 		updates:           make(chan func(), queueSize),
 		screenReplacement: make(chan tcell.Screen, 1),
 		MouseEnabled:      true,
+		VimMode:		   vim.NewVim(vimEnabled),
 	}
 }
 

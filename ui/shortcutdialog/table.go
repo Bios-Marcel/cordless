@@ -6,6 +6,7 @@ import (
 
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
+	"github.com/Bios-Marcel/cordless/util/vim"
 	tcell "github.com/gdamore/tcell/v2"
 )
 
@@ -27,14 +28,17 @@ type ShortcutTable struct {
 	selection     int
 	focusNext     func()
 	focusPrevious func()
+
+	vimMode		  *int
 }
 
 // NewShortcutTable creates a new shortcut table that doesn't contain any data.
-func NewShortcutTable() *ShortcutTable {
+func NewShortcutTable(vimEnabled *int) *ShortcutTable {
 	table := tview.NewTable()
 	shortcutsTable := &ShortcutTable{
 		table:     table,
 		selection: -1,
+		vimMode: vimEnabled,
 	}
 
 	table.SetSelectable(true, false)
@@ -46,9 +50,11 @@ func NewShortcutTable() *ShortcutTable {
 	table.SetCell(0, actionCellIndex, createHeaderCell("Action"))
 	table.SetCell(0, scopeCellIndex, createHeaderCell("Scope"))
 	table.SetCell(0, shortcutCellIndex, createHeaderCell("Shortcut"))
-	table.SetCell(0, vimNormalCellIndex, createHeaderCell("Vim: N"))
-	table.SetCell(0, vimInsertCellIndex, createHeaderCell("Vim: I"))
-	table.SetCell(0, vimVisualCellIndex, createHeaderCell("Vim: V"))
+	if *vimEnabled != vim.Disabled {
+		table.SetCell(0, vimNormalCellIndex, createHeaderCell("Vim: N"))
+		table.SetCell(0, vimInsertCellIndex, createHeaderCell("Vim: I"))
+		table.SetCell(0, vimVisualCellIndex, createHeaderCell("Vim: V"))
+	}
 
 	table.SetInputCapture(shortcutsTable.handleInput)
 
@@ -97,53 +103,55 @@ func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*shortcuts.Shortcut
 			SetMaxWidth(1)
 		shortcutTable.table.SetCell(row, shortcutCellIndex, eventCell)
 
-		normalKey := ""
-		insertKey := ""
-		visualKey := ""
+		if *shortcutTable.vimMode != vim.Disabled {
+			normalKey := ""
+			insertKey := ""
+			visualKey := ""
 
-		// HACK
-		// Empty tcell EventKey corresponds to Ctrl-Space
-		if shortcut.VimModifier.NormalEvent == nil {
-			normalKey = EventToString(shortcut.Event)
-		} else if shortcut.VimModifier.NormalEvent.Rune() == rune(tcell.KeyCtrlSpace){
-			normalKey = ""
-		} else {
-			normalKey = EventToString(shortcut.VimModifier.NormalEvent)
+			// HACK
+			// Empty tcell EventKey corresponds to Ctrl-Space
+			if shortcut.VimModifier.NormalEvent == nil {
+				normalKey = EventToString(shortcut.Event)
+			} else if shortcut.VimModifier.NormalEvent.Rune() == rune(tcell.KeyCtrlSpace){
+				normalKey = ""
+			} else {
+				normalKey = EventToString(shortcut.VimModifier.NormalEvent)
+			}
+
+			if shortcut.VimModifier.InsertEvent == nil {
+				insertKey = EventToString(shortcut.Event)
+			} else if shortcut.VimModifier.InsertEvent.Rune() == rune(tcell.KeyCtrlSpace){
+				insertKey = ""
+			} else {
+				insertKey = EventToString(shortcut.VimModifier.InsertEvent)
+			}
+
+			if shortcut.VimModifier.VisualEvent == nil {
+				visualKey = EventToString(shortcut.Event)
+			} else if shortcut.VimModifier.VisualEvent.Rune() == rune(tcell.KeyCtrlSpace){
+				visualKey = ""
+			} else {
+				visualKey = EventToString(shortcut.VimModifier.VisualEvent)
+			}
+
+			vimNormalCell := tview.NewTableCell(fmt.Sprintf("%s",
+				normalKey)).
+				SetExpansion(1).
+				SetMaxWidth(1)
+			shortcutTable.table.SetCell(row, vimNormalCellIndex, vimNormalCell)
+
+			vimInsertCell := tview.NewTableCell(fmt.Sprintf("%s",
+				insertKey)).
+				SetExpansion(1).
+				SetMaxWidth(1)
+			shortcutTable.table.SetCell(row, vimInsertCellIndex, vimInsertCell)
+
+			vimVisualCell := tview.NewTableCell(fmt.Sprintf("%s",
+				visualKey)).
+				SetExpansion(1).
+				SetMaxWidth(1)
+			shortcutTable.table.SetCell(row, vimVisualCellIndex, vimVisualCell)
 		}
-
-		if shortcut.VimModifier.InsertEvent == nil {
-			insertKey = EventToString(shortcut.Event)
-		} else if shortcut.VimModifier.InsertEvent.Rune() == rune(tcell.KeyCtrlSpace){
-			insertKey = ""
-		} else {
-			insertKey = EventToString(shortcut.VimModifier.InsertEvent)
-		}
-
-		if shortcut.VimModifier.VisualEvent == nil {
-			visualKey = EventToString(shortcut.Event)
-		} else if shortcut.VimModifier.VisualEvent.Rune() == rune(tcell.KeyCtrlSpace){
-			visualKey = ""
-		} else {
-			visualKey = EventToString(shortcut.VimModifier.VisualEvent)
-		}
-
-		vimNormalCell := tview.NewTableCell(fmt.Sprintf("%s",
-			normalKey)).
-			SetExpansion(1).
-			SetMaxWidth(1)
-		shortcutTable.table.SetCell(row, vimNormalCellIndex, vimNormalCell)
-
-		vimInsertCell := tview.NewTableCell(fmt.Sprintf("%s",
-			insertKey)).
-			SetExpansion(1).
-			SetMaxWidth(1)
-		shortcutTable.table.SetCell(row, vimInsertCellIndex, vimInsertCell)
-
-		vimVisualCell := tview.NewTableCell(fmt.Sprintf("%s",
-			visualKey)).
-			SetExpansion(1).
-			SetMaxWidth(1)
-		shortcutTable.table.SetCell(row, vimVisualCellIndex, vimVisualCell)
 
 		row++
 	}

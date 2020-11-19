@@ -42,7 +42,7 @@ func SetupApplicationWithAccount(app *tview.Application, account string) {
 			configuration.Token = configuration.GetAccountToken(account)
 		}
 
-		shortcutsLoadError := shortcuts.Load()
+		shortcutsLoadError := shortcuts.Load(app.VimMode)
 		if shortcutsLoadError != nil {
 			panic(shortcutsLoadError)
 		}
@@ -128,7 +128,7 @@ func SetupApplicationWithAccount(app *tview.Application, account string) {
 			window.RegisterCommand(serverCreateCmd)
 			window.RegisterCommand(commandimpls.NewServerCommand(serverJoinCmd, serverLeaveCmd, serverCreateCmd))
 			window.RegisterCommand(commandimpls.NewNickSetCmd(discord, window))
-			window.RegisterCommand(commandimpls.NewVimCmd(config.Current))
+			window.RegisterCommand(commandimpls.NewVimCmd(app.VimMode))
 			tfaEnableCmd := commandimpls.NewTFAEnableCommand(window, discord)
 			tfaDisableCmd := commandimpls.NewTFADisableCommand(discord)
 			tfaBackupGetCmd := commandimpls.NewTFABackupGetCmd(discord, window)

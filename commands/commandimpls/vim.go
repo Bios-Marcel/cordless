@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/util/vim"
 )
 
@@ -34,11 +33,11 @@ const (
 )
 
 type VimHelp struct {
-	Config *config.Config
+	vimMode	*vim.Vim
 }
 
-func NewVimCmd(c *config.Config) *VimHelp {
-	return &VimHelp{Config: c}
+func NewVimCmd(vimMode *vim.Vim) *VimHelp {
+	return &VimHelp{vimMode: vimMode}
 }
 
 // PrintHelp prints a static help page for this command
@@ -53,12 +52,12 @@ func (v VimHelp) Execute(writer io.Writer, parameters []string) {
 	}
 	switch parameters[0] {
 	case "on","enable":
-		v.Config.VimMode.CurrentMode = vim.NormalMode
-		fmt.Fprintf(writer, "Vim mode has been enabled.")
+		v.vimMode.CurrentMode = vim.NormalMode
+		fmt.Fprintf(writer, "Vim mode has been enabled.\n")
 	case "off","disable":
-		v.Config.VimMode.CurrentMode = vim.NormalMode
-		v.Config.VimMode.CurrentMode = vim.Disabled
-		fmt.Fprintf(writer, "Vim mode has been disabled.")
+		v.vimMode.CurrentMode = vim.NormalMode
+		v.vimMode.CurrentMode = vim.Disabled
+		fmt.Fprintf(writer, "Vim mode has been disabled.\n")
 	default:
 		fmt.Fprintf(writer, "Parameter %s not recognized.", parameters[0])
 	}
