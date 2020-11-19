@@ -51,14 +51,11 @@ func (r Reaction) Execute(writer io.Writer, parameters []string) {
 			fmt.Fprintf(writer, "Not enough arguments provided.")
 			return
 		}
-		message, err := r.session.ChannelMessage(parameters[1], parameters[2])
-		if err != nil {
-			fmt.Fprintf(writer, "There was an error obtaining the message.\n%e",err)
-			return
-		}
-		reactions := message.Reactions
-		for _, reaction := range reactions {
-			fmt.Fprintf(writer, "%s\n",reaction.Emoji.Name)
+		emojis, l := r.Emojis(parameters[1], parameters[2])
+		if l == "" {
+			fmt.Fprintf(writer, "%s\n",emojis)
+		} else {
+			fmt.Fprintf(writer, "%s\n",l)
 		}
 		return
 
@@ -75,6 +72,21 @@ func (r Reaction) Execute(writer io.Writer, parameters []string) {
 		fmt.Fprintf(writer, "Added reaction successfully.")
 
 	}
+}
+
+func (r Reaction) Emojis(c string, m string) ([]string,string) {
+		message, err := r.session.State.Message(c, m)
+		msgLog := ""
+		if err != nil {
+			msgLog = fmt.Sprintf("There was an error obtaining the message.\n")
+			return nil, msgLog
+		}
+		reactions := message.Reactions
+		returnedReactions := make([]string, len(reactions))
+		for _, reaction := range reactions {
+			returnedReactions = append(returnedReactions,reaction.Emoji.Name)
+		}
+	return returnedReactions, msgLog
 }
 
 // Name returns the primary name for this command. This name will also be
