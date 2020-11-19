@@ -44,6 +44,9 @@ type Primitive interface {
 	// Box.WrapInputHandler() so you inherit that functionality.
 	InputHandler() InputHandlerFunc
 
+	// OnPaste is called when a bracketed paste is finished.
+	OnPaste([]rune)
+
 	// Focus is called by the application when the primitive receives focus.
 	// Implementers may call delegate() to pass the focus on to another primitive.
 	Focus(delegate func(p Primitive))

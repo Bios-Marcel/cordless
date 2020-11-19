@@ -69,6 +69,8 @@ type Application struct {
 	screenReplacement chan tcell.Screen
 
 	VimMode	*vim.Vim
+	// Defines whether a bracketed paste is currently ongoing.
+	pasteActive bool
 }
 
 // NewApplication creates and returns a new application.
@@ -120,6 +122,7 @@ func (a *Application) SetScreen(screen tcell.Screen) *Application {
 		if a.MouseEnabled {
 			a.screen.EnableMouse()
 		}
+		screen.EnablePaste()
 		a.Unlock()
 		return a
 	}
@@ -153,6 +156,7 @@ func (a *Application) Run() error {
 		if a.MouseEnabled {
 			a.screen.EnableMouse()
 		}
+		a.screen.EnablePaste()
 	}
 
 	// We catch panics to clean up because they mess up the terminal.
@@ -219,6 +223,7 @@ func (a *Application) Run() error {
 
 	// Start event loop.
 	var keyEventHandleHierarchy []Primitive
+	var pastedRunes []rune
 EventLoop:
 	for {
 		//resize slice to zero without having to allocate a new array.
@@ -236,6 +241,14 @@ EventLoop:
 				a.RLock()
 				p := a.focus
 				inputCapture := a.inputCapture
+				if a.pasteActive {
+					if event.Rune() != 0 {
+						pastedRunes = append(pastedRunes, event.Rune())
+						a.RUnlock()
+						continue
+					}
+				}
+
 				a.RUnlock()
 
 				// Intercept keys.
@@ -281,6 +294,25 @@ EventLoop:
 				}
 				screen.Clear()
 				a.draw()
+			case *tcell.EventPaste:
+				a.RLock()
+				p := a.focus
+
+				if event.Start() {
+
+					a.pasteActive = true
+					a.RUnlock()
+				} else if event.End() {
+					a.pasteActive = false
+					a.RUnlock()
+					if p != nil {
+						p.OnPaste(pastedRunes)
+						a.draw()
+						pastedRunes = pastedRunes[0:0]
+					}
+				} else {
+					a.RUnlock()
+				}
 			case *tcell.EventMouse:
 				if event.Buttons() == tcell.ButtonNone {
 					continue
@@ -371,6 +403,11 @@ func getSelfIfCoordinatesMatch(primitive Primitive, x, y int) *Primitive {
 	return nil
 }
 
+// IsPasting indicates whether a bracketed paste is ongoing.
+func (a *Application) IsPasting() bool {
+	return a.pasteActive
+}
+
 // Stop stops the application, causing Run() to return.
 func (a *Application) Stop() {
 	a.Lock()
@@ -415,6 +452,7 @@ func (a *Application) Suspend(f func()) bool {
 	if a.MouseEnabled {
 		screen.EnableMouse()
 	}
+	screen.EnablePaste()
 
 	a.screenReplacement <- screen
 	// One key event will get lost, see https://github.com/gdamore/tcell/issues/194
