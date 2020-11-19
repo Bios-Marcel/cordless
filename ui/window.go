@@ -2144,7 +2144,7 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 	} else if shortcuts.FocusMessageContainer.Equals(event) {
 		window.app.SetFocus(window.chatView.internalTextView)
 	} else if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
-		shortcutdialog.ShowShortcutsDialog(window.app, func() {
+		shortcutdialog.ShowShortcutsDialog(window.app,func() {
 			window.app.SetRoot(window.rootContainer, true)
 		})
 	} else if shortcuts.ToggleCommandView.Equals(event) {
