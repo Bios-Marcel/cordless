@@ -115,7 +115,7 @@ func SetupApplicationWithAccount(app *tview.Application, account string) {
 			window.RegisterCommand(commandimpls.NewManualCommand(window))
 			window.RegisterCommand(commandimpls.NewFixLayoutCommand(window))
 			window.RegisterCommand(commandimpls.NewFriendsCommand(discord))
-			window.RegisterCommand(commandimpls.NewReaction(discord))
+			window.RegisterCommand(commandimpls.NewReaction(discord, window, app))
 			userSetCmd := commandimpls.NewUserSetCommand(window, discord)
 			userGetCmd := commandimpls.NewUserGetCommand(window, discord)
 			window.RegisterCommand(userSetCmd)

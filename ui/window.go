@@ -241,19 +241,13 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 			window.insertQuoteOfMessage(message)
 			return nil
 		}
-		if shortcuts.ShowMessageID.Equals(event) {
-			if !window.commandMode {
-				window.SetCommandModeEnabled(true)
-			}
+		if shortcuts.ReactionDialog.Equals(event) {
 			fmt.Fprintf(window.commandView, "Selected channel ID: %s , Message ID: %s\n", message.ChannelID, message.ID)
 			clipboard.WriteAll(fmt.Sprintf("%s %s",message.ChannelID, message.ID))
 			fmt.Fprintf(window.commandView, "Channel ID and MessageID copied to clipboard.\n")
 			r := window.FindCommand("reaction")
-			parameters := []string{"show",message.ChannelID,message.ID}
+			parameters := []string{"dialog",message.ChannelID,message.ID}
 			r.Execute(window.commandView,parameters)
-			/*window.ShowDialog(config.GetTheme().PrimitiveBackgroundColor, fmt.Sprintf("%s","foo"), func(button string) {
-
-			} , "OK")*/
 		}
 
 		if shortcuts.NewDirectMessage.Equals(event) {

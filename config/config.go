@@ -146,6 +146,11 @@ type Config struct {
 	// to impersonate people or change their name every 5 minutes.
 	ShowNicknames bool
 
+	// FavoriteReactions holds some unicode emojis that an user can select
+	// to react to a message. Due to space constraints, they are only allowed
+	// to use this array, and it can't be more than 20 elements.
+	FavoriteReactions []string
+
 	// FileHandlers allow registering specific file-handers for certain
 	FileOpenHandlers map[string]string
 	// FileOpenSaveFilesPermanently decides whether opened files are saved
@@ -211,6 +216,7 @@ func createDefaultConfig() *Config {
 		FileOpenHandlers:                            make(map[string]string),
 		FileOpenSaveFilesPermanently:                false,
 		FileDownloadSaveLocation:                    "~/Downloads",
+		FavoriteReactions: 						[]string{"👍","👎"},
 	}
 }
 

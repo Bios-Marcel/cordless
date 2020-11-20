@@ -151,7 +151,7 @@ var (
 	ChannelTreeMarkRead = addShortcut("channel_mark_read", "Mark channel as read",
 		channeltree, tcell.NewEventKey(tcell.KeyCtrlR, rune(tcell.KeyCtrlR), tcell.ModCtrl))
 
-	ShowMessageID = addShortcut("show_message_id", "View message ID",
+	ReactionDialog = addShortcut("reaction_dialog", "Show an interactive reaction dialog",
 		chatview, tcell.NewEventKey(tcell.KeyRune, 'w', tcell.ModNone))
 
 	scopes    []*Scope
