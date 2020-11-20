@@ -100,7 +100,7 @@ func (r Reaction) Execute(writer io.Writer, parameters []string) {
 							"Select reaction to add. (Add more in your config)", func(button string) {
 								err := r.Add(parameters[1],parameters[2], button)
 								if err != nil {
-									fmt.Fprintf(writer, "Could not add emoji %s", button)
+									fmt.Fprintf(writer, "Could not add emoji %s, %e", button, err)
 									return
 								} else {
 									fmt.Fprintf(writer, "Added reaction.")
@@ -137,7 +137,15 @@ func (r Reaction) Show(c string, m string) string {
 }
 
 func (r Reaction) Add(c, m, emoji string) error {
+	const reactionAddPerm = 64 // 1000000
+	perms, _ := r.session.State.UserChannelPermissions(r.session.State.User.ID, c)
+	if perms&64 != 64 {
+		return fmt.Errorf("You can't add reactions here.\n")
+	}
 	err := r.session.MessageReactionAdd(c, m, emoji)
+	if err != nil {
+		return fmt.Errorf("Some error ocurred.\n")
+	}
 	return err
 }
 
