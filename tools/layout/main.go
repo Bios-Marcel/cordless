@@ -93,6 +93,10 @@ func (c *CoreLayout) NextFocusableComponent(direction tview.FocusDirection) tvie
 	panic("implement me")
 }
 
+func (c *CoreLayout) OnPaste(runes []rune) {
+	panic("implement me")
+}
+
 func (c *CoreLayout) SetParent(parent tview.Primitive) {
 	//Do nothing
 }
@@ -180,6 +184,10 @@ func (d *demoComponent) GetFocusable() tview.Focusable {
 
 func (d *demoComponent) NextFocusableComponent(direction tview.FocusDirection) tview.Primitive {
 	return nil
+}
+
+func (d *demoComponent) OnPaste(runes []rune) {
+	panic("implement me")
 }
 
 func (d *demoComponent) SetParent(parent tview.Primitive) {

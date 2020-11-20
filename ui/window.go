@@ -120,7 +120,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		}()
 	}
 
-	window.commandView = NewCommandView(window.ExecuteCommand)
+	window.commandView = NewCommandView(window.app, window.ExecuteCommand)
 	logging.SetAdditionalOutput(window.commandView)
 
 	for _, engine := range window.extensionEngines {
@@ -133,13 +133,11 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	guilds := readyEvent.Guilds
 
 	mentionWindowRootNode := tview.NewTreeNode("")
-	autocompleteView := tview.NewTreeView().
-		SetVimBindingsEnabled(false).
+	autocompleteView := components.NewAutocompleteView()
+	autocompleteView.
 		SetRoot(mentionWindowRootNode).
-		SetTopLevel(1).
-		SetCycleSelection(true)
-	autocompleteView.SetBorder(true)
-	autocompleteView.SetBorderSides(false, true, false, true)
+		SetBorder(true).
+		SetBorderSides(false, true, false, true)
 
 	window.leftArea = tview.NewFlex().SetDirection(tview.FlexRow)
 
@@ -407,7 +405,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	})
 	window.messageContainer = window.chatView.GetPrimitive()
 
-	window.messageInput = NewEditor()
+	window.messageInput = NewEditor(window.app)
 	window.messageInput.internalTextView.SetIndicateOverflow(true)
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
 		_, _, _, chatViewHeight := window.chatView.internalTextView.GetRect()
@@ -431,7 +429,12 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 			autocompleteView.SetCurrentNode(rootNode)
 			autocompleteView.SetVisible(true)
 			window.app.SetFocus(autocompleteView)
-			window.chatArea.ResizeItem(autocompleteView, maths.Min(10, len(values)), 0)
+			_, _, _, height := window.app.GetRoot().GetRect()
+			//The preferred height is limited to a certain to avoid the
+			//autocomplete taking too much space in small windows, or
+			//furthermore terminals with a big font size.
+			prefHeight := maths.Min(maths.Min(10, height/4), len(values))
+			window.chatArea.ResizeItem(autocompleteView, prefHeight, 0)
 		}
 	})
 
@@ -889,14 +892,12 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	window.updateUserList()
 
 	autocompleteView.SetVisible(false)
-	//FIXME this probably needs to be adapted to custom bindings
+
+	//All uncaptured events, e.g. events not relevant for TreeViews, will be
+	//forwarded to the message input, as both full typing capability, but also
+	//autocomplete capability should work at the same time.
 	autocompleteView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch key := event.Key(); key {
-		case tcell.KeyRune, tcell.KeyDelete, tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyLeft, tcell.KeyRight, tcell.KeyCtrlA, tcell.KeyCtrlV:
-			window.messageInput.internalTextView.GetInputCapture()(event)
-			return nil
-		}
-		return event
+		return window.messageInput.internalTextView.GetInputCapture()(event)
 	})
 
 	window.chatArea.AddItem(window.messageContainer, 0, 1, false)

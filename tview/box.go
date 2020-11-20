@@ -84,6 +84,8 @@ type Box struct {
 
 	nextFocusableComponents map[FocusDirection][]Primitive
 	parent                  Primitive
+
+	onPaste func([]rune)
 }
 
 // NewBox returns a Box without a border.
@@ -588,11 +590,15 @@ func (b *Box) SetIndicateOverflow(indicateOverflow bool) *Box {
 	return b
 }
 
+// SetParent defines which component this primitive is currently being
+// treated as a child of. This should never be called manually.
 func (b *Box) SetParent(parent Primitive) {
 	//Reparenting is possible!
 	b.parent = parent
 }
 
+// GetParent returns the current parent or nil if the parent hasn't been
+// set yet.
 func (b *Box) GetParent() Primitive {
 	return b.parent
 }
@@ -607,5 +613,17 @@ func (b *Box) drawOverflow(screen tcell.Screen, showTop, showBottom bool) {
 		if showBottom {
 			screen.SetContent(overflowIndicatorX, b.innerY+b.innerHeight+b.paddingBottom, '▼', nil, style)
 		}
+	}
+}
+
+// SetOnPaste defines the function that's called in OnPaste.
+func (b *Box) SetOnPaste(onPaste func([]rune)) {
+	b.onPaste = onPaste
+}
+
+// OnPaste is called when a bracketed paste is finished.
+func (b *Box) OnPaste(runes []rune) {
+	if b.onPaste != nil {
+		b.onPaste(runes)
 	}
 }

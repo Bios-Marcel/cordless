@@ -27,7 +27,7 @@ type CommandView struct {
 
 // NewCommandView creates a new struct containing the components necessary
 // for a command view. It also contains the state for those components.
-func NewCommandView(onExecuteCommand func(command string)) *CommandView {
+func NewCommandView(app *tview.Application, onExecuteCommand func(command string)) *CommandView {
 	commandOutput := tview.NewTextView()
 	commandOutput.SetDynamicColors(true).
 		SetWordWrap(true).
@@ -36,7 +36,7 @@ func NewCommandView(onExecuteCommand func(command string)) *CommandView {
 		SetBorder(true).
 		SetIndicateOverflow(true)
 
-	commandInput := NewEditor()
+	commandInput := NewEditor(app)
 	commandInput.internalTextView.
 		SetWrap(false).
 		SetWordWrap(false)
