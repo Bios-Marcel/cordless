@@ -137,7 +137,7 @@ func (r Reaction) Show(c string, m string) string {
 }
 
 func (r Reaction) Add(c, m, emoji string) error {
-	const reactionAddPerm = 64 // 1000000
+	const reactionAddPerm = discordgo.PermissionAddReactions
 	perms, _ := r.session.State.UserChannelPermissions(r.session.State.User.ID, c)
 	if perms&64 != 64 {
 		return fmt.Errorf("You can't add reactions here.\n")
