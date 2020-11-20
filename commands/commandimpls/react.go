@@ -137,9 +137,8 @@ func (r Reaction) Show(c string, m string) string {
 }
 
 func (r Reaction) Add(c, m, emoji string) error {
-	const reactionAddPerm = discordgo.PermissionAddReactions
 	perms, _ := r.session.State.UserChannelPermissions(r.session.State.User.ID, c)
-	if perms&64 != 64 {
+	if perms&discordgo.PermissionAddReactions != discordgo.PermissionAddReactions {
 		return fmt.Errorf("You can't add reactions here.\n")
 	}
 	err := r.session.MessageReactionAdd(c, m, emoji)
