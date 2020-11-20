@@ -831,71 +831,71 @@ func (t *TreeView) Draw(screen tcell.Screen) bool {
 
 // InputHandler returns the handler for this primitive.
 func (t *TreeView) InputHandler() InputHandlerFunc {
-	return t.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
-		selectNode := func() {
-			if t.currentNode != nil {
-				if t.selected != nil {
-					t.selected(t.currentNode)
-				}
-				if t.currentNode.selected != nil {
-					t.currentNode.selected()
+	return t.WrapInputHandler(t.DefaultInputHandler)
+}
+
+// DefaultInputHandler handles basic navigation and interaction with the
+// TreeView.
+func (t *TreeView) DefaultInputHandler(event *tcell.EventKey, setFocus func(p Primitive)) *tcell.EventKey {
+	// Because the tree is flattened into a list only at drawing time, we also
+	// postpone the (selection) movement to drawing time.
+	switch key := event.Key(); key {
+	case tcell.KeyTab, tcell.KeyDown, tcell.KeyRight:
+		t.movement = treeDown
+	case tcell.KeyBacktab, tcell.KeyUp, tcell.KeyLeft:
+		t.movement = treeUp
+	case tcell.KeyHome:
+		t.movement = treeHome
+	case tcell.KeyEnd:
+		t.movement = treeEnd
+	case tcell.KeyPgDn, tcell.KeyCtrlF:
+		t.movement = treePageDown
+	case tcell.KeyPgUp, tcell.KeyCtrlB:
+		t.movement = treePageUp
+	case tcell.KeyRune:
+		if t.vimBindings {
+			switch event.Rune() {
+			case 'g':
+				t.movement = treeHome
+			case 'G':
+				t.movement = treeEnd
+			case 'j':
+				t.movement = treeDown
+			case 'k':
+				t.movement = treeUp
+			default:
+				return event
+			}
+		} else if t.searchOnType {
+			if time.Since(t.jumpTime) > (500 * time.Millisecond) {
+				t.jumpBuffer = ""
+			}
+
+			if event.Key() == tcell.KeyRune {
+				t.jumpTime = time.Now()
+				t.jumpBuffer += strings.ToLower(string(event.Rune()))
+
+				node := t.FindFirstSelectableNode(t.GetRoot(), t.jumpBuffer)
+				if node != nil {
+					t.SetCurrentNode(node)
 				}
 			}
 		}
-
-		// Because the tree is flattened into a list only at drawing time, we also
-		// postpone the (selection) movement to drawing time.
-		switch key := event.Key(); key {
-		case tcell.KeyTab, tcell.KeyDown, tcell.KeyRight:
-			t.movement = treeDown
-		case tcell.KeyBacktab, tcell.KeyUp, tcell.KeyLeft:
-			t.movement = treeUp
-		case tcell.KeyHome:
-			t.movement = treeHome
-		case tcell.KeyEnd:
-			t.movement = treeEnd
-		case tcell.KeyPgDn, tcell.KeyCtrlF:
-			t.movement = treePageDown
-		case tcell.KeyPgUp, tcell.KeyCtrlB:
-			t.movement = treePageUp
-		case tcell.KeyRune:
-			if t.vimBindings {
-				switch event.Rune() {
-				case 'g':
-					t.movement = treeHome
-				case 'G':
-					t.movement = treeEnd
-				case 'j':
-					t.movement = treeDown
-				case 'k':
-					t.movement = treeUp
-				default:
-					return event
-				}
-			} else if t.searchOnType {
-				if time.Since(t.jumpTime) > (500 * time.Millisecond) {
-					t.jumpBuffer = ""
-				}
-
-				if event.Key() == tcell.KeyRune {
-					t.jumpTime = time.Now()
-					t.jumpBuffer += strings.ToLower(string(event.Rune()))
-
-					node := t.FindFirstSelectableNode(t.GetRoot(), t.jumpBuffer)
-					if node != nil {
-						t.SetCurrentNode(node)
-					}
-				}
+	case tcell.KeyEnter:
+		if t.currentNode != nil {
+			if t.selected != nil {
+				t.selected(t.currentNode)
 			}
-		case tcell.KeyEnter:
-			selectNode()
-		default:
-			return event
+			if t.currentNode.selected != nil {
+				t.currentNode.selected()
+			}
 		}
+	default:
+		return event
+	}
 
-		t.process()
-		return nil
-	})
+	t.process()
+	return nil
 }
 
 // FindFirstSelectableNode iterates through the tree from top to bottom, trying

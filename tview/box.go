@@ -590,11 +590,15 @@ func (b *Box) SetIndicateOverflow(indicateOverflow bool) *Box {
 	return b
 }
 
+// SetParent defines which component this primitive is currently being
+// treated as a child of. This should never be called manually.
 func (b *Box) SetParent(parent Primitive) {
 	//Reparenting is possible!
 	b.parent = parent
 }
 
+// GetParent returns the current parent or nil if the parent hasn't been
+// set yet.
 func (b *Box) GetParent() Primitive {
 	return b.parent
 }
