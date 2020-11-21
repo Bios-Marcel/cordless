@@ -43,6 +43,7 @@ func SetupApplicationWithAccount(app *tview.Application, account string) {
 		}
 
 		shortcutsLoadError := shortcuts.Load(app.VimMode)
+		shortcuts.InjectVim(app.VimMode)
 		if shortcutsLoadError != nil {
 			panic(shortcutsLoadError)
 		}

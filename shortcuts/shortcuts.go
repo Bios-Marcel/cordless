@@ -351,8 +351,6 @@ var (
 
 	scopes    []*Scope
 	Shortcuts []*Shortcut
-	// VimKeyStore is needed to fix normal mode and visual mode accidentally typing inside the text box.
-	//				Key     Mode
 )
 
 // Vim event holds possible modifiers for keys. They can be nil. In that case, they will default
@@ -437,6 +435,9 @@ type Shortcut struct {
 // If any vim mode is enabled, it will replace the default event.
 func (shortcut *Shortcut) Equals(event *tcell.EventKey) bool {
 	if shortcut.VimModifier == nil {
+		return EventsEqual(shortcut.Event, event)
+	}
+	if shortcut.VimStatus == nil {
 		return EventsEqual(shortcut.Event, event)
 	}
 	if shortcut.VimStatus.CurrentMode == vim.NormalMode {
@@ -609,6 +610,12 @@ OUTER_LOOP:
 	}
 
 	return nil
+}
+
+func InjectVim(v *vim.Vim) {
+	for i := range Shortcuts {
+		Shortcuts[i].VimStatus = v
+	}
 }
 
 // Persist saves the currently shortcuts that are currently being held in
