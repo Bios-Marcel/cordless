@@ -436,7 +436,7 @@ type Shortcut struct {
 // Equals compares the given EventKey with the Shortcuts Event.
 // If any vim mode is enabled, it will replace the default event.
 func (shortcut *Shortcut) Equals(event *tcell.EventKey) bool {
-	if shortcut.VimStatus == nil {
+	if shortcut.VimModifier == nil {
 		return EventsEqual(shortcut.Event, event)
 	}
 	if shortcut.VimStatus.CurrentMode == vim.NormalMode {
