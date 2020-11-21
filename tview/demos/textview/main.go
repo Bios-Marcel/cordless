@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	tcell "github.com/gdamore/tcell/v2"
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 const corporate = `Leverage agile frameworks to provide a robust synopsis for high level overviews. Iterative approaches to corporate strategy foster collaborative thinking to further the overall value proposition. Organically grow the holistic world view of disruptive innovation via workplace diversity and empowerment.
@@ -20,7 +21,7 @@ Capitalize on low hanging fruit to identify a ballpark value added activity to b
 [yellow]Press Enter, then Tab/Backtab for word selections`
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	textView := tview.NewTextView().
 		SetDynamicColors(true).
 		SetRegions(true).

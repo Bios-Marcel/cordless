@@ -2,12 +2,13 @@
 package main
 
 import (
-	tcell "github.com/gdamore/tcell/v2"
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	inputField := tview.NewInputField().
 		SetLabel("Enter a number: ").
 		SetPlaceholder("E.g. 1234").

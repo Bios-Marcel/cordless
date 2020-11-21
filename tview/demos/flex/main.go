@@ -2,11 +2,12 @@
 package main
 
 import (
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
 )
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	flex := tview.NewFlex().
 		AddItem(tview.NewBox().SetBorder(true).SetTitle("Left (1/2 x width of Top)"), 0, 1, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).

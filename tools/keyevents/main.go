@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
 	tcell "github.com/gdamore/tcell/v2"
 )
@@ -14,5 +15,5 @@ func main() {
 
 		return event
 	})
-	tview.NewApplication().SetRoot(input, true).Run()
+	tview.NewApplication(config.Current.VimEnabled).SetRoot(input, true).Run()
 }

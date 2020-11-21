@@ -1,12 +1,13 @@
 package main
 
 import (
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
 	tcell "github.com/gdamore/tcell/v2"
 )
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	err := app.Run()
 	if err != nil {
 		panic(err)

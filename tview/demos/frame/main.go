@@ -2,12 +2,13 @@
 package main
 
 import (
-	tcell "github.com/gdamore/tcell/v2"
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	frame := tview.NewFrame(tview.NewBox().SetBackgroundColor(tcell.ColorBlue)).
 		SetBorders(2, 2, 2, 2, 4, 4).
 		AddText("Header left", true, tview.AlignLeft, tcell.ColorWhite).

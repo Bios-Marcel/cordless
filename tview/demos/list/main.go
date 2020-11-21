@@ -2,11 +2,12 @@
 package main
 
 import (
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
 )
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	list := tview.NewList().
 		AddItem("List item 1", "Some explanatory text", 'a', nil).
 		AddItem("List item 2", "Some explanatory text", 'b', nil).

@@ -16,8 +16,9 @@ import (
 	"fmt"
 	"strconv"
 
-	tcell "github.com/gdamore/tcell/v2"
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 // Slide is a function which returns the slide's main primitive and its title.
@@ -26,7 +27,7 @@ import (
 type Slide func(nextSlide func()) (title string, content tview.Primitive)
 
 // The application.
-var app = tview.NewApplication()
+var app = tview.NewApplication(config.Current.VimEnabled)
 
 // Starting point for the presentation.
 func main() {

@@ -1,12 +1,14 @@
 package main
 
 import (
-	"github.com/Bios-Marcel/cordless/tview"
 	"strings"
+
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/tview"
 )
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	textView := tview.NewTextView().
 		SetWordWrap(true).
 		SetChangedFunc(func() {
