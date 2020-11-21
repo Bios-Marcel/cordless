@@ -124,7 +124,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		}()
 	}
 
-	window.commandView = NewCommandView(window.app, window.ExecuteCommand)
+	window.commandView = NewCommandView(&window.app.VimMode.CurrentMode,window.ExecuteCommand)
 	logging.SetAdditionalOutput(window.commandView)
 
 	for _, engine := range window.extensionEngines {
@@ -401,7 +401,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	})
 	window.messageContainer = window.chatView.GetPrimitive()
 
-	window.messageInput = NewEditor(window.app)
+	window.messageInput = NewEditor(&window.app.VimMode.CurrentMode)
 	window.messageInput.internalTextView.SetIndicateOverflow(true)
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
 		_, _, _, chatViewHeight := window.chatView.internalTextView.GetRect()

@@ -29,9 +29,7 @@ type Editor struct {
 	requestedHeight      int
 	autocompleteFrom     *femto.Loc
 
-	// App is the tview Application this editor is used in. The reference is
-	// required to query the current bracketed paste state.
-	App *tview.Application
+	vimMode			*int
 }
 
 func (editor *Editor) applyBuffer() {
@@ -379,17 +377,6 @@ func (editor *Editor) Paste(event *tcell.EventKey) {
 	}
 }
 
-func (editor *Editor) insertCharacterWithoutApply(character rune) {
-	selectionEnd := editor.buffer.Cursor.CurSelection[1]
-	selectionStart := editor.buffer.Cursor.CurSelection[0]
-	if editor.buffer.Cursor.HasSelection() {
-		editor.buffer.Replace(selectionStart, selectionEnd, string(character))
-	} else {
-		editor.buffer.Insert(editor.buffer.Cursor.Loc, string(character))
-	}
-	editor.buffer.Cursor.ResetSelection()
-}
-
 func (editor *Editor) InsertCharacter(character rune) {
 	selectionEnd := editor.buffer.Cursor.CurSelection[1]
 	selectionStart := editor.buffer.Cursor.CurSelection[0]
@@ -403,13 +390,13 @@ func (editor *Editor) InsertCharacter(character rune) {
 }
 
 // NewEditor instantiates a ready to use text editor.
-func NewEditor(app *tview.Application) *Editor {
+func NewEditor(vimMode *int) *Editor {
 	editor := Editor{
 		internalTextView: tview.NewTextView(),
 		requestedHeight:  3,
 		buffer:           femto.NewBufferFromString("", ""),
 		tempBuffer:       femto.NewBufferFromString("", ""),
-		App:              app,
+		vimMode: vimMode,
 	}
 
 	editor.internalTextView.SetWrap(true)
@@ -423,28 +410,6 @@ func NewEditor(app *tview.Application) *Editor {
 	editor.buffer.Cursor.SetSelectionStart(editor.buffer.Start())
 	editor.buffer.Cursor.SetSelectionEnd(editor.buffer.End())
 
-	if editor.App != nil {
-		editor.internalTextView.SetOnPaste(func(pastedRunes []rune) {
-			var wasLastCharacterSlashR bool
-			for _, r := range pastedRunes {
-				//Workaround! Sometimes no \n is received, but only \r. Why? Unsure.
-				if r == '\r' {
-					wasLastCharacterSlashR = true
-					editor.insertCharacterWithoutApply('\n')
-				} else {
-					if wasLastCharacterSlashR {
-						wasLastCharacterSlashR = false
-					}
-					if r != '\n' {
-						editor.insertCharacterWithoutApply(r)
-					}
-				}
-			}
-			editor.applyBuffer()
-			editor.TriggerHeightRequestIfNecessary()
-			editor.internalTextView.ScrollToHighlight()
-		})
-	}
 	editor.internalTextView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		inputCapture := editor.inputCapture
 		if inputCapture != nil {
@@ -506,14 +471,11 @@ func NewEditor(app *tview.Application) *Editor {
 			return nil
 		} else if shortcuts.InputNewLine.Equals(event) {
 			editor.InsertCharacter('\n')
-		} else {
-			if editor.App.VimMode.CurrentMode != vim.Disabled && editor.App.VimMode.CurrentMode != vim.InsertMode {
+		} else if event.Rune() != 0 {
+			if *editor.vimMode != vim.Disabled && *editor.vimMode != vim.InsertMode {
 				return nil
 			}
-			mappedRune := mapInputToRune(event)
-			if mappedRune != 0 {
-				editor.InsertCharacter(mappedRune)
-			}
+			editor.InsertCharacter(event.Rune())
 		}
 
 		editor.TriggerHeightRequestIfNecessary()
@@ -521,34 +483,6 @@ func NewEditor(app *tview.Application) *Editor {
 		return nil
 	})
 	return &editor
-}
-
-// mapInputToRune makes sure no invalid characters get inserted into the
-// editor. All exceptions that aren't specifically declared as
-// Key type 'tcell.KeyRune' have to be defined here. A prominent example
-// is the newline character. This was initially added to avoid inserting
-// the characters produces by Ctrl+Backspace, Alt+Backspace, Ctrl+W and so
-// on and so forth. These are all control characters which we don't always
-// react to, since the shortcuts are configurably from within the app.
-// A return value of 0 is to be treated as 'no rune'.
-func mapInputToRune(event *tcell.EventKey) rune {
-	//If something is specifically defined as a rune, we won't question whether
-	//it's valid input, as it's generally not deemed a control character.
-	if event.Key() == tcell.KeyRune {
-		return event.Rune()
-	}
-
-	//While '\n' is treated as newline, we'll ignore '\r', as it's useless.
-	if event.Rune() == '\n' {
-		return '\n'
-	}
-
-	//Handles Tab + Ctrl+H
-	if event.Rune() == '\t' {
-		return '\t'
-	}
-
-	return 0
 }
 
 func (editor *Editor) GetTextLeftOfSelection() string {
@@ -584,7 +518,9 @@ func (editor *Editor) TriggerHeightRequestIfNecessary() {
 		return
 	}
 
-	newRequestedHeight := editor.countRows(editor.GetText())
+	rowAmount := editor.countRows(editor.GetText())
+
+	newRequestedHeight := rowAmount
 	if editor.internalTextView.IsBorderTop() {
 		newRequestedHeight++
 	}

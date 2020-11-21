@@ -2,7 +2,6 @@ clone_folder: c:\gopath\src\github.com\Bios-Marcel\cordless
 
 environment:
   GOPATH: c:\gopath
-  GO111MODULE: on
 build: off
 stack: go 1.13
 
