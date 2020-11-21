@@ -467,7 +467,12 @@ func (chatView *ChatView) formatMessageText(message *discordgo.Message) string {
 	} else if message.Type == discordgo.MessageTypeRecipientAdd {
 		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]added " + message.Mentions[0].Username + " to the group."
 	} else if message.Type == discordgo.MessageTypeRecipientRemove {
-		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]removed " + message.Mentions[0].Username + " from the group."
+		removedUser := message.Mentions[0]
+		if removedUser.ID == message.Author.ID {
+			return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]has left the group."
+		}
+
+		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]removed " + removedUser.Username + " from the group."
 	} else if message.Type == discordgo.MessageTypeChannelFollowAdd {
 		return "[" + tviewutil.ColorToHex(config.GetTheme().InfoMessageColor) + "]has added '" + message.Content + "' to this channel."
 	} else if message.Type == discordgo.MessageTypeUserPremiumGuildSubscription ||
