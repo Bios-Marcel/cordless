@@ -68,7 +68,7 @@ type Application struct {
 	// stop the application.
 	screenReplacement chan tcell.Screen
 
-	VimMode	*vim.Vim
+	VimMode *vim.Vim
 }
 
 // NewApplication creates and returns a new application.
@@ -78,7 +78,7 @@ func NewApplication(vimEnabled bool) *Application {
 		updates:           make(chan func(), queueSize),
 		screenReplacement: make(chan tcell.Screen, 1),
 		MouseEnabled:      true,
-		VimMode:		   vim.NewVim(vimEnabled),
+		VimMode:           vim.NewVim(vimEnabled),
 	}
 }
 

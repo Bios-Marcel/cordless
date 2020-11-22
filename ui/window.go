@@ -43,7 +43,6 @@ import (
 	"github.com/Bios-Marcel/cordless/ui/shortcutdialog"
 	"github.com/Bios-Marcel/cordless/ui/tviewutil"
 	"github.com/Bios-Marcel/cordless/util/maths"
-	//"github.com/Bios-Marcel/cordless/util/vim"
 )
 
 var (
@@ -124,7 +123,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		}()
 	}
 
-	window.commandView = NewCommandView(&window.app.VimMode.CurrentMode,window.ExecuteCommand)
+	window.commandView = NewCommandView(&window.app.VimMode.CurrentMode, window.ExecuteCommand)
 	logging.SetAdditionalOutput(window.commandView)
 
 	for _, engine := range window.extensionEngines {
@@ -749,7 +748,6 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 	window.userList = NewUserTree(window.session.State)
 
-	// Disable search on type when in Vim mode. TODO add / shourtcut to search.
 	if window.app.VimMode.CurrentMode != vim.Disabled {
 		guildList.SetSearchOnTypeEnabled(false)
 		channelTree.SetSearchOnTypeEnabled(false)
@@ -877,9 +875,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		bottomBar := components.NewBottomBar()
 		bottomBar.AddItem(fmt.Sprintf("Logged in as: '%s'", tviewutil.Escape(session.State.User.Username)))
 		bottomBar.AddItem(fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut)))
-		// bottomBar.AddItem(fmt.Sprintf("Vim: %s", window.app.VimMode.EnabledString()))
 		window.vimStatus = bottomBar.AddDynamicItem()
-		// Default content
 		window.vimStatus.Content = fmt.Sprintf("Vim: %s", window.app.VimMode.CurrentModeString())
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
@@ -974,14 +970,8 @@ important changes of the last two versions officially released.
 	- Features
 [::b]2020-11-16
 	- Features
-		- Added Vim mode
-		- Enable vim mode in your config file, setting VimMode to 0.
-		- Navigate menus with h j k l in normal mode, enter focus with either
-		- insert mode or visual mode.
-		- Navigate inside lists with vim keys.
-		- Use some of your known bindings inside chat view, or selection mode.
-		- More vim features will be added in next updates, and bugs will try to be
-		- fixed :)
+		- Vim mode
+			- Vim-like movement and bindings
 [::b]2020-10-24
 	- Features
 		- DM people via "p" in the chatview or use the dm-open command
@@ -2143,16 +2133,16 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 
 	if window.app.VimMode.CurrentMode != vim.Disabled {
 		if shortcuts.VimInsertMode.Equals(event) {
-			window.app.VimMode.Insert()
-			window.vimStatus.Content = fmt.Sprintf("Vim: %s",window.app.VimMode.CurrentModeString())
+			window.app.VimMode.SetInsert()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s", window.app.VimMode.CurrentModeString())
 			return nil
 		} else if shortcuts.VimVisualMode.Equals(event) {
-			window.app.VimMode.Visual()
-			window.vimStatus.Content = fmt.Sprintf("Vim: %s",window.app.VimMode.CurrentModeString())
+			window.app.VimMode.SetVisual()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s", window.app.VimMode.CurrentModeString())
 			return nil
 		} else if shortcuts.VimNormalMode.Equals(event) && window.app.GetRoot() == window.rootContainer {
-			window.app.VimMode.Normal()
-			window.vimStatus.Content = fmt.Sprintf("Vim: %s",window.app.VimMode.CurrentModeString())
+			window.app.VimMode.SetNormal()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s", window.app.VimMode.CurrentModeString())
 			return nil
 		}
 
@@ -2198,7 +2188,7 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 	} else if shortcuts.FocusMessageContainer.Equals(event) {
 		window.app.SetFocus(window.chatView.internalTextView)
 	} else if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
-		shortcutdialog.ShowShortcutsDialog(window.app,func() {
+		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
 			window.app.SetFocus(window.chatView.GetPrimitive())
 		})

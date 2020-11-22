@@ -3,8 +3,8 @@ package main
 import (
 	"strings"
 
-	tcell "github.com/gdamore/tcell/v2"
 	"github.com/Bios-Marcel/cordless/tview"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 const treeAllCode = `[green]package[white] main

@@ -1,17 +1,18 @@
 package vim
 
+type VimMode int
+
 const (
+	// Disabled : Default mode. Vim disabled.
+	Disabled int = iota
 	// NormalMode : every key is interpreted as focus movement,
 	// let it be from containers or text lines.
-	NormalMode int = iota	// 0
-	// InsertMode : every key is sent to the program as normal,
-	// such as input boxes.
-	InsertMode				// 1
-	// TODO
-	VisualMode				// 2
-
-	// Default: disabled
-	Disabled = -1
+	NormalMode
+	// InsertMode : keys inside text box are all sent to the input handler.
+	// It also allows between-message movement inside chatview.
+	InsertMode
+	// Global movement with hjkl. Text selection in text box.
+	VisualMode
 )
 
 // Vim stores information about vim-mode, such as
@@ -42,18 +43,18 @@ func (v *Vim) SetMode(mode int) {
 
 // Quick mode switch
 
-// Normal quickly switches to normal mode.
-func (v *Vim) Normal() {
+// SetNormal quickly switches to normal mode.
+func (v *Vim) SetNormal() {
 	v.CurrentMode = NormalMode
 }
 
-// Insert quickly switches to insert mode.
-func (v *Vim) Insert() {
+// SetInsert quickly switches to insert mode.
+func (v *Vim) SetInsert() {
 	v.CurrentMode = InsertMode
 }
 
-// Visual quickly switches to visual mode.
-func (v *Vim) Visual() {
+// SetVisual quickly switches to visual mode.
+func (v *Vim) SetVisual() {
 	v.CurrentMode = VisualMode
 }
 

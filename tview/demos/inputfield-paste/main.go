@@ -16,6 +16,6 @@ func main() {
 
 		return event
 	})
-	app := tview.NewApplication(config.Current.VimEnabled).SetRoot(field,true)
+	app := tview.NewApplication(config.Current.VimEnabled).SetRoot(field, true)
 	app.Run()
 }

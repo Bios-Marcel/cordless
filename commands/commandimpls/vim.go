@@ -33,7 +33,7 @@ const (
 )
 
 type VimHelp struct {
-	vimMode	*vim.Vim
+	vimMode *vim.Vim
 }
 
 func NewVimCmd(vimMode *vim.Vim) *VimHelp {
@@ -47,14 +47,14 @@ func (v VimHelp) PrintHelp(writer io.Writer) {
 
 func (v VimHelp) Execute(writer io.Writer, parameters []string) {
 	if len(parameters) < 1 {
-		fmt.Fprintf(writer, "You did not specify any parameter for this command.")
+		fmt.Fprintf(writer, "Usage: vim on/off")
 		return
 	}
 	switch parameters[0] {
-	case "on","enable":
+	case "on", "enable":
 		v.vimMode.CurrentMode = vim.NormalMode
 		fmt.Fprintf(writer, "Vim mode has been enabled.\n")
-	case "off","disable":
+	case "off", "disable":
 		v.vimMode.CurrentMode = vim.NormalMode
 		v.vimMode.CurrentMode = vim.Disabled
 		fmt.Fprintf(writer, "Vim mode has been disabled.\n")

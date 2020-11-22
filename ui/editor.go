@@ -29,7 +29,7 @@ type Editor struct {
 	requestedHeight      int
 	autocompleteFrom     *femto.Loc
 
-	vimMode			*int
+	vimMode *int
 }
 
 func (editor *Editor) applyBuffer() {
@@ -396,7 +396,7 @@ func NewEditor(vimMode *int) *Editor {
 		requestedHeight:  3,
 		buffer:           femto.NewBufferFromString("", ""),
 		tempBuffer:       femto.NewBufferFromString("", ""),
-		vimMode: vimMode,
+		vimMode:          vimMode,
 	}
 
 	editor.internalTextView.SetWrap(true)

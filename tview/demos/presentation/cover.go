@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	tcell "github.com/gdamore/tcell/v2"
 	"github.com/Bios-Marcel/cordless/tview"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 const logo = `

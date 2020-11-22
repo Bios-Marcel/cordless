@@ -24,12 +24,12 @@ const (
 type ShortcutTable struct {
 	table         *tview.Table
 	shortcuts     []*shortcuts.Shortcut
-	vimBindings	  []*shortcuts.VimEvent
+	vimBindings   []*shortcuts.VimEvent
 	selection     int
 	focusNext     func()
 	focusPrevious func()
 
-	vimMode		  *int
+	vimMode *int
 }
 
 // NewShortcutTable creates a new shortcut table that doesn't contain any data.
@@ -38,7 +38,7 @@ func NewShortcutTable(vimEnabled *int) *ShortcutTable {
 	shortcutsTable := &ShortcutTable{
 		table:     table,
 		selection: -1,
-		vimMode: vimEnabled,
+		vimMode:   vimEnabled,
 	}
 
 	table.SetSelectable(true, false)
@@ -104,15 +104,15 @@ func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*shortcuts.Shortcut
 		shortcutTable.table.SetCell(row, shortcutCellIndex, eventCell)
 
 		if *shortcutTable.vimMode != vim.Disabled {
-			normalKey := ""
-			insertKey := ""
-			visualKey := ""
+			var normalKey string
+			var insertKey string
+			var visualKey string
 
 			// HACK
 			// Empty tcell EventKey corresponds to Ctrl-Space
 			if shortcut.VimModifier.NormalEvent == nil {
 				normalKey = EventToString(shortcut.Event)
-			} else if shortcut.VimModifier.NormalEvent.Rune() == rune(tcell.KeyCtrlSpace){
+			} else if shortcut.VimModifier.NormalEvent.Rune() == rune(tcell.KeyCtrlSpace) {
 				normalKey = ""
 			} else {
 				normalKey = EventToString(shortcut.VimModifier.NormalEvent)
@@ -120,7 +120,7 @@ func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*shortcuts.Shortcut
 
 			if shortcut.VimModifier.InsertEvent == nil {
 				insertKey = EventToString(shortcut.Event)
-			} else if shortcut.VimModifier.InsertEvent.Rune() == rune(tcell.KeyCtrlSpace){
+			} else if shortcut.VimModifier.InsertEvent.Rune() == rune(tcell.KeyCtrlSpace) {
 				insertKey = ""
 			} else {
 				insertKey = EventToString(shortcut.VimModifier.InsertEvent)
@@ -128,7 +128,7 @@ func (shortcutTable *ShortcutTable) SetShortcuts(shortcuts []*shortcuts.Shortcut
 
 			if shortcut.VimModifier.VisualEvent == nil {
 				visualKey = EventToString(shortcut.Event)
-			} else if shortcut.VimModifier.VisualEvent.Rune() == rune(tcell.KeyCtrlSpace){
+			} else if shortcut.VimModifier.VisualEvent.Rune() == rune(tcell.KeyCtrlSpace) {
 				visualKey = ""
 			} else {
 				visualKey = EventToString(shortcut.VimModifier.VisualEvent)

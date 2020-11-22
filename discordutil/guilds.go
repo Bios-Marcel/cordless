@@ -66,7 +66,6 @@ func FindEmojiInGuild(session *discordgo.Session, guild *discordgo.Guild, omitGW
 			continue
 		}
 
-
 		if strings.EqualFold(emoji.Name, emojiSequence) && (omitGWCheck || strings.HasPrefix(emoji.Name, "GW")) {
 			if len(emoji.Roles) != 0 {
 				selfMember, cacheError := session.State.Member(guild.ID, session.State.User.ID)
