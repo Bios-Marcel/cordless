@@ -245,3 +245,51 @@ func ReplaceMentions(message *discordgo.Message) string {
 	}
 	return strings.NewReplacer(replaceInstructions...).Replace(message.Content)
 }
+
+// HandleReactionAdd adds a new reaction to a message or updates the count if
+// that message already has a reaction with that same emoji.
+func HandleReactionAdd(state *discordgo.State,
+	message *discordgo.Message,
+	newReaction *discordgo.MessageReactionAdd) {
+	for _, reaction := range message.Reactions {
+		//Only custom emojis have IDs and non custom unes have unique names.
+		if reaction.Emoji.ID == newReaction.Emoji.ID && reaction.Emoji.Name == newReaction.Emoji.Name {
+			//Match found, so we can add one to the count.
+			reaction.Count++
+			return
+		}
+	}
+
+	//FIXME Better look up emoji in cache if possible?
+	message.Reactions = append(message.Reactions, &discordgo.MessageReactions{
+		Count: 1,
+		Emoji: &newReaction.Emoji,
+		Me:    newReaction.UserID == state.User.ID,
+	})
+}
+
+// HandleReactionRemove removes an existing reaction to a message or updates
+// the count if the same message still has reactions with the same emoji left.
+func HandleReactionRemove(state *discordgo.State,
+	message *discordgo.Message,
+	newReaction *discordgo.MessageReactionRemove) {
+	for index, reaction := range message.Reactions {
+		//Only custom emojis have IDs and non custom unes have unique names.
+		if reaction.Emoji.ID == newReaction.Emoji.ID && reaction.Emoji.Name == newReaction.Emoji.Name {
+			if reaction.Count <= 1 {
+				message.Reactions = append(message.Reactions[:index], message.Reactions[index+1:]...)
+				//No more reactions of that emoji would be left, therefore we remove the array entry.
+			} else {
+				//Only a single user removed his reaction, so we keep the array entry.
+				reaction.Count--
+			}
+			return
+		}
+	}
+}
+
+// HandleReactionRemoveAll removes all reactions from all users in a message.
+func HandleReactionRemoveAll(state *discordgo.State,
+	message *discordgo.Message) {
+	message.Reactions = message.Reactions[0:0]
+}

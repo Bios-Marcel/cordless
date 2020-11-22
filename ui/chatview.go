@@ -714,8 +714,32 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 		}
 	}
 
+	var reactionText string
+	if len(message.Reactions) > 0 {
+		var reactionBuilder strings.Builder
+		reactionBuilder.Grow(10 + len(message.Reactions)*8)
+		reactionBuilder.WriteString("\nReactions: ")
+		for rIndex, reaction := range message.Reactions {
+			if reaction.Emoji.Name != "" {
+				reactionBuilder.WriteString(tviewutil.Escape(reaction.Emoji.Name))
+				if reaction.Me {
+					reactionBuilder.WriteString("[::r]")
+				}
+				reactionBuilder.WriteRune('-')
+				reactionBuilder.WriteString(strconv.FormatInt(int64(reaction.Count), 10))
+				if reaction.Me {
+					reactionBuilder.WriteString("[::-]")
+				}
+				if rIndex != len(message.Reactions)-1 {
+					reactionBuilder.WriteRune(' ')
+				}
+			}
+		}
+		reactionText = reactionBuilder.String()
+	}
+
 	if !hasRichEmbed {
-		return messageText
+		return messageText + reactionText
 	}
 
 	var messageBuffer strings.Builder
@@ -808,7 +832,7 @@ func (chatView *ChatView) formatDefaultMessageText(message *discordgo.Message) s
 		embedBuffer.WriteRune('\n')
 	}
 
-	return messageBuffer.String()
+	return messageBuffer.String() + reactionText
 }
 
 func parseCustomEmojis(text string) string {

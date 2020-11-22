@@ -742,6 +742,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 	window.registerMessageEventHandler(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
 	window.startMessageHandlerRoutines(messageInputChan, messageEditChan, messageDeleteChan, messageBulkDeleteChan)
+	window.registerReactionEventHandlers()
 
 	window.userList = NewUserTree(window.session.State)
 
@@ -1650,6 +1651,73 @@ func (window *Window) registerMessageEventHandler(input, edit, delete chan *disc
 
 	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
 		edit <- m.Message
+	})
+}
+
+// registerReactionEventHandlers are responsible for updating the cache if
+// reactions are added or removed and updating the chatview if needed.
+func (window *Window) registerReactionEventHandlers() {
+	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageReactionAdd) {
+		message, stateError := s.State.Message(m.ChannelID, m.MessageID)
+		if message != nil && stateError == nil {
+			s.State.Lock()
+			defer func() {
+				selectedChannel := window.selectedChannel
+				if selectedChannel != nil && selectedChannel.ID == m.ChannelID {
+					window.app.QueueUpdateDraw(func() {
+						window.chatView.Lock()
+						defer window.chatView.Unlock()
+
+						window.chatView.UpdateMessage(message)
+					})
+				}
+			}()
+			defer s.State.Unlock()
+
+			discordutil.HandleReactionAdd(s.State, message, m)
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageReactionRemove) {
+		message, stateError := s.State.Message(m.ChannelID, m.MessageID)
+		if message != nil && stateError == nil {
+			s.State.Lock()
+			defer func() {
+				selectedChannel := window.selectedChannel
+				if selectedChannel != nil && selectedChannel.ID == m.ChannelID {
+					window.app.QueueUpdateDraw(func() {
+						window.chatView.Lock()
+						defer window.chatView.Unlock()
+
+						window.chatView.UpdateMessage(message)
+					})
+				}
+			}()
+			defer s.State.Unlock()
+
+			discordutil.HandleReactionRemove(s.State, message, m)
+		}
+	})
+
+	window.session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageReactionRemoveAll) {
+		message, stateError := s.State.Message(m.ChannelID, m.MessageID)
+		if message != nil && stateError == nil {
+			s.State.Lock()
+			defer func() {
+				selectedChannel := window.selectedChannel
+				if selectedChannel != nil && selectedChannel.ID == m.ChannelID {
+					window.app.QueueUpdateDraw(func() {
+						window.chatView.Lock()
+						defer window.chatView.Unlock()
+
+						window.chatView.UpdateMessage(message)
+					})
+				}
+			}()
+			defer s.State.Unlock()
+
+			discordutil.HandleReactionRemoveAll(s.State, message)
+		}
 	})
 }
 

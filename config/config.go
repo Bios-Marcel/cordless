@@ -145,6 +145,9 @@ type Config struct {
 	// application, as there are some childish goons that deem it funny
 	// to impersonate people or change their name every 5 minutes.
 	ShowNicknames bool
+	// ShowReactionsInline decides whether reactions are displayed below a
+	// message.
+	ShowReactionsInline bool
 
 	// FileHandlers allow registering specific file-handers for certain
 	FileOpenHandlers map[string]string
@@ -208,6 +211,7 @@ func createDefaultConfig() *Config {
 		IndicateChannelAccessRestriction:            false,
 		ShowBottomBar:                               true,
 		ShowNicknames:                               true,
+		ShowReactionsInline:                         true,
 		FileOpenHandlers:                            make(map[string]string),
 		FileOpenSaveFilesPermanently:                false,
 		FileDownloadSaveLocation:                    "~/Downloads",
