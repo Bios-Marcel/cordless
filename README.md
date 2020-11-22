@@ -1,3 +1,8 @@
+# I AM CLOSING DOWN THE CORDLESS PROJECT
+
+Hey, so I know this is somewhat of a bummer, but I got banned because of ToS violation today. As that's basically a conformation for what we've believed would never be enforced, I decided to not work on the cordless project anymore. I'll be taking down cordless in package managers in hope that no new users will install it anymore, especially less illiterate ones. I believe that if you manage to build it yourself, you've probably read the README and are aware of the risks.
+I'll keep the repository up for now and see what I'll do with it. Might archive it, might delete it, I am unsure. Either way, thanks for sticking around everyone :)
+
 <h1 align="center">Cordless</h1>
 
 <p align="center">
@@ -34,7 +39,7 @@
 - [Similar projects](#similar-projects)
 - [Troubleshooting](#troubleshooting)
 
-**WARNING: Third party clients are discouraged and against the Discord TOS.**
+**WARNING: Third party clients are discouraged and against the Discord TOS. There have already been cordless users that got banned, including me (Bios-Marcel, the maker and maintainer)**
 
 Cordless is a custom [Discord](https://discordapp.com) client that aims to
 have a low memory footprint and be aimed at power-users.
@@ -88,54 +93,6 @@ Note:
 * X11 users need `xclip` in order to copy and paste.
 * Wayland users need `wl-clipboard` in order to copy and paste.
 * Mac OS users need `pngpaste` in order to copy and paste images.
-
-### Installing on Linux
-
-#### Arch based Linux distributions
-
-On Arch based distributions, you can use the AUR package to install cordless:
-
-```shell
-git clone https://aur.archlinux.org/cordless-git.git
-cd cordless-git
-makepkg -sric
-```
-
-or use your favourite AUR helper.
-
-### Installing on Windows
-
-In order to install the latest version on Windows, you first need to install
-[scoop](https://scoop.sh/#installs-in-seconds).
-
-After installing scoop, run the following:
-
-This adds the bucket (repository) that contains cordless to your local scoop
-installation, allowing you to install any package it contains. Afterwards
-it installs cordless for your current windows user.
-
-```ps1
-scoop bucket add biosmarcel https://github.com/Bios-Marcel/scoopbucket.git
-scoop install cordless
-```
-
-Updates can be installed via:
-
-```ps1
-scoop update cordless
-```
-
-### Installing on macOS
-
-Use [Homebrew](https://brew.sh) to install `cordless` on macOS:
-
-```shell
-brew tap Bios-Marcel/cordless
-brew install cordless
-```
-
-If you don't install via cordless via brew, then you should have to get
-`pngpaste` in order to be able to paste image data.
 
 ### Login
 
