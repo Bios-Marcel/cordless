@@ -1,6 +1,6 @@
 # I AM CLOSING DOWN THE CORDLESS PROJECT
 
-Hey, so I know this is somewhat of a bummer, but I got banned because of ToS violation today. As that's basically a conformation for what we've believed would never be enforced, I decided to not work on the cordless project anymore. I'll be taking down cordless in package managers in hope that no new users will install it anymore, especially less illiterate ones. I believe that if you manage to build it yourself, you've probably read the README and are aware of the risks.
+Hey, so I know this is somewhat of a bummer, but I got banned because of ToS violation today. As that's basically a confirmation for what we've believed would never be enforced, I decided to not work on the cordless project anymore. I'll be taking down cordless in package managers in hope that no new users will install it anymore, especially less illiterate ones. I believe that if you manage to build it yourself, you've probably read the README and are aware of the risks.
 I'll keep the repository up for now and see what I'll do with it. Might archive it, might delete it, I am unsure. Either way, thanks for sticking around everyone :)
 
 <h1 align="center">Cordless</h1>
