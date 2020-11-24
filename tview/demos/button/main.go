@@ -1,10 +1,13 @@
 // Demo code for the Button primitive.
 package main
 
-import "github.com/Bios-Marcel/cordless/tview"
+import (
+	"github.com/Bios-Marcel/cordless/config"
+	"github.com/Bios-Marcel/cordless/tview"
+)
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	button := tview.NewButton("Hit Enter to close").SetSelectedFunc(func() {
 		app.Stop()
 	})

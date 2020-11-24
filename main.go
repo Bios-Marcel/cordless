@@ -63,7 +63,7 @@ func main() {
 		fmt.Printf("You are running cordless version %s\nKeep in mind that this version might not be correct for manually built versions, as those can contain additional commits.\n", version.Version)
 	} else {
 		//App that will be reused throughout the process runtime.
-		tviewApp := tview.NewApplication()
+		tviewApp := tview.NewApplication(config.Current.VimEnabled)
 
 		if accountToUse != nil && *accountToUse != "" {
 			app.SetupApplicationWithAccount(tviewApp, *accountToUse)

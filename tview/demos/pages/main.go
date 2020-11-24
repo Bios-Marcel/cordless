@@ -4,13 +4,14 @@ package main
 import (
 	"fmt"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
 )
 
 const pageCount = 5
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	pages := tview.NewPages()
 	for page := 0; page < pageCount; page++ {
 		func(page int) {

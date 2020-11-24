@@ -18,6 +18,7 @@ import (
 	"github.com/Bios-Marcel/cordless/util/files"
 	"github.com/Bios-Marcel/cordless/util/fuzzy"
 	"github.com/Bios-Marcel/cordless/util/text"
+	"github.com/Bios-Marcel/cordless/util/vim"
 	"github.com/Bios-Marcel/cordless/version"
 
 	"github.com/Bios-Marcel/discordemojimap"
@@ -91,6 +92,8 @@ type Window struct {
 
 	bareChat   bool
 	activeView ActiveView
+
+	vimStatus *components.BottomBarItem
 }
 
 type ActiveView bool
@@ -120,7 +123,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		}()
 	}
 
-	window.commandView = NewCommandView(window.app, window.ExecuteCommand)
+	window.commandView = NewCommandView(&window.app.VimMode.CurrentMode, window.ExecuteCommand)
 	logging.SetAdditionalOutput(window.commandView)
 
 	for _, engine := range window.extensionEngines {
@@ -397,7 +400,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	})
 	window.messageContainer = window.chatView.GetPrimitive()
 
-	window.messageInput = NewEditor(window.app)
+	window.messageInput = NewEditor(&window.app.VimMode.CurrentMode)
 	window.messageInput.internalTextView.SetIndicateOverflow(true)
 	window.messageInput.SetOnHeightChangeRequest(func(height int) {
 		_, _, _, chatViewHeight := window.chatView.internalTextView.GetRect()
@@ -746,7 +749,12 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 
 	window.userList = NewUserTree(window.session.State)
 
-	if config.Current.OnTypeInListBehaviour == config.SearchOnTypeInList {
+	if window.app.VimMode.CurrentMode != vim.Disabled {
+		guildList.SetSearchOnTypeEnabled(false)
+		channelTree.SetSearchOnTypeEnabled(false)
+		window.userList.internalTreeView.SetSearchOnTypeEnabled(false)
+		window.privateList.internalTreeView.SetSearchOnTypeEnabled(false)
+	} else if config.Current.OnTypeInListBehaviour == config.SearchOnTypeInList {
 		guildList.SetSearchOnTypeEnabled(true)
 		channelTree.SetSearchOnTypeEnabled(true)
 		window.userList.internalTreeView.SetSearchOnTypeEnabled(true)
@@ -762,6 +770,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	}
 
 	newGuildHandler := func(event *tcell.EventKey) *tcell.EventKey {
+
 		if shortcuts.GuildListMarkRead.Equals(event) {
 			selectedGuildNode := guildList.GetCurrentNode()
 			if selectedGuildNode != nil && !readstate.HasGuildBeenRead(selectedGuildNode.GetReference().(string)) {
@@ -791,6 +800,7 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 	}
 
 	newChannelListHandler := func(event *tcell.EventKey) *tcell.EventKey {
+
 		if shortcuts.ChannelTreeMarkRead.Equals(event) {
 			selectedChannelNode := channelTree.GetCurrentNode()
 			if selectedChannelNode != nil {
@@ -873,6 +883,8 @@ func NewWindow(app *tview.Application, session *discordgo.Session, readyEvent *d
 		}
 		bottomBar.AddItem(loggedInAsText)
 		bottomBar.AddItem(fmt.Sprintf("View / Change shortcuts: %s", shortcutdialog.EventToString(shortcutsDialogShortcut)))
+		window.vimStatus = bottomBar.AddDynamicItem()
+		window.vimStatus.Content = fmt.Sprintf("Vim: %s", window.app.VimMode.CurrentModeString())
 		window.rootContainer.AddItem(bottomBar, 1, 0, false)
 	}
 
@@ -964,8 +976,10 @@ important changes of the last two versions officially released.
 
 [::b]THIS VERSION
 	- Features
-	- Changes
-	- Bugfixes
+[::b]2020-11-16
+	- Features
+		- Vim mode
+			- Vim-like movement and bindings
 [::b]2020-10-24
 	- Features
 		- DM people via "p" in the chatview or use the dm-open command
@@ -2192,6 +2206,35 @@ func (window *Window) handleGlobalShortcuts(event *tcell.EventKey) *tcell.EventK
 		return nil
 	}
 
+	if window.app.VimMode.CurrentMode != vim.Disabled {
+		if shortcuts.VimInsertMode.Equals(event) {
+			window.app.VimMode.SetInsert()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s", window.app.VimMode.CurrentModeString())
+			return nil
+		} else if shortcuts.VimVisualMode.Equals(event) {
+			window.app.VimMode.SetVisual()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s", window.app.VimMode.CurrentModeString())
+			return nil
+		} else if shortcuts.VimNormalMode.Equals(event) && window.app.GetRoot() == window.rootContainer {
+			window.app.VimMode.SetNormal()
+			window.vimStatus.Content = fmt.Sprintf("Vim: %s", window.app.VimMode.CurrentModeString())
+			return nil
+		}
+
+		if shortcuts.VimSimKeyDown.Equals(event) && window.app.VimMode.CurrentMode == vim.VisualMode {
+			return tcell.NewEventKey(tcell.KeyDown, rune(tcell.KeyDown), tcell.ModNone)
+		} else if shortcuts.VimSimKeyUp.Equals(event) && window.app.VimMode.CurrentMode == vim.VisualMode {
+			return tcell.NewEventKey(tcell.KeyUp, rune(tcell.KeyUp), tcell.ModNone)
+		} else if shortcuts.VimSimKeyLeft.Equals(event) && window.app.VimMode.CurrentMode == vim.VisualMode {
+			return tcell.NewEventKey(tcell.KeyLeft, rune(tcell.KeyLeft), tcell.ModNone)
+		} else if shortcuts.VimSimKeyRight.Equals(event) && window.app.VimMode.CurrentMode == vim.VisualMode {
+			return tcell.NewEventKey(tcell.KeyRight, rune(tcell.KeyRight), tcell.ModNone)
+		}
+	}
+
+	window.app.QueueUpdateDraw(func() {
+	})
+
 	// Maybe compare directly to table?
 	if config.Current.DesktopNotificationsUserInactivityThreshold > 0 {
 		window.userActive = true
@@ -2222,6 +2265,7 @@ func (window *Window) handleChatWindowShortcuts(event *tcell.EventKey) *tcell.Ev
 	} else if shortcuts.EventsEqual(event, shortcutsDialogShortcut) {
 		shortcutdialog.ShowShortcutsDialog(window.app, func() {
 			window.app.SetRoot(window.rootContainer, true)
+			window.app.SetFocus(window.chatView.GetPrimitive())
 		})
 	} else if shortcuts.ToggleCommandView.Equals(event) {
 		window.SetCommandModeEnabled(!window.commandMode)

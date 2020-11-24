@@ -1,8 +1,8 @@
 package main
 
 import (
-	tcell "github.com/gdamore/tcell/v2"
 	"github.com/Bios-Marcel/cordless/tview"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 const inputField = `[green]package[white] main

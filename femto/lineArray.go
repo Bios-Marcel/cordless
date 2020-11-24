@@ -234,4 +234,3 @@ func (la *LineArray) Substr(start, end Loc) string {
 	str += string(la.lines[end.Y].data[:endX])
 	return str
 }
-

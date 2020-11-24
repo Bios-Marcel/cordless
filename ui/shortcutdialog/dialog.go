@@ -3,6 +3,7 @@ package shortcutdialog
 import (
 	"log"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/shortcuts"
 	"github.com/Bios-Marcel/cordless/tview"
 	"github.com/Bios-Marcel/cordless/ui/components"
@@ -15,7 +16,7 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 	var exitButton *tview.Button
 	var resetButton *tview.Button
 
-	table = NewShortcutTable()
+	table = NewShortcutTable(&app.VimMode.CurrentMode)
 	table.SetShortcuts(shortcuts.Shortcuts)
 
 	exitButton = tview.NewButton("Go back")
@@ -94,11 +95,11 @@ func ShowShortcutsDialog(app *tview.Application, onClose func()) {
 }
 
 func RunShortcutsDialogStandalone() {
-	loadError := shortcuts.Load()
+	loadError := shortcuts.Load(nil)
 	if loadError != nil {
 		log.Fatalf("Error loading shortcuts: %s\n", loadError)
 	}
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if shortcuts.ExitApplication.Equals(event) {
 			app.Stop()

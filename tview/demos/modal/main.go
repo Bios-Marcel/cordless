@@ -6,11 +6,12 @@ import (
 
 	tcell "github.com/gdamore/tcell/v2"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
 )
 
 func main() {
-	app := tview.NewApplication()
+	app := tview.NewApplication(config.Current.VimEnabled)
 
 	// Returns a new primitive which puts the provided primitive in the center and
 	// sets its size to the given width and height.

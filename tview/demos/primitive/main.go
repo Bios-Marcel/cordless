@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/Bios-Marcel/cordless/config"
 	"github.com/Bios-Marcel/cordless/tview"
 	tcell "github.com/gdamore/tcell/v2"
 )
@@ -74,7 +75,7 @@ func main() {
 	radioButtons.SetBorder(true).
 		SetTitle("Radio Button Demo").
 		SetRect(0, 0, 30, 5)
-	if err := tview.NewApplication().SetRoot(radioButtons, false).Run(); err != nil {
+	if err := tview.NewApplication(config.Current.VimEnabled).SetRoot(radioButtons, false).Run(); err != nil {
 		panic(err)
 	}
 }

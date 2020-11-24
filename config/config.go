@@ -158,6 +158,10 @@ type Config struct {
 	// download files to. If FileOpenSaveFilesPermanently has been set to
 	// true, then all opened files are saved in this folder for example.
 	FileDownloadSaveLocation string
+
+	// This will set the global vim keybindings when enabled, effectively
+	// taking over the normal bindings. It is changed in the config file.
+	VimEnabled bool
 }
 
 // Account has a name and a token. The name is just for the users recognition.
@@ -215,6 +219,7 @@ func createDefaultConfig() *Config {
 		FileOpenHandlers:                            make(map[string]string),
 		FileOpenSaveFilesPermanently:                false,
 		FileDownloadSaveLocation:                    "~/Downloads",
+		VimEnabled:                                  false,
 	}
 }
 
