@@ -1,7 +1,7 @@
 # I AM CLOSING DOWN THE CORDLESS PROJECT
 
-Hey, so I know this is somewhat of a bummer, but I got banned because of ToS violation today. As that's basically a confirmation for what we've believed would never be enforced, I decided to not work on the cordless project anymore. I'll be taking down cordless in package managers in hope that no new users will install it anymore, especially less illiterate ones. I believe that if you manage to build it yourself, you've probably read the README and are aware of the risks.
-I'll keep the repository up for now and see what I'll do with it. Might archive it, might delete it, I am unsure. Either way, thanks for sticking around everyone :)
+Hey, so I know this is somewhat of a bummer, but I got banned because of ToS violation today. This seemed to be connected to creating a new PM channel via the `/users/@me` endpoint. As that's basically a confirmation for what we've believed would never be enforced, I decided to not work on the cordless project anymore. I'll be taking down cordless in package managers in hope that no new users will install it anymore without knowing the risks. I believe that if you manage to build it yourself, you've probably read the README and are aware of the risks.
+I'll keep the repository up, but might archive it at some point. **And yes, you'll still be able to use existing binaries for as long as discord doesn't introduce any more breaking changes. However, be aware that the risk of getting a ban will only get higher with time!**
 
 <h1 align="center">Cordless</h1>
 
@@ -25,23 +25,21 @@ I'll keep the repository up for now and see what I'll do with it. Might archive 
 
 ## Overview
 
-- [Credits](#credits)
 - [How to install it](#installation)
+  - [Using prebuilt binaries](#using-prebuilt-binaries)
   - [Building from source](#building-from-source)
-  - [Installing on Linux](#installing-on-linux)
-  - [Installing on Windows](#installing-on-windows)
-  - [Installing on macOS](#installing-on-macos)
 - [Login](#login)
 - [Quick overview - Navigation (switching between boxes / containers)](#quick-overview---navigation-switching-between-boxes--containers)
 - [Extending Cordless via the scripting interface](#extending-cordless-via-the-scripting-interface)
-- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+- [FAQ](#faq)
 - [This project isn't for you, if](#this-project-isnt-for-you-if)
 - [Similar projects](#similar-projects)
-- [Troubleshooting](#troubleshooting)
+- [Credits](#credits)
 
 **WARNING: Third party clients are discouraged and against the Discord TOS. There have already been cordless users that got banned, including me (Bios-Marcel, the maker and maintainer)**
 
-Cordless is a custom [Discord](https://discordapp.com) client that aims to
+Cordless is a custom [Discord](https://discord.com/app) client that aims to
 have a low memory footprint and be aimed at power-users.
 
 The application only uses the official Discord API and doesn't send data to
@@ -153,22 +151,6 @@ https://github.com/Bios-Marcel/cordless/wiki/FAQ
 - You want to see images, videos and whatnot inside of the application itself
 - You need the voice/video calling features
 - You need to manage or moderate servers
-
-## Contributing
-
-All kinds of contributions are welcome. Whether it's correcting typos, fixing
-bugs, adding features or whatever else might be good for the project. If you
-want to contribute code, please create a new branch and commit only changes
-relevant to your planned pull request onto that branch. This will help
-to isolate new changes and make merging those into `master` easier.
-
-If you encounter any issues, whether it's bugs or the lack of certain features,
-don't hesitate to create a new GitHub issue.
-
-If there are specific issues you want to be solved quickly, you can set a
-bounty on those via [IssueHunt](https://issuehunt.io/r/Bios-Marcel/cordless).
-The full 100% of the bounty goes to whoever solves the issue, no matter
-whether that's me or someone else.
 
 ## Similar projects
 
