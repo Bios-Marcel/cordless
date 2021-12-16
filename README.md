@@ -5,23 +5,9 @@ I'll keep the repository up, but it'll be archived (read-only) and I have vendor
 
 <h1 align="center">Cordless</h1>
 
-<p align="center">
-  <a href="https://circleci.com/gh/Bios-Marcel/cordless">
-    <img src="https://img.shields.io/circleci/build/gh/Bios-Marcel/cordless?label=linux&logo=linux&logoColor=white">
-  </a>
-  <a href="https://travis-ci.org/Bios-Marcel/cordless">
-    <img src="https://img.shields.io/travis/Bios-Marcel/cordless?label=darwin&logo=apple&logoColor=white">
-  </a>
-  <a href="https://ci.appveyor.com/project/Bios-Marcel/cordless/branch/master">
-    <img src=https://img.shields.io/appveyor/ci/Bios-Marcel/cordless?label=windows&logo=windows&logoColor=white">
-  </a>
-  <a href="https://codecov.io/gh/Bios-Marcel/cordless">
-     <img src="https://codecov.io/gh/Bios-Marcel/cordless/branch/master/graph/badge.svg">
-  </a>
-  <a href="https://discord.gg/fxFqszu">
-     <img src="https://img.shields.io/discord/600329866558308373.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2">
-  </a>
-</p>
+The discord server still exists and there's still some people talking, so feel free to check it out if you want to:
+
+https://discord.gg/fxFqszu
 
 ## Overview
 
