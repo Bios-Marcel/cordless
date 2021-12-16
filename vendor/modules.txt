@@ -1,0 +1,159 @@
+# github.com/Bios-Marcel/discordemojimap v1.0.1
+github.com/Bios-Marcel/discordemojimap
+# github.com/Bios-Marcel/discordgo v0.21.2-0.20201025194456-7046b5509389
+github.com/Bios-Marcel/discordgo
+# github.com/Bios-Marcel/goclipimg v0.0.0-20191117180634-d0f7b06fbe82
+github.com/Bios-Marcel/goclipimg
+# github.com/Bios-Marcel/shortnotforlong v1.1.1
+github.com/Bios-Marcel/shortnotforlong
+# github.com/alecthomas/chroma v0.7.3
+github.com/alecthomas/chroma
+github.com/alecthomas/chroma/formatters
+github.com/alecthomas/chroma/formatters/html
+github.com/alecthomas/chroma/formatters/svg
+github.com/alecthomas/chroma/lexers
+github.com/alecthomas/chroma/lexers/a
+github.com/alecthomas/chroma/lexers/b
+github.com/alecthomas/chroma/lexers/c
+github.com/alecthomas/chroma/lexers/circular
+github.com/alecthomas/chroma/lexers/d
+github.com/alecthomas/chroma/lexers/e
+github.com/alecthomas/chroma/lexers/f
+github.com/alecthomas/chroma/lexers/g
+github.com/alecthomas/chroma/lexers/h
+github.com/alecthomas/chroma/lexers/i
+github.com/alecthomas/chroma/lexers/internal
+github.com/alecthomas/chroma/lexers/j
+github.com/alecthomas/chroma/lexers/k
+github.com/alecthomas/chroma/lexers/l
+github.com/alecthomas/chroma/lexers/m
+github.com/alecthomas/chroma/lexers/n
+github.com/alecthomas/chroma/lexers/o
+github.com/alecthomas/chroma/lexers/p
+github.com/alecthomas/chroma/lexers/q
+github.com/alecthomas/chroma/lexers/r
+github.com/alecthomas/chroma/lexers/s
+github.com/alecthomas/chroma/lexers/t
+github.com/alecthomas/chroma/lexers/v
+github.com/alecthomas/chroma/lexers/w
+github.com/alecthomas/chroma/lexers/x
+github.com/alecthomas/chroma/lexers/y
+github.com/alecthomas/chroma/styles
+# github.com/atotto/clipboard v0.1.2
+github.com/atotto/clipboard
+# github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
+github.com/danwakefield/fnmatch
+# github.com/dlclark/regexp2 v1.2.0
+github.com/dlclark/regexp2
+github.com/dlclark/regexp2/syntax
+# github.com/gdamore/encoding v1.0.0
+github.com/gdamore/encoding
+# github.com/gdamore/tcell/v2 v2.0.0
+github.com/gdamore/tcell/v2
+github.com/gdamore/tcell/v2/terminfo
+github.com/gdamore/tcell/v2/terminfo/a/aixterm
+github.com/gdamore/tcell/v2/terminfo/a/alacritty
+github.com/gdamore/tcell/v2/terminfo/a/ansi
+github.com/gdamore/tcell/v2/terminfo/b/beterm
+github.com/gdamore/tcell/v2/terminfo/base
+github.com/gdamore/tcell/v2/terminfo/c/cygwin
+github.com/gdamore/tcell/v2/terminfo/d/dtterm
+github.com/gdamore/tcell/v2/terminfo/dynamic
+github.com/gdamore/tcell/v2/terminfo/e/emacs
+github.com/gdamore/tcell/v2/terminfo/extended
+github.com/gdamore/tcell/v2/terminfo/g/gnome
+github.com/gdamore/tcell/v2/terminfo/h/hpterm
+github.com/gdamore/tcell/v2/terminfo/k/konsole
+github.com/gdamore/tcell/v2/terminfo/k/kterm
+github.com/gdamore/tcell/v2/terminfo/l/linux
+github.com/gdamore/tcell/v2/terminfo/p/pcansi
+github.com/gdamore/tcell/v2/terminfo/r/rxvt
+github.com/gdamore/tcell/v2/terminfo/s/screen
+github.com/gdamore/tcell/v2/terminfo/s/simpleterm
+github.com/gdamore/tcell/v2/terminfo/s/sun
+github.com/gdamore/tcell/v2/terminfo/t/termite
+github.com/gdamore/tcell/v2/terminfo/t/tmux
+github.com/gdamore/tcell/v2/terminfo/v/vt100
+github.com/gdamore/tcell/v2/terminfo/v/vt102
+github.com/gdamore/tcell/v2/terminfo/v/vt220
+github.com/gdamore/tcell/v2/terminfo/v/vt320
+github.com/gdamore/tcell/v2/terminfo/v/vt400
+github.com/gdamore/tcell/v2/terminfo/v/vt420
+github.com/gdamore/tcell/v2/terminfo/v/vt52
+github.com/gdamore/tcell/v2/terminfo/w/wy50
+github.com/gdamore/tcell/v2/terminfo/w/wy60
+github.com/gdamore/tcell/v2/terminfo/w/wy99_ansi
+github.com/gdamore/tcell/v2/terminfo/x/xfce
+github.com/gdamore/tcell/v2/terminfo/x/xterm
+github.com/gdamore/tcell/v2/terminfo/x/xterm_kitty
+github.com/gdamore/tcell/v2/terminfo/x/xterm_termite
+# github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
+github.com/gen2brain/beeep
+# github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4
+github.com/go-toast/toast
+# github.com/godbus/dbus/v5 v5.0.3
+github.com/godbus/dbus/v5
+# github.com/google/go-github/v29 v29.0.3
+github.com/google/go-github/v29/github
+# github.com/google/go-querystring v1.0.0
+github.com/google/go-querystring/query
+# github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c
+github.com/gopherjs/gopherjs/js
+# github.com/gopherjs/gopherwasm v1.1.0
+github.com/gopherjs/gopherwasm/js
+# github.com/gorilla/websocket v1.4.2
+github.com/gorilla/websocket
+# github.com/lucasb-eyer/go-colorful v1.0.3
+github.com/lucasb-eyer/go-colorful
+# github.com/mattn/go-runewidth v0.0.9
+github.com/mattn/go-runewidth
+# github.com/mdp/qrterminal/v3 v3.0.0
+github.com/mdp/qrterminal/v3
+# github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
+github.com/nu7hatch/gouuid
+# github.com/pkg/errors v0.9.1
+github.com/pkg/errors
+# github.com/rivo/uniseg v0.1.0
+github.com/rivo/uniseg
+# github.com/robertkrimen/otto v0.0.0-20200922221731-ef014fd054ac
+github.com/robertkrimen/otto
+github.com/robertkrimen/otto/ast
+github.com/robertkrimen/otto/dbg
+github.com/robertkrimen/otto/file
+github.com/robertkrimen/otto/parser
+github.com/robertkrimen/otto/registry
+github.com/robertkrimen/otto/token
+# github.com/sergi/go-diff v1.1.0
+github.com/sergi/go-diff/diffmatchpatch
+# github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
+github.com/skratchdot/open-golang/open
+# github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af
+github.com/tadvi/systray
+# golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
+golang.org/x/crypto/cast5
+golang.org/x/crypto/internal/subtle
+golang.org/x/crypto/nacl/secretbox
+golang.org/x/crypto/openpgp
+golang.org/x/crypto/openpgp/armor
+golang.org/x/crypto/openpgp/elgamal
+golang.org/x/crypto/openpgp/errors
+golang.org/x/crypto/openpgp/packet
+golang.org/x/crypto/openpgp/s2k
+golang.org/x/crypto/poly1305
+golang.org/x/crypto/salsa20/salsa
+# golang.org/x/sys v0.0.0-20200413165638-669c56c373c4
+golang.org/x/sys/cpu
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+golang.org/x/sys/windows/registry
+# golang.org/x/text v0.3.0
+golang.org/x/text/encoding
+golang.org/x/text/encoding/internal/identifier
+golang.org/x/text/transform
+# gopkg.in/sourcemap.v1 v1.0.5
+gopkg.in/sourcemap.v1
+gopkg.in/sourcemap.v1/base64vlq
+# rsc.io/qr v0.2.0
+rsc.io/qr
+rsc.io/qr/coding
+rsc.io/qr/gf256

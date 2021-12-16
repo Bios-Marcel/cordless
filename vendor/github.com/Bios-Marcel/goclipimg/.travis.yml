@@ -1,0 +1,4 @@
+os: osx
+language: go
+go:
+  - "1.10"
