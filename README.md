@@ -1,7 +1,7 @@
 # I AM CLOSING DOWN THE CORDLESS PROJECT
 
 Hey, so I know this is somewhat of a bummer, but I got banned because of ToS violation today. This seemed to be connected to creating a new PM channel via the `/users/@me` endpoint. As that's basically a confirmation for what we've believed would never be enforced, I decided to not work on the cordless project anymore. I'll be taking down cordless in package managers in hope that no new users will install it anymore without knowing the risks. I believe that if you manage to build it yourself, you've probably read the README and are aware of the risks.
-I'll keep the repository up, but might archive it at some point. **And yes, you'll still be able to use existing binaries for as long as discord doesn't introduce any more breaking changes. However, be aware that the risk of getting a ban will only get higher with time!**
+I'll keep the repository up, but it'll be archived (read-only) and I have vendored the dependencies, meaning that you'll probably always be able to build the project from source as long as you have a compatible go compiler. **And yes, you'll still be able to use existing binaries for as long as discord doesn't introduce any more breaking changes. However, be aware that the risk of getting a ban will only get higher with time!**
 
 <h1 align="center">Cordless</h1>
 
